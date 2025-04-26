@@ -1,0 +1,396 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Leaf, TrendingDown, Download, FileText, AlertTriangle } from 'lucide-react';
+
+// Define blowing agent data
+const BlowingAgentData = {
+  HFC: { gwp: 1430, odp: 0, lambda: 0.022, cost: 4.50 },
+  HCFC: { gwp: 725, odp: 0.07, lambda: 0.023, cost: 4.20 },
+  Pentane: { gwp: 5, odp: 0, lambda: 0.024, cost: 3.80 },
+  HFO: { gwp: 1, odp: 0, lambda: 0.022, cost: 5.20 },
+  Ecomate: { gwp: 0, odp: 0, lambda: 0.019, cost: 3.95 }
+};
+
+interface SustainabilityData {
+  date: string;
+  consumption: number;
+  co2Savings: number;
+  energyEfficiency: number;
+  costSavings: number;
+}
+
+const SustainabilityPage = () => {
+  const [currentAgent, setCurrentAgent] = useState('HFC');
+  const [consumption, setConsumption] = useState('5000'); // Default value
+  const [historicalData, setHistoricalData] = useState<SustainabilityData[]>([]);
+  const [projectedSavings, setProjectedSavings] = useState<any[]>([]);
+  const [impactResults, setImpactResults] = useState<any>(null);
+
+  // Load historical data on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('sustainabilityData');
+    if (savedData) {
+      try {
+        setHistoricalData(JSON.parse(savedData));
+      } catch (e) {
+        console.error('Error loading saved data:', e);
+      }
+    }
+  }, []);
+
+  // Calculate environmental impact
+  const calculateImpact = () => {
+    const consumptionValue = parseFloat(consumption);
+    if (isNaN(consumptionValue)) return;
+
+    const currentProperties = BlowingAgentData[currentAgent];
+    const ecomateProperties = BlowingAgentData.Ecomate;
+
+    // Calculate environmental impact
+    const co2Savings = (currentProperties.gwp * consumptionValue) / 1000; // Convert to metric tons
+    const thermalImprovement = ((currentProperties.lambda - ecomateProperties.lambda) / 
+                               currentProperties.lambda) * 100;
+    const costSavings = (currentProperties.cost - ecomateProperties.cost) * consumptionValue;
+    const odpReduction = currentProperties.odp * consumptionValue;
+
+    // Results to display
+    setImpactResults({
+      co2Savings,
+      thermalImprovement,
+      costSavings,
+      odpReduction
+    });
+
+    // Generate projected savings for next 12 months
+    const monthlyProjection = Array.from({ length: 12 }, (_, month) => {
+      const projected = (consumptionValue / 12) * (month + 1);
+      return {
+        month: month + 1,
+        co2Savings: (currentProperties.gwp * projected) / 1000,
+        costSavings: (currentProperties.cost - ecomateProperties.cost) * projected,
+        thermalImprovement
+      };
+    });
+
+    setProjectedSavings(monthlyProjection);
+
+    // Save to historical data
+    const newDataPoint: SustainabilityData = {
+      date: new Date().toISOString(),
+      consumption: consumptionValue,
+      co2Savings,
+      energyEfficiency: thermalImprovement,
+      costSavings
+    };
+
+    const updatedData = [...historicalData, newDataPoint]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    setHistoricalData(updatedData);
+    localStorage.setItem('sustainabilityData', JSON.stringify(updatedData));
+  };
+
+  // Export data as CSV
+  const exportData = () => {
+    const csvContent = [
+      ['Date', 'Consumption (kg)', 'CO2 Savings (tons)', 'Energy Efficiency (%)', 'Cost Savings (€)'].join(','),
+      ...historicalData.map(data => [
+        new Date(data.date).toLocaleDateString(),
+        data.consumption,
+        data.co2Savings.toFixed(2),
+        data.energyEfficiency.toFixed(2),
+        data.costSavings.toFixed(2)
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'sustainability_data.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Generate comparison data for bar chart
+  const getComparisonData = () => {
+    return [
+      {
+        name: 'Global Warming Potential',
+        [currentAgent]: BlowingAgentData[currentAgent].gwp,
+        Ecomate: BlowingAgentData.Ecomate.gwp
+      },
+      {
+        name: 'Thermal Conductivity (W/m·K x 1000)',
+        [currentAgent]: BlowingAgentData[currentAgent].lambda * 1000,
+        Ecomate: BlowingAgentData.Ecomate.lambda * 1000
+      },
+      {
+        name: 'Ozone Depletion Potential (x100)',
+        [currentAgent]: BlowingAgentData[currentAgent].odp * 100,
+        Ecomate: BlowingAgentData.Ecomate.odp * 100
+      }
+    ];
+  };
+
+  // Generate PDF report
+  const generateReport = () => {
+    if (!impactResults) return;
+
+    const reportContent = `
+Environmental Impact Report
+Generated: ${new Date().toLocaleString()}
+
+Current Blowing Agent: ${currentAgent}
+Annual Consumption: ${consumption} kg
+
+Summary of Potential Impact:
+- CO₂ Emission Reduction: ${impactResults.co2Savings.toFixed(2)} tons/year
+- Thermal Efficiency Improvement: ${impactResults.thermalImprovement.toFixed(2)}%
+- Cost Savings: €${impactResults.costSavings.toFixed(2)}/year
+- Ozone Layer Protection: ${impactResults.odpReduction.toFixed(4)} ODP units avoided
+
+Environmental Properties Comparison:
+${currentAgent}:
+  - GWP: ${BlowingAgentData[currentAgent].gwp}
+  - ODP: ${BlowingAgentData[currentAgent].odp}
+  - Thermal Conductivity: ${BlowingAgentData[currentAgent].lambda} W/m·K
+
+ecomate®:
+  - GWP: 0
+  - ODP: 0
+  - Thermal Conductivity: 0.019 W/m·K
+
+This report was generated using the Polyurethane Injection Optimizer's Sustainability Calculator.
+`;
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'environmental_impact_report.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Leaf className="h-6 w-6 text-green-500" />
+            Environmental Impact Calculator
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Current Blowing Agent</label>
+                  <select 
+                    className="w-full rounded-md border border-gray-300 p-2"
+                    value={currentAgent}
+                    onChange={(e) => setCurrentAgent(e.target.value)}
+                  >
+                    {Object.keys(BlowingAgentData).filter(agent => agent !== 'Ecomate').map(agent => (
+                      <option key={agent} value={agent}>{agent}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Annual Consumption (kg)</label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 5000"
+                    value={consumption}
+                    onChange={(e) => setConsumption(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <Button 
+                className="w-full"
+                onClick={calculateImpact}
+                disabled={!consumption}
+              >
+                Calculate Environmental Impact
+              </Button>
+
+              {impactResults && (
+                <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    Switching from {currentAgent} to ecomate® would eliminate {BlowingAgentData[currentAgent].gwp} GWP
+                    and {BlowingAgentData[currentAgent].odp} ODP per kg, while improving thermal 
+                    conductivity by {impactResults.thermalImprovement.toFixed(1)}%.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            {impactResults && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4 bg-green-50 dark:bg-green-900/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className="w-4 h-4 text-green-500" />
+                      <h3 className="font-medium">CO₂ Reduction</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">
+                      {impactResults.co2Savings.toFixed(1)}
+                      <span className="text-sm font-normal ml-1">tons/year</span>
+                    </p>
+                  </Card>
+                  
+                  <Card className="p-4 bg-blue-50 dark:bg-blue-900/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Leaf className="w-4 h-4 text-blue-500" />
+                      <h3 className="font-medium">Cost Savings</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-600">
+                      €{impactResults.costSavings.toFixed(2)}
+                      <span className="text-sm font-normal ml-1">/year</span>
+                    </p>
+                  </Card>
+                </div>
+
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={projectedSavings}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="month" 
+                        label={{ value: 'Month', position: 'bottom' }}
+                      />
+                      <YAxis 
+                        yAxisId="left"
+                        label={{ 
+                          value: 'CO₂ Savings (tons)', 
+                          angle: -90, 
+                          position: 'left' 
+                        }}
+                      />
+                      <YAxis 
+                        yAxisId="right"
+                        orientation="right"
+                        label={{
+                          value: 'Cost Savings (€)',
+                          angle: 90,
+                          position: 'right'
+                        }}
+                      />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="co2Savings"
+                        name="CO₂ Savings"
+                        stroke="#059669"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="costSavings"
+                        name="Cost Savings"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={generateReport}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {historicalData.length > 0 && (
+            <div className="mt-8 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Environmental Impact History</h3>
+                <Button variant="outline" onClick={exportData}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Data
+                </Button>
+              </div>
+
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={historicalData.slice(-6)} // Show last 6 entries
+                    margin={{ top: 5, right: 30, left: 20, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                      formatter={(value) => typeof value === 'number' ? value.toFixed(2) : value}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="co2Savings" 
+                      name="CO₂ Savings (tons)" 
+                      fill="#059669" 
+                    />
+                    <Bar 
+                      dataKey="energyEfficiency" 
+                      name="Thermal Efficiency (%)" 
+                      fill="#3b82f6" 
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Environmental Properties Comparison</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={getComparisonData()}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey={currentAgent} fill="#6366f1" />
+                  <Bar dataKey="Ecomate" fill="#22c55e" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SustainabilityPage;

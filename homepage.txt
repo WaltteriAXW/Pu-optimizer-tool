@@ -1,0 +1,185 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Settings2, Thermometer, LineChart, Save, Beaker } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const FeatureCard = ({ icon: Icon, title, description }) => (
+  <Card className="flex flex-col items-center text-center h-full">
+    <CardHeader>
+      <Icon className="w-12 h-12 text-blue-500" />
+      <CardTitle>{title}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <CardDescription className="text-gray-600 dark:text-gray-400">{description}</CardDescription>
+    </CardContent>
+  </Card>
+);
+
+const ComparisonTable = () => {
+  const comparisons = [
+    {
+      type: 'ecomate®',
+      gwp: '0',
+      odp: '0',
+      lambda: '0.019',
+      notes: 'EPA SNAP approved, VOC exempt'
+    },
+    {
+      type: 'HFO',
+      gwp: '<1',
+      odp: '0',
+      lambda: '0.022',
+      notes: 'Higher cost, limited availability'
+    },
+    {
+      type: 'HFC',
+      gwp: '1,430',
+      odp: '0',
+      lambda: '0.022',
+      notes: 'Being phased out globally'
+    },
+    {
+      type: 'HCFC',
+      gwp: '725',
+      odp: '0.07',
+      lambda: '0.023',
+      notes: 'Banned in many regions'
+    },
+    {
+      type: 'Pentane',
+      gwp: '<5',
+      odp: '0',
+      lambda: '0.024',
+      notes: 'Flammable, requires safety systems'
+    }
+  ];
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="bg-gray-50 dark:bg-gray-800">
+            <th className="p-4 text-left">Blowing Agent</th>
+            <th className="p-4 text-left">GWP</th>
+            <th className="p-4 text-left">ODP</th>
+            <th className="p-4 text-left">λ Value (W/m·K)</th>
+            <th className="p-4 text-left">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {comparisons.map((item, index) => (
+            <tr key={index} className="border-t">
+              <td className="p-4">{item.type}</td>
+              <td className="p-4">{item.gwp}</td>
+              <td className="p-4">{item.odp}</td>
+              <td className="p-4">{item.lambda}</td>
+              <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{item.notes}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const HomePage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="space-y-8 p-6">
+      <section className="text-center space-y-4">
+        <h1 className="text-4xl font-bold tracking-tight">
+          Polyurethane Injection Optimizer
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          Optimize your injection pressure while reducing environmental impact. Our tool helps you
+          achieve perfect results using ecomate® blowing agent technology.
+        </p>
+      </section>
+
+      <section className="grid md:grid-cols-3 gap-6">
+        <FeatureCard
+          icon={Settings2}
+          title="Injection Optimization"
+          description="Calculate optimal injection parameters based on your specific setup and material properties, using advanced fluid dynamics models."
+        />
+        <FeatureCard
+          icon={LineChart}
+          title="Sustainability Tracking"
+          description="Monitor and compare environmental impact with different formulations. Track CO₂ reductions and energy savings."
+        />
+        <FeatureCard
+          icon={Save}
+          title="Production Logging"
+          description="Keep detailed records of your optimization results and track production efficiency over time."
+        />
+      </section>
+
+      <section className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">Environmental Impact</h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Using ecomate® blowing agent technology, you can achieve superior results while maintaining
+            environmental responsibility:
+          </p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+            <strong className="text-green-500">Zero GWP</strong>
+            <p className="text-sm text-gray-600 dark:text-gray-400">No Global Warming Potential</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+            <strong className="text-green-500">Zero ODP</strong>
+            <p className="text-sm text-gray-600 dark:text-gray-400">No Ozone Depletion Potential</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+            <strong className="text-green-500">VOC Exempt</strong>
+            <p className="text-sm text-gray-600 dark:text-gray-400">No Volatile Organic Compounds</p>
+          </div>
+        </div>
+
+        <ComparisonTable />
+      </section>
+
+      <section className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
+        <div className="max-w-3xl mx-auto text-center space-y-4">
+          <h2 className="text-2xl font-semibold">Technical Excellence</h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Our optimizer leverages advanced fluid dynamics models including modified Hagen-Poiseuille equations
+            for non-Newtonian fluids, the Arrhenius equation for temperature dependence, and the Power Law
+            model for shear-thinning behavior.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 pt-4">
+            <div className="bg-white dark:bg-gray-700 p-3 rounded-lg flex items-center gap-2">
+              <Thermometer className="text-blue-500" />
+              <span>Temperature-dependent viscosity</span>
+            </div>
+            <div className="bg-white dark:bg-gray-700 p-3 rounded-lg flex items-center gap-2">
+              <Beaker className="text-blue-500" />
+              <span>Power Law fluid model</span>
+            </div>
+            <div className="bg-white dark:bg-gray-700 p-3 rounded-lg flex items-center gap-2">
+              <Settings2 className="text-blue-500" />
+              <span>Shear rate optimization</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="flex justify-center space-x-4">
+        <Button size="lg" onClick={() => navigate('/optimizer')}>
+          Start Optimizing
+          <Settings2 className="ml-2 h-4 w-4" />
+        </Button>
+        <Button size="lg" variant="outline" onClick={() => navigate('/sustainability')}>
+          View Environmental Impact
+          <LineChart className="ml-2 h-4 w-4" />
+        </Button>
+      </section>
+    </div>
+  );
+};
+
+export default HomePage;

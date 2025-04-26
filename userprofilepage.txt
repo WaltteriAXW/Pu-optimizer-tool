@@ -1,0 +1,522 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { User, Save, Settings, Building, HardDrive, ThermometerIcon, FileSpreadsheet, CheckCircle2, Trash2 } from 'lucide-react';
+
+interface UserProfile {
+  name: string;
+  organization: string;
+  role: string;
+  email: string;
+  defaultSettings: {
+    pipeLength: number;
+    pipeThickness: number;
+    temperature: number;
+    viscosity: number;
+    density: number;
+  };
+}
+
+interface SavedCalculation {
+  id: string;
+  date: string;
+  pipeLength: number;
+  pipeThickness: number;
+  temperature: number;
+  pressure: number;
+  viscosity: number;
+  reynoldsNumber: number;
+  notes?: string;
+}
+
+const UserProfilePage = () => {
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '',
+    organization: '',
+    role: '',
+    email: '',
+    defaultSettings: {
+      pipeLength: 100,
+      pipeThickness: 20,
+      temperature: 25,
+      viscosity: 350,
+      density: 1.12
+    }
+  });
+  
+  const [isSaved, setIsSaved] = useState(false);
+  const [editingSettings, setEditingSettings] = useState(false);
+  const [savedCalculations, setSavedCalculations] = useState<SavedCalculation[]>([]);
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
+
+  // Load user profile on component mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      try {
+        setProfile(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error('Error loading user profile:', e);
+      }
+    }
+    
+    // Load saved calculations if any
+    const savedCalcs = localStorage.getItem('savedCalculations');
+    if (savedCalcs) {
+      try {
+        setSavedCalculations(JSON.parse(savedCalcs));
+      } catch (e) {
+        console.error('Error loading saved calculations:', e);
+      }
+    }
+  }, []);
+
+  // Handle user profile changes
+  const handleProfileChange = (field: keyof Omit<UserProfile, 'defaultSettings'>, value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setIsSaved(false);
+  };
+
+  // Handle default settings changes
+  const handleSettingChange = (setting: keyof UserProfile['defaultSettings'], value: number) => {
+    setProfile(prev => ({
+      ...prev,
+      defaultSettings: {
+        ...prev.defaultSettings,
+        [setting]: value
+      }
+    }));
+    setIsSaved(false);
+  };
+
+  // Save profile to localStorage
+  const saveProfile = () => {
+    localStorage.setItem('userProfile', JSON.stringify(profile));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  // Delete a saved calculation
+  const deleteSavedCalculation = (id: string) => {
+    const updatedCalculations = savedCalculations.filter(calc => calc.id !== id);
+    setSavedCalculations(updatedCalculations);
+    localStorage.setItem('savedCalculations', JSON.stringify(updatedCalculations));
+  };
+
+  // Edit notes for a saved calculation
+  const startEditingNotes = (id: string, currentNotes: string = '') => {
+    setEditingNotes(id);
+    setNoteText(currentNotes);
+  };
+
+  // Save notes for a calculation
+  const saveNotes = (id: string) => {
+    const updatedCalculations = savedCalculations.map(calc => 
+      calc.id === id ? { ...calc, notes: noteText } : calc
+    );
+    setSavedCalculations(updatedCalculations);
+    localStorage.setItem('savedCalculations', JSON.stringify(updatedCalculations));
+    setEditingNotes(null);
+  };
+
+  // Apply default settings to the application
+  const applyDefaultSettings = () => {
+    localStorage.setItem('defaultParameters', JSON.stringify(profile.defaultSettings));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  return (
+    <div className="p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-6 h-6" />
+                User Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center justify-center">
+                  <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                    <User className="w-12 h-12 text-blue-500" />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Name</label>
+                    <Input 
+                      value={profile.name} 
+                      onChange={(e) => handleProfileChange('name', e.target.value)}
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Organization</label>
+                    <Input 
+                      value={profile.organization} 
+                      onChange={(e) => handleProfileChange('organization', e.target.value)}
+                      placeholder="Enter your organization"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Role</label>
+                    <Input 
+                      value={profile.role} 
+                      onChange={(e) => handleProfileChange('role', e.target.value)}
+                      placeholder="Enter your role (e.g. Process Engineer)"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input 
+                      type="email"
+                      value={profile.email} 
+                      onChange={(e) => handleProfileChange('email', e.target.value)}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  
+                  <Button className="w-full" onClick={saveProfile}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Profile
+                  </Button>
+                  
+                  {isSaved && (
+                    <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800 dark:text-green-200">
+                        Profile saved successfully!
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="lg:col-span-2">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-6 h-6" />
+                  Default Parameters
+                </CardTitle>
+                <CardDescription>
+                  Set your default parameters for the optimization tool
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!editingSettings ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">Pipe Length</span>
+                        </div>
+                        <p className="text-lg font-medium">{profile.defaultSettings.pipeLength} mm</p>
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">Pipe Thickness</span>
+                        </div>
+                        <p className="text-lg font-medium">{profile.defaultSettings.pipeThickness} mm</p>
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <ThermometerIcon className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">Temperature</span>
+                        </div>
+                        <p className="text-lg font-medium">{profile.defaultSettings.temperature} °C</p>
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">Viscosity</span>
+                        </div>
+                        <p className="text-lg font-medium">{profile.defaultSettings.viscosity} cP</p>
+                      </div>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-500">Density</span>
+                        </div>
+                        <p className="text-lg font-medium">{profile.defaultSettings.density} g/cm³</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button onClick={() => setEditingSettings(true)}>
+                        Edit Default Parameters
+                      </Button>
+                      <Button variant="outline" onClick={applyDefaultSettings}>
+                        Apply as Default
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Pipe Length (mm)</label>
+                        <Input 
+                          type="number"
+                          value={profile.defaultSettings.pipeLength} 
+                          onChange={(e) => handleSettingChange('pipeLength', Number(e.target.value))}
+                          min="50"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Pipe Thickness (mm)</label>
+                        <Input 
+                          type="number"
+                          value={profile.defaultSettings.pipeThickness} 
+                          onChange={(e) => handleSettingChange('pipeThickness', Number(e.target.value))}
+                          min="0.1"
+                          step="0.1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Temperature (°C)</label>
+                        <Input 
+                          type="number"
+                          value={profile.defaultSettings.temperature} 
+                          onChange={(e) => handleSettingChange('temperature', Number(e.target.value))}
+                          min="5"
+                          max="40"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Viscosity (cP)</label>
+                        <Input 
+                          type="number"
+                          value={profile.defaultSettings.viscosity} 
+                          onChange={(e) => handleSettingChange('viscosity', Number(e.target.value))}
+                          min="1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Density (g/cm³)</label>
+                        <Input 
+                          type="number"
+                          value={profile.defaultSettings.density} 
+                          onChange={(e) => handleSettingChange('density', Number(e.target.value))}
+                          min="0.1"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button onClick={() => {
+                        saveProfile();
+                        setEditingSettings(false);
+                      }}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingSettings(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HardDrive className="w-6 h-6" />
+                  Saved Calculations
+                </CardTitle>
+                <CardDescription>
+                  Access your previously saved optimization results
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {savedCalculations.length === 0 ? (
+                  <Alert>
+                    <AlertDescription>
+                      You don't have any saved calculations yet. Save your results from the optimizer page to access them here.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="overflow-x-auto rounded-md border">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            <th className="p-3 text-left">Date</th>
+                            <th className="p-3 text-left">Pipe Length</th>
+                            <th className="p-3 text-left">Temperature</th>
+                            <th className="p-3 text-left">Pressure</th>
+                            <th className="p-3 text-left">Reynolds</th>
+                            <th className="p-3 text-left">Notes</th>
+                            <th className="p-3 text-left">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {savedCalculations.map((calc) => (
+                            <tr key={calc.id} className="bg-white dark:bg-gray-900">
+                              <td className="p-3">{formatDate(calc.date)}</td>
+                              <td className="p-3">{calc.pipeLength} mm</td>
+                              <td className="p-3">{calc.temperature} °C</td>
+                              <td className="p-3">{calc.pressure.toFixed(2)} kPa</td>
+                              <td className="p-3">{calc.reynoldsNumber.toFixed(2)}</td>
+                              <td className="p-3">
+                                {editingNotes === calc.id ? (
+                                  <div className="flex flex-col gap-2">
+                                    <Input
+                                      value={noteText}
+                                      onChange={(e) => setNoteText(e.target.value)}
+                                      placeholder="Add notes..."
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button size="sm" onClick={() => saveNotes(calc.id)}>Save</Button>
+                                      <Button size="sm" variant="outline" onClick={() => setEditingNotes(null)}>
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    {calc.notes || 'N/A'}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => startEditingNotes(calc.id, calc.notes)}
+                                      className="ml-2"
+                                    >
+                                      Edit
+                                    </Button>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => deleteSavedCalculation(calc.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-6 h-6" />
+              Material Presets
+            </CardTitle>
+            <CardDescription>
+              Quick access to common material settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" 
+                onClick={() => {
+                  setProfile(prev => ({
+                    ...prev,
+                    defaultSettings: {
+                      ...prev.defaultSettings,
+                      viscosity: 350,
+                      density: 1.12
+                    }
+                  }));
+                  setIsSaved(false);
+                }}
+              >
+                <h3 className="font-medium">Ecofoam EC</h3>
+                <p className="text-sm text-gray-500">Viscosity: 350 cP</p>
+                <p className="text-sm text-gray-500">Density: 1.12 g/cm³</p>
+              </Card>
+              
+              <Card className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                onClick={() => {
+                  setProfile(prev => ({
+                    ...prev,
+                    defaultSettings: {
+                      ...prev.defaultSettings,
+                      viscosity: 850,
+                      density: 1.12
+                    }
+                  }));
+                  setIsSaved(false);
+                }}
+              >
+                <h3 className="font-medium">Ecofoam XHD RC</h3>
+                <p className="text-sm text-gray-500">Viscosity: 850 cP</p>
+                <p className="text-sm text-gray-500">Density: 1.12 g/cm³</p>
+              </Card>
+              
+              <Card className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                onClick={() => {
+                  setProfile(prev => ({
+                    ...prev,
+                    defaultSettings: {
+                      ...prev.defaultSettings,
+                      viscosity: 400,
+                      density: 1.23
+                    }
+                  }));
+                  setIsSaved(false);
+                }}
+              >
+                <h3 className="font-medium">Isocyanate</h3>
+                <p className="text-sm text-gray-500">Viscosity: 200 cP</p>
+                <p className="text-sm text-gray-500">Density: 1.23 g/cm³</p>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default UserProfilePage;
