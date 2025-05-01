@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://waltteriaxw.github.io/polyurethane-optimizer/",
+  "homepage": "https://waltteriaxw.github.io/Pu-optimizer-tool/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
