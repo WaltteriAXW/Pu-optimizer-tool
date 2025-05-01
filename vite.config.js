@@ -10,7 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: '/polyurethane-optimizer/', // GitHub Pages repository name
+  base: '/Pu-optimizer-tool/', // GitHub Pages repository name
   build: {
     outDir: 'dist',
     rollupOptions: {
