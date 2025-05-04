@@ -13,14 +13,21 @@ export default defineConfig({
   base: '/Pu-optimizer-tool/', // GitHub Pages repository name
   build: {
     outDir: 'dist',
+    sourcemap: true, // Add source maps for better debugging
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom'],
           'recharts': ['recharts'],
-          'ui': ['@/components/ui'],
         },
       },
+    },
+  },
+  // Add CORS headers for Pyodide
+  server: {
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
 });
