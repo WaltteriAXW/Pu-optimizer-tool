@@ -14,20 +14,5 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true, // Add source maps for better debugging
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom'],
-          'recharts': ['recharts'],
-        },
-      },
-    },
-  },
-  // Add CORS headers for Pyodide
-  server: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
   },
 });
