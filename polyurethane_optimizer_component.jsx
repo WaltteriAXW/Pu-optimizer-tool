@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Alert, AlertTitle, AlertDescription } from './components/ui';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale } from 'lucide-react';
+import { initializePyodide, calculateParameters, calculateEnvironmentalImpact } from './pyodide_loader';
+
+// If Lucide React icons aren't available, provide fallbacks
+const Icons = {
+  Settings2: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>,
+  Thermometer: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"></path></svg>,
+  FileSpreadsheet: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h2"></path><path d="M8 17h2"></path><path d="M14 13h2"></path><path d="M14 17h2"></path></svg>,
+  AlertTriangle: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>,
+  Download: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>,
+  Leaf: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.5 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>,
+  Scale: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>,
+};
 
 const InputField = ({ label, unit, icon: Icon, ...props }) => (
   <div className="space-y-2">
@@ -58,6 +66,7 @@ const PolyurethaneOptimizer = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [pyodideReady, setPyodideReady] = useState(false);
+  const [pyodideError, setPyodideError] = useState(false);
   
   // State for environmental impact
   const [environmentalImpact, setEnvironmentalImpact] = useState(null);
@@ -67,11 +76,25 @@ const PolyurethaneOptimizer = () => {
   // State for production logs
   const [productionLogs, setProductionLogs] = useState([]);
 
-  // Simulate Python environment initialization
+  // Initialize Pyodide
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPyodideReady(true);
-    }, 2000);
+    const initPyodide = async () => {
+      try {
+        if (window.DEBUG) console.log('Initializing Pyodide...');
+        await initializePyodide();
+        if (window.DEBUG) console.log('Pyodide initialization successful');
+        setPyodideReady(true);
+      } catch (err) {
+        console.error('Failed to initialize Pyodide:', err);
+        setPyodideError(true);
+        // Set ready anyway so the UI doesn't get stuck
+        setPyodideReady(true);
+        // Show error message
+        setError('Warning: Python calculation engine could not be initialized. Using simplified calculations instead.');
+      }
+    };
+    
+    initPyodide();
     
     // Load saved logs from localStorage
     const savedLogs = localStorage.getItem('productionLogs');
@@ -96,8 +119,6 @@ const PolyurethaneOptimizer = () => {
         console.error('Error loading default parameters:', e);
       }
     }
-    
-    return () => clearTimeout(timer);
   }, []);
 
   // Calculate results using fluid dynamics equations
@@ -122,70 +143,8 @@ const PolyurethaneOptimizer = () => {
         throw new Error("Temperature must be between 5°C and 40°C");
       }
       
-      // Simulate calculation delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Convert units
-      const radius = inputs.pipeThickness / 2000; // mm to m
-      const length = inputs.pipeLength / 1000; // mm to m
-      
-      // Material properties
-      const activationEnergy = 50000; // J/mol
-      const gasConstant = 8.314; // J/(mol·K)
-      const powerLawIndex = 0.85; // Dimensionless
-      
-      // Calculate temperature factor (Arrhenius equation)
-      const tempK = inputs.temperature + 273.15; // Convert to Kelvin
-      const refTempK = 25 + 273.15; // 25°C reference in Kelvin
-      const tempFactor = Math.exp((activationEnergy / gasConstant) * (1/tempK - 1/refTempK));
-      
-      // Calculate shear rate
-      const shearRate = (4 * inputs.flowRate) / (Math.PI * Math.pow(radius, 3));
-      
-      // Calculate apparent viscosity with Power Law model
-      const viscosityPas = (inputs.viscosity * 0.001) * tempFactor * Math.pow(shearRate, powerLawIndex - 1);
-      
-      // Calculate Reynolds number
-      const velocity = inputs.flowRate / (Math.PI * Math.pow(radius, 2));
-      const densityKgM3 = inputs.density * 1000; // g/cm³ to kg/m³
-      const reynolds = (2 * radius * velocity * densityKgM3) / viscosityPas;
-      
-      // Calculate pressure drop using modified Hagen-Poiseuille for Power Law fluid
-      const n = powerLawIndex;
-      const pressureDrop = ((8 * viscosityPas * length * inputs.flowRate) / 
-                        (Math.PI * Math.pow(radius, 4))) * ((3*n + 1)/(4*n));
-      
-      // Generate pressure profile
-      const numPoints = 20;
-      const pressureProfile = Array.from({length: numPoints}, (_, i) => {
-        const distance = (i * inputs.pipeLength) / (numPoints - 1); // in mm
-        const pressure = (pressureDrop/1000) * (1 - distance/inputs.pipeLength); // in kPa
-        return { 
-          distance: parseFloat(distance.toFixed(1)), 
-          pressure: parseFloat(pressure.toFixed(2)) 
-        };
-      });
-      
-      // Calculate optimal injection time
-      const pipeVolume = Math.PI * Math.pow(radius, 2) * length; // m³
-      const injectionTime = pipeVolume / inputs.flowRate; // seconds
-      
-      // Generate warnings
-      const warnings = [];
-      if (reynolds > 2300) warnings.push("Flow is turbulent - consider reducing flow rate");
-      if (shearRate > 1000) warnings.push("High shear rate may affect material properties");
-      if (viscosityPas > 1.0) warnings.push("High viscosity may require increased pressure");
-      
-      const calculationResults = {
-        required_pressure: parseFloat((pressureDrop/1000).toFixed(2)), // Convert to kPa
-        shear_rate: parseFloat(shearRate.toFixed(2)),
-        apparent_viscosity: parseFloat(viscosityPas.toFixed(4)),
-        reynolds_number: parseFloat(reynolds.toFixed(2)),
-        optimal_injection_time: parseFloat(injectionTime.toFixed(2)),
-        pressure_profile: pressureProfile,
-        flow_regime: reynolds < 2300 ? 'laminar' : 'turbulent',
-        warnings
-      };
+      // Calculate parameters using Python
+      const calculationResults = await calculateParameters(inputs);
       
       setResults(calculationResults);
 
@@ -206,19 +165,8 @@ const PolyurethaneOptimizer = () => {
       localStorage.setItem('productionLogs', JSON.stringify(updatedLogs));
 
       // Calculate environmental impact
-      const currentAgent = BLOWING_AGENT_DATA[alternativeAgent];
-      const ecomate = BLOWING_AGENT_DATA.Ecomate;
-      
-      const co2Reduction = (currentAgent.gwp * annualConsumption) / 1000; // tons
-      const thermalImprovement = ((currentAgent.lambda - ecomate.lambda) / currentAgent.lambda) * 100; // percentage
-      const costSavings = (currentAgent.cost - ecomate.cost) * annualConsumption; // currency
-      
-      setEnvironmentalImpact({
-        co2_reduction: parseFloat(co2Reduction.toFixed(2)),
-        thermal_improvement: parseFloat(thermalImprovement.toFixed(2)),
-        cost_savings: parseFloat(costSavings.toFixed(2)),
-        odp_reduction: currentAgent.odp * annualConsumption
-      });
+      const envImpact = await calculateEnvironmentalImpact(alternativeAgent, annualConsumption);
+      setEnvironmentalImpact(envImpact);
       
     } catch (err) {
       console.error('Calculation error:', err);
@@ -246,28 +194,23 @@ const PolyurethaneOptimizer = () => {
   const getEnvironmentalComparisonData = () => {
     if (!environmentalImpact) return [];
     
-    const agentData = {
-      'HFC': { gwp: 1430, lambda: 0.022 },
-      'HCFC': { gwp: 725, lambda: 0.023 },
-      'Pentane': { gwp: 5, lambda: 0.024 },
-      'HFO': { gwp: 1, lambda: 0.022 }
-    };
+    const currentAgent = BLOWING_AGENT_DATA[alternativeAgent] || BLOWING_AGENT_DATA.HFC;
     
     return [
       {
         name: 'Global Warming Potential',
         Ecomate: 0,
-        [alternativeAgent]: agentData[alternativeAgent].gwp
+        [alternativeAgent]: currentAgent.gwp
       },
       {
         name: 'Thermal Conductivity (W/m·K)',
         Ecomate: 0.019,
-        [alternativeAgent]: agentData[alternativeAgent].lambda
+        [alternativeAgent]: currentAgent.lambda
       },
       {
         name: 'Ozone Depletion',
         Ecomate: 0,
-        [alternativeAgent]: environmentalImpact.odp_reduction
+        [alternativeAgent]: currentAgent.odp
       }
     ];
   };
@@ -324,12 +267,26 @@ const PolyurethaneOptimizer = () => {
     setTimeout(() => setError(null), 3000);
   };
 
+  // Demo mode warning when Pyodide failed to initialize
+  const demoModeWarning = pyodideError && (
+    <Alert className="my-4 bg-yellow-50 border-yellow-200 text-yellow-800">
+      <Icons.AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Running in Demo Mode</AlertTitle>
+      <AlertDescription>
+        The Python calculation engine couldn't be initialized. 
+        Using simplified calculations for demonstration purposes.
+      </AlertDescription>
+    </Alert>
+  );
+
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+      {demoModeWarning}
+      
       <Card className="border-t-4 border-t-blue-500">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
-            <Settings2 className="w-6 h-6" />
+            <Icons.Settings2 className="w-6 h-6" />
             Polyurethane Injection Optimizer
           </CardTitle>
         </CardHeader>
@@ -341,7 +298,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Pipe Length"
                   unit="mm"
-                  icon={Settings2}
+                  icon={Icons.Settings2}
                   type="number"
                   min="50"
                   value={inputs.pipeLength}
@@ -351,7 +308,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Pipe Thickness"
                   unit="mm"
-                  icon={Settings2}
+                  icon={Icons.Settings2}
                   type="number"
                   min="0.1"
                   step="0.1"
@@ -362,7 +319,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Temperature"
                   unit="°C"
-                  icon={Thermometer}
+                  icon={Icons.Thermometer}
                   type="number"
                   min="5"
                   max="40"
@@ -373,7 +330,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Flow Rate"
                   unit="L/s"
-                  icon={FileSpreadsheet}
+                  icon={Icons.FileSpreadsheet}
                   type="number"
                   min="0.0001"
                   step="0.0001"
@@ -384,7 +341,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Initial Viscosity"
                   unit="cP"
-                  icon={FileSpreadsheet}
+                  icon={Icons.FileSpreadsheet}
                   type="number"
                   min="1"
                   value={inputs.viscosity}
@@ -394,7 +351,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label="Density"
                   unit="g/cm³"
-                  icon={Scale}
+                  icon={Icons.Scale}
                   type="number"
                   min="0.1"
                   step="0.01"
@@ -407,260 +364,4 @@ const PolyurethaneOptimizer = () => {
                 <h3 className="text-lg font-medium">Environmental Impact</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Current Blowing Agent</label>
-                    <select 
-                      className="w-full rounded-md border border-gray-300 p-2"
-                      value={alternativeAgent}
-                      onChange={(e) => setAlternativeAgent(e.target.value)}
-                    >
-                      <option value="HFC">HFC</option>
-                      <option value="HCFC">HCFC</option>
-                      <option value="Pentane">Pentane</option>
-                      <option value="HFO">HFO</option>
-                    </select>
-                  </div>
-                  
-                  <InputField
-                    label="Annual Consumption"
-                    unit="kg"
-                    icon={Leaf}
-                    type="number"
-                    min="1"
-                    value={annualConsumption}
-                    onChange={(e) => setAnnualConsumption(Math.max(1, Number(e.target.value)))}
-                  />
-                </div>
-              </div>
-
-              {!pyodideReady && !error && (
-                <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200">
-                  <div className="flex items-center">
-                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                    <AlertDescription className="text-blue-800 dark:text-blue-200">
-                      Initializing calculation environment...
-                    </AlertDescription>
-                  </div>
-                </Alert>
-              )}
-
-              {error && (
-                <Alert variant={error.includes('successfully') ? 'default' : 'destructive'}>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>{error.includes('successfully') ? 'Success' : 'Error'}</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="flex space-x-4">
-                <Button 
-                  className="flex-1 h-12 text-lg"
-                  onClick={calculateResults}
-                  disabled={loading || !pyodideReady}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Optimizing...
-                    </span>
-                  ) : 'Calculate Optimal Parameters'}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={saveAsDefaults}
-                  disabled={loading}
-                  className="h-12"
-                >
-                  Save as Default
-                </Button>
-                
-                {results && (
-                  <Button 
-                    variant="outline"
-                    onClick={exportResults}
-                    className="h-12"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Export
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Results Panel */}
-            {results && (
-              <div className="space-y-6">
-                <div className="h-72 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                  <ResponsiveContainer>
-                    <LineChart
-                      data={getPressureProfileData()}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="distance"
-                        label={{ value: 'Distance (mm)', position: 'bottom' }}
-                      />
-                      <YAxis 
-                        label={{ 
-                          value: 'Pressure (kPa)', 
-                          angle: -90, 
-                          position: 'left' 
-                        }}
-                      />
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          border: 'none',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        }}
-                      />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="pressure" 
-                        name="Pressure"
-                        stroke="#6366f1"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <ResultCard
-                    title="Required Injection Pressure"
-                    value={results.required_pressure}
-                    unit="kPa"
-                    icon={Settings2}
-                  />
-                  <ResultCard
-                    title="Optimal Injection Time"
-                    value={results.optimal_injection_time}
-                    unit="s"
-                    icon={FileSpreadsheet}
-                  />
-                  <ResultCard
-                    title="Apparent Viscosity"
-                    value={results.apparent_viscosity}
-                    unit="Pa·s"
-                    icon={FileSpreadsheet}
-                  />
-                  <ResultCard
-                    title="Reynolds Number"
-                    value={results.reynolds_number}
-                    unit=""
-                    icon={FileSpreadsheet}
-                  />
-                </div>
-
-                {results.warnings.length > 0 && (
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Process Warnings</AlertTitle>
-                    <AlertDescription>
-                      <ul className="mt-2 list-disc pl-5 space-y-1">
-                        {results.warnings.map((warning, index) => (
-                          <li key={index}>{warning}</li>
-                        ))}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {environmentalImpact && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Environmental Impact</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <ResultCard
-                        title="CO₂ Reduction"
-                        value={environmentalImpact.co2_reduction}
-                        unit="tonnes/year"
-                        icon={Leaf}
-                      />
-                      <ResultCard
-                        title="Thermal Efficiency"
-                        value={`+${environmentalImpact.thermal_improvement}`}
-                        unit="%"
-                        icon={Thermometer}
-                      />
-                      <ResultCard
-                        title="Cost Savings"
-                        value={environmentalImpact.cost_savings}
-                        unit="€"
-                        icon={Download}
-                      />
-                    </div>
-
-                    <div className="h-64 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                      <ResponsiveContainer>
-                        <BarChart
-                          data={getEnvironmentalComparisonData()}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="Ecomate" fill="#22c55e" />
-                          <Bar dataKey={alternativeAgent} fill="#6366f1" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Production Logs */}
-      {productionLogs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-6 h-6" />
-              Recent Production Logs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800">
-                    <th className="p-2 text-left">Timestamp</th>
-                    <th className="p-2 text-left">Pipe Length</th>
-                    <th className="p-2 text-left">Temperature</th>
-                    <th className="p-2 text-left">Pressure</th>
-                    <th className="p-2 text-left">Viscosity</th>
-                    <th className="p-2 text-left">Reynolds</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productionLogs.slice(-5).map((log, index) => (
-                    <tr key={index} className="border-t">
-                      <td className="p-2">{new Date(log.timestamp).toLocaleString()}</td>
-                      <td className="p-2">{log.pipeLength} mm</td>
-                      <td className="p-2">{log.temperature} °C</td>
-                      <td className="p-2">{log.pressure} kPa</td>
-                      <td className="p-2">{log.viscosity} Pa·s</td>
-                      <td className="p-2">{log.reynoldsNumber}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
-
-export default PolyurethaneOptimizer;
+                    <label className="block text-sm font-medium mb-1">Current Blowing Agent</label
