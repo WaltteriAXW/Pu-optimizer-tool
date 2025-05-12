@@ -12,11 +12,11 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@/components/ui": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.9.0",
-    "lucide-react": "^0.263.1"
+    "lucide-react": "^0.263.1",
+    "pyodide": "0.24.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
