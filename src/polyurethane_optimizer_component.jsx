@@ -259,45 +259,53 @@ const PolyurethaneOptimizer = () => {
         throw new Error("Temperature must be between 5°C and 50°C");
       }
 
-      // Simulate calculation
+      // Simulate calculation delay for UX
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Convert units
+      // === UNIT CONVERSIONS ===
       const radius = inputs.pipeDiameter / 2000; // mm to m
       const length = inputs.pipeLength / 1000; // mm to m
       const flowRateM3s = inputs.flowRate / 60000; // L/min to m³/s
 
-      // Material properties
-      const activationEnergy = selectedMaterial === 'ecofoam_xhd' ? 28000 : 25000;
-      const gasConstant = 8.314;
-      const powerLawIndex = selectedMaterial === 'ecofoam_xhd' ? 0.82 : 0.85;
-      const safetyFactor = 1.5;
+      // === MATERIAL PROPERTIES ===
+      // Select material-specific properties based on preset
+      const activationEnergy = selectedMaterial === 'ecofoam_xhd' ? 28000 : 25000; // J/mol
+      const gasConstant = 8.314; // J/(mol·K)
+      const powerLawIndex = selectedMaterial === 'ecofoam_xhd' ? 0.82 : 0.85; // n (dimensionless)
+      const safetyFactor = 1.5; // Safety multiplier
 
-      // Temperature correction
-      const tempK = inputs.temperature + 273.15;
-      const refTempK = 25 + 273.15;
+      // === ARRHENIUS EQUATION - Temperature Correction ===
+      // μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
+      const tempK = inputs.temperature + 273.15; // °C to K
+      const refTempK = 25 + 273.15; // Reference temperature in K
       const tempFactor = Math.exp((activationEnergy / gasConstant) * (1/tempK - 1/refTempK));
 
-      // Calculate shear rate
+      // === SHEAR RATE CALCULATION ===
+      // γ̇ = 4Q / (πr³) for Power Law fluids in circular pipes
       const shearRate = (4 * flowRateM3s) / (Math.PI * Math.pow(radius, 3));
 
-      // Calculate apparent viscosity
+      // === POWER LAW MODEL - Apparent Viscosity ===
+      // μ = K × γ̇^(n-1)
       const baseViscosity = inputs.viscosity * 0.001; // cP to Pa·s
       const correctedViscosity = baseViscosity * tempFactor;
       const apparentViscosity = correctedViscosity * Math.pow(shearRate, powerLawIndex - 1);
 
-      // Calculate velocity and Reynolds number
+      // === FLOW VELOCITY AND REYNOLDS NUMBER ===
       const area = Math.PI * Math.pow(radius, 2);
-      const velocity = flowRateM3s / area;
-      const reynolds = (inputs.density * velocity * inputs.pipeDiameter / 1000) / correctedViscosity;
+      const velocity = flowRateM3s / area; // m/s
+      const reynolds = (inputs.density * velocity * (inputs.pipeDiameter / 1000)) / correctedViscosity;
 
-      // Calculate pressure drop
+      // === HAGEN-POISEUILLE EQUATION (MODIFIED FOR POWER LAW FLUIDS) ===
+      // ΔP = (8μLQ)/(πr⁴) × [(3n+1)/(4n)]
+      // This accounts for non-Newtonian behavior of polyurethane systems
       const n = powerLawIndex;
+      const powerLawCorrection = (3 * n + 1) / (4 * n);
       const pressureDrop = ((8 * apparentViscosity * length * flowRateM3s) /
-        (Math.PI * Math.pow(radius, 4))) * ((3 * n + 1) / (4 * n));
+        (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
 
-      const pressureDropBar = pressureDrop / 100000;
-      const totalPressureBar = 1.01325 + (pressureDropBar * safetyFactor);
+      // Convert to practical units
+      const pressureDropBar = pressureDrop / 100000; // Pa to bar
+      const totalPressureBar = 1.01325 + (pressureDropBar * safetyFactor); // Add atmospheric + safety
 
       // Calculate optimal injection time
       const pipeVolume = Math.PI * Math.pow(radius, 2) * length;
@@ -335,53 +343,72 @@ const PolyurethaneOptimizer = () => {
         recommendations.push("Reduce flow rate or increase pipe diameter");
       }
 
-      // Generate pressure vs length data
+      // === PRESSURE PROFILE vs PIPE LENGTH ===
+      // Generate pressure requirements for different pipe lengths
       const pressureData = [];
       for (let len = 100; len <= 1000; len += 100) {
-        const l = len / 1000;
+        const l = len / 1000; // Convert mm to m
+        // Apply Hagen-Poiseuille with Power Law correction for each length
         const pDrop = ((8 * apparentViscosity * l * flowRateM3s) /
-          (Math.PI * Math.pow(radius, 4))) * ((3 * n + 1) / (4 * n));
+          (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
         const pBar = 1.01325 + ((pDrop / 100000) * safetyFactor);
         pressureData.push({
           length: len,
-          pressure: parseFloat(pBar.toFixed(2)),
+          pressure: parseFloat(pBar.toFixed(3)), // Higher precision for chart
           machineLimit: machine.maxPressure
         });
       }
 
+      // === PREPARE COMPREHENSIVE RESULTS ===
       setResults({
-        optimalPressureBar: parseFloat(totalPressureBar.toFixed(2)),
-        pressureDropBar: parseFloat(pressureDropBar.toFixed(2)),
-        pressureDropKpa: parseFloat((pressureDropBar * 100).toFixed(1)),
-        reynoldsNumber: parseFloat(reynolds.toFixed(0)),
+        // Primary pressure results with high precision
+        optimalPressureBar: parseFloat(totalPressureBar.toFixed(3)),
+        pressureDropBar: parseFloat(pressureDropBar.toFixed(3)),
+        pressureDropKpa: parseFloat((pressureDropBar * 100).toFixed(2)),
+
+        // Flow characteristics
+        reynoldsNumber: parseFloat(reynolds.toFixed(1)),
         flowRegime,
-        velocity: parseFloat(velocity.toFixed(2)),
-        shearRate: parseFloat(shearRate.toFixed(0)),
-        apparentViscosity: parseFloat(apparentViscosity.toFixed(4)),
-        injectionTime: parseFloat(injectionTime.toFixed(2)),
-        pipeVolume: parseFloat((pipeVolume * 1000).toFixed(3)),
+        velocity: parseFloat(velocity.toFixed(3)),
+        shearRate: parseFloat(shearRate.toFixed(1)),
+        apparentViscosity: parseFloat(apparentViscosity.toFixed(6)),
+
+        // Injection parameters
+        injectionTime: parseFloat(injectionTime.toFixed(3)),
+        pipeVolume: parseFloat((pipeVolume * 1000).toFixed(4)),
+
+        // Compatibility and recommendations
         compatible,
         warnings,
         recommendations,
         machine,
-        // ML Insights - Simulated for now (will be real when Python backend is integrated)
+
+        // === ML INSIGHTS ===
+        // Simulated AI predictions (will be real when Python ML backend is integrated)
         mlInsights: {
           trained: true,
           optimal_parameters: {
-            optimal_temperature: 25.0,
-            optimal_flow_rate: 40.0
+            // Temperature optimization based on material properties
+            optimal_temperature: selectedMaterial === 'ecofoam_xhd' ? 28.0 : 25.0,
+            // Flow rate optimization based on pipe geometry
+            optimal_flow_rate: parseFloat((Math.PI * Math.pow(radius, 2) * 1.5 * 60000).toFixed(1))
           },
           quality_prediction: {
             is_good_part: compatible && reynolds < 2300,
-            confidence: 85,
-            good_probability: compatible && reynolds < 2300 ? 85 : 45
+            confidence: compatible && reynolds < 2300 ? 88 : 65,
+            good_probability: compatible && reynolds < 2300 ? 87 : 42
           },
           defect_risks: {
-            void_risk: compatible ? 15 : 45,
-            short_shot_risk: totalPressureBar > machine.maxPressure ? 60 : 12,
-            flash_risk: totalPressureBar > machine.maxPressure * 0.9 ? 35 : 10,
-            surface_defect_risk: temperature < 20 || temperature > 35 ? 30 : 15,
-            overall_risk: compatible && reynolds < 2300 && temperature >= 20 && temperature <= 35 ? 18 : 38
+            // Void risk increases if pressure is too low
+            void_risk: compatible ? 12 : 48,
+            // Short shot risk if pressure exceeds machine capacity
+            short_shot_risk: totalPressureBar > machine.maxPressure ? 65 : 10,
+            // Flash risk if pressure is near maximum
+            flash_risk: totalPressureBar > machine.maxPressure * 0.9 ? 38 : 8,
+            // Surface defects related to temperature
+            surface_defect_risk: inputs.temperature < 20 || inputs.temperature > 35 ? 32 : 14,
+            // Overall risk assessment
+            overall_risk: compatible && reynolds < 2300 && inputs.temperature >= 20 && inputs.temperature <= 35 ? 15 : 42
           },
           recommendations: []
         }
@@ -662,10 +689,60 @@ const PolyurethaneOptimizer = () => {
                 </CardContent>
               </Card>
 
+              {/* Equations Information Card */}
+              <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                    Fluid Dynamics Model
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-indigo-600 text-white rounded-full">Scientific</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-4">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                    <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center gap-2">
+                      <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
+                    </h4>
+                    <div className="text-sm text-indigo-800 dark:text-indigo-200 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded">
+                      <p>ΔP = (8 × μ × L × Q) / (π × r⁴) × [(3n+1)/(4n)]</p>
+                      <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
+                        Modified for non-Newtonian fluids with Power Law correction
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                      <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1 text-sm flex items-center gap-1">
+                        <span>🌡️</span> Arrhenius Equation
+                      </h4>
+                      <p className="text-xs font-mono text-purple-800 dark:text-purple-200">
+                        μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1 text-sm flex items-center gap-1">
+                        <span>💧</span> Power Law Model
+                      </h4>
+                      <p className="text-xs font-mono text-blue-800 dark:text-blue-200">
+                        μ = K × γ̇⁽ⁿ⁻¹⁾
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
+                    <p>✓ Temperature-dependent viscosity correction</p>
+                    <p>✓ Shear-thinning behavior for polyurethane systems</p>
+                    <p>✓ Reynolds number analysis for flow regime determination</p>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Primary Results */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Optimization Results</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    Optimization Results
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -713,16 +790,29 @@ const PolyurethaneOptimizer = () => {
                     />
                   </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-sm space-y-1">
-                    <p className="text-blue-900 dark:text-blue-100">
-                      <span className="font-semibold">Shear Rate:</span> {results.shearRate} s⁻¹
-                    </p>
-                    <p className="text-blue-900 dark:text-blue-100">
-                      <span className="font-semibold">Apparent Viscosity:</span> {results.apparentViscosity} Pa·s
-                    </p>
-                    <p className="text-blue-900 dark:text-blue-100">
-                      <span className="font-semibold">Pipe Volume:</span> {results.pipeVolume} L
-                    </p>
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg text-sm space-y-2 border border-blue-200 dark:border-blue-700">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                      <Settings2 className="w-4 h-4" />
+                      Detailed Flow Analysis
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Shear Rate</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.shearRate} <span className="text-xs font-normal">s⁻¹</span></p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Apparent Viscosity</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.apparentViscosity} <span className="text-xs font-normal">Pa·s</span></p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Pipe Volume</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.pipeVolume} <span className="text-xs font-normal">L</span></p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Temperature</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{inputs.temperature} <span className="text-xs font-normal">°C</span></p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -825,7 +915,7 @@ const PolyurethaneOptimizer = () => {
                               {results.mlInsights.optimal_parameters.optimal_temperature}°C
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              Current: {temperature}°C
+                              Current: {inputs.temperature}°C
                             </p>
                           </div>
                           <div className="bg-white dark:bg-gray-800 rounded p-3">
@@ -834,7 +924,7 @@ const PolyurethaneOptimizer = () => {
                               {results.mlInsights.optimal_parameters.optimal_flow_rate} L/min
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              Current: {flowRate} L/min
+                              Current: {inputs.flowRate} L/min
                             </p>
                           </div>
                         </div>
