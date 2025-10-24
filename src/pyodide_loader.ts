@@ -9,11 +9,11 @@ import { loadPyodide } from 'pyodide';
 // Types for calculation parameters and results
 export interface ProcessParameters {
   pipeLength: number;   // mm
-  pipeThickness: number; // mm
+  pipeDiameter: number; // mm (internal diameter, not thickness)
   temperature: number;  // °C
-  flowRate: number;     // m³/s
+  flowRate: number;     // L/min (liters per minute)
   viscosity?: number;   // cP
-  density?: number;     // g/cm³
+  density?: number;     // kg/m³
 }
 
 export interface PressurePoint {
@@ -86,35 +86,38 @@ class PolyurethaneCalculator:
         self.gas_constant = 8.314  # J/(mol·K) - Universal gas constant
         self.power_law_index = 0.85  # Dimensionless - For shear-thinning behavior
     
-    def validate_inputs(self, pipe_length, pipe_thickness, temperature, flow_rate, 
+    def validate_inputs(self, pipe_length, pipe_diameter, temperature, flow_rate,
                       viscosity, density):
         """Validate input parameters against physical constraints"""
         if pipe_length < 50:
             raise ValidationError("Pipe length must be at least 50mm")
-        if pipe_thickness <= 0:
-            raise ValidationError("Pipe thickness must be positive")
-        if not (5 <= temperature <= 40):
-            raise ValidationError("Temperature must be between 5°C and 40°C")
+        if pipe_diameter <= 0:
+            raise ValidationError("Pipe diameter must be positive")
+        if not (5 <= temperature <= 50):
+            raise ValidationError("Temperature must be between 5°C and 50°C")
         if flow_rate <= 0:
             raise ValidationError("Flow rate must be positive")
         if viscosity <= 0:
             raise ValidationError("Viscosity must be positive")
         if density <= 0:
             raise ValidationError("Density must be positive")
-    
-    def calculate(self, pipe_length, pipe_thickness, temperature, flow_rate, 
-                viscosity=350.0, density=1.12):
+
+    def calculate(self, pipe_length, pipe_diameter, temperature, flow_rate_lpm,
+                viscosity=350.0, density=1120):
         """Calculate polyurethane injection parameters"""
         try:
+            # Convert flow rate from L/min to m³/s
+            flow_rate = flow_rate_lpm / 60000  # L/min to m³/s
+
             # Validate inputs
-            self.validate_inputs(pipe_length, pipe_thickness, temperature, flow_rate, 
+            self.validate_inputs(pipe_length, pipe_diameter, temperature, flow_rate,
                                viscosity, density)
-            
+
             # Convert units to SI
-            radius = pipe_thickness / 2000  # mm to m
+            radius = pipe_diameter / 2000  # mm to m
             length = pipe_length / 1000  # mm to m
-            density_kg_m3 = density * 1000  # g/cm³ to kg/m³
-            
+            density_kg_m3 = density  # already in kg/m³
+
             # Calculate shear rate
             shear_rate = (4 * flow_rate) / (np.pi * radius**3)
             
@@ -311,33 +314,36 @@ print(f"Quality classifier accuracy: {metrics['quality_accuracy']*100:.1f}%")
  */
 export function calculateParametersFallback(params: ProcessParameters): CalculationResults {
   // Simplified calculations for fallback mode
-  const radius = params.pipeThickness / 2000;
+  const radius = params.pipeDiameter / 2000;
   const length = params.pipeLength / 1000;
   const viscosity = (params.viscosity || 350) * 0.001; // cP to Pa·s
-  const density = (params.density || 1.12) * 1000; // g/cm³ to kg/m³
-  
+  const density = (params.density || 1120); // kg/m³
+
+  // Convert flow rate from L/min to m³/s
+  const flowRate = params.flowRate / 60000; // L/min to m³/s
+
   // Constants for Power Law model
   const powerLawIndex = 0.85; // n value for polyurethane
   const activationEnergy = 50000; // J/mol
   const gasConstant = 8.314; // J/(mol·K)
-  
+
   // Temperature effect (Arrhenius equation)
   const tempK = params.temperature + 273.15; // Convert to Kelvin
   const refTempK = 25 + 273.15; // 25°C reference in Kelvin
   const tempFactor = Math.exp((activationEnergy / gasConstant) * (1/tempK - 1/refTempK));
-  
+
   // Calculate shear rate
-  const shearRate = (4 * params.flowRate) / (Math.PI * Math.pow(radius, 3));
+  const shearRate = (4 * flowRate) / (Math.PI * Math.pow(radius, 3));
   
   // Calculate apparent viscosity with both temperature and shear effects
   const viscosityPas = viscosity * tempFactor * Math.pow(shearRate, powerLawIndex - 1);
-  
+
   // Calculate Reynolds number
-  const velocity = params.flowRate / (Math.PI * Math.pow(radius, 2));
+  const velocity = flowRate / (Math.PI * Math.pow(radius, 2));
   const reynolds = (2 * radius * velocity * density) / viscosityPas;
-  
+
   // Calculate pressure drop using modified Hagen-Poiseuille for Power Law fluid
-  const pressureDrop = ((8 * viscosityPas * length * params.flowRate) / 
+  const pressureDrop = ((8 * viscosityPas * length * flowRate) /
                        (Math.PI * Math.pow(radius, 4))) * ((3*powerLawIndex + 1)/(4*powerLawIndex));
   
   // Convert pressure to kPa for display
@@ -355,7 +361,7 @@ export function calculateParametersFallback(params: ProcessParameters): Calculat
   
   // Calculate injection time
   const volume = Math.PI * Math.pow(radius, 2) * length;
-  const injectionTime = volume / params.flowRate;
+  const injectionTime = volume / flowRate;
   
   // Determine flow regime
   const flowRegime = reynolds < 2300 ? 'laminar' : 'turbulent';
@@ -411,18 +417,18 @@ export async function calculateParameters(params: ProcessParameters): Promise<Ca
     
     // Set default values for optional parameters
     const viscosity = params.viscosity !== undefined ? params.viscosity : 350.0;
-    const density = params.density !== undefined ? params.density : 1.12;
-    
+    const density = params.density !== undefined ? params.density : 1120;
+
     // Create Python calculator and run calculation
     const pythonCode = `
 try:
     # Create calculator
     calculator = PolyurethaneCalculator()
-    
+
     # Run calculation
     results = calculator.calculate(
         pipe_length=${params.pipeLength},
-        pipe_thickness=${params.pipeThickness},
+        pipe_diameter=${params.pipeDiameter},
         temperature=${params.temperature},
         flow_rate=${params.flowRate},
         viscosity=${viscosity},
