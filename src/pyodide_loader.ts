@@ -251,12 +251,42 @@ export async function initializePyodide(): Promise<void> {
         
         console.log('Loading NumPy...');
         await pyodide.loadPackage("numpy");
-        
+
+        console.log('Loading scikit-learn for ML models...');
+        await pyodide.loadPackage("scikit-learn");
+
         console.log('Loading calculator code...');
-        // Load the polyurethane calculator code
-        calculatorCode = getPythonCalculatorCode();
-        await pyodide.runPython(calculatorCode);
-        
+        // Load the polyurethane calculator code from file
+        try {
+          const calculatorResponse = await fetch('/Pu-optimizer-tool/src/polyurethane_calculator.py');
+          const calculatorCode = await calculatorResponse.text();
+          await pyodide.runPython(calculatorCode);
+          console.log('Calculator code loaded successfully');
+        } catch (err) {
+          console.warn('Failed to load calculator from file, using embedded code', err);
+          calculatorCode = getPythonCalculatorCode();
+          await pyodide.runPython(calculatorCode);
+        }
+
+        console.log('Loading ML optimizer module...');
+        try {
+          const mlResponse = await fetch('/Pu-optimizer-tool/src/process_optimizer_ml.py');
+          const mlCode = await mlResponse.text();
+          await pyodide.runPython(mlCode);
+          console.log('ML optimizer loaded successfully');
+
+          console.log('Training ML models...');
+          await pyodide.runPython(`
+from process_optimizer_ml import initialize_ml_models
+metrics = initialize_ml_models()
+print(f"ML models initialized with {metrics['n_samples']} samples")
+print(f"Quality classifier accuracy: {metrics['quality_accuracy']*100:.1f}%")
+          `);
+          console.log('ML models trained and ready');
+        } catch (err) {
+          console.warn('Failed to load ML module - running without ML features', err);
+        }
+
         console.log('Pyodide initialization completed successfully');
       } catch (err) {
         console.error('Failed to load Pyodide:', err);

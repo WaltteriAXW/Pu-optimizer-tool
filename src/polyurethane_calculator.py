@@ -1,5 +1,13 @@
 import numpy as np
 
+# Try to import ML module (optional dependency)
+try:
+    from process_optimizer_ml import get_ml_predictions
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    print("ML module not available - running without ML predictions")
+
 class ValidationError(Exception):
     """Custom exception for input validation errors"""
     pass
@@ -266,6 +274,22 @@ class PolyurethaneCalculator:
                 warnings.append(f"Required pressure ({total_pressure_bar:.2f} bar) exceeds machine capacity ({machine_info['max_pressure']} bar)")
                 recommendations.append("Reduce flow rate, increase pipe diameter, or increase temperature")
 
+            # Get ML predictions if available
+            ml_insights = None
+            if ML_AVAILABLE:
+                try:
+                    ml_insights = get_ml_predictions(
+                        pipe_length, pipe_diameter, temperature, flow_rate_lpm,
+                        viscosity, density, self.power_law_index, self.activation_energy,
+                        total_pressure_bar, reynolds
+                    )
+                    # Merge ML recommendations with existing ones
+                    if ml_insights and ml_insights.get('trained'):
+                        recommendations.extend(ml_insights.get('recommendations', []))
+                except Exception as e:
+                    print(f"ML prediction error: {e}")
+                    ml_insights = {'trained': False, 'error': str(e)}
+
             # Prepare comprehensive results
             return {
                 # Primary results
@@ -297,7 +321,10 @@ class PolyurethaneCalculator:
 
                 # Warnings and recommendations
                 "warnings": warnings,
-                "recommendations": recommendations
+                "recommendations": recommendations,
+
+                # ML Insights (if available)
+                "ml_insights": ml_insights
             }
 
         except ValidationError as e:
