@@ -5,6 +5,7 @@ package-lock.json
 # Build outputs
 dist/
 .vite/
+# Note: docs/ is NOT ignored - it's used for GitHub Pages deployment
 
 # IDE
 .vscode/
