@@ -12,7 +12,7 @@ export default defineConfig({
   },
   base: '/Pu-optimizer-tool/', // GitHub Pages repository name
   build: {
-    outDir: 'dist',
+    outDir: 'docs',
     sourcemap: true, // Add source maps for better debugging
     rollupOptions: {
       external: [],
