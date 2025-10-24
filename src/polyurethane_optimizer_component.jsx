@@ -101,15 +101,18 @@ const MATERIAL_PRESETS = {
   }
 };
 
-const InputField = ({ label, unit, icon: Icon, ...props }) => (
+const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
   <div className="space-y-2">
     <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
       {Icon && <Icon className="w-4 h-4 mr-2" />}
       {label}
     </label>
+    {helpText && (
+      <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 mb-1">{helpText}</p>
+    )}
     <div className="relative">
-      <Input {...props} className="pl-3 pr-12" />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+      <Input {...props} className="pl-3 pr-12 text-gray-900 dark:text-gray-100" />
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
         {unit}
       </span>
     </div>
@@ -434,14 +437,40 @@ const PolyurethaneOptimizer = () => {
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
       {/* Beta Disclaimer */}
-      <Alert className="bg-yellow-50 border-yellow-200">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-800">BETA VERSION - DISCLAIMER</AlertTitle>
-        <AlertDescription className="text-yellow-700 text-sm">
+      <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
+        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+        <AlertTitle className="text-yellow-800 dark:text-yellow-300">BETA VERSION - DISCLAIMER</AlertTitle>
+        <AlertDescription className="text-yellow-700 dark:text-yellow-400 text-sm">
           This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
           Always conduct thorough testing before implementing in production environments.
         </AlertDescription>
       </Alert>
+
+      {/* How to Use Guide */}
+      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            <Settings2 className="w-5 h-5" />
+            How to Use This Tool
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+          <p><strong>Welcome!</strong> This tool calculates optimal injection pressure, flow parameters, and machine compatibility for polyurethane injection molding.</p>
+          <div className="space-y-2">
+            <p><strong>Quick Start:</strong></p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>Select your <strong>injection machine</strong> and <strong>material system</strong> from the dropdowns</li>
+              <li>Enter your <strong>process parameters</strong> (pipe length, diameter, temperature, flow rate)</li>
+              <li>Material properties are pre-filled based on your material selection</li>
+              <li>Click <strong>"Calculate Injection Parameters"</strong> to see results</li>
+              <li>Review machine compatibility, pressure requirements, and recommendations</li>
+            </ol>
+          </div>
+          <p className="text-xs pt-2 border-t border-blue-300 dark:border-blue-700">
+            <strong>Tip:</strong> Default values are provided as examples. Hover over or check the help text under each field for guidance on acceptable ranges.
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Section */}
@@ -510,6 +539,8 @@ const PolyurethaneOptimizer = () => {
                   step="10"
                   value={inputs.pipeLength}
                   onChange={(e) => setInputs(prev => ({ ...prev, pipeLength: Number(e.target.value) }))}
+                  helpText="Length of injection pipe (minimum 50mm)"
+                  placeholder="500"
                 />
 
                 <InputField
@@ -521,6 +552,8 @@ const PolyurethaneOptimizer = () => {
                   step="0.5"
                   value={inputs.pipeDiameter}
                   onChange={(e) => setInputs(prev => ({ ...prev, pipeDiameter: Number(e.target.value) }))}
+                  helpText="Internal diameter of pipe"
+                  placeholder="12"
                 />
               </div>
 
@@ -534,6 +567,8 @@ const PolyurethaneOptimizer = () => {
                   max="50"
                   value={inputs.temperature}
                   onChange={(e) => setInputs(prev => ({ ...prev, temperature: Number(e.target.value) }))}
+                  helpText="Process temperature (5-50°C)"
+                  placeholder="25"
                 />
 
                 <InputField
@@ -545,6 +580,8 @@ const PolyurethaneOptimizer = () => {
                   step="0.1"
                   value={inputs.flowRate}
                   onChange={(e) => setInputs(prev => ({ ...prev, flowRate: Number(e.target.value) }))}
+                  helpText="Volumetric flow rate"
+                  placeholder="5.0"
                 />
               </div>
 
@@ -557,6 +594,8 @@ const PolyurethaneOptimizer = () => {
                   step="10"
                   value={inputs.density}
                   onChange={(e) => setInputs(prev => ({ ...prev, density: Number(e.target.value) }))}
+                  helpText="Material density at process temp"
+                  placeholder="1120"
                 />
 
                 <InputField
@@ -567,6 +606,8 @@ const PolyurethaneOptimizer = () => {
                   step="10"
                   value={inputs.viscosity}
                   onChange={(e) => setInputs(prev => ({ ...prev, viscosity: Number(e.target.value) }))}
+                  helpText="Viscosity at 25°C (centipoise)"
+                  placeholder="350"
                 />
               </div>
             </CardContent>
@@ -598,6 +639,8 @@ const PolyurethaneOptimizer = () => {
                     step="0.01"
                     value={mixInputs.polyolSG}
                     onChange={(e) => setMixInputs(prev => ({ ...prev, polyolSG: Number(e.target.value) }))}
+                    helpText="Specific gravity of polyol component"
+                    placeholder="1.12"
                   />
 
                   <InputField
@@ -608,6 +651,8 @@ const PolyurethaneOptimizer = () => {
                     step="0.01"
                     value={mixInputs.isoSG}
                     onChange={(e) => setMixInputs(prev => ({ ...prev, isoSG: Number(e.target.value) }))}
+                    helpText="Specific gravity of isocyanate"
+                    placeholder="1.23"
                   />
                 </div>
 
@@ -619,6 +664,8 @@ const PolyurethaneOptimizer = () => {
                   step="0.1"
                   value={mixInputs.partVolume}
                   onChange={(e) => setMixInputs(prev => ({ ...prev, partVolume: Number(e.target.value) }))}
+                  helpText="Total volume of part to be filled"
+                  placeholder="1.0"
                 />
 
                 {mixResults && (
