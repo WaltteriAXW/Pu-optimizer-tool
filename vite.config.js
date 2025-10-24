@@ -14,5 +14,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true, // Add source maps for better debugging
+    rollupOptions: {
+      external: [],
+    },
+  },
+  optimizeDeps: {
+    exclude: ['pyodide'],
   },
 });
