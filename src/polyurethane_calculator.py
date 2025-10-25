@@ -146,102 +146,6 @@ class PolyurethaneCalculator:
         self.gas_constant = 8.314  # J/(mol·K) - Universal gas constant
         self.safety_factor = 1.5  # Safety multiplier for pressure
 
-    def calculate_mold_volume(self, mold_shape, dimensions):
-        """
-        Calculate mold volume based on shape and dimensions
-
-        Args:
-            mold_shape: "panel", "cylinder", "sphere", "custom"
-            dimensions: Dict with shape-specific dimensions in mm
-                - panel: {"length": mm, "width": mm, "height": mm}
-                - cylinder: {"diameter": mm, "height": mm}
-                - sphere: {"diameter": mm}
-                - custom: {"volume": liters}
-
-        Returns:
-            Volume in liters
-        """
-        if mold_shape == "panel":
-            # Convert mm to m and calculate volume
-            length_m = dimensions.get("length", 0) / 1000
-            width_m = dimensions.get("width", 0) / 1000
-            height_m = dimensions.get("height", 0) / 1000
-            volume_m3 = length_m * width_m * height_m
-            return volume_m3 * 1000  # m³ to liters
-
-        elif mold_shape == "cylinder":
-            # Convert mm to m
-            radius_m = (dimensions.get("diameter", 0) / 2) / 1000
-            height_m = dimensions.get("height", 0) / 1000
-            volume_m3 = np.pi * radius_m**2 * height_m
-            return volume_m3 * 1000  # m³ to liters
-
-        elif mold_shape == "sphere":
-            # Convert mm to m
-            radius_m = (dimensions.get("diameter", 0) / 2) / 1000
-            volume_m3 = (4/3) * np.pi * radius_m**3
-            return volume_m3 * 1000  # m³ to liters
-
-        elif mold_shape == "custom":
-            return dimensions.get("volume", 0)  # Already in liters
-
-        else:
-            raise ValidationError(f"Unknown mold shape: {mold_shape}")
-
-    def calculate_injection_time(self, mold_volume_liters, flow_rate_lpm, injection_type, num_injection_points=1):
-        """
-        Calculate optimal injection time based on mold volume and injection type
-
-        Args:
-            mold_volume_liters: Mold cavity volume in liters
-            flow_rate_lpm: Flow rate in L/min
-            injection_type: "single_point", "two_point", "multi_point"
-            num_injection_points: Number of injection points (for multi_point)
-
-        Returns:
-            Dict with injection time details
-        """
-        # Base filling time
-        base_fill_time = mold_volume_liters / flow_rate_lpm  # minutes
-
-        # Correction factors based on injection type
-        if injection_type == "single_point":
-            # Single point takes longest - full flow path
-            fill_correction = 1.0
-            efficiency = 0.85  # 85% efficiency due to dead zones
-
-        elif injection_type == "two_point":
-            # Two points reduce flow distance by ~50%
-            fill_correction = 0.6  # 40% faster due to shorter flow paths
-            efficiency = 0.90  # Better efficiency
-
-        elif injection_type == "multi_point":
-            # Multiple points significantly reduce flow distance
-            points = max(num_injection_points, 2)
-            fill_correction = 1.0 / np.sqrt(points)  # Reduction based on number of points
-            efficiency = 0.92  # Best efficiency
-
-        else:
-            raise ValidationError(f"Unknown injection type: {injection_type}")
-
-        # Calculate actual injection time with corrections
-        corrected_fill_time = (base_fill_time * fill_correction) / efficiency
-
-        # Add packing time (typically 10-20% of fill time for polyurethane)
-        packing_time = corrected_fill_time * 0.15
-
-        # Total injection time
-        total_time = corrected_fill_time + packing_time
-
-        return {
-            "fill_time_seconds": round(corrected_fill_time * 60, 2),
-            "packing_time_seconds": round(packing_time * 60, 2),
-            "total_injection_time_seconds": round(total_time * 60, 2),
-            "injection_type": injection_type,
-            "num_points": num_injection_points if injection_type == "multi_point" else (2 if injection_type == "two_point" else 1),
-            "efficiency": round(efficiency * 100, 1)
-        }
-
     def validate_inputs(self, pipe_length, pipe_diameter, temperature, flow_rate,
                       viscosity, density):
         """Validate input parameters against physical constraints"""
@@ -259,24 +163,18 @@ class PolyurethaneCalculator:
             raise ValidationError("Density must be positive")
 
     def calculate(self, pipe_length, pipe_diameter, temperature, flow_rate_lpm,
-                viscosity=350.0, density=1120, machine_type="cannon_std_legacy",
-                mold_shape="panel", mold_dimensions=None, injection_type="single_point",
-                num_injection_points=1):
+                viscosity=350.0, density=1120, machine_type="cannon_std_legacy"):
         """
         Calculate polyurethane injection parameters with enhanced accuracy
 
         Args:
-            pipe_length: Length of the injection pipe in mm (for pressure calculation)
-            pipe_diameter: Diameter of the pipe in mm (for pressure calculation)
+            pipe_length: Length of the injection pipe in mm
+            pipe_diameter: Diameter of the pipe in mm (not thickness)
             temperature: Process temperature in °C
             flow_rate_lpm: Volumetric flow rate in L/min
             viscosity: Initial viscosity at 25°C in cP (default: 350.0)
             density: Material density in kg/m³ (default: 1120)
             machine_type: Key from MACHINE_SPECS dict
-            mold_shape: Shape of mold - "panel", "cylinder", "sphere", "custom"
-            mold_dimensions: Dict with shape-specific dimensions
-            injection_type: "single_point", "two_point", "multi_point"
-            num_injection_points: Number of injection points (for multi_point)
 
         Returns:
             Dictionary with comprehensive calculation results
@@ -339,19 +237,9 @@ class PolyurethaneCalculator:
                     "pressure_kpa": round(pressure * 100, 2)
                 })
 
-            # Calculate mold volume and injection time
-            # Default mold dimensions if not provided
-            if mold_dimensions is None:
-                mold_dimensions = {"length": 1500, "width": 500, "height": 20}  # Default panel mold
-
-            mold_volume_liters = self.calculate_mold_volume(mold_shape, mold_dimensions)
-            injection_timing = self.calculate_injection_time(
-                mold_volume_liters, flow_rate_lpm, injection_type, num_injection_points
-            )
-
-            # Also calculate pipe volume for reference
+            # Calculate optimal injection time
             pipe_volume = np.pi * radius**2 * length  # m³
-            pipe_volume_liters = pipe_volume * 1000
+            injection_time = pipe_volume / flow_rate  # seconds
 
             # Determine flow regime
             flow_regime = "laminar" if reynolds < 2300 else "turbulent"
@@ -416,15 +304,9 @@ class PolyurethaneCalculator:
                 "flow_regime": flow_regime,
                 "velocity": round(velocity, 3),  # m/s
 
-                # Mold and injection timing (NEW - based on mold volume, not pipe)
-                "mold_volume_liters": round(mold_volume_liters, 3),
-                "mold_shape": mold_shape,
-                "mold_dimensions": mold_dimensions,
-                "injection_timing": injection_timing,
-                "optimal_injection_time": injection_timing["total_injection_time_seconds"],  # For backward compatibility
-
-                # Pipe volume (for reference only)
-                "pipe_volume_liters": round(pipe_volume_liters, 3),
+                # Time and volume
+                "optimal_injection_time": round(injection_time, 3),  # s
+                "pipe_volume_liters": round(pipe_volume * 1000, 3),
 
                 # Temperature effects
                 "temperature_factor": round(temp_factor, 3),
