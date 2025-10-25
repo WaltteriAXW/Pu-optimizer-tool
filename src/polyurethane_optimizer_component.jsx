@@ -454,6 +454,37 @@ const PolyurethaneOptimizer = () => {
 
       setPressureVsLength(pressureData);
 
+      // === AUTO-SAVE TO TRAINING DATABASE FOR ML ===
+      // Save process data for continuous learning and model improvement
+      try {
+        const trainingEntry = {
+          pipeLength: inputs.pipeLength,
+          pipeDiameter: inputs.pipeDiameter,
+          temperature: inputs.temperature,
+          flowRate: inputs.flowRate,
+          viscosity: inputs.viscosity,
+          density: inputs.density,
+          moldShape: 'custom',
+          moldDimensions: {},
+          injectionType: 'single_point',
+          machineType: selectedMachine,
+          materialPreset: selectedMaterial,
+          optimalPressure: totalPressureBar,
+          reynoldsNumber: reynolds,
+          injectionTime: injectionTime,
+          moldVolume: pipeVolume * 1000,
+          partQuality: null, // User can provide feedback later
+          defectsObserved: [],
+          notes: ''
+        };
+
+        saveProcessEntry(trainingEntry);
+        console.log('✅ Process data saved for ML training');
+      } catch (saveError) {
+        console.error('Failed to save training data:', saveError);
+        // Don't fail the whole calculation if saving fails
+      }
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -501,31 +532,103 @@ const PolyurethaneOptimizer = () => {
         </AlertDescription>
       </Alert>
 
-      {/* How to Use Guide */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow duration-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-50 text-lg sm:text-xl">
-            <Activity className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
-            How to Use This Tool
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100">
-          <p><strong>Welcome!</strong> This tool calculates optimal injection pressure, flow parameters, and machine compatibility for polyurethane injection molding.</p>
-          <div className="space-y-2">
-            <p className="font-semibold text-blue-950 dark:text-blue-50">Quick Start:</p>
-            <ol className="list-decimal list-inside space-y-1.5 ml-2 text-blue-800 dark:text-blue-200">
-              <li>Select your <strong>injection machine</strong> and <strong>material system</strong> from the dropdowns</li>
-              <li>Enter your <strong>process parameters</strong> (pipe length, diameter, temperature, flow rate)</li>
-              <li>Material properties are pre-filled based on your material selection</li>
-              <li>Results update automatically as you change parameters</li>
-              <li>Review machine compatibility, pressure requirements, and recommendations</li>
-            </ol>
-          </div>
-          <p className="text-xs sm:text-sm pt-2 border-t border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
-            <strong>Tip:</strong> Toggle between Simple and Advanced view using the button above. Simple view hides technical equations for easier reading.
-          </p>
-        </CardContent>
-      </Card>
+      {/* How to Use Guide - Different for Simple vs Advanced */}
+      {viewMode === 'simple' ? (
+        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border-2 border-blue-300 dark:border-blue-700 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-50">
+              <HelpCircle className="w-7 h-7 text-blue-600 animate-pulse" />
+              What Does This Tool Do? (Beginner's Guide)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-600 shadow-md">
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-4">
+                This tool answers 3 critical questions:
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-3 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-300 dark:border-green-700">
+                  <CheckCircle2 className="w-7 h-7 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-green-900 dark:text-green-100 text-base">
+                      1. Can my machine handle this job?
+                    </p>
+                    <p className="text-sm text-green-800 dark:text-green-200 mt-1">
+                      We check if your machine is powerful enough to push foam through your tubes and into the mold.
+                      If your machine isn't strong enough, you'll get incomplete parts or the machine will struggle.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-700">
+                  <Info className="w-7 h-7 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-blue-900 dark:text-blue-100 text-base">
+                      2. What pressure do I need?
+                    </p>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                      We calculate exactly how much pressure (in bar) you need to push foam smoothly through your setup.
+                      Too little pressure = incomplete parts. Too much = wasted energy and potential damage.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-700">
+                  <AlertTriangle className="w-7 h-7 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-purple-900 dark:text-purple-100 text-base">
+                      3. Will I get good quality parts?
+                    </p>
+                    <p className="text-sm text-purple-800 dark:text-purple-200 mt-1">
+                      We predict if your settings will make quality parts or if you'll have defects like bubbles,
+                      weak spots, voids, or incomplete filling. We also suggest how to fix problems!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 p-4 rounded-lg border-l-4 border-yellow-500">
+              <p className="text-sm text-yellow-900 dark:text-yellow-100 font-semibold">
+                ⚡ <strong>Quick Tip:</strong> Use the sliders to quickly try different settings, then fine-tune the exact numbers in the boxes.
+                The tool updates your results instantly as you change settings!
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-4 rounded-lg border-l-4 border-green-500">
+              <p className="text-sm text-green-900 dark:text-green-100">
+                <strong>New to foam injection?</strong> Don't worry! Every setting has a plain-English explanation.
+                Just look for the blue boxes under each slider. We'll explain what it does and how it affects your parts.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow duration-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-50 text-lg sm:text-xl">
+              <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
+              Advanced Mode - Technical Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100">
+            <p><strong>Advanced Fluid Dynamics Calculator</strong> for polyurethane injection molding optimization using Power Law and Arrhenius equations.</p>
+            <div className="space-y-2">
+              <p className="font-semibold text-blue-950 dark:text-blue-50">Features:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2 text-blue-800 dark:text-blue-200">
+                <li>Modified Hagen-Poiseuille equation with Power Law correction for non-Newtonian fluids</li>
+                <li>Temperature-dependent viscosity using Arrhenius model</li>
+                <li>Reynolds number analysis for flow regime determination</li>
+                <li>Machine compatibility verification against Italian manufacturer specifications</li>
+                <li>ML-based quality prediction and defect risk assessment</li>
+              </ul>
+            </div>
+            <p className="text-xs sm:text-sm pt-2 border-t border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
+              <strong>Training Data:</strong> Results are automatically saved to improve ML models. {getTrainingStats().totalEntries} calculations stored.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Input Section */}
@@ -575,7 +678,7 @@ const PolyurethaneOptimizer = () => {
               )}
 
               <SelectField
-                label="Material System"
+                label="Material System (Quick Presets)"
                 icon={Leaf}
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
@@ -584,98 +687,144 @@ const PolyurethaneOptimizer = () => {
                   <option key={key} value={key}>{preset.name}</option>
                 ))}
               </SelectField>
+
+              {selectedMaterialName && (
+                <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-300 dark:border-green-700">
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                    ✅ Using: {selectedMaterialName}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500">
+          {/* Material Database Browser */}
+          <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-white via-green-50 to-emerald-50 dark:from-gray-800 dark:via-green-900/20 dark:to-emerald-900/20">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-left group"
+                onClick={() => setShowDatabase(!showDatabase)}
+              >
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                  <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
+                  Material Database Browser
+                  <span className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full text-green-800 dark:text-green-200 font-normal">
+                    {getAllMaterialPresets().length} Real Products
+                  </span>
+                </CardTitle>
+                {showDatabase ?
+                  <ChevronDown className="w-5 h-5 text-green-600 transition-transform" /> :
+                  <ChevronRight className="w-5 h-5 text-green-600 transition-transform" />
+                }
+              </button>
+            </CardHeader>
+            {showDatabase && (
+              <CardContent className="pt-4 animate-slideIn">
+                {viewMode === 'simple' && (
+                  <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      💡 <strong>What this is:</strong> This database contains real polyurethane products from manufacturers.
+                      Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!
+                    </p>
+                  </div>
+                )}
+                <DatabaseViewer onSelectProduct={handleSelectFromDatabase} />
+              </CardContent>
+            )}
+          </Card>
+
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 bg-gradient-to-br from-white via-purple-50 to-pink-50 dark:from-gray-800 dark:via-purple-900/20 dark:to-pink-900/20">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
               <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
                 <Thermometer className="w-5 h-5 text-purple-600" />
                 Process Parameters
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField
-                  label="Pipe Length"
-                  unit="mm"
-                  icon={Settings2}
-                  type="number"
-                  min="50"
-                  step="10"
-                  value={inputs.pipeLength}
-                  onChange={(e) => setInputs(prev => ({ ...prev, pipeLength: Number(e.target.value) }))}
-                  helpText="Length of injection pipe (minimum 50mm)"
-                  placeholder="500"
-                />
+            <CardContent className="space-y-6 pt-4">
+              <SliderInput
+                label="Pipe Length"
+                value={inputs.pipeLength}
+                onChange={(val) => setInputs(prev => ({ ...prev, pipeLength: val }))}
+                min={50}
+                max={2000}
+                step={10}
+                unit="mm"
+                icon={Settings2}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="This is how long the tube is that carries foam from your machine to where it's being injected. Longer tubes need more pressure to push the foam through. Think of it like a garden hose - the longer the hose, the harder it is to push water through."
+                helpText="Length of injection pipe from machine to mold (minimum 50mm)"
+              />
 
-                <InputField
-                  label="Pipe Diameter"
-                  unit="mm"
-                  icon={Settings2}
-                  type="number"
-                  min="1"
-                  step="0.5"
-                  value={inputs.pipeDiameter}
-                  onChange={(e) => setInputs(prev => ({ ...prev, pipeDiameter: Number(e.target.value) }))}
-                  helpText="Internal diameter of pipe"
-                  placeholder="12"
-                />
-              </div>
+              <SliderInput
+                label="Pipe Diameter"
+                value={inputs.pipeDiameter}
+                onChange={(val) => setInputs(prev => ({ ...prev, pipeDiameter: val }))}
+                min={4}
+                max={50}
+                step={0.5}
+                unit="mm"
+                icon={Settings2}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="This is how wide the inside of your tube is. Wider tubes make it easier for foam to flow through - like drinking through a thick straw vs a coffee stirrer. Wider = less pressure needed!"
+                helpText="Internal diameter of injection pipe"
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField
-                  label="Temperature"
-                  unit="°C"
-                  icon={Thermometer}
-                  type="number"
-                  min="5"
-                  max="50"
-                  value={inputs.temperature}
-                  onChange={(e) => setInputs(prev => ({ ...prev, temperature: Number(e.target.value) }))}
-                  helpText="Process temperature (5-50°C)"
-                  placeholder="25"
-                />
+              <SliderInput
+                label="Temperature"
+                value={inputs.temperature}
+                onChange={(val) => setInputs(prev => ({ ...prev, temperature: val }))}
+                min={5}
+                max={50}
+                step={1}
+                unit="°C"
+                icon={Thermometer}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="How warm your foam materials are. Warmer = runnier and easier to push (like honey gets runny when warm). But too hot or too cold causes problems! Most materials work best around 20-30°C."
+                helpText="Process temperature - affects material viscosity (5-50°C)"
+              />
 
-                <InputField
-                  label="Flow Rate"
-                  unit="L/min"
-                  icon={Activity}
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={inputs.flowRate}
-                  onChange={(e) => setInputs(prev => ({ ...prev, flowRate: Number(e.target.value) }))}
-                  helpText="Volumetric flow rate"
-                  placeholder="5.0"
-                />
-              </div>
+              <SliderInput
+                label="Flow Rate"
+                value={inputs.flowRate}
+                onChange={(val) => setInputs(prev => ({ ...prev, flowRate: val }))}
+                min={0.1}
+                max={50}
+                step={0.1}
+                unit="L/min"
+                icon={Activity}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="How fast you're trying to push foam through the tubes (liters per minute). Faster = more pressure needed. Go too fast and you'll get bubbles, weak spots, and bad parts. Slow and steady wins!"
+                helpText="Volumetric flow rate - how fast material is injected"
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField
-                  label="Density"
-                  unit="kg/m³"
-                  icon={Scale}
-                  type="number"
-                  step="10"
-                  value={inputs.density}
-                  onChange={(e) => setInputs(prev => ({ ...prev, density: Number(e.target.value) }))}
-                  helpText="Material density at process temp"
-                  placeholder="1120"
-                />
+              <SliderInput
+                label="Density"
+                value={inputs.density}
+                onChange={(val) => setInputs(prev => ({ ...prev, density: val }))}
+                min={500}
+                max={2000}
+                step={10}
+                unit="kg/m³"
+                icon={Scale}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="How heavy/thick your foam is (weight per cubic meter). Heavier/denser foam is harder to push through tubes. Light spray foam might be 30-50 kg/m³, while dense structural foam can be 200+ kg/m³."
+                helpText="Material density at process temperature"
+              />
 
-                <InputField
-                  label="Viscosity"
-                  unit="cP"
-                  icon={FileSpreadsheet}
-                  type="number"
-                  step="10"
-                  value={inputs.viscosity}
-                  onChange={(e) => setInputs(prev => ({ ...prev, viscosity: Number(e.target.value) }))}
-                  helpText="Viscosity at 25°C (centipoise)"
-                  placeholder="350"
-                />
-              </div>
+              <SliderInput
+                label="Viscosity"
+                value={inputs.viscosity}
+                onChange={(val) => setInputs(prev => ({ ...prev, viscosity: val }))}
+                min={100}
+                max={2000}
+                step={10}
+                unit="cP"
+                icon={FileSpreadsheet}
+                showSimpleMode={viewMode === 'simple'}
+                simpleExplanation="How thick and sticky your foam is - like comparing water (thin) to honey (thick). Higher numbers = thicker/stickier = more pressure needed. This is measured in centiPoise (cP). Water is 1 cP, motor oil is ~100 cP."
+                helpText="Viscosity at 25°C in centiPoise - resistance to flow"
+              />
             </CardContent>
           </Card>
 
