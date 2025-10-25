@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity } from 'lucide-react';
 import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Zap, Gauge, Ruler, Droplets, Activity, Info, HelpCircle, ArrowRight, Sparkles, CheckCheck, Save, Database, Package } from 'lucide-react';
 import { saveProcessEntry, getTrainingStats, exportTrainingData, getMLTrainingData } from './training_data_storage';
 import { DatabaseViewer } from './database_viewer';
@@ -104,17 +105,17 @@ const MATERIAL_PRESETS = {
 };
 
 const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
-  <div className="space-y-2">
-    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-      {Icon && <Icon className="w-4 h-4 mr-2" />}
+  <div className="space-y-2 group">
+    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
+      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
       {label}
     </label>
     {helpText && (
-      <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 mb-1">{helpText}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-300 -mt-1 mb-1">{helpText}</p>
     )}
     <div className="relative">
-      <Input {...props} className="pl-3 pr-12 text-gray-900 dark:text-gray-100" />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
+      <Input {...props} className="pl-3 pr-12 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 transition-colors" />
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-600 dark:text-gray-300">
         {unit}
       </span>
     </div>
@@ -122,14 +123,14 @@ const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
 );
 
 const SelectField = ({ label, icon: Icon, children, ...props }) => (
-  <div className="space-y-2">
-    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-      {Icon && <Icon className="w-4 h-4 mr-2" />}
+  <div className="space-y-2 group">
+    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
+      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
       {label}
     </label>
     <select
       {...props}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500"
     >
       {children}
     </select>
@@ -138,20 +139,27 @@ const SelectField = ({ label, icon: Icon, children, ...props }) => (
 
 const ResultCard = ({ title, value, unit, icon: Icon, status }) => {
   const statusColors = {
-    success: 'border-green-500',
-    warning: 'border-yellow-500',
-    error: 'border-red-500',
-    default: 'border-blue-500'
+    success: 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
+    warning: 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20',
+    error: 'border-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20',
+    default: 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
+  };
+
+  const iconColors = {
+    success: 'text-green-600 dark:text-green-400',
+    warning: 'text-yellow-600 dark:text-yellow-400',
+    error: 'text-red-600 dark:text-red-400',
+    default: 'text-blue-600 dark:text-blue-400'
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border-l-4 ${statusColors[status] || statusColors.default}`}>
-      <h3 className="text-sm flex items-center font-medium text-gray-500 dark:text-gray-400">
-        {Icon && <Icon className="w-4 h-4 mr-2" />}
+    <div className={`p-4 rounded-lg shadow-md hover:shadow-lg border-l-4 ${statusColors[status] || statusColors.default} transition-all duration-200 transform hover:scale-105 animate-slideIn`}>
+      <h3 className="text-sm flex items-center font-medium text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className={`w-4 h-4 mr-2 ${iconColors[status] || iconColors.default}`} />}
         {title}
       </h3>
-      <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
-        {value} <span className="text-sm font-normal text-gray-500">{unit}</span>
+      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+        {value} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{unit}</span>
       </p>
     </div>
   );
@@ -193,6 +201,8 @@ const simplifyRecommendation = (rec, advancedMode) => {
 };
 
 const PolyurethaneOptimizer = () => {
+  // State for view mode (simple vs advanced)
+  const [viewMode, setViewMode] = useState('simple'); // 'simple' or 'advanced'
   // State for UI mode
   const [advancedMode, setAdvancedMode] = useState(false);
 
@@ -623,6 +633,62 @@ const PolyurethaneOptimizer = () => {
   }, [inputs, selectedMachine, selectedMaterial, moldShape, moldDimensions, injectionType, numInjectionPoints]);
 
   return (
+    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm sm:text-base"
+        >
+          {viewMode === 'simple' ? (
+            <>
+              <Eye className="w-4 h-4" />
+              <span>Advanced View</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4" />
+              <span>Simple View</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Beta Disclaimer */}
+      <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 shadow-sm">
+        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+        <AlertTitle className="text-yellow-900 dark:text-yellow-200 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
+        <AlertDescription className="text-yellow-800 dark:text-yellow-300 text-sm">
+          This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
+          Always conduct thorough testing before implementing in production environments.
+        </AlertDescription>
+      </Alert>
+
+      {/* How to Use Guide */}
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow duration-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-50 text-lg sm:text-xl">
+            <Activity className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
+            How to Use This Tool
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100">
+          <p><strong>Welcome!</strong> This tool calculates optimal injection pressure, flow parameters, and machine compatibility for polyurethane injection molding.</p>
+          <div className="space-y-2">
+            <p className="font-semibold text-blue-950 dark:text-blue-50">Quick Start:</p>
+            <ol className="list-decimal list-inside space-y-1.5 ml-2 text-blue-800 dark:text-blue-200">
+              <li>Select your <strong>injection machine</strong> and <strong>material system</strong> from the dropdowns</li>
+              <li>Enter your <strong>process parameters</strong> (pipe length, diameter, temperature, flow rate)</li>
+              <li>Material properties are pre-filled based on your material selection</li>
+              <li>Results update automatically as you change parameters</li>
+              <li>Review machine compatibility, pressure requirements, and recommendations</li>
+            </ol>
+          </div>
+          <p className="text-xs sm:text-sm pt-2 border-t border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
+            <strong>Tip:</strong> Toggle between Simple and Advanced view using the button above. Simple view hides technical equations for easier reading.
+          </p>
+        </CardContent>
+      </Card>
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
       {/* Modern Mode Toggle */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-1">
@@ -768,17 +834,17 @@ const PolyurethaneOptimizer = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Input Section */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="w-5 h-5" />
+        <div className="space-y-4 sm:space-y-6">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <Settings2 className="w-5 h-5 text-blue-600" />
                 Machine Selection
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               <SelectField
                 label="Injection Molding Machine"
                 icon={Settings2}
@@ -791,22 +857,33 @@ const PolyurethaneOptimizer = () => {
               </SelectField>
 
               {MACHINE_SPECS[selectedMachine] && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-sm">
-                  <p className="font-semibold text-blue-900 dark:text-blue-100">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 p-4 rounded-lg text-sm border border-blue-200 dark:border-blue-700 transform transition-all duration-200 hover:scale-[1.02]">
+                  <p className="font-bold text-blue-950 dark:text-blue-50 text-base">
                     {MACHINE_SPECS[selectedMachine].name}
                   </p>
-                  <p className="text-blue-700 dark:text-blue-300">
+                  <p className="text-blue-800 dark:text-blue-200 mt-1">
                     {MACHINE_SPECS[selectedMachine].manufacturer}
                   </p>
-                  <p className="text-blue-600 dark:text-blue-400 mt-2">
-                    Max output: {MACHINE_SPECS[selectedMachine].output} | Max pressure: {MACHINE_SPECS[selectedMachine].maxPressure} bar | Tank: {MACHINE_SPECS[selectedMachine].tankCapacity}
-                  </p>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
+                      <p className="text-gray-600 dark:text-gray-400">Max Output</p>
+                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].output}</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
+                      <p className="text-gray-600 dark:text-gray-400">Max Pressure</p>
+                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
+                      <p className="text-gray-600 dark:text-gray-400">Tank</p>
+                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
               <SelectField
                 label="Material System"
-                icon={FileSpreadsheet}
+                icon={Leaf}
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
               >
@@ -830,15 +907,15 @@ const PolyurethaneOptimizer = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5" />
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <Thermometer className="w-5 h-5 text-purple-600" />
                 Process Parameters
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InputField
                   label={advancedMode ? "Pipe Length" : "Distance to Mold"}
                   unit="mm"
@@ -866,7 +943,7 @@ const PolyurethaneOptimizer = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InputField
                   label="Temperature"
                   unit="°C"
@@ -883,6 +960,7 @@ const PolyurethaneOptimizer = () => {
                 <InputField
                   label={advancedMode ? "Flow Rate" : "Injection Speed"}
                   unit="L/min"
+                  icon={Activity}
                   icon={Zap}
                   type="number"
                   min="0.1"
@@ -894,6 +972,7 @@ const PolyurethaneOptimizer = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {advancedMode && (
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
@@ -1084,23 +1163,26 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mix Ratio Calculator */}
-          <Card>
-            <CardHeader>
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
               <button
                 type="button"
-                className="w-full flex items-center justify-between text-left"
+                className="w-full flex items-center justify-between text-left group"
                 onClick={() => setMixRatioExpanded(!mixRatioExpanded)}
               >
-                <CardTitle className="flex items-center gap-2">
-                  <Leaf className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                  <Leaf className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Advanced Mix Ratio Calculator
                 </CardTitle>
-                {mixRatioExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                {mixRatioExpanded ?
+                  <ChevronDown className="w-5 h-5 text-green-600 transition-transform" /> :
+                  <ChevronRight className="w-5 h-5 text-green-600 transition-transform" />
+                }
               </button>
             </CardHeader>
             {mixRatioExpanded && (
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-4 pt-4 animate-slideIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputField
                     label="Polyol SG"
                     unit=""
@@ -1139,23 +1221,45 @@ const PolyurethaneOptimizer = () => {
                 />
 
                 {mixResults && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg space-y-2 text-sm">
-                    <h4 className="font-semibold text-green-900 dark:text-green-100">Component Requirements:</h4>
-                    <p className="text-green-800 dark:text-green-200">
-                      Polyol needed: <span className="font-semibold">{mixResults.polyolKg} kg ({mixResults.polyolL} L)</span>
-                    </p>
-                    <p className="text-green-800 dark:text-green-200">
-                      Isocyanate needed: <span className="font-semibold">{mixResults.isoKg} kg ({mixResults.isoL} L)</span>
-                    </p>
-                    <p className="text-green-800 dark:text-green-200">
-                      Total weight: <span className="font-semibold">{mixResults.totalWeight} kg</span>
-                    </p>
-                    <p className="text-green-800 dark:text-green-200">
-                      Theoretical density: <span className="font-semibold">{mixResults.density} kg/m³</span>
-                    </p>
-                    <p className="text-green-800 dark:text-green-200">
-                      Weight ratio: <span className="font-semibold">{mixResults.weightRatio}</span>
-                    </p>
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg space-y-3 text-sm border border-green-200 dark:border-green-700 shadow-sm">
+                    <h4 className="font-bold text-green-950 dark:text-green-50 text-base flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      Component Requirements:
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Polyol</p>
+                        <p className="text-green-800 dark:text-green-200 font-bold">
+                          {mixResults.polyolKg} kg
+                        </p>
+                        <p className="text-xs text-green-700 dark:text-green-300">
+                          ({mixResults.polyolL} L)
+                        </p>
+                      </div>
+                      <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Isocyanate</p>
+                        <p className="text-green-800 dark:text-green-200 font-bold">
+                          {mixResults.isoKg} kg
+                        </p>
+                        <p className="text-xs text-green-700 dark:text-green-300">
+                          ({mixResults.isoL} L)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-green-300 dark:border-green-600">
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Total Weight</p>
+                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.totalWeight} kg</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Density</p>
+                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.density} kg/m³</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Ratio</p>
+                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.weightRatio}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -1231,6 +1335,22 @@ const PolyurethaneOptimizer = () => {
 
           {results && (
             <>
+              {/* Machine Compatibility */}
+              <Card className="shadow-lg border-2 border-gray-200 dark:border-gray-700 animate-slideIn">
+                <CardContent className="pt-6">
+                  <div className={`flex flex-col sm:flex-row items-center justify-between p-5 rounded-lg shadow-md ${results.compatible ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500' : 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-500'}`}>
+                    <div className="flex items-center gap-3 mb-3 sm:mb-0">
+                      {results.compatible ? (
+                        <CheckCircle2 className="w-8 h-8 text-green-600 animate-pulse" />
+                      ) : (
+                        <XCircle className="w-8 h-8 text-red-600 animate-pulse" />
+                      )}
+                      <div>
+                        <p className={`font-bold text-lg ${results.compatible ? 'text-green-950 dark:text-green-50' : 'text-red-950 dark:text-red-50'}`}>
+                          {results.compatible ? '✓ Machine Compatible' : '✗ Not Compatible'}
+                        </p>
+                        <p className={`text-sm ${results.compatible ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                          {results.machine.name}
               {/* Quick Decision Panel - Simple Mode */}
               {!advancedMode && (
                 <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl overflow-hidden">
@@ -1369,6 +1489,12 @@ const PolyurethaneOptimizer = () => {
                         </div>
                       </div>
                     </div>
+                    <div className="text-center sm:text-right">
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {results.optimalPressureBar} <span className="text-lg">bar</span>
+                      </p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                        Max: {results.machine.maxPressure} bar
                   </div>
                 </div>
               )}
@@ -1468,6 +1594,11 @@ const PolyurethaneOptimizer = () => {
                 </CardContent>
               </Card>
 
+              {/* Equations Information Card - Only in Advanced View */}
+              {viewMode === 'advanced' && (
+                <Card className="border-2 border-indigo-200 dark:border-indigo-800 shadow-lg animate-slideIn">
+                  <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+                    <CardTitle className="flex items-center gap-2 text-indigo-900 dark:text-indigo-50">
               {/* Equations Information Card */}
               <Card className="border-2 border-indigo-200 dark:border-indigo-800">
                 <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
@@ -1503,6 +1634,13 @@ const PolyurethaneOptimizer = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-4">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                      <h4 className="font-semibold text-indigo-950 dark:text-indigo-50 mb-2 flex items-center gap-2">
+                        <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
+                      </h4>
+                      <div className="text-sm text-indigo-900 dark:text-indigo-100 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded shadow-sm">
+                        <p>ΔP = (8 × μ × L × Q) / (π × r⁴) × [(3n+1)/(4n)]</p>
+                        <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-2">
                     <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                       <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center gap-2">
                         <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
@@ -1514,6 +1652,20 @@ const PolyurethaneOptimizer = () => {
                         </p>
                       </div>
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <h4 className="font-semibold text-purple-950 dark:text-purple-50 mb-1 text-sm flex items-center gap-1">
+                          <span>🌡️</span> Arrhenius Equation
+                        </h4>
+                        <p className="text-xs font-mono text-purple-900 dark:text-purple-100">
+                          μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <h4 className="font-semibold text-blue-950 dark:text-blue-50 mb-1 text-sm flex items-center gap-1">
+                          <span>💧</span> Power Law Model
+                        </h4>
+                        <p className="text-xs font-mono text-blue-900 dark:text-blue-100">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
                         <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1 text-sm flex items-center gap-1">
@@ -1532,6 +1684,7 @@ const PolyurethaneOptimizer = () => {
                         </p>
                       </div>
                     </div>
+                    <div className="text-xs text-gray-700 dark:text-gray-300 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
                     <div className="text-xs text-gray-600 dark:text-gray-400 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
                       <p>✓ Temperature-dependent viscosity correction</p>
                       <p>✓ Shear-thinning behavior for polyurethane systems</p>
@@ -1576,15 +1729,15 @@ const PolyurethaneOptimizer = () => {
               )}
 
               {/* Primary Results */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <Card className="shadow-lg border-l-4 border-l-blue-500 animate-slideIn">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
                     Optimization Results
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <CardContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <ResultCard
                       title="Injection Pressure"
                       value={results.optimalPressureBar}
@@ -1629,27 +1782,27 @@ const PolyurethaneOptimizer = () => {
                     />
                   </div>
 
-                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg text-sm space-y-2 border border-blue-200 dark:border-blue-700">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                      <Settings2 className="w-4 h-4" />
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-5 rounded-lg text-sm space-y-3 border-2 border-blue-300 dark:border-blue-600 shadow-md">
+                    <h4 className="font-bold text-blue-950 dark:text-blue-50 mb-3 flex items-center gap-2 text-base">
+                      <Activity className="w-5 h-5" />
                       Detailed Flow Analysis
                     </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Shear Rate</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.shearRate} <span className="text-xs font-normal">s⁻¹</span></p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Shear Rate</p>
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.shearRate} <span className="text-sm font-normal">s⁻¹</span></p>
                       </div>
-                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Apparent Viscosity</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.apparentViscosity} <span className="text-xs font-normal">Pa·s</span></p>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Apparent Viscosity</p>
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.apparentViscosity} <span className="text-sm font-normal">Pa·s</span></p>
                       </div>
-                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Pipe Volume</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{results.pipeVolume} <span className="text-xs font-normal">L</span></p>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Pipe Volume</p>
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.pipeVolume} <span className="text-sm font-normal">L</span></p>
                       </div>
-                      <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Temperature</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{inputs.temperature} <span className="text-xs font-normal">°C</span></p>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Temperature</p>
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{inputs.temperature} <span className="text-sm font-normal">°C</span></p>
                       </div>
                     </div>
                   </div>
@@ -1658,6 +1811,26 @@ const PolyurethaneOptimizer = () => {
 
               {/* Warnings and Recommendations */}
               {(results.warnings.length > 0 || results.recommendations.length > 0) && (
+                <Card className="shadow-lg border-l-4 border-l-yellow-500 animate-slideIn">
+                  <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20">
+                    <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                      <AlertTriangle className="w-5 h-5 text-yellow-600 animate-pulse" />
+                      Warnings & Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-4">
+                    {results.warnings.map((warning, idx) => (
+                      <Alert key={idx} className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600 shadow-sm">
+                        <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
+                        <AlertDescription className="text-yellow-900 dark:text-yellow-100 text-sm font-medium">
+                          {warning}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                    {results.recommendations.map((rec, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <span className="text-blue-600 dark:text-blue-400 font-bold text-base">→</span>
+                        <span className="text-blue-800 dark:text-blue-200 font-medium">{rec}</span>
                 <Card className="border-2 border-orange-200 dark:border-orange-800">
                   <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20">
                     <CardTitle className="flex items-center gap-2">
@@ -1959,21 +2132,37 @@ const PolyurethaneOptimizer = () => {
           )}
 
           {loading && (
-            <Card>
+            <Card className="shadow-lg animate-pulse">
               <CardContent className="pt-6">
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                  <div className="relative">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 dark:border-blue-800"></div>
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 dark:border-blue-400 absolute top-0"></div>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 font-medium animate-pulse">Calculating optimal parameters...</p>
+                  <div className="flex gap-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {!results && !loading && (
-            <Card>
+            <Card className="shadow-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
               <CardContent className="pt-6">
-                <div className="text-center py-12 text-gray-500">
-                  <Settings2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Adjust parameters to see optimization results</p>
+                <div className="text-center py-16 space-y-4">
+                  <Settings2 className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 animate-pulse" />
+                  <div>
+                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Ready to Calculate</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Adjust parameters to see optimization results</p>
+                  </div>
+                  <div className="flex justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">Real-time calculations</span>
+                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">Auto-update</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
