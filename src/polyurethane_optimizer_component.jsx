@@ -138,7 +138,7 @@ const SelectField = ({ label, icon: Icon, children, ...props }) => (
   </div>
 );
 
-const ResultCard = ({ title, value, unit, icon: Icon, status }) => {
+const ResultCard = ({ title, value, unit, icon: Icon, status, helpText }) => {
   const statusColors = {
     success: 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
     warning: 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20',
@@ -162,6 +162,9 @@ const ResultCard = ({ title, value, unit, icon: Icon, status }) => {
       <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
         {value} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{unit}</span>
       </p>
+      {helpText && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">{helpText}</p>
+      )}
     </div>
   );
 };
@@ -197,6 +200,23 @@ const PolyurethaneOptimizer = () => {
     partVolume: 1.0
   });
   const [mixResults, setMixResults] = useState(null);
+
+  // State for mold dimensions
+  const [moldDimensionsExpanded, setMoldDimensionsExpanded] = useState(true);
+  const [moldShape, setMoldShape] = useState('rectangular');
+  const [moldDimensions, setMoldDimensions] = useState({
+    // Rectangular
+    length: 1000, // mm
+    width: 500,   // mm
+    height: 50,   // mm
+    // Cylinder
+    diameter: 500, // mm
+    cylinderHeight: 1000, // mm
+    // Sphere
+    sphereDiameter: 500, // mm
+    wallThickness: 50 // mm for all shapes
+  });
+  const [moldVolume, setMoldVolume] = useState(0);
 
   // State for calculation results
   const [results, setResults] = useState(null);
@@ -381,9 +401,15 @@ const PolyurethaneOptimizer = () => {
       const pressureDropBar = pressureDrop / 100000; // Pa to bar
       const totalPressureBar = 1.01325 + (pressureDropBar * safetyFactor); // Add atmospheric + safety
 
-      // Calculate optimal injection time
-      const pipeVolume = Math.PI * Math.pow(radius, 2) * length;
-      const injectionTime = pipeVolume / flowRateM3s;
+      // Calculate optimal injection time based on mold cavity volume
+      const pipeVolume = Math.PI * Math.pow(radius, 2) * length; // m³
+      const moldVolumeM3 = moldVolume / 1000; // Convert liters to m³
+
+      // Injection time should be based on filling the mold cavity, not just the pipe
+      // Total time = time to fill pipe + time to fill mold
+      const pipeFillingTime = pipeVolume / flowRateM3s;
+      const moldFillingTime = moldVolumeM3 / flowRateM3s;
+      const injectionTime = moldVolume > 0 ? pipeFillingTime + moldFillingTime : pipeFillingTime;
 
       // Flow regime
       const flowRegime = reynolds < 2300 ? 'Laminar' : 'Turbulent';
@@ -410,11 +436,57 @@ const PolyurethaneOptimizer = () => {
       if (!compatible) {
         warnings.push(`Required pressure (${totalPressureBar.toFixed(2)} bar) exceeds machine capacity (${machine.maxPressure} bar)`);
         recommendations.push("Reduce flow rate, increase pipe diameter, or select a higher capacity machine");
+
+        // Machine-specific recommendations
+        const suitableMachines = Object.entries(MACHINE_SPECS)
+          .filter(([_, spec]) => spec.maxPressure >= totalPressureBar)
+          .slice(0, 2);
+        if (suitableMachines.length > 0) {
+          recommendations.push(`Consider upgrading to: ${suitableMachines.map(([_, s]) => s.name).join(' or ')}`);
+        }
       }
 
       if (velocity > 5.0) {
         warnings.push("Very high flow velocity may cause turbulence");
         recommendations.push("Reduce flow rate or increase pipe diameter");
+      }
+
+      // Temperature recommendations
+      if (inputs.temperature < 20) {
+        recommendations.push("Consider increasing temperature to 20-25°C for better flow properties");
+      } else if (inputs.temperature > 35) {
+        warnings.push("High temperature may accelerate reaction and reduce pot life");
+        recommendations.push("Monitor reaction time closely and consider reducing temperature");
+      }
+
+      // Mold-specific recommendations
+      if (moldVolume > 0) {
+        const fillTime = moldFillingTime;
+        if (fillTime < 2) {
+          warnings.push("Very fast mold filling may cause air entrapment and voids");
+          recommendations.push("Reduce flow rate to increase fill time above 2 seconds");
+        } else if (fillTime > 30) {
+          warnings.push("Slow mold filling may cause premature gelation");
+          recommendations.push("Increase flow rate or check for flow restrictions");
+        }
+
+        // Pressure recommendations for mold clamping
+        if (totalPressureBar > 5.0) {
+          recommendations.push("Ensure mold clamping force is sufficient for high injection pressure");
+        }
+      }
+
+      // Machine output rate recommendations
+      const flowRateKgMin = inputs.flowRate * inputs.density / 1000; // Convert to kg/min
+      const machineOutputRange = machine.output.toLowerCase();
+      if (machineOutputRange.includes('-')) {
+        const [minOutput, maxOutput] = machineOutputRange.split('-').map(s => parseFloat(s.trim()));
+        if (flowRateKgMin < minOutput * 0.3) {
+          recommendations.push(`Flow rate is very low for this machine. Consider using a smaller capacity machine for better control`);
+        } else if (flowRateKgMin > maxOutput * 0.9) {
+          warnings.push(`Flow rate approaching machine capacity (${machine.output})`);
+          recommendations.push("Consider using a higher capacity machine or reducing flow rate");
+        }
       }
 
       // === PRESSURE PROFILE vs PIPE LENGTH ===
@@ -450,6 +522,10 @@ const PolyurethaneOptimizer = () => {
         // Injection parameters
         injectionTime: parseFloat(injectionTime.toFixed(3)),
         pipeVolume: parseFloat((pipeVolume * 1000).toFixed(4)),
+        moldVolume: parseFloat(moldVolume.toFixed(4)),
+        moldShape,
+        pipeFillingTime: parseFloat(pipeFillingTime.toFixed(3)),
+        moldFillingTime: parseFloat(moldFillingTime.toFixed(3)),
 
         // Compatibility and recommendations
         compatible,
@@ -473,16 +549,44 @@ const PolyurethaneOptimizer = () => {
             good_probability: compatible && reynolds < 2300 ? 87 : 42
           },
           defect_risks: {
-            // Void risk increases if pressure is too low
-            void_risk: compatible ? 12 : 48,
-            // Short shot risk if pressure exceeds machine capacity
-            short_shot_risk: totalPressureBar > machine.maxPressure ? 65 : 10,
-            // Flash risk if pressure is near maximum
-            flash_risk: totalPressureBar > machine.maxPressure * 0.9 ? 38 : 8,
-            // Surface defects related to temperature
-            surface_defect_risk: inputs.temperature < 20 || inputs.temperature > 35 ? 32 : 14,
+            // Void risk increases with fast filling, turbulent flow, or low pressure
+            void_risk: Math.min(95, (
+              (moldFillingTime < 3 ? 25 : 5) +
+              (reynolds > 2300 ? 20 : 5) +
+              (pressureDropBar < 0.5 ? 15 : 5) +
+              (shearRate > 1000 ? 15 : 5)
+            )),
+
+            // Short shot risk if pressure exceeds capacity or flow is insufficient
+            short_shot_risk: Math.min(95, (
+              (totalPressureBar > machine.maxPressure ? 50 : 5) +
+              (moldFillingTime > 25 ? 30 : 5) +
+              (velocity < 0.5 ? 20 : 5)
+            )),
+
+            // Flash/overflow risk if pressure is very high
+            flash_risk: Math.min(95, (
+              (totalPressureBar > machine.maxPressure * 0.95 ? 40 : 5) +
+              (totalPressureBar > machine.maxPressure * 0.85 ? 25 : 5) +
+              (velocity > 4.0 ? 20 : 5)
+            )),
+
+            // Surface defects related to temperature and flow conditions
+            surface_defect_risk: Math.min(95, (
+              (inputs.temperature < 18 ? 25 : inputs.temperature < 20 ? 15 : 5) +
+              (inputs.temperature > 35 ? 20 : inputs.temperature > 32 ? 10 : 5) +
+              (shearRate > 1500 ? 20 : shearRate > 1000 ? 10 : 5) +
+              (reynolds > 3000 ? 15 : 5)
+            )),
+
             // Overall risk assessment
-            overall_risk: compatible && reynolds < 2300 && inputs.temperature >= 20 && inputs.temperature <= 35 ? 15 : 42
+            overall_risk: Math.min(95, Math.round(
+              (compatible ? 5 : 25) +
+              (reynolds < 2300 ? 3 : 15) +
+              (inputs.temperature >= 20 && inputs.temperature <= 35 ? 3 : 12) +
+              (moldFillingTime >= 3 && moldFillingTime <= 25 ? 3 : 10) +
+              (shearRate <= 1000 ? 3 : 10)
+            ))
           },
           recommendations: []
         }
@@ -864,6 +968,170 @@ const PolyurethaneOptimizer = () => {
             </CardContent>
           </Card>
 
+          {/* Mold Dimensions */}
+          <Card>
+            <CardHeader>
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-left"
+                onClick={() => setMoldDimensionsExpanded(!moldDimensionsExpanded)}
+              >
+                <CardTitle className="flex items-center gap-2">
+                  <Scale className="w-5 h-5" />
+                  Mold Dimensions
+                </CardTitle>
+                {moldDimensionsExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              </button>
+            </CardHeader>
+            {moldDimensionsExpanded && (
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Define your mold cavity dimensions to calculate accurate injection time and material requirements.
+                </p>
+
+                <SelectField
+                  label="Mold Shape"
+                  icon={Scale}
+                  value={moldShape}
+                  onChange={(e) => setMoldShape(e.target.value)}
+                >
+                  <option value="rectangular">Rectangular (Panels, Boxes)</option>
+                  <option value="cylinder">Cylindrical (Boilers, Tanks)</option>
+                  <option value="sphere">Spherical (Tanks, Vessels)</option>
+                </SelectField>
+
+                {moldShape === 'rectangular' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <InputField
+                        label="Length"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={moldDimensions.length}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, length: Number(e.target.value) }))}
+                        helpText="Mold cavity length"
+                        placeholder="1000"
+                      />
+                      <InputField
+                        label="Width"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={moldDimensions.width}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, width: Number(e.target.value) }))}
+                        helpText="Mold cavity width"
+                        placeholder="500"
+                      />
+                      <InputField
+                        label="Height/Thickness"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={moldDimensions.height}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, height: Number(e.target.value) }))}
+                        helpText="Panel thickness"
+                        placeholder="50"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {moldShape === 'cylinder' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <InputField
+                        label="Outer Diameter"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={moldDimensions.diameter}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, diameter: Number(e.target.value) }))}
+                        helpText="Outer diameter of cylinder"
+                        placeholder="500"
+                      />
+                      <InputField
+                        label="Height"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={moldDimensions.cylinderHeight}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, cylinderHeight: Number(e.target.value) }))}
+                        helpText="Cylinder height"
+                        placeholder="1000"
+                      />
+                      <InputField
+                        label="Wall Thickness"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={moldDimensions.wallThickness}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, wallThickness: Number(e.target.value) }))}
+                        helpText="Foam layer thickness"
+                        placeholder="50"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {moldShape === 'sphere' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <InputField
+                        label="Outer Diameter"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="10"
+                        step="10"
+                        value={moldDimensions.sphereDiameter}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, sphereDiameter: Number(e.target.value) }))}
+                        helpText="Outer diameter of sphere"
+                        placeholder="500"
+                      />
+                      <InputField
+                        label="Wall Thickness"
+                        unit="mm"
+                        icon={FileSpreadsheet}
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={moldDimensions.wallThickness}
+                        onChange={(e) => setMoldDimensions(prev => ({ ...prev, wallThickness: Number(e.target.value) }))}
+                        helpText="Foam layer thickness"
+                        placeholder="50"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {moldVolume > 0 && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg space-y-2 text-sm">
+                    <h4 className="font-semibold text-purple-900 dark:text-purple-100">Calculated Mold Volume:</h4>
+                    <p className="text-purple-800 dark:text-purple-200">
+                      Cavity volume: <span className="font-semibold">{moldVolume.toFixed(3)} L</span>
+                    </p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 italic">
+                      This volume will be used to calculate accurate injection time and material requirements
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
           {/* Mix Ratio Calculator */}
           <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
@@ -1077,6 +1345,7 @@ const PolyurethaneOptimizer = () => {
                       unit="bar"
                       icon={Settings2}
                       status={results.compatible ? 'success' : 'error'}
+                      helpText="Total pressure required at injection point (includes pipe pressure drop + safety factor)"
                     />
                     <ResultCard
                       title="Pressure Drop"
@@ -1084,6 +1353,7 @@ const PolyurethaneOptimizer = () => {
                       unit="kPa"
                       icon={Settings2}
                       status="default"
+                      helpText="Pressure loss due to friction as material flows through the injection pipe"
                     />
                     <ResultCard
                       title="Flow Regime"
@@ -1091,6 +1361,7 @@ const PolyurethaneOptimizer = () => {
                       unit=""
                       icon={FileSpreadsheet}
                       status={results.flowRegime === 'Laminar' ? 'success' : 'warning'}
+                      helpText={`${results.flowRegime === 'Laminar' ? 'Smooth, layered flow (ideal for consistent mixing)' : 'Chaotic, turbulent flow (may cause mixing issues)'}`}
                     />
                     <ResultCard
                       title="Reynolds Number"
@@ -1098,6 +1369,7 @@ const PolyurethaneOptimizer = () => {
                       unit=""
                       icon={FileSpreadsheet}
                       status={results.reynoldsNumber < 2300 ? 'success' : 'warning'}
+                      helpText="Dimensionless number indicating flow type (< 2300 = laminar, > 2300 = turbulent)"
                     />
                     <ResultCard
                       title="Flow Velocity"
@@ -1105,6 +1377,7 @@ const PolyurethaneOptimizer = () => {
                       unit="m/s"
                       icon={Settings2}
                       status="default"
+                      helpText="Average speed of material flowing through the injection pipe"
                     />
                     <ResultCard
                       title="Injection Time"
@@ -1112,6 +1385,7 @@ const PolyurethaneOptimizer = () => {
                       unit="s"
                       icon={FileSpreadsheet}
                       status="default"
+                      helpText={`Total time to fill pipe${results.moldVolume > 0 ? ' and mold cavity' : ''} at current flow rate`}
                     />
                   </div>
 
@@ -1139,6 +1413,36 @@ const PolyurethaneOptimizer = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Mold Filling Information */}
+                  {results.moldVolume > 0 && (
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg text-sm space-y-2 border border-purple-200 dark:border-purple-700">
+                      <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                        <Scale className="w-4 h-4" />
+                        Mold Filling Analysis
+                      </h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Mold Volume</p>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.moldVolume.toFixed(3)} <span className="text-xs font-normal">L</span></p>
+                          <p className="text-xs text-gray-400 italic capitalize">{results.moldShape} shape</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Mold Fill Time</p>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.moldFillingTime.toFixed(2)} <span className="text-xs font-normal">s</span></p>
+                          <p className="text-xs text-gray-400 italic">Cavity filling</p>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Pipe Fill Time</p>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.pipeFillingTime.toFixed(2)} <span className="text-xs font-normal">s</span></p>
+                          <p className="text-xs text-gray-400 italic">Pipe transit</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 pt-2 border-t border-purple-200 dark:border-purple-700">
+                        Total injection time = Pipe fill time ({results.pipeFillingTime.toFixed(2)}s) + Mold fill time ({results.moldFillingTime.toFixed(2)}s) = {results.injectionTime.toFixed(2)}s
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1331,11 +1635,31 @@ const PolyurethaneOptimizer = () => {
                         </h3>
                         <div className="space-y-2">
                           {[
-                            { key: 'void_risk', label: 'Void Formation', icon: '○' },
-                            { key: 'short_shot_risk', label: 'Short Shot', icon: '◐' },
-                            { key: 'flash_risk', label: 'Flash/Overflow', icon: '◆' },
-                            { key: 'surface_defect_risk', label: 'Surface Defects', icon: '▪' }
-                          ].map(({key, label, icon}) => {
+                            {
+                              key: 'void_risk',
+                              label: 'Void Formation',
+                              icon: '○',
+                              description: 'Air bubbles or gas pockets trapped in the foam (caused by turbulent flow, fast filling, or air entrapment)'
+                            },
+                            {
+                              key: 'short_shot_risk',
+                              label: 'Short Shot',
+                              icon: '◐',
+                              description: 'Incomplete mold filling (caused by insufficient pressure, slow flow, or premature gelation)'
+                            },
+                            {
+                              key: 'flash_risk',
+                              label: 'Flash/Overflow',
+                              icon: '◆',
+                              description: 'Excess material leaking from mold (caused by excessive pressure or poor mold clamping)'
+                            },
+                            {
+                              key: 'surface_defect_risk',
+                              label: 'Surface Defects',
+                              icon: '▪',
+                              description: 'Poor surface finish or skin quality (caused by wrong temperature, high shear, or turbulent flow)'
+                            }
+                          ].map(({key, label, icon, description}) => {
                             const risk = results.mlInsights.defect_risks[key];
                             const riskLevel = risk < 20 ? 'low' : risk < 40 ? 'medium' : 'high';
                             const colors = {
@@ -1344,21 +1668,24 @@ const PolyurethaneOptimizer = () => {
                               high: 'bg-red-200 dark:bg-red-700'
                             };
                             return (
-                              <div key={key} className="flex items-center gap-2">
-                                <span className="text-sm w-32">{icon} {label}</span>
-                                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
-                                  <div
-                                    className={`h-full ${colors[riskLevel]} transition-all duration-300`}
-                                    style={{ width: `${risk}%` }}
-                                  />
+                              <div key={key} className="space-y-1">
+                                <div className="flex items-center gap-2" title={description}>
+                                  <span className="text-sm w-32">{icon} {label}</span>
+                                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div
+                                      className={`h-full ${colors[riskLevel]} transition-all duration-300`}
+                                      style={{ width: `${risk}%` }}
+                                    />
+                                  </div>
+                                  <span className={`text-sm font-semibold w-12 text-right ${
+                                    riskLevel === 'low' ? 'text-green-600 dark:text-green-400' :
+                                    riskLevel === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                    'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {risk}%
+                                  </span>
                                 </div>
-                                <span className={`text-sm font-semibold w-12 text-right ${
-                                  riskLevel === 'low' ? 'text-green-600 dark:text-green-400' :
-                                  riskLevel === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
-                                  'text-red-600 dark:text-red-400'
-                                }`}>
-                                  {risk}%
-                                </span>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 italic ml-2">{description}</p>
                               </div>
                             );
                           })}
