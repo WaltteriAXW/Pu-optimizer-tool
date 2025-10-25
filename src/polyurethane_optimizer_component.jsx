@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './button';
 import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
+import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info } from 'lucide-react';
+import { DatabaseViewer } from './database_viewer';
+import { getAllMaterialPresets } from './utils/database_loader';
+import { saveProcessEntry, getTrainingStats } from './training_data_storage';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -166,6 +170,10 @@ const PolyurethaneOptimizer = () => {
   // State for view mode (simple vs advanced)
   const [viewMode, setViewMode] = useState('simple'); // 'simple' or 'advanced'
 
+  // State for database viewer
+  const [showDatabase, setShowDatabase] = useState(false);
+  const [selectedMaterialName, setSelectedMaterialName] = useState('');
+
   // State for machine and material selection
   const [selectedMachine, setSelectedMachine] = useState('cannon_std_legacy');
   const [selectedMaterial, setSelectedMaterial] = useState('ecofoam_standard');
@@ -254,6 +262,23 @@ const PolyurethaneOptimizer = () => {
       calculateMixRatio();
     }
   }, [mixRatioExpanded, mixInputs, selectedMaterial]);
+
+  // Handle material selection from database
+  const handleSelectFromDatabase = (preset, product) => {
+    setInputs(prev => ({
+      ...prev,
+      density: preset.density,
+      viscosity: preset.viscosity,
+      specificGravity: preset.density / 1000
+    }));
+    setMixInputs(prev => ({
+      ...prev,
+      polyolSG: preset.polyolSG,
+      isoSG: preset.isoSG
+    }));
+    setSelectedMaterialName(preset.name);
+    setShowDatabase(false);
+  };
 
   // Enhanced calculation function
   const calculateResults = async () => {
