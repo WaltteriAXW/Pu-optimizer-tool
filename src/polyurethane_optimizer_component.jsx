@@ -4,7 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Save, Database, Package } from 'lucide-react';
+import { saveProcessEntry, getTrainingStats, exportTrainingData, getMLTrainingData } from './training_data_storage';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -180,11 +181,28 @@ const PolyurethaneOptimizer = () => {
   });
   const [mixResults, setMixResults] = useState(null);
 
+  // State for mold geometry
+  const [moldShape, setMoldShape] = useState('panel');
+  const [injectionType, setInjectionType] = useState('single_point');
+  const [numInjectionPoints, setNumInjectionPoints] = useState(1);
+  const [moldDimensions, setMoldDimensions] = useState({
+    length: 1500,  // mm
+    width: 500,    // mm
+    height: 20     // mm
+  });
+
   // State for calculation results
   const [results, setResults] = useState(null);
   const [pressureVsLength, setPressureVsLength] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // State for training data and quality feedback
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [partQuality, setPartQuality] = useState('good');
+  const [defectsObserved, setDefectsObserved] = useState([]);
+  const [processNotes, setProcessNotes] = useState('');
+  const [trainingStats, setTrainingStats] = useState(null);
 
   // Update inputs when material preset changes
   useEffect(() => {
@@ -244,6 +262,61 @@ const PolyurethaneOptimizer = () => {
       calculateMixRatio();
     }
   }, [mixRatioExpanded, mixInputs, selectedMaterial]);
+
+  // Load training stats on mount
+  useEffect(() => {
+    setTrainingStats(getTrainingStats());
+  }, []);
+
+  // Update mold dimensions when shape changes
+  useEffect(() => {
+    if (moldShape === 'panel') {
+      setMoldDimensions({ length: 1500, width: 500, height: 20 });
+    } else if (moldShape === 'cylinder') {
+      setMoldDimensions({ diameter: 200, height: 500 });
+    } else if (moldShape === 'sphere') {
+      setMoldDimensions({ diameter: 300 });
+    } else if (moldShape === 'custom') {
+      setMoldDimensions({ volume: 15 });
+    }
+  }, [moldShape]);
+
+  // Save process result with quality feedback
+  const saveProcessResult = () => {
+    if (!results) return;
+
+    try {
+      saveProcessEntry({
+        pipeLength: inputs.pipeLength,
+        pipeDiameter: inputs.pipeDiameter,
+        temperature: inputs.temperature,
+        flowRate: inputs.flowRate,
+        viscosity: inputs.viscosity,
+        density: inputs.density,
+        moldShape,
+        moldDimensions,
+        injectionType,
+        numInjectionPoints,
+        machineType: selectedMachine,
+        materialPreset: selectedMaterial,
+        optimalPressure: results.optimalPressureBar,
+        reynoldsNumber: results.reynoldsNumber,
+        injectionTime: results.optimal_injection_time,
+        moldVolume: results.mold_volume_liters || 0,
+        partQuality,
+        defectsObserved,
+        notes: processNotes,
+      });
+
+      // Update stats and close dialog
+      setTrainingStats(getTrainingStats());
+      setShowSaveDialog(false);
+      setProcessNotes('');
+      alert('Process result saved successfully! 🎉');
+    } catch (error) {
+      alert('Failed to save process result: ' + error.message);
+    }
+  };
 
   // Enhanced calculation function
   const calculateResults = async () => {
@@ -310,9 +383,48 @@ const PolyurethaneOptimizer = () => {
       const pressureDropBar = pressureDrop / 100000; // Pa to bar
       const totalPressureBar = 1.01325 + (pressureDropBar * safetyFactor); // Add atmospheric + safety
 
-      // Calculate optimal injection time
+      // === CALCULATE MOLD VOLUME BASED ON SHAPE ===
+      let moldVolumeLiters = 0;
+      if (moldShape === 'panel') {
+        const lengthM = (moldDimensions.length || 0) / 1000;
+        const widthM = (moldDimensions.width || 0) / 1000;
+        const heightM = (moldDimensions.height || 0) / 1000;
+        moldVolumeLiters = lengthM * widthM * heightM * 1000; // m³ to liters
+      } else if (moldShape === 'cylinder') {
+        const radiusM = ((moldDimensions.diameter || 0) / 2) / 1000;
+        const heightM = (moldDimensions.height || 0) / 1000;
+        moldVolumeLiters = Math.PI * Math.pow(radiusM, 2) * heightM * 1000;
+      } else if (moldShape === 'sphere') {
+        const radiusM = ((moldDimensions.diameter || 0) / 2) / 1000;
+        moldVolumeLiters = (4/3) * Math.PI * Math.pow(radiusM, 3) * 1000;
+      } else if (moldShape === 'custom') {
+        moldVolumeLiters = moldDimensions.volume || 0;
+      }
+
+      // === CALCULATE INJECTION TIME BASED ON MOLD VOLUME AND INJECTION TYPE ===
+      const baseFillTimeMin = moldVolumeLiters / inputs.flowRate; // minutes
+
+      let fillCorrection = 1.0;
+      let efficiency = 0.85;
+
+      if (injectionType === 'single_point') {
+        fillCorrection = 1.0;
+        efficiency = 0.85;
+      } else if (injectionType === 'two_point') {
+        fillCorrection = 0.6; // 40% faster
+        efficiency = 0.90;
+      } else if (injectionType === 'multi_point') {
+        const points = Math.max(numInjectionPoints, 2);
+        fillCorrection = 1.0 / Math.sqrt(points);
+        efficiency = 0.92;
+      }
+
+      const correctedFillTimeMin = (baseFillTimeMin * fillCorrection) / efficiency;
+      const packingTimeMin = correctedFillTimeMin * 0.15;
+      const totalInjectionTimeMin = correctedFillTimeMin + packingTimeMin;
+
+      // Pipe volume for reference
       const pipeVolume = Math.PI * Math.pow(radius, 2) * length;
-      const injectionTime = pipeVolume / flowRateM3s;
 
       // Flow regime
       const flowRegime = reynolds < 2300 ? 'Laminar' : 'Turbulent';
@@ -376,9 +488,19 @@ const PolyurethaneOptimizer = () => {
         shearRate: parseFloat(shearRate.toFixed(1)),
         apparentViscosity: parseFloat(apparentViscosity.toFixed(6)),
 
-        // Injection parameters
-        injectionTime: parseFloat(injectionTime.toFixed(3)),
-        pipeVolume: parseFloat((pipeVolume * 1000).toFixed(4)),
+        // Mold and Injection parameters (NEW - based on mold geometry)
+        mold_volume_liters: parseFloat(moldVolumeLiters.toFixed(3)),
+        moldShape,
+        injectionType,
+        numInjectionPoints: injectionType === 'multi_point' ? numInjectionPoints : (injectionType === 'two_point' ? 2 : 1),
+        injection_timing: {
+          fill_time_seconds: parseFloat((correctedFillTimeMin * 60).toFixed(2)),
+          packing_time_seconds: parseFloat((packingTimeMin * 60).toFixed(2)),
+          total_injection_time_seconds: parseFloat((totalInjectionTimeMin * 60).toFixed(2)),
+          efficiency: parseFloat((efficiency * 100).toFixed(1))
+        },
+        optimal_injection_time: parseFloat((totalInjectionTimeMin * 60).toFixed(2)), // For backward compatibility
+        pipeVolume: parseFloat((pipeVolume * 1000).toFixed(4)), // Pipe volume for reference only
 
         // Compatibility and recommendations
         compatible,
@@ -432,7 +554,7 @@ const PolyurethaneOptimizer = () => {
       calculateResults();
     }, 500);
     return () => clearTimeout(timer);
-  }, [inputs, selectedMachine, selectedMaterial]);
+  }, [inputs, selectedMachine, selectedMaterial, moldShape, moldDimensions, injectionType, numInjectionPoints]);
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
@@ -610,6 +732,156 @@ const PolyurethaneOptimizer = () => {
                   placeholder="350"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Mold Geometry and Injection Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Mold Geometry & Injection Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <SelectField
+                  label="Mold Shape"
+                  icon={Package}
+                  value={moldShape}
+                  onChange={(e) => setMoldShape(e.target.value)}
+                >
+                  <option value="panel">Panel / Rectangular</option>
+                  <option value="cylinder">Cylinder</option>
+                  <option value="sphere">Sphere</option>
+                  <option value="custom">Custom Volume</option>
+                </SelectField>
+
+                <SelectField
+                  label="Injection Type"
+                  icon={Settings2}
+                  value={injectionType}
+                  onChange={(e) => setInjectionType(e.target.value)}
+                >
+                  <option value="single_point">Single Point</option>
+                  <option value="two_point">Two Point</option>
+                  <option value="multi_point">Multi-Point</option>
+                </SelectField>
+              </div>
+
+              {injectionType === 'multi_point' && (
+                <InputField
+                  label="Number of Injection Points"
+                  unit=""
+                  icon={Settings2}
+                  type="number"
+                  min="2"
+                  max="20"
+                  value={numInjectionPoints}
+                  onChange={(e) => setNumInjectionPoints(Number(e.target.value))}
+                  helpText="Total number of injection points"
+                  placeholder="4"
+                />
+              )}
+
+              {/* Panel dimensions */}
+              {moldShape === 'panel' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Panel Dimensions</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <InputField
+                      label="Length"
+                      unit="mm"
+                      icon={Package}
+                      type="number"
+                      min="1"
+                      value={moldDimensions.length || 0}
+                      onChange={(e) => setMoldDimensions(prev => ({ ...prev, length: Number(e.target.value) }))}
+                      placeholder="1500"
+                    />
+                    <InputField
+                      label="Width"
+                      unit="mm"
+                      icon={Package}
+                      type="number"
+                      min="1"
+                      value={moldDimensions.width || 0}
+                      onChange={(e) => setMoldDimensions(prev => ({ ...prev, width: Number(e.target.value) }))}
+                      placeholder="500"
+                    />
+                    <InputField
+                      label="Height"
+                      unit="mm"
+                      icon={Package}
+                      type="number"
+                      min="1"
+                      value={moldDimensions.height || 0}
+                      onChange={(e) => setMoldDimensions(prev => ({ ...prev, height: Number(e.target.value) }))}
+                      placeholder="20"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Cylinder dimensions */}
+              {moldShape === 'cylinder' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Cylinder Dimensions</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField
+                      label="Diameter"
+                      unit="mm"
+                      icon={Package}
+                      type="number"
+                      min="1"
+                      value={moldDimensions.diameter || 0}
+                      onChange={(e) => setMoldDimensions(prev => ({ ...prev, diameter: Number(e.target.value) }))}
+                      placeholder="200"
+                    />
+                    <InputField
+                      label="Height"
+                      unit="mm"
+                      icon={Package}
+                      type="number"
+                      min="1"
+                      value={moldDimensions.height || 0}
+                      onChange={(e) => setMoldDimensions(prev => ({ ...prev, height: Number(e.target.value) }))}
+                      placeholder="500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Sphere dimensions */}
+              {moldShape === 'sphere' && (
+                <InputField
+                  label="Sphere Diameter"
+                  unit="mm"
+                  icon={Package}
+                  type="number"
+                  min="1"
+                  value={moldDimensions.diameter || 0}
+                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, diameter: Number(e.target.value) }))}
+                  helpText="Outer diameter of the sphere"
+                  placeholder="300"
+                />
+              )}
+
+              {/* Custom volume */}
+              {moldShape === 'custom' && (
+                <InputField
+                  label="Mold Volume"
+                  unit="L"
+                  icon={Package}
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={moldDimensions.volume || 0}
+                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, volume: Number(e.target.value) }))}
+                  helpText="Total cavity volume in liters"
+                  placeholder="15.0"
+                />
+              )}
             </CardContent>
           </Card>
 
