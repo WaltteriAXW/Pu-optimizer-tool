@@ -4,9 +4,9 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Zap, Gauge, Ruler, Droplets, Activity, Info, HelpCircle, ArrowRight, Sparkles, CheckCheck } from 'lucide-react';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Save, Database, Package } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Zap, Gauge, Ruler, Droplets, Activity, Info, HelpCircle, ArrowRight, Sparkles, CheckCheck, Save, Database, Package } from 'lucide-react';
 import { saveProcessEntry, getTrainingStats, exportTrainingData, getMLTrainingData } from './training_data_storage';
+import { DatabaseViewer } from './database_viewer';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -243,6 +243,9 @@ const PolyurethaneOptimizer = () => {
   const [processNotes, setProcessNotes] = useState('');
   const [trainingStats, setTrainingStats] = useState(null);
 
+  // State for database viewer
+  const [showDatabaseViewer, setShowDatabaseViewer] = useState(false);
+
   // Update inputs when material preset changes
   useEffect(() => {
     if (selectedMaterial && MATERIAL_PRESETS[selectedMaterial]) {
@@ -355,6 +358,30 @@ const PolyurethaneOptimizer = () => {
     } catch (error) {
       alert('Failed to save process result: ' + error.message);
     }
+  };
+
+  // Handle product selection from database
+  const handleProductSelect = (preset, fullProduct) => {
+    // Update inputs with selected product properties
+    setInputs(prev => ({
+      ...prev,
+      density: preset.density,
+      viscosity: preset.viscosity,
+      specificGravity: preset.density / 1000
+    }));
+
+    // Update mix ratio inputs
+    setMixInputs(prev => ({
+      ...prev,
+      polyolSG: preset.polyolSG,
+      isoSG: preset.isoSG
+    }));
+
+    // Close database viewer
+    setShowDatabaseViewer(false);
+
+    // Show confirmation
+    alert(`✅ Product "${preset.name}" loaded successfully!\n\nMaterial properties have been updated.`);
   };
 
   // Enhanced calculation function
@@ -787,6 +814,19 @@ const PolyurethaneOptimizer = () => {
                   <option key={key} value={key}>{preset.name}</option>
                 ))}
               </SelectField>
+
+              <div className="pt-2">
+                <Button
+                  onClick={() => setShowDatabaseViewer(true)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                >
+                  <Database className="w-4 h-4 mr-2" />
+                  Browse Product Database
+                </Button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Or browse the complete database with detailed specifications
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -1361,6 +1401,11 @@ const PolyurethaneOptimizer = () => {
                           Max: {results.machine.maxPressure} bar
                         </p>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Mold Volume and Injection Timing */}
               <Card className="border-2 border-green-200 dark:border-green-800">
                 <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20">
@@ -1443,9 +1488,9 @@ const PolyurethaneOptimizer = () => {
                         Modified for non-Newtonian fluids with Power Law correction
                       </p>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Equations Information Card - Advanced Mode Only */}
               {advancedMode && (
@@ -2081,6 +2126,23 @@ const PolyurethaneOptimizer = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Database Viewer Modal */}
+      {showDatabaseViewer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] overflow-y-auto w-full">
+            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-blue-600">Product Database</h2>
+              <Button variant="outline" onClick={() => setShowDatabaseViewer(false)}>
+                Close
+              </Button>
+            </div>
+            <div className="p-4">
+              <DatabaseViewer onSelectProduct={handleProductSelect} />
             </div>
           </div>
         </div>
