@@ -8,6 +8,10 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, Grad
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import json
+import os
+from datetime import datetime
+from pathlib import Path
+import pickle
 
 
 class ProcessOptimizerML:
@@ -367,6 +371,393 @@ class ProcessOptimizerML:
             'quality_prediction': quality,
             'defect_risks': defects,
             'recommendations': recommendations
+        }
+
+    def log_production_data(self, parameters, results, actual_quality_outcome=None,
+                           actual_defects=None, notes="", log_file="ml_training_data.json"):
+        """
+        Log production data for continuous ML model training
+
+        Args:
+            parameters: Dictionary with all input parameters
+            results: Dictionary with calculation/prediction results
+            actual_quality_outcome: Actual quality result ("good", "acceptable", "defective", "failed")
+            actual_defects: Dictionary with actual defect occurrences
+            notes: Additional notes about the production run
+            log_file: Path to training data log file
+
+        Returns:
+            Dictionary with log status
+        """
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_path = log_dir / log_file
+
+        # Prepare training data entry
+        training_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "notes": notes,
+
+            # Input parameters
+            "pipe_length": parameters.get("pipe_length"),
+            "pipe_diameter": parameters.get("pipe_diameter"),
+            "temperature": parameters.get("temperature"),
+            "flow_rate": parameters.get("flow_rate"),
+            "viscosity": parameters.get("viscosity"),
+            "density": parameters.get("density"),
+            "flow_index": parameters.get("flow_index"),
+            "activation_energy": parameters.get("activation_energy"),
+
+            # Calculated/predicted results
+            "required_pressure": results.get("optimal_pressure_bar") or results.get("required_pressure"),
+            "reynolds_number": results.get("reynolds_number"),
+            "flow_regime": results.get("flow_regime"),
+            "shear_rate": results.get("shear_rate"),
+            "velocity": results.get("velocity"),
+
+            # Predicted quality (if available)
+            "predicted_quality": results.get("quality_prediction", {}).get("is_good_part"),
+            "predicted_defects": results.get("defect_risks"),
+
+            # Actual outcomes (for supervised learning)
+            "actual_quality_outcome": actual_quality_outcome,
+            "actual_quality_score": 1.0 if actual_quality_outcome == "good" else
+                                   0.7 if actual_quality_outcome == "acceptable" else
+                                   0.3 if actual_quality_outcome == "defective" else 0.0,
+            "actual_defects": actual_defects or {},
+
+            # Whether this is labeled data (has actual outcomes)
+            "is_labeled": actual_quality_outcome is not None
+        }
+
+        # Load existing logs or create new list
+        logs = []
+        if log_path.exists():
+            try:
+                with open(log_path, 'r') as f:
+                    logs = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Warning: Could not parse {log_path}, creating new log file")
+                logs = []
+
+        # Append new entry
+        logs.append(training_entry)
+
+        # Save updated logs
+        with open(log_path, 'w') as f:
+            json.dump(logs, f, indent=2)
+
+        labeled_count = sum(1 for log in logs if log.get("is_labeled", False))
+
+        print(f"✓ Training data logged to {log_path}")
+        print(f"  Total entries: {len(logs)} (Labeled: {labeled_count})")
+
+        return {
+            "logged": True,
+            "log_file": str(log_path),
+            "total_entries": len(logs),
+            "labeled_entries": labeled_count,
+            "ready_for_retraining": labeled_count >= 50
+        }
+
+    def load_production_data_for_training(self, log_file="ml_training_data.json",
+                                         min_labeled_samples=50):
+        """
+        Load production data and convert to training format
+
+        Args:
+            log_file: Path to training data log file
+            min_labeled_samples: Minimum number of labeled samples required
+
+        Returns:
+            List of training data dictionaries or None if insufficient data
+        """
+        log_path = Path("logs") / log_file
+
+        if not log_path.exists():
+            print(f"No training data found at {log_path}")
+            return None
+
+        try:
+            with open(log_path, 'r') as f:
+                logs = json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error: Could not parse {log_path}")
+            return None
+
+        # Filter for labeled data only
+        labeled_logs = [log for log in logs if log.get("is_labeled", False)]
+
+        if len(labeled_logs) < min_labeled_samples:
+            print(f"Insufficient labeled data: {len(labeled_logs)} < {min_labeled_samples}")
+            return None
+
+        # Convert to training data format
+        training_data = []
+        for log in labeled_logs:
+            # Calculate optimal parameters based on actual outcome
+            quality_score = log.get("actual_quality_score", 0.5)
+
+            # If production was good, use actual parameters as "optimal"
+            # If production was bad, adjust parameters slightly (simple heuristic)
+            optimal_temperature = log["temperature"]
+            optimal_flow_rate = log["flow_rate"]
+
+            if quality_score < 0.5:
+                # Bad outcome - suggest modifications
+                optimal_temperature = np.clip(log["temperature"] + np.random.normal(0, 3), 15, 45)
+                optimal_flow_rate = np.clip(log["flow_rate"] + np.random.normal(0, 5), 5, 100)
+
+            # Extract defect probabilities from actual defects
+            actual_defects = log.get("actual_defects", {})
+            void_probability = 0.8 if actual_defects.get("voids", False) else 0.1
+            short_shot_probability = 0.8 if actual_defects.get("short_shot", False) else 0.1
+            flash_probability = 0.8 if actual_defects.get("flash", False) else 0.1
+            surface_defect_probability = 0.8 if actual_defects.get("surface_defects", False) else 0.1
+
+            training_data.append({
+                # Input features
+                'pipe_length': log["pipe_length"],
+                'pipe_diameter': log["pipe_diameter"],
+                'temperature': log["temperature"],
+                'flow_rate': log["flow_rate"],
+                'viscosity': log["viscosity"],
+                'density': log["density"],
+                'flow_index': log["flow_index"],
+                'activation_energy': log["activation_energy"],
+
+                # Calculated outputs
+                'required_pressure': log["required_pressure"],
+                'reynolds_number': log["reynolds_number"],
+                'quality_score': quality_score,
+                'is_good_part': quality_score > 0.6,
+
+                # Defect probabilities from actual data
+                'void_probability': void_probability,
+                'short_shot_probability': short_shot_probability,
+                'flash_probability': flash_probability,
+                'surface_defect_probability': surface_defect_probability,
+
+                # Optimal parameters
+                'optimal_temperature': optimal_temperature,
+                'optimal_flow_rate': optimal_flow_rate,
+            })
+
+        print(f"✓ Loaded {len(training_data)} labeled samples for retraining")
+        return training_data
+
+    def retrain_with_production_data(self, production_log_file="ml_training_data.json",
+                                    combine_with_synthetic=True, min_labeled_samples=50):
+        """
+        Retrain ML models using accumulated production data
+
+        Args:
+            production_log_file: Path to production training data log
+            combine_with_synthetic: Whether to combine with synthetic data
+            min_labeled_samples: Minimum labeled samples required for retraining
+
+        Returns:
+            Dictionary with retraining results and metrics
+        """
+        # Load production data
+        production_data = self.load_production_data_for_training(
+            production_log_file, min_labeled_samples
+        )
+
+        if production_data is None:
+            return {
+                "success": False,
+                "message": f"Insufficient production data (need at least {min_labeled_samples} labeled samples)"
+            }
+
+        # Optionally combine with synthetic data
+        training_data = production_data.copy()
+        if combine_with_synthetic:
+            synthetic_data = self.generate_synthetic_training_data(
+                n_samples=max(500, len(production_data) * 2)
+            )
+            training_data.extend(synthetic_data)
+            print(f"Combined {len(production_data)} production + {len(synthetic_data)} synthetic samples")
+
+        # Train models
+        print("\n=== Retraining ML Models with Production Data ===")
+        metrics = self.train_models(training_data)
+
+        # Save the retrained models
+        self.save_models(f"models_retrained_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
+
+        return {
+            "success": True,
+            "production_samples": len(production_data),
+            "synthetic_samples": len(synthetic_data) if combine_with_synthetic else 0,
+            "total_samples": len(training_data),
+            "metrics": metrics,
+            "retrained_at": datetime.now().isoformat()
+        }
+
+    def save_models(self, filename="ml_models.pkl"):
+        """
+        Save trained models and scalers to file
+
+        Args:
+            filename: Name of file to save models to
+
+        Returns:
+            Dictionary with save status
+        """
+        if not self.is_trained:
+            return {
+                "success": False,
+                "message": "Models not trained yet"
+            }
+
+        # Create models directory if it doesn't exist
+        models_dir = Path("models")
+        models_dir.mkdir(exist_ok=True)
+        model_path = models_dir / filename
+
+        # Package all models and scalers
+        model_package = {
+            "parameter_optimizer": self.parameter_optimizer,
+            "quality_classifier": self.quality_classifier,
+            "defect_predictor": self.defect_predictor,
+            "pressure_predictor": self.pressure_predictor,
+            "param_scaler": self.param_scaler,
+            "quality_scaler": self.quality_scaler,
+            "defect_scaler": self.defect_scaler,
+            "pressure_scaler": self.pressure_scaler,
+            "training_data_size": len(self.training_data),
+            "saved_at": datetime.now().isoformat()
+        }
+
+        # Save to file
+        with open(model_path, 'wb') as f:
+            pickle.dump(model_package, f)
+
+        file_size = model_path.stat().st_size / 1024  # KB
+
+        print(f"✓ Models saved to {model_path} ({file_size:.1f} KB)")
+
+        return {
+            "success": True,
+            "model_file": str(model_path),
+            "file_size_kb": round(file_size, 1),
+            "training_data_size": len(self.training_data)
+        }
+
+    def load_models(self, filename="ml_models.pkl"):
+        """
+        Load pre-trained models from file
+
+        Args:
+            filename: Name of file to load models from
+
+        Returns:
+            Dictionary with load status
+        """
+        model_path = Path("models") / filename
+
+        if not model_path.exists():
+            return {
+                "success": False,
+                "message": f"Model file not found: {model_path}"
+            }
+
+        # Load model package
+        with open(model_path, 'rb') as f:
+            model_package = pickle.load(f)
+
+        # Restore all models and scalers
+        self.parameter_optimizer = model_package["parameter_optimizer"]
+        self.quality_classifier = model_package["quality_classifier"]
+        self.defect_predictor = model_package["defect_predictor"]
+        self.pressure_predictor = model_package["pressure_predictor"]
+        self.param_scaler = model_package["param_scaler"]
+        self.quality_scaler = model_package["quality_scaler"]
+        self.defect_scaler = model_package["defect_scaler"]
+        self.pressure_scaler = model_package["pressure_scaler"]
+        self.is_trained = True
+
+        print(f"✓ Models loaded from {model_path}")
+        print(f"  Trained with {model_package['training_data_size']} samples")
+        print(f"  Saved at: {model_package['saved_at']}")
+
+        return {
+            "success": True,
+            "model_file": str(model_path),
+            "training_data_size": model_package["training_data_size"],
+            "saved_at": model_package["saved_at"]
+        }
+
+    def get_training_statistics(self, production_log_file="ml_training_data.json"):
+        """
+        Get statistics about available training data
+
+        Args:
+            production_log_file: Path to production training data log
+
+        Returns:
+            Dictionary with training data statistics
+        """
+        log_path = Path("logs") / production_log_file
+
+        if not log_path.exists():
+            return {
+                "total_entries": 0,
+                "labeled_entries": 0,
+                "ready_for_training": False,
+                "message": "No training data found"
+            }
+
+        try:
+            with open(log_path, 'r') as f:
+                logs = json.load(f)
+        except json.JSONDecodeError:
+            return {
+                "error": "Could not parse training data file"
+            }
+
+        labeled_logs = [log for log in logs if log.get("is_labeled", False)]
+
+        # Quality distribution
+        quality_distribution = {
+            "good": 0,
+            "acceptable": 0,
+            "defective": 0,
+            "failed": 0
+        }
+
+        for log in labeled_logs:
+            outcome = log.get("actual_quality_outcome")
+            if outcome in quality_distribution:
+                quality_distribution[outcome] += 1
+
+        # Defect analysis
+        defect_counts = {
+            "voids": 0,
+            "short_shot": 0,
+            "flash": 0,
+            "surface_defects": 0
+        }
+
+        for log in labeled_logs:
+            defects = log.get("actual_defects", {})
+            for defect_type in defect_counts.keys():
+                if defects.get(defect_type, False):
+                    defect_counts[defect_type] += 1
+
+        return {
+            "total_entries": len(logs),
+            "labeled_entries": len(labeled_logs),
+            "unlabeled_entries": len(logs) - len(labeled_logs),
+            "ready_for_training": len(labeled_logs) >= 50,
+            "quality_distribution": quality_distribution,
+            "defect_counts": defect_counts,
+            "date_range": {
+                "first_entry": logs[0].get("timestamp") if logs else None,
+                "last_entry": logs[-1].get("timestamp") if logs else None
+            }
         }
 
 
