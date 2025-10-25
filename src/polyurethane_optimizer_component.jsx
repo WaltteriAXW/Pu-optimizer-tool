@@ -967,6 +967,62 @@ const PolyurethaneOptimizer = () => {
 
         {/* Results Section */}
         <div className="space-y-6">
+          {/* Training Data Stats */}
+          {trainingStats && (
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-blue-600" />
+                    Training Data
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const data = exportTrainingData();
+                        const blob = new Blob([data], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `pu-training-data-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Download className="w-3 h-3 mr-1 inline" />
+                      Export
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-5 gap-3 text-center">
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{trainingStats.totalEntries}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total Entries</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-gray-600">{trainingStats.entriesWithQuality}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">With Feedback</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{trainingStats.goodParts}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Good Parts</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-yellow-600">{trainingStats.acceptableParts}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Acceptable</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-2xl font-bold text-red-600">{trainingStats.badParts}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Bad Parts</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {error && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -1004,6 +1060,68 @@ const PolyurethaneOptimizer = () => {
                         Max: {results.machine.maxPressure} bar
                       </p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Mold Volume and Injection Timing */}
+              <Card className="border-2 border-green-200 dark:border-green-800">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20">
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-green-600" />
+                    Mold Volume & Injection Timing
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-green-600 text-white rounded-full">Mold-Based</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Mold Volume</h3>
+                      <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                        {results.mold_volume_liters} <span className="text-lg font-normal">L</span>
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        {results.moldShape.charAt(0).toUpperCase() + results.moldShape.slice(1)} mold
+                      </p>
+                    </div>
+
+                    <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-teal-700 dark:text-teal-300 mb-1">Total Injection Time</h3>
+                      <p className="text-3xl font-bold text-teal-900 dark:text-teal-100">
+                        {results.injection_timing.total_injection_time_seconds} <span className="text-lg font-normal">s</span>
+                      </p>
+                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                        {results.injectionType.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        {results.numInjectionPoints > 1 ? ` (${results.numInjectionPoints} points)` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Injection Cycle Breakdown</h4>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Fill Time</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {results.injection_timing.fill_time_seconds}s
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Packing Time</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {results.injection_timing.packing_time_seconds}s
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Efficiency</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {results.injection_timing.efficiency}%
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 italic pt-2 border-t border-gray-300 dark:border-gray-600">
+                      ℹ️ Pipe volume ({results.pipeVolume}L) is used only for pressure calculation, not injection time
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -1361,6 +1479,27 @@ const PolyurethaneOptimizer = () => {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Save Process Result Button */}
+              <Card className="border-2 border-blue-500 dark:border-blue-700">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Save This Process to Training Data
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Record this process configuration and results to help train the ML model
+                    </p>
+                    <Button
+                      onClick={() => setShowSaveDialog(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base"
+                    >
+                      <Save className="w-5 h-5 mr-2 inline" />
+                      Save Process Result
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
 
@@ -1386,6 +1525,156 @@ const PolyurethaneOptimizer = () => {
           )}
         </div>
       </div>
+
+      {/* Quality Feedback Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Save className="w-6 h-6" />
+                  Save Process Result
+                </h2>
+                <button
+                  onClick={() => setShowSaveDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Part Quality Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Part Quality
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() => setPartQuality('good')}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        partQuality === 'good'
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-green-300'
+                      }`}
+                    >
+                      <CheckCircle2 className={`w-8 h-8 mx-auto mb-2 ${
+                        partQuality === 'good' ? 'text-green-600' : 'text-gray-400'
+                      }`} />
+                      <p className={`font-semibold ${
+                        partQuality === 'good' ? 'text-green-900 dark:text-green-100' : 'text-gray-700 dark:text-gray-300'
+                      }`}>Good</p>
+                    </button>
+                    <button
+                      onClick={() => setPartQuality('acceptable')}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        partQuality === 'acceptable'
+                          ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-yellow-300'
+                      }`}
+                    >
+                      <AlertTriangle className={`w-8 h-8 mx-auto mb-2 ${
+                        partQuality === 'acceptable' ? 'text-yellow-600' : 'text-gray-400'
+                      }`} />
+                      <p className={`font-semibold ${
+                        partQuality === 'acceptable' ? 'text-yellow-900 dark:text-yellow-100' : 'text-gray-700 dark:text-gray-300'
+                      }`}>Acceptable</p>
+                    </button>
+                    <button
+                      onClick={() => setPartQuality('bad')}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        partQuality === 'bad'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-red-300'
+                      }`}
+                    >
+                      <XCircle className={`w-8 h-8 mx-auto mb-2 ${
+                        partQuality === 'bad' ? 'text-red-600' : 'text-gray-400'
+                      }`} />
+                      <p className={`font-semibold ${
+                        partQuality === 'bad' ? 'text-red-900 dark:text-red-100' : 'text-gray-700 dark:text-gray-300'
+                      }`}>Bad</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Defects Observed */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Defects Observed (if any)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Voids', 'Short Shot', 'Flash', 'Surface Defects', 'Warping', 'Sink Marks'].map((defect) => (
+                      <label key={defect} className="flex items-center gap-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={defectsObserved.includes(defect)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setDefectsObserved([...defectsObserved, defect]);
+                            } else {
+                              setDefectsObserved(defectsObserved.filter(d => d !== defect));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{defect}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Process Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Process Notes (optional)
+                  </label>
+                  <textarea
+                    value={processNotes}
+                    onChange={(e) => setProcessNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Add any observations, issues, or notes about this process..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                {/* Process Summary */}
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Process Summary</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-gray-600 dark:text-gray-400">Mold:</span> <span className="font-medium">{moldShape} ({results?.mold_volume_liters}L)</span></div>
+                    <div><span className="text-gray-600 dark:text-gray-400">Injection:</span> <span className="font-medium">{injectionType.replace('_', ' ')}</span></div>
+                    <div><span className="text-gray-600 dark:text-gray-400">Pressure:</span> <span className="font-medium">{results?.optimalPressureBar} bar</span></div>
+                    <div><span className="text-gray-600 dark:text-gray-400">Time:</span> <span className="font-medium">{results?.optimal_injection_time}s</span></div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    onClick={() => {
+                      setShowSaveDialog(false);
+                      setProcessNotes('');
+                      setDefectsObserved([]);
+                    }}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveProcessResult}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Save className="w-4 h-4 mr-2 inline" />
+                    Save to Training Data
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
