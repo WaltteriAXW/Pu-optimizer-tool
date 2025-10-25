@@ -280,6 +280,42 @@ const PolyurethaneOptimizer = () => {
     setShowDatabase(false);
   };
 
+  // Simplify warnings for non-technical users
+  const simplifyWarning = (warning) => {
+    if (viewMode === 'advanced') return warning;
+
+    const translations = {
+      'Flow is turbulent': '⚠️ You\'re injecting TOO FAST! This causes bubbles, weak spots, and defects in your parts. The foam is tumbling and mixing with air instead of flowing smoothly.',
+      'High shear rate': '⚠️ Material is being stressed and stretched too much during injection - this can damage the foam structure and make weak parts.',
+      'Required pressure': '❌ YOUR MACHINE IS TOO WEAK! It cannot produce enough pressure for this job. Your parts will be incomplete.',
+      'Very high flow velocity': '⚠️ Injection speed is way too high - will cause turbulence (chaotic mixing) and quality problems.',
+      'exceeds machine capacity': '❌ Your machine can\'t handle this! You need more pressure than your machine can provide.',
+    };
+
+    for (const [key, simple] of Object.entries(translations)) {
+      if (warning.includes(key)) {
+        return simple;
+      }
+    }
+    return warning;
+  };
+
+  // Simplify recommendations for non-technical users
+  const simplifyRecommendation = (rec) => {
+    if (viewMode === 'advanced') return rec;
+
+    if (rec.includes('Reduce flow rate') || rec.includes('laminar flow')) {
+      return '💡 SOLUTION: Slow down! Reduce your injection speed to get smoother, bubble-free flow. Try cutting your speed in half and test again.';
+    }
+    if (rec.includes('increase pipe diameter') || rec.includes('increasing pipe diameter')) {
+      return '💡 SOLUTION: You have 2 options - Either use wider tubes (easier for foam to flow) OR slow down your injection speed.';
+    }
+    if (rec.includes('higher capacity machine') || rec.includes('select a higher')) {
+      return '💡 SOLUTIONS: Three ways to fix this - 1) Slow down injection speed, 2) Use wider pipes, OR 3) Get a more powerful machine with higher pressure.';
+    }
+    return rec;
+  };
+
   // Enhanced calculation function
   const calculateResults = async () => {
     setLoading(true);
@@ -1116,20 +1152,38 @@ const PolyurethaneOptimizer = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-4">
+                    {viewMode === 'simple' && results.warnings.length > 0 && (
+                      <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded-r-lg mb-4">
+                        <p className="text-sm text-red-900 dark:text-red-100 font-semibold">
+                          ⚠️ <strong>Problems Found:</strong> These warnings mean your current settings will cause defects or won't work at all. Read carefully!
+                        </p>
+                      </div>
+                    )}
                     {results.warnings.map((warning, idx) => (
                       <Alert key={idx} className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600 shadow-sm">
                         <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
-                        <AlertDescription className="text-yellow-900 dark:text-yellow-100 text-sm font-medium">
-                          {warning}
+                        <AlertDescription className="text-yellow-900 dark:text-yellow-100 text-sm font-medium leading-relaxed">
+                          {simplifyWarning(warning)}
                         </AlertDescription>
                       </Alert>
                     ))}
-                    {results.recommendations.map((rec, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <span className="text-blue-600 dark:text-blue-400 font-bold text-base">→</span>
-                        <span className="text-blue-800 dark:text-blue-200 font-medium">{rec}</span>
-                      </div>
-                    ))}
+                    {results.recommendations.length > 0 && (
+                      <>
+                        {viewMode === 'simple' && (
+                          <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded-r-lg mt-4">
+                            <p className="text-sm text-green-900 dark:text-green-100 font-semibold">
+                              💡 <strong>How to Fix:</strong> Follow these solutions to fix the problems and get perfect parts.
+                            </p>
+                          </div>
+                        )}
+                        {results.recommendations.map((rec, idx) => (
+                          <div key={idx} className="flex items-start gap-3 text-sm bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 shadow-sm">
+                            <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">→</span>
+                            <span className="text-blue-900 dark:text-blue-100 font-medium leading-relaxed">{simplifyRecommendation(rec)}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               )}
