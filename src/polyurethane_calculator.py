@@ -1,4 +1,8 @@
 import numpy as np
+import json
+import os
+from datetime import datetime
+from pathlib import Path
 
 # Try to import ML module (optional dependency)
 try:
@@ -380,6 +384,232 @@ class PolyurethaneCalculator:
             "total_weight_kg": round(total_weight, 3),
             "theoretical_density": round(theoretical_density, 0),
             "volume_ratio": f"{volume_ratio_polyol}:100"
+        }
+
+    def log_production_run(self, parameters, results, quality_status="good",
+                          quality_notes="", machine_type="unknown",
+                          material_preset="unknown", log_file="production_log.json"):
+        """
+        Log production run data for ML model training and quality tracking
+
+        Args:
+            parameters: Dictionary with input parameters (pipe_length, pipe_diameter, etc.)
+            results: Dictionary with calculation results
+            quality_status: "good", "acceptable", "defective", or "failed"
+            quality_notes: String describing any quality issues or observations
+            machine_type: Machine type used for production
+            material_preset: Material preset used
+            log_file: Path to log file (default: production_log.json)
+
+        Returns:
+            Dictionary with log entry details
+        """
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_path = log_dir / log_file
+
+        # Prepare log entry
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "quality_status": quality_status,
+            "quality_notes": quality_notes,
+            "machine_type": machine_type,
+            "material_preset": material_preset,
+
+            # Input parameters
+            "parameters": {
+                "pipe_length": parameters.get("pipe_length"),
+                "pipe_diameter": parameters.get("pipe_diameter"),
+                "temperature": parameters.get("temperature"),
+                "flow_rate": parameters.get("flow_rate"),
+                "viscosity": parameters.get("viscosity"),
+                "density": parameters.get("density"),
+                "flow_index": self.power_law_index,
+                "activation_energy": self.activation_energy
+            },
+
+            # Calculation results
+            "results": {
+                "optimal_pressure_bar": results.get("optimal_pressure_bar"),
+                "pressure_drop_bar": results.get("pressure_drop_bar"),
+                "reynolds_number": results.get("reynolds_number"),
+                "flow_regime": results.get("flow_regime"),
+                "velocity": results.get("velocity"),
+                "shear_rate": results.get("shear_rate"),
+                "apparent_viscosity": results.get("apparent_viscosity"),
+                "machine_compatible": results.get("machine_compatible"),
+                "warnings_count": len(results.get("warnings", [])),
+                "has_warnings": len(results.get("warnings", [])) > 0
+            },
+
+            # Warnings and recommendations
+            "warnings": results.get("warnings", []),
+            "recommendations": results.get("recommendations", [])
+        }
+
+        # Load existing logs or create new list
+        logs = []
+        if log_path.exists():
+            try:
+                with open(log_path, 'r') as f:
+                    logs = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Warning: Could not parse {log_path}, creating new log file")
+                logs = []
+
+        # Append new entry
+        logs.append(log_entry)
+
+        # Save updated logs
+        with open(log_path, 'w') as f:
+            json.dump(logs, f, indent=2)
+
+        print(f"✓ Production run logged to {log_path} (Total entries: {len(logs)})")
+
+        return {
+            "logged": True,
+            "log_file": str(log_path),
+            "total_entries": len(logs),
+            "entry_id": len(logs) - 1
+        }
+
+    def log_quality_issue(self, issue_type, description, parameters=None,
+                         severity="medium", log_file="quality_issues.json"):
+        """
+        Log quality issues and defects for tracking and ML training
+
+        Args:
+            issue_type: Type of issue (e.g., "void", "short_shot", "flash", "surface_defect")
+            description: Detailed description of the issue
+            parameters: Dictionary with process parameters when issue occurred
+            severity: "low", "medium", "high", or "critical"
+            log_file: Path to quality issues log file
+
+        Returns:
+            Dictionary with log entry details
+        """
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_path = log_dir / log_file
+
+        # Prepare log entry
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "issue_type": issue_type,
+            "severity": severity,
+            "description": description,
+            "parameters": parameters or {}
+        }
+
+        # Load existing logs or create new list
+        logs = []
+        if log_path.exists():
+            try:
+                with open(log_path, 'r') as f:
+                    logs = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Warning: Could not parse {log_path}, creating new log file")
+                logs = []
+
+        # Append new entry
+        logs.append(log_entry)
+
+        # Save updated logs
+        with open(log_path, 'w') as f:
+            json.dump(logs, f, indent=2)
+
+        print(f"⚠ Quality issue logged to {log_path} (Total issues: {len(logs)})")
+
+        return {
+            "logged": True,
+            "log_file": str(log_path),
+            "total_issues": len(logs),
+            "issue_id": len(logs) - 1
+        }
+
+    def get_production_statistics(self, log_file="production_log.json"):
+        """
+        Get statistics from production logs
+
+        Args:
+            log_file: Path to log file
+
+        Returns:
+            Dictionary with production statistics
+        """
+        log_path = Path("logs") / log_file
+
+        if not log_path.exists():
+            return {
+                "total_runs": 0,
+                "message": "No production logs found"
+            }
+
+        try:
+            with open(log_path, 'r') as f:
+                logs = json.load(f)
+        except json.JSONDecodeError:
+            return {
+                "total_runs": 0,
+                "error": "Could not parse log file"
+            }
+
+        if not logs:
+            return {
+                "total_runs": 0,
+                "message": "No production runs logged"
+            }
+
+        # Calculate statistics
+        total_runs = len(logs)
+        quality_counts = {
+            "good": 0,
+            "acceptable": 0,
+            "defective": 0,
+            "failed": 0
+        }
+
+        avg_pressure = 0
+        avg_temperature = 0
+        avg_reynolds = 0
+        runs_with_warnings = 0
+
+        for log in logs:
+            quality_counts[log.get("quality_status", "unknown")] = \
+                quality_counts.get(log.get("quality_status", "unknown"), 0) + 1
+
+            results = log.get("results", {})
+            params = log.get("parameters", {})
+
+            avg_pressure += results.get("optimal_pressure_bar", 0)
+            avg_temperature += params.get("temperature", 0)
+            avg_reynolds += results.get("reynolds_number", 0)
+
+            if results.get("has_warnings", False):
+                runs_with_warnings += 1
+
+        avg_pressure /= total_runs
+        avg_temperature /= total_runs
+        avg_reynolds /= total_runs
+
+        success_rate = (quality_counts["good"] + quality_counts["acceptable"]) / total_runs * 100
+
+        return {
+            "total_runs": total_runs,
+            "quality_distribution": quality_counts,
+            "success_rate": round(success_rate, 1),
+            "runs_with_warnings": runs_with_warnings,
+            "averages": {
+                "pressure_bar": round(avg_pressure, 2),
+                "temperature_c": round(avg_temperature, 1),
+                "reynolds_number": round(avg_reynolds, 2)
+            },
+            "date_range": {
+                "first_run": logs[0].get("timestamp"),
+                "last_run": logs[-1].get("timestamp")
+            }
         }
 
 # Environmental impact calculation function
