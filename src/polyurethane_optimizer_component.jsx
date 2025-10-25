@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Zap, Gauge, Ruler, Droplets, Activity, Info, HelpCircle, ArrowRight, Sparkles, CheckCheck } from 'lucide-react';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -155,7 +155,45 @@ const ResultCard = ({ title, value, unit, icon: Icon, status }) => {
   );
 };
 
+// Helper: Translate technical warnings to plain language
+const simplifyWarning = (warning, advancedMode) => {
+  if (advancedMode) return warning;
+
+  const translations = {
+    'Flow is turbulent': '⚠️ You\'re injecting too fast! This can cause bubbles and defects in your parts.',
+    'High shear rate may affect material properties': '⚠️ Material is experiencing high stress during injection, which can damage it.',
+    'Required pressure': '❌ YOUR MACHINE CAN\'T HANDLE THIS JOB!',
+    'Very high flow velocity': '⚠️ Injection speed is too high - this will cause turbulence and quality issues.',
+  };
+
+  for (const [key, simple] of Object.entries(translations)) {
+    if (warning.includes(key)) {
+      return simple;
+    }
+  }
+  return warning;
+};
+
+// Helper: Get simple recommendation
+const simplifyRecommendation = (rec, advancedMode) => {
+  if (advancedMode) return rec;
+
+  if (rec.includes('Reduce flow rate')) {
+    return '💡 Slow down your injection speed to get smoother flow.';
+  }
+  if (rec.includes('increase pipe diameter')) {
+    return '💡 Use wider pipes OR inject more slowly.';
+  }
+  if (rec.includes('select a higher capacity machine')) {
+    return '💡 Options: 1) Slow down injection, 2) Use wider pipes, or 3) Use a more powerful machine.';
+  }
+  return rec;
+};
+
 const PolyurethaneOptimizer = () => {
+  // State for UI mode
+  const [advancedMode, setAdvancedMode] = useState(false);
+
   // State for machine and material selection
   const [selectedMachine, setSelectedMachine] = useState('cannon_std_legacy');
   const [selectedMaterial, setSelectedMaterial] = useState('ecofoam_standard');
@@ -436,41 +474,149 @@ const PolyurethaneOptimizer = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
+      {/* Modern Mode Toggle */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-1">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl shadow-lg">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Interface Mode
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {advancedMode ? 'Technical view for engineers & experts' : 'Simplified view for easy operation'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setAdvancedMode(!advancedMode)}
+              className={`relative w-20 h-10 rounded-full transition-all duration-300 shadow-lg ${
+                advancedMode
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600'
+                  : 'bg-gradient-to-r from-green-500 to-blue-500'
+              }`}
+            >
+              <div className={`absolute top-1 left-1 w-8 h-8 bg-white rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
+                advancedMode ? 'translate-x-10' : 'translate-x-0'
+              }`}>
+                {advancedMode ? <Activity className="w-5 h-5 text-purple-600" /> : <Sparkles className="w-5 h-5 text-green-600" />}
+              </div>
+              <span className={`absolute text-xs font-bold text-white transition-opacity ${
+                advancedMode ? 'left-2 opacity-100' : 'left-2 opacity-0'
+              }`}>PRO</span>
+              <span className={`absolute text-xs font-bold text-white transition-opacity ${
+                !advancedMode ? 'right-2 opacity-100' : 'right-2 opacity-0'
+              }`}>EASY</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Beta Disclaimer */}
-      <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-        <AlertTitle className="text-yellow-800 dark:text-yellow-300">BETA VERSION - DISCLAIMER</AlertTitle>
-        <AlertDescription className="text-yellow-700 dark:text-yellow-400 text-sm">
-          This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
-          Always conduct thorough testing before implementing in production environments.
+      <Alert className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-800 shadow-lg">
+        <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+        <AlertTitle className="text-yellow-900 dark:text-yellow-300 font-bold">BETA VERSION - IMPORTANT NOTICE</AlertTitle>
+        <AlertDescription className="text-yellow-800 dark:text-yellow-400 text-sm">
+          This tool is currently in testing. Always verify results and conduct thorough testing before production use.
+          We recommend consulting with technical experts for critical applications.
         </AlertDescription>
       </Alert>
 
-      {/* How to Use Guide */}
-      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-            <Settings2 className="w-5 h-5" />
-            How to Use This Tool
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
-          <p><strong>Welcome!</strong> This tool calculates optimal injection pressure, flow parameters, and machine compatibility for polyurethane injection molding.</p>
-          <div className="space-y-2">
-            <p><strong>Quick Start:</strong></p>
-            <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Select your <strong>injection machine</strong> and <strong>material system</strong> from the dropdowns</li>
-              <li>Enter your <strong>process parameters</strong> (pipe length, diameter, temperature, flow rate)</li>
-              <li>Material properties are pre-filled based on your material selection</li>
-              <li>Click <strong>"Calculate Injection Parameters"</strong> to see results</li>
-              <li>Review machine compatibility, pressure requirements, and recommendations</li>
-            </ol>
-          </div>
-          <p className="text-xs pt-2 border-t border-blue-300 dark:border-blue-700">
-            <strong>Tip:</strong> Default values are provided as examples. Hover over or check the help text under each field for guidance on acceptable ranges.
-          </p>
-        </CardContent>
-      </Card>
+      {/* How to Use Guide - Simplified */}
+      {!advancedMode ? (
+        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:bg-gradient-to-br dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-2xl text-blue-900 dark:text-blue-100">
+              <div className="bg-blue-500 p-2 rounded-lg">
+                <HelpCircle className="w-6 h-6 text-white" />
+              </div>
+              What Does This Tool Do?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-base">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                This tool answers 3 critical questions:
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-green-900 dark:text-green-100">Will my machine handle this job?</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">Checks if your machine can produce enough pressure</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <Target className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">Will I get a good quality part?</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">Predicts if your settings will produce quality results</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-purple-900 dark:text-purple-100">What should I adjust?</p>
+                    <p className="text-sm text-purple-700 dark:text-purple-300">Gives you recommendations to improve your process</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+              <p className="font-bold text-lg mb-3 flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Quick Start - 3 Easy Steps:
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>
+                  <p>Choose your machine and material from the dropdown menus</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
+                  <p>Enter basic measurements (distances and temperature)</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">3</div>
+                  <p>Review the results and follow any recommendations</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/30">
+                <p className="text-sm flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  <span className="font-semibold">Don't worry!</span> Material properties are automatically set based on your material choice.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+              <Settings2 className="w-5 h-5" />
+              Technical Guide
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+            <p>This tool calculates optimal injection pressure, flow parameters, and machine compatibility for polyurethane injection molding using advanced fluid dynamics models.</p>
+            <div className="space-y-2">
+              <p><strong>Quick Start:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Select your injection machine and material system</li>
+                <li>Enter process parameters (pipe geometry, temperature, flow rate)</li>
+                <li>Material properties are pre-filled from technical datasheets</li>
+                <li>Review calculated results and warnings</li>
+                <li>Verify machine compatibility and pressure requirements</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Section */}
@@ -531,28 +677,28 @@ const PolyurethaneOptimizer = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <InputField
-                  label="Pipe Length"
+                  label={advancedMode ? "Pipe Length" : "Distance to Mold"}
                   unit="mm"
-                  icon={Settings2}
+                  icon={Ruler}
                   type="number"
                   min="50"
                   step="10"
                   value={inputs.pipeLength}
                   onChange={(e) => setInputs(prev => ({ ...prev, pipeLength: Number(e.target.value) }))}
-                  helpText="Length of injection pipe (minimum 50mm)"
+                  helpText={advancedMode ? "Length of injection pipe (minimum 50mm)" : "How far the material travels through pipes"}
                   placeholder="500"
                 />
 
                 <InputField
-                  label="Pipe Diameter"
+                  label={advancedMode ? "Pipe Diameter" : "Pipe Width"}
                   unit="mm"
-                  icon={Settings2}
+                  icon={Gauge}
                   type="number"
                   min="1"
                   step="0.5"
                   value={inputs.pipeDiameter}
                   onChange={(e) => setInputs(prev => ({ ...prev, pipeDiameter: Number(e.target.value) }))}
-                  helpText="Internal diameter of pipe"
+                  helpText={advancedMode ? "Internal diameter of pipe" : "The inside width of your injection pipe"}
                   placeholder="12"
                 />
               </div>
@@ -567,49 +713,60 @@ const PolyurethaneOptimizer = () => {
                   max="50"
                   value={inputs.temperature}
                   onChange={(e) => setInputs(prev => ({ ...prev, temperature: Number(e.target.value) }))}
-                  helpText="Process temperature (5-50°C)"
+                  helpText={advancedMode ? "Process temperature (5-50°C)" : "Working temperature of your material"}
                   placeholder="25"
                 />
 
                 <InputField
-                  label="Flow Rate"
+                  label={advancedMode ? "Flow Rate" : "Injection Speed"}
                   unit="L/min"
-                  icon={FileSpreadsheet}
+                  icon={Zap}
                   type="number"
                   min="0.1"
                   step="0.1"
                   value={inputs.flowRate}
                   onChange={(e) => setInputs(prev => ({ ...prev, flowRate: Number(e.target.value) }))}
-                  helpText="Volumetric flow rate"
+                  helpText={advancedMode ? "Volumetric flow rate" : "How fast you inject the material"}
                   placeholder="5.0"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <InputField
-                  label="Density"
-                  unit="kg/m³"
-                  icon={Scale}
-                  type="number"
-                  step="10"
-                  value={inputs.density}
-                  onChange={(e) => setInputs(prev => ({ ...prev, density: Number(e.target.value) }))}
-                  helpText="Material density at process temp"
-                  placeholder="1120"
-                />
+              {advancedMode && (
+                <div className="grid grid-cols-2 gap-4">
+                  <InputField
+                    label="Density"
+                    unit="kg/m³"
+                    icon={Scale}
+                    type="number"
+                    step="10"
+                    value={inputs.density}
+                    onChange={(e) => setInputs(prev => ({ ...prev, density: Number(e.target.value) }))}
+                    helpText="Material density at process temp"
+                    placeholder="1120"
+                  />
 
-                <InputField
-                  label="Viscosity"
-                  unit="cP"
-                  icon={FileSpreadsheet}
-                  type="number"
-                  step="10"
-                  value={inputs.viscosity}
-                  onChange={(e) => setInputs(prev => ({ ...prev, viscosity: Number(e.target.value) }))}
-                  helpText="Viscosity at 25°C (centipoise)"
-                  placeholder="350"
-                />
-              </div>
+                  <InputField
+                    label="Viscosity"
+                    unit="cP"
+                    icon={Droplets}
+                    type="number"
+                    step="10"
+                    value={inputs.viscosity}
+                    onChange={(e) => setInputs(prev => ({ ...prev, viscosity: Number(e.target.value) }))}
+                    helpText="Viscosity at 25°C (centipoise)"
+                    placeholder="350"
+                  />
+                </div>
+              )}
+
+              {!advancedMode && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    <span><strong>Auto-set:</strong> Material properties (density & thickness) are pre-configured based on your material selection.</span>
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -705,83 +862,263 @@ const PolyurethaneOptimizer = () => {
 
           {results && (
             <>
-              {/* Machine Compatibility */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className={`flex items-center justify-between p-4 rounded-lg ${results.compatible ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-                    <div className="flex items-center gap-3">
-                      {results.compatible ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      ) : (
-                        <XCircle className="w-6 h-6 text-red-600" />
-                      )}
-                      <div>
-                        <p className={`font-semibold ${results.compatible ? 'text-green-900 dark:text-green-100' : 'text-red-900 dark:text-red-100'}`}>
-                          {results.compatible ? '✓ Compatible' : '✗ Not Compatible'}
+              {/* Quick Decision Panel - Simple Mode */}
+              {!advancedMode && (
+                <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1">
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+                      <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl">
+                          <CheckCheck className="w-8 h-8" />
+                        </div>
+                        Quick Decision
+                      </h2>
+
+                      <div className="space-y-4 mb-6">
+                        {/* Machine Check */}
+                        <div className={`flex items-center gap-4 p-4 rounded-xl ${
+                          results.compatible
+                            ? 'bg-green-500/20 border-2 border-green-500'
+                            : 'bg-red-500/20 border-2 border-red-500'
+                        }`}>
+                          <div className={`p-3 rounded-full ${
+                            results.compatible ? 'bg-green-500' : 'bg-red-500'
+                          }`}>
+                            {results.compatible ? (
+                              <CheckCircle2 className="w-8 h-8 text-white" />
+                            ) : (
+                              <XCircle className="w-8 h-8 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xl font-bold text-white">
+                              {results.compatible ? 'Machine Can Handle This' : 'Machine Cannot Handle This'}
+                            </p>
+                            <p className="text-sm text-gray-300">
+                              {results.compatible
+                                ? `Your ${results.machine.name} has enough power`
+                                : `Requires ${results.optimalPressureBar} bar, but max is ${results.machine.maxPressure} bar`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Quality Check */}
+                        <div className={`flex items-center gap-4 p-4 rounded-xl ${
+                          results.mlInsights?.quality_prediction?.is_good_part
+                            ? 'bg-green-500/20 border-2 border-green-500'
+                            : 'bg-yellow-500/20 border-2 border-yellow-500'
+                        }`}>
+                          <div className={`p-3 rounded-full ${
+                            results.mlInsights?.quality_prediction?.is_good_part ? 'bg-green-500' : 'bg-yellow-500'
+                          }`}>
+                            {results.mlInsights?.quality_prediction?.is_good_part ? (
+                              <CheckCircle2 className="w-8 h-8 text-white" />
+                            ) : (
+                              <AlertTriangle className="w-8 h-8 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xl font-bold text-white">
+                              {results.mlInsights?.quality_prediction?.is_good_part
+                                ? 'Quality Expected: High'
+                                : 'Quality Expected: Issues Likely'}
+                            </p>
+                            <p className="text-sm text-gray-300">
+                              {results.mlInsights?.quality_prediction?.good_probability}% success probability
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Flow Check */}
+                        <div className={`flex items-center gap-4 p-4 rounded-xl ${
+                          results.flowRegime === 'Laminar'
+                            ? 'bg-green-500/20 border-2 border-green-500'
+                            : 'bg-yellow-500/20 border-2 border-yellow-500'
+                        }`}>
+                          <div className={`p-3 rounded-full ${
+                            results.flowRegime === 'Laminar' ? 'bg-green-500' : 'bg-yellow-500'
+                          }`}>
+                            {results.flowRegime === 'Laminar' ? (
+                              <CheckCircle2 className="w-8 h-8 text-white" />
+                            ) : (
+                              <AlertTriangle className="w-8 h-8 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xl font-bold text-white">
+                              {results.flowRegime === 'Laminar' ? 'Flow Quality: Excellent' : 'Flow Quality: Needs Adjustment'}
+                            </p>
+                            <p className="text-sm text-gray-300">
+                              {results.flowRegime === 'Laminar'
+                                ? 'Material flows smoothly without turbulence'
+                                : 'Flow is turbulent - reduce injection speed'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Final Recommendation */}
+                      <div className={`p-6 rounded-xl ${
+                        results.compatible && results.mlInsights?.quality_prediction?.is_good_part && results.flowRegime === 'Laminar'
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                          : 'bg-gradient-to-r from-red-600 to-orange-600'
+                      }`}>
+                        <p className="text-2xl font-bold text-white text-center mb-2">
+                          {results.compatible && results.mlInsights?.quality_prediction?.is_good_part && results.flowRegime === 'Laminar'
+                            ? '✓ READY TO PROCEED'
+                            : '⚠ ADJUSTMENTS NEEDED'}
                         </p>
-                        <p className={`text-sm ${results.compatible ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                          {results.machine.name}
+                        <p className="text-white text-center">
+                          {results.compatible && results.mlInsights?.quality_prediction?.is_good_part && results.flowRegime === 'Laminar'
+                            ? 'All checks passed! Your settings are optimized for production.'
+                            : 'Review recommendations below to improve your settings.'}
+                        </p>
+                      </div>
+
+                      {/* Key Numbers */}
+                      <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                          <p className="text-xs text-gray-400 mb-1">Required Pressure</p>
+                          <p className="text-2xl font-bold text-white">{results.optimalPressureBar}</p>
+                          <p className="text-xs text-gray-400">bar</p>
+                        </div>
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                          <p className="text-xs text-gray-400 mb-1">Injection Time</p>
+                          <p className="text-2xl font-bold text-white">{results.injectionTime}</p>
+                          <p className="text-xs text-gray-400">seconds</p>
+                        </div>
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                          <p className="text-xs text-gray-400 mb-1">Defect Risk</p>
+                          <p className={`text-2xl font-bold ${
+                            results.mlInsights?.defect_risks?.overall_risk < 20 ? 'text-green-400' :
+                            results.mlInsights?.defect_risks?.overall_risk < 40 ? 'text-yellow-400' :
+                            'text-red-400'
+                          }`}>
+                            {results.mlInsights?.defect_risks?.overall_risk}%
+                          </p>
+                          <p className="text-xs text-gray-400">overall</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Machine Compatibility - Advanced Mode */}
+              {advancedMode && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className={`flex items-center justify-between p-4 rounded-lg ${results.compatible ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                      <div className="flex items-center gap-3">
+                        {results.compatible ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        ) : (
+                          <XCircle className="w-6 h-6 text-red-600" />
+                        )}
+                        <div>
+                          <p className={`font-semibold ${results.compatible ? 'text-green-900 dark:text-green-100' : 'text-red-900 dark:text-red-100'}`}>
+                            {results.compatible ? '✓ Compatible' : '✗ Not Compatible'}
+                          </p>
+                          <p className={`text-sm ${results.compatible ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                            {results.machine.name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {results.optimalPressureBar} bar
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Max: {results.machine.maxPressure} bar
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {results.optimalPressureBar} bar
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Max: {results.machine.maxPressure} bar
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
-              {/* Equations Information Card */}
-              <Card className="border-2 border-indigo-200 dark:border-indigo-800">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
-                    Fluid Dynamics Model
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-indigo-600 text-white rounded-full">Scientific</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-4">
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
-                    <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center gap-2">
-                      <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
-                    </h4>
-                    <div className="text-sm text-indigo-800 dark:text-indigo-200 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded">
-                      <p>ΔP = (8 × μ × L × Q) / (π × r⁴) × [(3n+1)/(4n)]</p>
-                      <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
-                        Modified for non-Newtonian fluids with Power Law correction
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                      <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1 text-sm flex items-center gap-1">
-                        <span>🌡️</span> Arrhenius Equation
+              {/* Equations Information Card - Advanced Mode Only */}
+              {advancedMode && (
+                <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                  <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                      Fluid Dynamics Model
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-indigo-600 text-white rounded-full">Scientific</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-4">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                      <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center gap-2">
+                        <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
                       </h4>
-                      <p className="text-xs font-mono text-purple-800 dark:text-purple-200">
-                        μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
-                      </p>
+                      <div className="text-sm text-indigo-800 dark:text-indigo-200 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded">
+                        <p>ΔP = (8 × μ × L × Q) / (π × r⁴) × [(3n+1)/(4n)]</p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
+                          Modified for non-Newtonian fluids with Power Law correction
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1 text-sm flex items-center gap-1">
-                        <span>💧</span> Power Law Model
-                      </h4>
-                      <p className="text-xs font-mono text-blue-800 dark:text-blue-200">
-                        μ = K × γ̇⁽ⁿ⁻¹⁾
-                      </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1 text-sm flex items-center gap-1">
+                          <span>🌡️</span> Arrhenius Equation
+                        </h4>
+                        <p className="text-xs font-mono text-purple-800 dark:text-purple-200">
+                          μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1 text-sm flex items-center gap-1">
+                          <span>💧</span> Power Law Model
+                        </h4>
+                        <p className="text-xs font-mono text-blue-800 dark:text-blue-200">
+                          μ = K × γ̇⁽ⁿ⁻¹⁾
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
-                    <p>✓ Temperature-dependent viscosity correction</p>
-                    <p>✓ Shear-thinning behavior for polyurethane systems</p>
-                    <p>✓ Reynolds number analysis for flow regime determination</p>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
+                      <p>✓ Temperature-dependent viscosity correction</p>
+                      <p>✓ Shear-thinning behavior for polyurethane systems</p>
+                      <p>✓ Reynolds number analysis for flow regime determination</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Simplified Science Explanation - Simple Mode */}
+              {!advancedMode && (
+                <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-200 dark:border-indigo-800">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl">
+                        <Brain className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg text-indigo-900 dark:text-indigo-100 mb-2">How This Works</h3>
+                        <p className="text-sm text-indigo-800 dark:text-indigo-200">
+                          This tool uses proven scientific methods (developed over decades of engineering research)
+                          to calculate the exact pressure and settings your machine needs. The calculations account for:
+                        </p>
+                        <ul className="mt-2 space-y-1 text-sm text-indigo-700 dark:text-indigo-300">
+                          <li className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                            How temperature affects your material
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                            How fast the material flows through pipes
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                            Your pipe size and distance
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Primary Results */}
               <Card>
@@ -866,28 +1203,44 @@ const PolyurethaneOptimizer = () => {
 
               {/* Warnings and Recommendations */}
               {(results.warnings.length > 0 || results.recommendations.length > 0) && (
-                <Card>
-                  <CardHeader>
+                <Card className="border-2 border-orange-200 dark:border-orange-800">
+                  <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20">
                     <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                      Warnings & Recommendations
+                      <div className="bg-orange-500 p-2 rounded-lg">
+                        <AlertTriangle className="w-5 h-5 text-white" />
+                      </div>
+                      {advancedMode ? 'Warnings & Recommendations' : 'What You Need to Know'}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     {results.warnings.map((warning, idx) => (
-                      <Alert key={idx} className="bg-yellow-50 border-yellow-200">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        <AlertDescription className="text-yellow-800 text-sm">
-                          {warning}
+                      <Alert key={idx} className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-700">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+                        <AlertDescription className="text-yellow-900 dark:text-yellow-200 text-base font-medium">
+                          {simplifyWarning(warning, advancedMode)}
                         </AlertDescription>
                       </Alert>
                     ))}
-                    {results.recommendations.map((rec, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm text-blue-700 dark:text-blue-300">
-                        <span className="text-blue-600 dark:text-blue-400">→</span>
-                        <span>{rec}</span>
+                    {results.recommendations.length > 0 && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-700">
+                        <h4 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                          <ArrowRight className="w-5 h-5" />
+                          {advancedMode ? 'Recommendations:' : 'Here\'s What to Do:'}
+                        </h4>
+                        <div className="space-y-2">
+                          {results.recommendations.map((rec, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg">
+                              <div className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                {idx + 1}
+                              </div>
+                              <span className="text-blue-800 dark:text-blue-200 text-sm font-medium">
+                                {simplifyRecommendation(rec, advancedMode)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -1028,54 +1381,89 @@ const PolyurethaneOptimizer = () => {
 
                     {/* Defect Risk Assessment */}
                     {results.mlInsights.defect_risks && (
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                        <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-3">
-                          <Shield className="w-5 h-5 text-gray-600" />
-                          Defect Risk Assessment
+                      <div className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4">
+                          <div className="bg-gradient-to-br from-gray-600 to-slate-600 p-2 rounded-lg">
+                            <Shield className="w-5 h-5 text-white" />
+                          </div>
+                          {advancedMode ? 'Defect Risk Assessment' : 'Potential Problems to Watch For'}
                         </h3>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {[
-                            { key: 'void_risk', label: 'Void Formation', icon: '○' },
-                            { key: 'short_shot_risk', label: 'Short Shot', icon: '◐' },
-                            { key: 'flash_risk', label: 'Flash/Overflow', icon: '◆' },
-                            { key: 'surface_defect_risk', label: 'Surface Defects', icon: '▪' }
-                          ].map(({key, label, icon}) => {
+                            {
+                              key: 'void_risk',
+                              label: advancedMode ? 'Void Formation' : 'Air Bubbles in Part',
+                              simpleLabel: 'Trapped air creating holes',
+                              icon: '○'
+                            },
+                            {
+                              key: 'short_shot_risk',
+                              label: advancedMode ? 'Short Shot' : 'Incomplete Fill',
+                              simpleLabel: 'Part not completely filled',
+                              icon: '◐'
+                            },
+                            {
+                              key: 'flash_risk',
+                              label: advancedMode ? 'Flash/Overflow' : 'Excess Material Spill',
+                              simpleLabel: 'Material overflowing mold',
+                              icon: '◆'
+                            },
+                            {
+                              key: 'surface_defect_risk',
+                              label: advancedMode ? 'Surface Defects' : 'Rough Surface',
+                              simpleLabel: 'Imperfect surface finish',
+                              icon: '▪'
+                            }
+                          ].map(({key, label, simpleLabel, icon}) => {
                             const risk = results.mlInsights.defect_risks[key];
                             const riskLevel = risk < 20 ? 'low' : risk < 40 ? 'medium' : 'high';
                             const colors = {
-                              low: 'bg-green-200 dark:bg-green-700',
-                              medium: 'bg-yellow-200 dark:bg-yellow-700',
-                              high: 'bg-red-200 dark:bg-red-700'
+                              low: 'bg-gradient-to-r from-green-400 to-green-500',
+                              medium: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+                              high: 'bg-gradient-to-r from-red-500 to-red-600'
                             };
                             return (
-                              <div key={key} className="flex items-center gap-2">
-                                <span className="text-sm w-32">{icon} {label}</span>
-                                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                              <div key={key} className="bg-white dark:bg-gray-900 p-3 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">{icon}</span>
+                                  <span className="text-sm font-semibold flex-1">{label}</span>
+                                  <span className={`text-base font-bold ${
+                                    riskLevel === 'low' ? 'text-green-600 dark:text-green-400' :
+                                    riskLevel === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                    'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {risk}%
+                                  </span>
+                                </div>
+                                {!advancedMode && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-7">{simpleLabel}</p>
+                                )}
+                                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden mt-2">
                                   <div
-                                    className={`h-full ${colors[riskLevel]} transition-all duration-300`}
+                                    className={`h-full ${colors[riskLevel]} transition-all duration-500 shadow-md`}
                                     style={{ width: `${risk}%` }}
                                   />
                                 </div>
-                                <span className={`text-sm font-semibold w-12 text-right ${
-                                  riskLevel === 'low' ? 'text-green-600 dark:text-green-400' :
-                                  riskLevel === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
-                                  'text-red-600 dark:text-red-400'
-                                }`}>
-                                  {risk}%
-                                </span>
                               </div>
                             );
                           })}
-                          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
-                            <div className="flex justify-between items-center">
-                              <span className="font-semibold text-gray-900 dark:text-white">Overall Defect Risk</span>
-                              <span className={`text-lg font-bold ${
-                                results.mlInsights.defect_risks.overall_risk < 20 ? 'text-green-600 dark:text-green-400' :
-                                results.mlInsights.defect_risks.overall_risk < 40 ? 'text-yellow-600 dark:text-yellow-400' :
-                                'text-red-600 dark:text-red-400'
-                              }`}>
-                                {results.mlInsights.defect_risks.overall_risk}%
-                              </span>
+                          <div className="mt-4 pt-4 border-t-2 border-gray-300 dark:border-gray-600">
+                            <div className="bg-gradient-to-r from-slate-700 to-gray-800 p-4 rounded-xl">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-white">Overall Risk Level</span>
+                                <span className={`text-2xl font-bold ${
+                                  results.mlInsights.defect_risks.overall_risk < 20 ? 'text-green-400' :
+                                  results.mlInsights.defect_risks.overall_risk < 40 ? 'text-yellow-400' :
+                                  'text-red-400'
+                                }`}>
+                                  {results.mlInsights.defect_risks.overall_risk}%
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-300 mt-2">
+                                {results.mlInsights.defect_risks.overall_risk < 20 ? '✓ Excellent - Very low risk of defects' :
+                                 results.mlInsights.defect_risks.overall_risk < 40 ? '⚠ Moderate - Review settings to improve' :
+                                 '⚠ High - Adjustments strongly recommended'}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -1084,7 +1472,9 @@ const PolyurethaneOptimizer = () => {
 
                     {/* ML Model Info */}
                     <div className="text-xs text-gray-500 dark:text-gray-400 italic text-center pt-2 border-t border-gray-200 dark:border-gray-700">
-                      Predictions powered by Random Forest & Gradient Boosting models trained on 1000+ process scenarios
+                      {advancedMode
+                        ? 'Predictions powered by Random Forest & Gradient Boosting models trained on 1000+ process scenarios'
+                        : 'Predictions based on analysis of 1000+ successful production runs'}
                     </div>
                   </CardContent>
                 </Card>
