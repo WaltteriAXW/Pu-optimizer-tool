@@ -330,7 +330,7 @@ export function suggestPipeForMold(pipeDatabase, mold, targetCycleTime = 60, max
  * @param {number} quantity - Number of parts
  * @param {number} foamDensity - Foam density in kg/m³ (default: 40)
  * @param {number} mixRatio - Polyol:Iso ratio (default: 100:110)
- * @returns {Object} Material requirements
+ * @returns {Object} Material requirements (without waste factor - apply separately)
  */
 export function calculateMaterialRequirements(mold, quantity = 1, foamDensity = 40, mixRatio = { polyol: 100, iso: 110 }) {
   const totalVolume_L = mold.volume_liters * quantity;
@@ -340,16 +340,13 @@ export function calculateMaterialRequirements(mold, quantity = 1, foamDensity = 
   const polyol_kg = totalMass_kg * (mixRatio.polyol / ratioSum);
   const iso_kg = totalMass_kg * (mixRatio.iso / ratioSum);
 
-  // Add 5% waste factor
-  const wasteFactor = 1.05;
-
   return {
     mold_id: mold.mold_id,
     quantity,
     foam_volume_L: totalVolume_L,
-    polyol_needed_kg: parseFloat((polyol_kg * wasteFactor).toFixed(2)),
-    iso_needed_kg: parseFloat((iso_kg * wasteFactor).toFixed(2)),
-    total_material_kg: parseFloat((totalMass_kg * wasteFactor).toFixed(2)),
+    polyol_needed_kg: parseFloat(polyol_kg.toFixed(2)),
+    iso_needed_kg: parseFloat(iso_kg.toFixed(2)),
+    total_material_kg: parseFloat(totalMass_kg.toFixed(2)),
     production_time_min: parseFloat(((mold.cycle_time_estimate_s * quantity) / 60).toFixed(1)),
     parts_per_hour: parseFloat((3600 / mold.cycle_time_estimate_s).toFixed(1))
   };

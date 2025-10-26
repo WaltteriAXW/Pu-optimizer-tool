@@ -91,6 +91,9 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
       config.moldVolume = selectedMold.volume_liters;
       config.moldShape = selectedMold.shape.toLowerCase();
 
+      // Save the full mold object for production planning
+      config.selectedMold = selectedMold;
+
       // Set mold dimensions
       if (selectedMold.shape === 'Rectangular') {
         config.moldDimensions = {
