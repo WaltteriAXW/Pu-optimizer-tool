@@ -10,6 +10,7 @@ import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
 import { useDebounce } from './hooks/useDebounce';
+import { CalculationResultsSkeleton, LoadingSpinner } from './components/SkeletonLoader';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -1719,20 +1720,15 @@ const PolyurethaneOptimizer = () => {
           )}
 
           {loading && (
-            <Card className="shadow-lg animate-pulse">
+            <Card className="shadow-lg">
               <CardContent className="pt-6">
-                <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                  <div className="relative">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 dark:border-blue-800"></div>
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 dark:border-blue-400 absolute top-0"></div>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 font-medium animate-pulse">Calculating optimal parameters...</p>
-                  <div className="flex gap-2">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
-                  </div>
+                <div className="flex items-center gap-3 mb-6">
+                  <LoadingSpinner size="md" />
+                  <p className="text-gray-700 dark:text-gray-300 font-medium">
+                    Calculating optimal parameters...
+                  </p>
                 </div>
+                <CalculationResultsSkeleton />
               </CardContent>
             </Card>
           )}
