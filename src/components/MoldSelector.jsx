@@ -7,7 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
-import { Square, Cylinder, Circle, Search, X, Filter } from 'lucide-react';
+import { Square, CircleDot, Circle, Search, X, Filter } from 'lucide-react';
 import {
   filterMoldsByShape,
   filterMoldsByApplication,
@@ -81,7 +81,7 @@ export function MoldSelector({
       case 'Rectangular':
         return <Square className="h-4 w-4" />;
       case 'Cylindrical':
-        return <Cylinder className="h-4 w-4" />;
+        return <CircleDot className="h-4 w-4" />;
       case 'Spherical':
         return <Circle className="h-4 w-4" />;
       default:
@@ -143,7 +143,7 @@ export function MoldSelector({
                   : 'border-transparent hover:border-gray-300'
               }`}
             >
-              <Cylinder className="h-4 w-4" />
+              <CircleDot className="h-4 w-4" />
               Cylindrical
             </button>
             <button
