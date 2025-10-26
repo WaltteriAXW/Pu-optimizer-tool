@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from './button';
 import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { Input } from './input';
@@ -230,6 +230,38 @@ const PolyurethaneOptimizer = () => {
   const debouncedInputs = useDebounce(inputs, 500);
   const debouncedMoldDimensions = useDebounce(moldDimensions, 300);
 
+  // Memoize mold volume calculation to avoid recalculating on every render
+  const calculatedMoldVolume = useMemo(() => {
+    const { length, width, height, diameter, cylinderHeight, sphereDiameter, wallThickness } = debouncedMoldDimensions;
+
+    switch (moldShape) {
+      case 'rectangular': {
+        // Volume of rectangular cavity = L × W × H (in liters)
+        const volumeMm3 = length * width * height;
+        return volumeMm3 / 1000; // Convert mm³ to liters
+      }
+      case 'cylinder': {
+        // Volume of cylinder = π × r² × h
+        const radius = diameter / 2;
+        const volumeMm3 = Math.PI * radius * radius * cylinderHeight;
+        return volumeMm3 / 1000;
+      }
+      case 'sphere': {
+        // Volume of sphere = 4/3 × π × r³
+        const radius = sphereDiameter / 2;
+        const volumeMm3 = (4 / 3) * Math.PI * Math.pow(radius, 3);
+        return volumeMm3 / 1000;
+      }
+      default:
+        return 0;
+    }
+  }, [moldShape, debouncedMoldDimensions]);
+
+  // Update moldVolume state when calculated value changes
+  useEffect(() => {
+    setMoldVolume(calculatedMoldVolume);
+  }, [calculatedMoldVolume]);
+
   // Update inputs when material preset changes
   useEffect(() => {
     if (selectedMaterial && MATERIAL_PRESETS[selectedMaterial]) {
@@ -248,8 +280,8 @@ const PolyurethaneOptimizer = () => {
     }
   }, [selectedMaterial]);
 
-  // Calculate mix ratio
-  const calculateMixRatio = () => {
+  // Calculate mix ratio (memoized to prevent unnecessary recalculations)
+  const calculateMixRatio = useCallback(() => {
     const preset = MATERIAL_PRESETS[selectedMaterial];
     if (!preset) return;
 
@@ -281,7 +313,7 @@ const PolyurethaneOptimizer = () => {
       density: theoreticalDensity.toFixed(0),
       weightRatio: `${polyolParts}:${isoParts}`
     });
-  };
+  }, [selectedMaterial, mixInputs]);
 
   useEffect(() => {
     if (mixRatioExpanded) {
@@ -342,8 +374,8 @@ const PolyurethaneOptimizer = () => {
     return rec;
   };
 
-  // Enhanced calculation function
-  const calculateResults = async () => {
+  // Enhanced calculation function (memoized to prevent unnecessary recreations)
+  const calculateResults = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -636,13 +668,13 @@ const PolyurethaneOptimizer = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [inputs, selectedMachine, selectedMaterial, moldVolume]);
 
   // Auto-calculate on debounced input change
   // This prevents excessive re-calculations while user is typing
   useEffect(() => {
     calculateResults();
-  }, [debouncedInputs, selectedMachine, selectedMaterial]);
+  }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
