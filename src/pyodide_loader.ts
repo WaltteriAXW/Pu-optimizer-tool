@@ -222,46 +222,73 @@ def calculate_environmental_impact(agent_type, annual_consumption):
 }
 
 /**
+ * Get configuration from environment variables
+ */
+function getConfig() {
+  return {
+    pyodideCDN: import.meta.env.VITE_PYODIDE_CDN || 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
+    basePath: import.meta.env.BASE_URL || '/',
+    enableML: import.meta.env.VITE_ENABLE_ML !== 'false',
+    debugMode: import.meta.env.VITE_DEBUG_MODE === 'true'
+  };
+}
+
+/**
  * Initialize Pyodide and load the calculator code
  */
 export async function initializePyodide(): Promise<void> {
   if (pyodide) {
     return; // Already initialized
   }
-  
+
   if (isInitializing) {
     return initializationPromise; // Wait for existing initialization
   }
-  
+
   isInitializing = true;
-  
+
   initializationPromise = (async () => {
     try {
+      const config = getConfig();
+
+      if (config.debugMode) {
+        console.log('Pyodide configuration:', config);
+      }
+
       console.log('Loading Pyodide...');
-      
+
       // Check if window is available (client-side only)
       if (typeof window === 'undefined') {
         console.log('Window not available, skipping Pyodide load');
         isInitializing = false;
         return;
       }
-      
+
       // Try to load Pyodide
       try {
         pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/",
+          indexURL: config.pyodideCDN,
         });
         
         console.log('Loading NumPy...');
         await pyodide.loadPackage("numpy");
 
-        console.log('Loading scikit-learn for ML models...');
-        await pyodide.loadPackage("scikit-learn");
+        if (config.enableML) {
+          console.log('Loading scikit-learn for ML models...');
+          await pyodide.loadPackage("scikit-learn");
+        }
 
         console.log('Loading calculator code...');
         // Load the polyurethane calculator code from file
         try {
-          const calculatorResponse = await fetch('/Pu-optimizer-tool/src/polyurethane_calculator.py');
+          const calculatorPath = `${config.basePath}src/polyurethane_calculator.py`;
+          if (config.debugMode) {
+            console.log('Fetching calculator from:', calculatorPath);
+          }
+          const calculatorResponse = await fetch(calculatorPath);
+          if (!calculatorResponse.ok) {
+            throw new Error(`HTTP ${calculatorResponse.status}: ${calculatorResponse.statusText}`);
+          }
           const calculatorCode = await calculatorResponse.text();
           await pyodide.runPython(calculatorCode);
           console.log('Calculator code loaded successfully');
@@ -271,23 +298,32 @@ export async function initializePyodide(): Promise<void> {
           await pyodide.runPython(calculatorCode);
         }
 
-        console.log('Loading ML optimizer module...');
-        try {
-          const mlResponse = await fetch('/Pu-optimizer-tool/src/process_optimizer_ml.py');
-          const mlCode = await mlResponse.text();
-          await pyodide.runPython(mlCode);
-          console.log('ML optimizer loaded successfully');
+        if (config.enableML) {
+          console.log('Loading ML optimizer module...');
+          try {
+            const mlPath = `${config.basePath}src/process_optimizer_ml.py`;
+            if (config.debugMode) {
+              console.log('Fetching ML optimizer from:', mlPath);
+            }
+            const mlResponse = await fetch(mlPath);
+            if (!mlResponse.ok) {
+              throw new Error(`HTTP ${mlResponse.status}: ${mlResponse.statusText}`);
+            }
+            const mlCode = await mlResponse.text();
+            await pyodide.runPython(mlCode);
+            console.log('ML optimizer loaded successfully');
 
-          console.log('Training ML models...');
-          await pyodide.runPython(`
+            console.log('Training ML models...');
+            await pyodide.runPython(`
 from process_optimizer_ml import initialize_ml_models
 metrics = initialize_ml_models()
 print(f"ML models initialized with {metrics['n_samples']} samples")
 print(f"Quality classifier accuracy: {metrics['quality_accuracy']*100:.1f}%")
-          `);
-          console.log('ML models trained and ready');
-        } catch (err) {
-          console.warn('Failed to load ML module - running without ML features', err);
+            `);
+            console.log('ML models trained and ready');
+          } catch (err) {
+            console.warn('Failed to load ML module - running without ML features', err);
+          }
         }
 
         console.log('Pyodide initialization completed successfully');

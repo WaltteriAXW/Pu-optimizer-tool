@@ -9,6 +9,7 @@ import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf,
 import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
+import { useDebounce } from './hooks/useDebounce';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -223,6 +224,10 @@ const PolyurethaneOptimizer = () => {
   const [pressureVsLength, setPressureVsLength] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Debounce inputs to prevent excessive calculations on every keystroke
+  const debouncedInputs = useDebounce(inputs, 500);
+  const debouncedMoldDimensions = useDebounce(moldDimensions, 300);
 
   // Update inputs when material preset changes
   useEffect(() => {
@@ -632,13 +637,11 @@ const PolyurethaneOptimizer = () => {
     }
   };
 
-  // Auto-calculate on input change
+  // Auto-calculate on debounced input change
+  // This prevents excessive re-calculations while user is typing
   useEffect(() => {
-    const timer = setTimeout(() => {
-      calculateResults();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [inputs, selectedMachine, selectedMaterial]);
+    calculateResults();
+  }, [debouncedInputs, selectedMachine, selectedMaterial]);
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
