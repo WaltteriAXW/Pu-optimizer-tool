@@ -5,7 +5,7 @@ import { Input } from './input';
 import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap } from 'lucide-react';
 import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
@@ -16,6 +16,8 @@ import { UI_CONFIG, CONVERSIONS } from './constants';
 import * as CalcHelpers from './utils/calculationHelpers';
 import { generateWarnings } from './utils/warningGenerator';
 import { generateMLInsights } from './utils/mlInsights';
+import { QuickSetup } from './components/QuickSetup';
+import { ProductionPlanner } from './components/ProductionPlanner';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -179,6 +181,10 @@ const ResultCard = ({ title, value, unit, icon: Icon, status, helpText }) => {
 const PolyurethaneOptimizer = () => {
   // State for view mode (simple vs advanced)
   const [viewMode, setViewMode] = useState('simple'); // 'simple' or 'advanced'
+
+  // State for Quick Setup from database
+  const [showQuickSetup, setShowQuickSetup] = useState(false);
+  const [selectedMoldFromDatabase, setSelectedMoldFromDatabase] = useState(null);
 
   // State for database viewer
   const [showDatabase, setShowDatabase] = useState(false);
@@ -379,6 +385,45 @@ const PolyurethaneOptimizer = () => {
     return rec;
   };
 
+  // Handler for applying Quick Setup configuration
+  const handleApplyQuickSetup = (config) => {
+    // Apply pipe configuration
+    if (config.pipeDiameter !== undefined && config.pipeLength !== undefined) {
+      setInputs(prev => ({
+        ...prev,
+        pipeDiameter: config.pipeDiameter,
+        pipeLength: config.pipeLength
+      }));
+    }
+
+    // Apply mold configuration
+    if (config.moldVolume !== undefined) {
+      setMoldVolume(config.moldVolume);
+    }
+
+    if (config.moldShape !== undefined) {
+      setMoldShape(config.moldShape);
+    }
+
+    if (config.moldDimensions !== undefined) {
+      setMoldDimensions(prev => ({
+        ...prev,
+        ...config.moldDimensions
+      }));
+    }
+
+    // Save the selected mold object for production planning
+    if (config.selectedMold !== undefined) {
+      setSelectedMoldFromDatabase(config.selectedMold);
+    }
+
+    // Show success message
+    console.log('✅ Quick Setup configuration applied:', config);
+
+    // Close Quick Setup
+    setShowQuickSetup(false);
+  };
+
   // Enhanced calculation function (memoized to prevent unnecessary recreations)
   // REFACTORED: Extracted complex calculations into testable utility functions
   const calculateResults = useCallback(async () => {
@@ -572,8 +617,25 @@ const PolyurethaneOptimizer = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
-      {/* View Mode Toggle */}
-      <div className="flex justify-end">
+      {/* View Mode Toggle and Quick Setup */}
+      <div className="flex justify-between items-center gap-2 flex-wrap">
+        {/* Quick Setup Button */}
+        <button
+          onClick={() => setShowQuickSetup(!showQuickSetup)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm sm:text-base ${
+            showQuickSetup
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+              : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white'
+          }`}
+        >
+          <Zap className="w-4 h-4" />
+          <span>{showQuickSetup ? 'Hide' : 'Quick Setup'}</span>
+          <span className="text-xs bg-white bg-opacity-20 px-2 py-0.5 rounded-full">
+            4,875 presets
+          </span>
+        </button>
+
+        {/* View Mode Toggle */}
         <button
           onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm sm:text-base"
@@ -601,6 +663,23 @@ const PolyurethaneOptimizer = () => {
           Always conduct thorough testing before implementing in production environments.
         </AlertDescription>
       </Alert>
+
+      {/* Quick Setup Component */}
+      {showQuickSetup && (
+        <QuickSetup
+          onApplyConfiguration={handleApplyQuickSetup}
+          isOpen={showQuickSetup}
+          onClose={() => setShowQuickSetup(false)}
+        />
+      )}
+
+      {/* Production Planner Component */}
+      {selectedMoldFromDatabase && (
+        <ProductionPlanner
+          selectedMold={selectedMoldFromDatabase}
+          isVisible={true}
+        />
+      )}
 
       {/* How to Use Guide - Different for Simple vs Advanced */}
       {viewMode === 'simple' ? (
