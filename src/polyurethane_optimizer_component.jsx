@@ -11,6 +11,11 @@ import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
 import { useDebounce } from './hooks/useDebounce';
 import { CalculationResultsSkeleton, LoadingSpinner } from './components/SkeletonLoader';
+import { validateInputs } from './validation';
+import { UI_CONFIG, CONVERSIONS } from './constants';
+import * as CalcHelpers from './utils/calculationHelpers';
+import { generateWarnings } from './utils/warningGenerator';
+import { generateMLInsights } from './utils/mlInsights';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -375,180 +380,124 @@ const PolyurethaneOptimizer = () => {
   };
 
   // Enhanced calculation function (memoized to prevent unnecessary recreations)
+  // REFACTORED: Extracted complex calculations into testable utility functions
   const calculateResults = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Validate inputs
-      if (inputs.pipeLength < 50) {
-        throw new Error("Pipe length must be at least 50mm");
-      }
-      if (inputs.pipeDiameter <= 0) {
-        throw new Error("Pipe diameter must be positive");
-      }
-      if (inputs.temperature < 5 || inputs.temperature > 50) {
-        throw new Error("Temperature must be between 5°C and 50°C");
+      // Validate inputs using validation module
+      const validation = validateInputs(inputs);
+      if (!validation.valid) {
+        throw new Error(validation.error);
       }
 
       // Simulate calculation delay for UX
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, UI_CONFIG.CALCULATION_SIMULATED_DELAY));
 
-      // === UNIT CONVERSIONS ===
-      const radius = inputs.pipeDiameter / 2000; // mm to m
-      const length = inputs.pipeLength / 1000; // mm to m
-      const flowRateM3s = inputs.flowRate / 60000; // L/min to m³/s
+      // === STEP 1: Unit Conversions ===
+      const { radius, length, flowRateM3s, area } = CalcHelpers.convertUnits(inputs);
 
-      // === MATERIAL PROPERTIES ===
-      // Select material-specific properties based on preset
-      const activationEnergy = selectedMaterial === 'ecofoam_xhd' ? 28000 : 25000; // J/mol
-      const gasConstant = 8.314; // J/(mol·K)
-      const powerLawIndex = selectedMaterial === 'ecofoam_xhd' ? 0.82 : 0.85; // n (dimensionless)
-      const safetyFactor = 1.5; // Safety multiplier
+      // === STEP 2: Material Properties ===
+      const { activationEnergy, powerLawIndex, safetyFactor } = CalcHelpers.getMaterialProperties(selectedMaterial);
 
-      // === ARRHENIUS EQUATION - Temperature Correction ===
-      // μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
-      const tempK = inputs.temperature + 273.15; // °C to K
-      const refTempK = 25 + 273.15; // Reference temperature in K
-      const tempFactor = Math.exp((activationEnergy / gasConstant) * (1/tempK - 1/refTempK));
+      // === STEP 3: Temperature Correction (Arrhenius) ===
+      const tempFactor = CalcHelpers.calculateTemperatureFactor(inputs.temperature, activationEnergy);
 
-      // === SHEAR RATE CALCULATION ===
-      // γ̇ = 4Q / (πr³) for Power Law fluids in circular pipes
-      const shearRate = (4 * flowRateM3s) / (Math.PI * Math.pow(radius, 3));
+      // === STEP 4: Shear Rate ===
+      const shearRate = CalcHelpers.calculateShearRate(flowRateM3s, radius);
 
-      // === POWER LAW MODEL - Apparent Viscosity ===
-      // μ = K × γ̇^(n-1)
-      const baseViscosity = inputs.viscosity * 0.001; // cP to Pa·s
-      const correctedViscosity = baseViscosity * tempFactor;
-      const apparentViscosity = correctedViscosity * Math.pow(shearRate, powerLawIndex - 1);
+      // === STEP 5: Apparent Viscosity (Power Law Model) ===
+      const baseViscosity = inputs.viscosity * CONVERSIONS.CP_TO_PA_S;
+      const { correctedViscosity, apparentViscosity } = CalcHelpers.calculateApparentViscosity(
+        baseViscosity,
+        tempFactor,
+        shearRate,
+        powerLawIndex
+      );
 
-      // === FLOW VELOCITY AND REYNOLDS NUMBER ===
-      const area = Math.PI * Math.pow(radius, 2);
-      const velocity = flowRateM3s / area; // m/s
-      const reynolds = (inputs.density * velocity * (inputs.pipeDiameter / 1000)) / correctedViscosity;
+      // === STEP 6: Flow Characteristics ===
+      const { velocity, reynolds, flowRegime } = CalcHelpers.calculateFlowCharacteristics(
+        flowRateM3s,
+        area,
+        inputs.density,
+        inputs.pipeDiameter,
+        correctedViscosity
+      );
 
-      // === HAGEN-POISEUILLE EQUATION (MODIFIED FOR POWER LAW FLUIDS) ===
-      // ΔP = (8μLQ)/(πr⁴) × [(3n+1)/(4n)]
-      // This accounts for non-Newtonian behavior of polyurethane systems
-      const n = powerLawIndex;
-      const powerLawCorrection = (3 * n + 1) / (4 * n);
-      const pressureDrop = ((8 * apparentViscosity * length * flowRateM3s) /
-        (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
+      // === STEP 7: Pressure Drop (Hagen-Poiseuille for Power Law Fluids) ===
+      const { pressureDrop, pressureDropBar, totalPressureBar } = CalcHelpers.calculatePressureDrop(
+        apparentViscosity,
+        length,
+        flowRateM3s,
+        radius,
+        powerLawIndex,
+        safetyFactor
+      );
 
-      // Convert to practical units
-      const pressureDropBar = pressureDrop / 100000; // Pa to bar
-      const totalPressureBar = 1.01325 + (pressureDropBar * safetyFactor); // Add atmospheric + safety
+      // === STEP 8: Injection Times ===
+      const { pipeVolume, pipeFillingTime, moldFillingTime, injectionTime } = CalcHelpers.calculateInjectionTimes(
+        radius,
+        length,
+        flowRateM3s,
+        moldVolume
+      );
 
-      // Calculate optimal injection time based on mold cavity volume
-      const pipeVolume = Math.PI * Math.pow(radius, 2) * length; // m³
-      const moldVolumeM3 = moldVolume / 1000; // Convert liters to m³
-
-      // Injection time should be based on filling the mold cavity, not just the pipe
-      // Total time = time to fill pipe + time to fill mold
-      const pipeFillingTime = pipeVolume / flowRateM3s;
-      const moldFillingTime = moldVolumeM3 / flowRateM3s;
-      const injectionTime = moldVolume > 0 ? pipeFillingTime + moldFillingTime : pipeFillingTime;
-
-      // Flow regime
-      const flowRegime = reynolds < 2300 ? 'Laminar' : 'Turbulent';
-
-      // Machine compatibility
+      // === STEP 9: Machine Compatibility ===
       const machine = MACHINE_SPECS[selectedMachine];
-      const compatible = totalPressureBar <= machine.maxPressure;
+      const compatible = CalcHelpers.checkMachineCompatibility(totalPressureBar, machine);
 
-      // Generate warnings
-      const warnings = [];
-      const recommendations = [];
+      // === STEP 10: Generate Warnings and Recommendations ===
+      const flowRateKgMin = inputs.flowRate * inputs.density / 1000;
+      const { warnings, recommendations } = generateWarnings({
+        reynolds,
+        shearRate,
+        velocity,
+        temperature: inputs.temperature,
+        totalPressureBar,
+        moldFillingTime,
+        moldVolume,
+        flowRateKgMin,
+        compatible,
+        machine,
+        correctedViscosity,
+        density: inputs.density,
+        diameter: inputs.pipeDiameter,
+        area,
+        machineSpecs: MACHINE_SPECS
+      });
 
-      if (reynolds > 2300) {
-        warnings.push("Flow is turbulent (Re > 2300) - consider reducing flow rate");
-        const maxFlowRate = (2300 * correctedViscosity / (inputs.density * inputs.pipeDiameter / 1000)) * area * 60000;
-        recommendations.push(`Reduce flow rate below ${maxFlowRate.toFixed(1)} L/min for laminar flow`);
-      }
+      // === STEP 11: Generate Pressure Profile ===
+      const pressureData = CalcHelpers.generatePressureProfile(
+        apparentViscosity,
+        flowRateM3s,
+        radius,
+        powerLawIndex,
+        safetyFactor,
+        machine.maxPressure
+      );
 
-      if (shearRate > 1000) {
-        warnings.push("High shear rate may affect material properties");
-        recommendations.push("Consider increasing pipe diameter or reducing flow rate");
-      }
+      // === STEP 12: Generate ML Insights ===
+      const mlInsights = generateMLInsights({
+        selectedMaterial,
+        radius,
+        reynolds,
+        shearRate,
+        temperature: inputs.temperature,
+        moldFillingTime,
+        pressureDropBar,
+        totalPressureBar,
+        velocity,
+        compatible,
+        machine
+      });
 
-      if (!compatible) {
-        warnings.push(`Required pressure (${totalPressureBar.toFixed(2)} bar) exceeds machine capacity (${machine.maxPressure} bar)`);
-        recommendations.push("Reduce flow rate, increase pipe diameter, or select a higher capacity machine");
-
-        // Machine-specific recommendations
-        const suitableMachines = Object.entries(MACHINE_SPECS)
-          .filter(([_, spec]) => spec.maxPressure >= totalPressureBar)
-          .slice(0, 2);
-        if (suitableMachines.length > 0) {
-          recommendations.push(`Consider upgrading to: ${suitableMachines.map(([_, s]) => s.name).join(' or ')}`);
-        }
-      }
-
-      if (velocity > 5.0) {
-        warnings.push("Very high flow velocity may cause turbulence");
-        recommendations.push("Reduce flow rate or increase pipe diameter");
-      }
-
-      // Temperature recommendations
-      if (inputs.temperature < 20) {
-        recommendations.push("Consider increasing temperature to 20-25°C for better flow properties");
-      } else if (inputs.temperature > 35) {
-        warnings.push("High temperature may accelerate reaction and reduce pot life");
-        recommendations.push("Monitor reaction time closely and consider reducing temperature");
-      }
-
-      // Mold-specific recommendations
-      if (moldVolume > 0) {
-        const fillTime = moldFillingTime;
-        if (fillTime < 2) {
-          warnings.push("Very fast mold filling may cause air entrapment and voids");
-          recommendations.push("Reduce flow rate to increase fill time above 2 seconds");
-        } else if (fillTime > 30) {
-          warnings.push("Slow mold filling may cause premature gelation");
-          recommendations.push("Increase flow rate or check for flow restrictions");
-        }
-
-        // Pressure recommendations for mold clamping
-        if (totalPressureBar > 5.0) {
-          recommendations.push("Ensure mold clamping force is sufficient for high injection pressure");
-        }
-      }
-
-      // Machine output rate recommendations
-      const flowRateKgMin = inputs.flowRate * inputs.density / 1000; // Convert to kg/min
-      const machineOutputRange = machine.output.toLowerCase();
-      if (machineOutputRange.includes('-')) {
-        const [minOutput, maxOutput] = machineOutputRange.split('-').map(s => parseFloat(s.trim()));
-        if (flowRateKgMin < minOutput * 0.3) {
-          recommendations.push(`Flow rate is very low for this machine. Consider using a smaller capacity machine for better control`);
-        } else if (flowRateKgMin > maxOutput * 0.9) {
-          warnings.push(`Flow rate approaching machine capacity (${machine.output})`);
-          recommendations.push("Consider using a higher capacity machine or reducing flow rate");
-        }
-      }
-
-      // === PRESSURE PROFILE vs PIPE LENGTH ===
-      // Generate pressure requirements for different pipe lengths
-      const pressureData = [];
-      for (let len = 100; len <= 1000; len += 100) {
-        const l = len / 1000; // Convert mm to m
-        // Apply Hagen-Poiseuille with Power Law correction for each length
-        const pDrop = ((8 * apparentViscosity * l * flowRateM3s) /
-          (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
-        const pBar = 1.01325 + ((pDrop / 100000) * safetyFactor);
-        pressureData.push({
-          length: len,
-          pressure: parseFloat(pBar.toFixed(3)), // Higher precision for chart
-          machineLimit: machine.maxPressure
-        });
-      }
-
-      // === PREPARE COMPREHENSIVE RESULTS ===
+      // === STEP 13: Assemble Results ===
       setResults({
-        // Primary pressure results with high precision
+        // Primary pressure results
         optimalPressureBar: parseFloat(totalPressureBar.toFixed(3)),
         pressureDropBar: parseFloat(pressureDropBar.toFixed(3)),
-        pressureDropKpa: parseFloat((pressureDropBar * 100).toFixed(2)),
+        pressureDropKpa: parseFloat((pressureDropBar * CONVERSIONS.BAR_TO_KPA).toFixed(2)),
 
         // Flow characteristics
         reynoldsNumber: parseFloat(reynolds.toFixed(1)),
@@ -559,7 +508,7 @@ const PolyurethaneOptimizer = () => {
 
         // Injection parameters
         injectionTime: parseFloat(injectionTime.toFixed(3)),
-        pipeVolume: parseFloat((pipeVolume * 1000).toFixed(4)),
+        pipeVolume: parseFloat(pipeVolume.toFixed(4)),
         moldVolume: parseFloat(moldVolume.toFixed(4)),
         moldShape,
         pipeFillingTime: parseFloat(pipeFillingTime.toFixed(3)),
@@ -571,63 +520,8 @@ const PolyurethaneOptimizer = () => {
         recommendations,
         machine,
 
-        // === ML INSIGHTS ===
-        // Simulated AI predictions (will be real when Python ML backend is integrated)
-        mlInsights: {
-          trained: true,
-          optimal_parameters: {
-            // Temperature optimization based on material properties
-            optimal_temperature: selectedMaterial === 'ecofoam_xhd' ? 28.0 : 25.0,
-            // Flow rate optimization based on pipe geometry
-            optimal_flow_rate: parseFloat((Math.PI * Math.pow(radius, 2) * 1.5 * 60000).toFixed(1))
-          },
-          quality_prediction: {
-            is_good_part: compatible && reynolds < 2300,
-            confidence: compatible && reynolds < 2300 ? 88 : 65,
-            good_probability: compatible && reynolds < 2300 ? 87 : 42
-          },
-          defect_risks: {
-            // Void risk increases with fast filling, turbulent flow, or low pressure
-            void_risk: Math.min(95, (
-              (moldFillingTime < 3 ? 25 : 5) +
-              (reynolds > 2300 ? 20 : 5) +
-              (pressureDropBar < 0.5 ? 15 : 5) +
-              (shearRate > 1000 ? 15 : 5)
-            )),
-
-            // Short shot risk if pressure exceeds capacity or flow is insufficient
-            short_shot_risk: Math.min(95, (
-              (totalPressureBar > machine.maxPressure ? 50 : 5) +
-              (moldFillingTime > 25 ? 30 : 5) +
-              (velocity < 0.5 ? 20 : 5)
-            )),
-
-            // Flash/overflow risk if pressure is very high
-            flash_risk: Math.min(95, (
-              (totalPressureBar > machine.maxPressure * 0.95 ? 40 : 5) +
-              (totalPressureBar > machine.maxPressure * 0.85 ? 25 : 5) +
-              (velocity > 4.0 ? 20 : 5)
-            )),
-
-            // Surface defects related to temperature and flow conditions
-            surface_defect_risk: Math.min(95, (
-              (inputs.temperature < 18 ? 25 : inputs.temperature < 20 ? 15 : 5) +
-              (inputs.temperature > 35 ? 20 : inputs.temperature > 32 ? 10 : 5) +
-              (shearRate > 1500 ? 20 : shearRate > 1000 ? 10 : 5) +
-              (reynolds > 3000 ? 15 : 5)
-            )),
-
-            // Overall risk assessment
-            overall_risk: Math.min(95, Math.round(
-              (compatible ? 5 : 25) +
-              (reynolds < 2300 ? 3 : 15) +
-              (inputs.temperature >= 20 && inputs.temperature <= 35 ? 3 : 12) +
-              (moldFillingTime >= 3 && moldFillingTime <= 25 ? 3 : 10) +
-              (shearRate <= 1000 ? 3 : 10)
-            ))
-          },
-          recommendations: []
-        }
+        // ML Insights
+        mlInsights
       });
 
       setPressureVsLength(pressureData);
