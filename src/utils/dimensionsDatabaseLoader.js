@@ -99,7 +99,9 @@ function parseCSVLine(line, headers) {
  * @private
  */
 function parseCSV(csvText) {
-  const lines = csvText.trim().split('\n');
+  // Normalize line endings (handle both \r\n and \n)
+  const normalizedText = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalizedText.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim());
 
   return lines.slice(1).map(line => parseCSVLine(line, headers));
