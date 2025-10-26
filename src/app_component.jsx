@@ -1,5 +1,6 @@
 import React from 'react';
 import PythonCalculationErrorBoundary from './error_boundary';
+import { PythonRuntimeErrorBoundary } from './specialized_error_boundaries';
 import PolyurethaneOptimizer from './polyurethane_optimizer_component';
 
 const AppComponent = () => {
@@ -54,7 +55,9 @@ const AppComponent = () => {
 
       <main>
         <PythonCalculationErrorBoundary>
-          <PolyurethaneOptimizer />
+          <PythonRuntimeErrorBoundary>
+            <PolyurethaneOptimizer />
+          </PythonRuntimeErrorBoundary>
         </PythonCalculationErrorBoundary>
       </main>
 
