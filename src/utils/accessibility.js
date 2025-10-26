@@ -1,15 +1,50 @@
 /**
- * Accessibility Utilities
+ * Accessibility Utilities Module
  *
- * Helper functions and utilities for improving accessibility (a11y)
+ * @module accessibility
+ * @description Helper functions and utilities for improving web accessibility (a11y).
+ * Provides ARIA attributes, screen reader announcements, keyboard navigation,
+ * and focus management utilities to help meet WCAG 2.1 Level AA compliance.
+ *
+ * @example
+ * import {
+ *   getInputAriaAttributes,
+ *   announceToScreenReader,
+ *   KeyboardNav
+ * } from './utils/accessibility';
+ *
+ * // Add ARIA attributes to input
+ * const attrs = getInputAriaAttributes({
+ *   label: 'Pipe Length',
+ *   error: validationError,
+ *   required: true
+ * });
+ * <input {...attrs} />
+ *
+ * // Announce to screen readers
+ * announceToScreenReader('Calculation complete', 'polite');
  */
 
 /**
- * Generate a unique ID for form elements
- * @param {string} prefix - Prefix for the ID
- * @returns {string} Unique ID
+ * Internal counter for unique ID generation
+ * @private
+ * @type {number}
  */
 let idCounter = 0;
+
+/**
+ * Generate a unique ID for form elements
+ *
+ * Creates collision-free IDs by combining a prefix, incrementing counter,
+ * and timestamp. Useful for dynamically generated form elements.
+ *
+ * @param {string} [prefix='id'] - Prefix for the ID
+ * @returns {string} Unique ID in format "prefix-counter-timestamp"
+ *
+ * @example
+ * generateId('input')  // "input-1-1704067200000"
+ * generateId('error')  // "error-2-1704067200001"
+ */
 export function generateId(prefix = 'id') {
   idCounter += 1;
   return `${prefix}-${idCounter}-${Date.now()}`;

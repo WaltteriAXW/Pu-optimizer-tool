@@ -1,16 +1,49 @@
 /**
  * Input Validation Module
  *
- * Provides consistent validation across the application
- * Matches Python validation for consistency
+ * @module validation
+ * @description Provides comprehensive input validation for the Polyurethane Injection Optimizer.
+ * This module ensures data integrity and provides user-friendly error messages.
+ * All validation logic matches the Python backend for consistency.
+ *
+ * @example
+ * import { validateInputs, validateField, sanitizeNumber } from './validation';
+ *
+ * // Validate all inputs
+ * const result = validateInputs(inputs);
+ * if (!result.valid) {
+ *   console.error(result.error);
+ * }
+ *
+ * // Validate single field
+ * const fieldResult = validateField('pipeLength', 500);
+ * console.log(fieldResult.valid); // true
+ *
+ * // Sanitize user input
+ * const clean = sanitizeNumber('123.45', 0); // 123.45
  */
 
 import { VALIDATION_RANGES, PHYSICS } from './constants';
 
 /**
- * Validation error class
+ * Custom validation error class
+ *
+ * @class
+ * @extends Error
+ * @property {string} name - Error name ('ValidationError')
+ * @property {string} message - Error message
+ * @property {string|null} field - Field name that failed validation
+ *
+ * @example
+ * throw new ValidationError('Invalid pipe length', 'pipeLength');
  */
 export class ValidationError extends Error {
+  /**
+   * Create a validation error
+   *
+   * @param {string} message - Error message
+   * @param {string} [field=null] - Field name that failed validation
+   */
   constructor(message, field = null) {
     super(message);
     this.name = 'ValidationError';
@@ -74,10 +107,51 @@ export function validateField(field, value) {
 }
 
 /**
+ * Input parameters object
+ * @typedef {Object} InputParams
+ * @property {number} pipeLength - Pipe length in mm
+ * @property {number} pipeDiameter - Pipe inner diameter in mm
+ * @property {number} temperature - Process temperature in °C
+ * @property {number} flowRate - Volumetric flow rate in L/min
+ * @property {number} viscosity - Dynamic viscosity in cP
+ * @property {number} density - Material density in kg/m³
+ */
+
+/**
  * Validate all calculator inputs
  *
- * @param {Object} inputs - Input object with calculator parameters
- * @returns {ValidationResult}
+ * Performs comprehensive validation of all input parameters including:
+ * - Range validation for each field
+ * - Physical constraint checks (e.g., diameter vs length ratio)
+ * - Type validation
+ *
+ * @param {InputParams} inputs - Input object with calculator parameters
+ * @returns {ValidationResult} Validation result with all errors concatenated
+ *
+ * @example
+ * const inputs = {
+ *   pipeLength: 500,
+ *   pipeDiameter: 12,
+ *   temperature: 25,
+ *   flowRate: 5,
+ *   viscosity: 350,
+ *   density: 1120
+ * };
+ *
+ * const result = validateInputs(inputs);
+ * if (!result.valid) {
+ *   alert(result.error); // Show all errors
+ * }
+ *
+ * @example
+ * // Invalid inputs
+ * const badInputs = { pipeLength: 50000, temperature: 100, flowRate: -5 };
+ * const result = validateInputs(badInputs);
+ * // Returns: {
+ * //   valid: false,
+ * //   error: "Pipe Length must not exceed 10000 mm...",
+ * //   errors: [...]
+ * // }
  */
 export function validateInputs(inputs) {
   const errors = [];
@@ -126,10 +200,62 @@ export function validateInputs(inputs) {
 }
 
 /**
+ * Calculated process parameters
+ * @typedef {Object} ProcessParams
+ * @property {number} reynolds - Reynolds number (dimensionless)
+ * @property {number} shearRate - Shear rate in s⁻¹
+ * @property {number} apparentViscosity - Apparent viscosity in Pa·s
+ * @property {number} velocity - Flow velocity in m/s
+ * @property {number} pressureBar - Required pressure in bar
+ * @property {number} [machineMaxPressure] - Maximum machine pressure in bar
+ * @property {number} [fillTime] - Mold fill time in seconds
+ * @property {number} temperature - Process temperature in °C
+ */
+
+/**
+ * Process validation result
+ * @typedef {Object} ProcessValidationResult
+ * @property {boolean} valid - True if no warnings
+ * @property {string[]} warnings - Array of warning messages
+ * @property {string[]} recommendations - Array of recommended actions
+ * @property {boolean} hasWarnings - True if warnings present
+ * @property {boolean} hasRecommendations - True if recommendations present
+ */
+
+/**
  * Validate process parameters (results-based validation)
  *
- * @param {Object} params - Calculated parameters
- * @returns {Object} Validation warnings and recommendations
+ * Analyzes calculated results and generates warnings and recommendations based on:
+ * - Flow regime (laminar vs turbulent)
+ * - Shear rate (material degradation risk)
+ * - Viscosity (flow difficulties)
+ * - Velocity (turbulence risk)
+ * - Pressure (machine capacity)
+ * - Fill time (air entrapment or gelation risk)
+ * - Temperature (reaction rate considerations)
+ *
+ * @param {ProcessParams} params - Calculated parameters
+ * @returns {ProcessValidationResult} Validation warnings and recommendations
+ *
+ * @example
+ * const params = {
+ *   reynolds: 3000,
+ *   shearRate: 1200,
+ *   apparentViscosity: 0.8,
+ *   velocity: 4.5,
+ *   pressureBar: 4.2,
+ *   machineMaxPressure: 6.0,
+ *   fillTime: 15,
+ *   temperature: 25
+ * };
+ *
+ * const validation = validateProcessParameters(params);
+ * if (validation.hasWarnings) {
+ *   validation.warnings.forEach(w => console.warn(w));
+ * }
+ * if (validation.hasRecommendations) {
+ *   validation.recommendations.forEach(r => console.info(r));
+ * }
  */
 export function validateProcessParameters(params) {
   const warnings = [];
@@ -210,11 +336,20 @@ export function validateProcessParameters(params) {
 }
 
 /**
- * Sanitize numeric input
+ * Sanitize numeric input from user
  *
- * @param {string|number} value - Input value
- * @param {number} defaultValue - Default if invalid
- * @returns {number} Sanitized number
+ * Converts strings to numbers and handles invalid values gracefully.
+ * Useful for processing form inputs before validation.
+ *
+ * @param {string|number} value - Input value to sanitize
+ * @param {number} [defaultValue=0] - Default value to return if input is invalid
+ * @returns {number} Sanitized numeric value or default
+ *
+ * @example
+ * sanitizeNumber('123.45', 0)     // 123.45
+ * sanitizeNumber('invalid', 100)  // 100
+ * sanitizeNumber(NaN, 0)          // 0
+ * sanitizeNumber(Infinity, 1)     // 1
  */
 export function sanitizeNumber(value, defaultValue = 0) {
   if (typeof value === 'number') {
@@ -230,22 +365,57 @@ export function sanitizeNumber(value, defaultValue = 0) {
 }
 
 /**
- * Clamp value to range
+ * Clamp a value to a specified range
+ *
+ * Ensures value is within [min, max] bounds. Commonly used to
+ * enforce valid ranges on user inputs.
  *
  * @param {number} value - Value to clamp
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @returns {number} Clamped value
+ * @param {number} min - Minimum allowed value
+ * @param {number} max - Maximum allowed value
+ * @returns {number} Clamped value within [min, max]
+ *
+ * @example
+ * clamp(150, 0, 100)   // 100
+ * clamp(-5, 0, 100)    // 0
+ * clamp(50, 0, 100)    // 50
  */
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
 /**
- * Get field constraints for UI
+ * Field constraints for UI elements
+ * @typedef {Object} FieldConstraints
+ * @property {number} min - Minimum value for input
+ * @property {number} max - Maximum value for input
+ * @property {number} step - Step increment for input
+ * @property {string} placeholder - Placeholder text showing range
+ * @property {string} title - Tooltip text with field description
+ */
+
+/**
+ * Get field constraints for HTML input elements
  *
- * @param {string} field - Field name
- * @returns {Object} Constraints object for input elements
+ * Returns appropriate min, max, step, placeholder, and title attributes
+ * for creating constrained numeric inputs. Step size is calculated based
+ * on the range size.
+ *
+ * @param {string} field - Field name from VALIDATION_RANGES
+ * @returns {FieldConstraints} Constraints object for input attributes
+ *
+ * @example
+ * const constraints = getFieldConstraints('pipeLength');
+ * // Returns: {
+ * //   min: 50,
+ * //   max: 10000,
+ * //   step: 10,
+ * //   placeholder: "50-10000 mm",
+ * //   title: "Pipe Length: 50-10000 mm"
+ * // }
+ *
+ * // Use in JSX
+ * <input type="number" {...constraints} value={value} />
  */
 export function getFieldConstraints(field) {
   const range = VALIDATION_RANGES[field];

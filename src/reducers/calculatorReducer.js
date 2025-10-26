@@ -1,11 +1,62 @@
 /**
- * State management reducer for Polyurethane Calculator
+ * Calculator State Management Reducer
  *
- * Consolidates multiple useState hooks into a single useReducer
- * for better state organization and predictable updates
+ * @module reducers/calculatorReducer
+ * @description Centralized state management for the Polyurethane Calculator using the reducer pattern.
+ * Consolidates multiple useState hooks into a single useReducer for better state organization,
+ * predictable updates, and easier testing.
+ *
+ * This module provides:
+ * - Action types (ACTIONS)
+ * - Initial state definition (initialState)
+ * - Reducer function (calculatorReducer)
+ * - Action creator helpers (actionCreators)
+ *
+ * @example
+ * import { useReducer } from 'react';
+ * import { calculatorReducer, initialState, actionCreators } from './reducers/calculatorReducer';
+ *
+ * function MyComponent() {
+ *   const [state, dispatch] = useReducer(calculatorReducer, initialState);
+ *
+ *   // Update a single input
+ *   dispatch(actionCreators.setInput('pipeLength', 600));
+ *
+ *   // Start calculation
+ *   dispatch(actionCreators.startCalculation());
+ * }
+ *
+ * @see {@link module:hooks/useCalculatorState} for a convenient wrapper hook
  */
 
-// Action types
+/**
+ * Action types enumeration
+ *
+ * Defines all available actions for the calculator reducer.
+ * Using constants prevents typos and enables IDE autocomplete.
+ *
+ * @constant {Object}
+ * @property {string} SET_VIEW_MODE - Switch between simple/advanced views
+ * @property {string} TOGGLE_DATABASE - Toggle material database visibility
+ * @property {string} TOGGLE_MIX_RATIO - Toggle mix ratio calculator
+ * @property {string} TOGGLE_MOLD_DIMENSIONS - Toggle mold dimensions editor
+ * @property {string} SET_INPUT - Update a single input field
+ * @property {string} SET_INPUTS - Update multiple input fields at once
+ * @property {string} SET_MACHINE - Select machine preset
+ * @property {string} SET_MATERIAL - Select material preset
+ * @property {string} SET_MOLD_SHAPE - Change mold shape
+ * @property {string} SET_MOLD_DIMENSION - Update a mold dimension
+ * @property {string} SET_MOLD_VOLUME - Set calculated mold volume
+ * @property {string} SET_MIX_INPUT - Update mix ratio input
+ * @property {string} SET_MIX_RESULTS - Set mix ratio calculation results
+ * @property {string} START_CALCULATION - Begin calculation (sets loading state)
+ * @property {string} CALCULATION_SUCCESS - Calculation completed successfully
+ * @property {string} CALCULATION_ERROR - Calculation failed with error
+ * @property {string} CLEAR_ERROR - Clear error message
+ * @property {string} SELECT_FROM_DATABASE - Load preset from database
+ * @property {string} RESET_INPUTS - Reset inputs to defaults
+ * @property {string} RESET_ALL - Reset entire state to initial
+ */
 export const ACTIONS = {
   // UI Actions
   SET_VIEW_MODE: 'SET_VIEW_MODE',
@@ -42,7 +93,36 @@ export const ACTIONS = {
   RESET_ALL: 'RESET_ALL'
 };
 
-// Initial state
+/**
+ * Calculator state structure
+ * @typedef {Object} CalculatorState
+ * @property {string} viewMode - Current view mode ('simple' or 'advanced')
+ * @property {boolean} showDatabase - Whether material database is visible
+ * @property {boolean} mixRatioExpanded - Whether mix ratio calculator is expanded
+ * @property {boolean} moldDimensionsExpanded - Whether mold dimensions editor is expanded
+ * @property {string} selectedMaterialName - Name of currently selected material
+ * @property {string} selectedMachine - ID of selected machine preset
+ * @property {string} selectedMaterial - ID of selected material preset
+ * @property {Object} inputs - Calculator input values
+ * @property {string} moldShape - Current mold shape ('rectangular', 'cylindrical', 'spherical', 'hollow')
+ * @property {Object} moldDimensions - Mold dimension values
+ * @property {number} moldVolume - Calculated mold volume in liters
+ * @property {Object} mixInputs - Mix ratio calculator inputs
+ * @property {Object|null} mixResults - Mix ratio calculation results
+ * @property {Object|null} results - Main calculation results
+ * @property {Array} pressureVsLength - Pressure profile data for charting
+ * @property {string|null} error - Error message if calculation failed
+ * @property {boolean} loading - Whether calculation is in progress
+ */
+
+/**
+ * Initial state for calculator
+ *
+ * Defines default values for all state properties.
+ * Used when initializing the reducer and for reset operations.
+ *
+ * @constant {CalculatorState}
+ */
 export const initialState = {
   // UI State
   viewMode: 'simple',
