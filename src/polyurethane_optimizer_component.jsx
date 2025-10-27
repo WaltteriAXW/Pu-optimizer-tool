@@ -218,7 +218,7 @@ const PolyurethaneOptimizer = () => {
   const [mixResults, setMixResults] = useState(null);
 
   // State for mold dimensions
-  const [moldDimensionsExpanded, setMoldDimensionsExpanded] = useState(false);
+  const [moldDimensionsExpanded, setMoldDimensionsExpanded] = useState(true);
   const [moldShape, setMoldShape] = useState('rectangular');
   const [moldDimensions, setMoldDimensions] = useState({
     // Rectangular
@@ -990,18 +990,19 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mold Dimensions */}
-          <Card>
-            <CardHeader>
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-indigo-500">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left"
                 onClick={() => setMoldDimensionsExpanded(!moldDimensionsExpanded)}
               >
-                <CardTitle className="flex items-center gap-2">
-                  <Scale className="w-5 h-5" />
-                  Mold Dimensions
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold mr-1">3</div>
+                  <Scale className="w-5 h-5 text-indigo-600" />
+                  Mold Dimensions (Optional)
                 </CardTitle>
-                {moldDimensionsExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                {moldDimensionsExpanded ? <ChevronDown className="w-5 h-5 text-indigo-600" /> : <ChevronRight className="w-5 h-5 text-indigo-600" />}
               </button>
             </CardHeader>
             {moldDimensionsExpanded && (
