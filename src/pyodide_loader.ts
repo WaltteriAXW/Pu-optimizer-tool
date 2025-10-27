@@ -222,6 +222,39 @@ def calculate_environmental_impact(agent_type, annual_consumption):
 }
 
 /**
+ * Retry function with exponential backoff
+ * @param fn Function to retry
+ * @param maxRetries Maximum number of retry attempts
+ * @param baseDelay Base delay in ms (will be doubled each retry)
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 2000
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(
+          `Attempt ${attempt + 1}/${maxRetries} failed: ${lastError.message}. ` +
+          `Retrying in ${delay}ms...`
+        );
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError!;
+}
+
+/**
  * Get configuration from environment variables
  */
 function getConfig() {
@@ -229,7 +262,9 @@ function getConfig() {
     pyodideCDN: import.meta.env.VITE_PYODIDE_CDN || 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
     basePath: import.meta.env.BASE_URL || '/',
     enableML: import.meta.env.VITE_ENABLE_ML !== 'false',
-    debugMode: import.meta.env.VITE_DEBUG_MODE === 'true'
+    debugMode: import.meta.env.VITE_DEBUG_MODE === 'true',
+    maxRetries: parseInt(import.meta.env.VITE_MAX_RETRIES || '3'),
+    retryDelay: parseInt(import.meta.env.VITE_RETRY_DELAY || '2000')
   };
 }
 
@@ -264,18 +299,34 @@ export async function initializePyodide(): Promise<void> {
         return;
       }
 
-      // Try to load Pyodide
+      // Try to load Pyodide with retry logic
       try {
-        pyodide = await loadPyodide({
-          indexURL: config.pyodideCDN,
-        });
-        
+        pyodide = await retryWithBackoff(
+          async () => {
+            const instance = await loadPyodide({
+              indexURL: config.pyodideCDN,
+            });
+            console.log('Pyodide loaded successfully');
+            return instance;
+          },
+          config.maxRetries,
+          config.retryDelay
+        );
+
         console.log('Loading NumPy...');
-        await pyodide.loadPackage("numpy");
+        await retryWithBackoff(
+          () => pyodide.loadPackage("numpy"),
+          config.maxRetries,
+          config.retryDelay
+        );
 
         if (config.enableML) {
           console.log('Loading scikit-learn for ML models...');
-          await pyodide.loadPackage("scikit-learn");
+          await retryWithBackoff(
+            () => pyodide.loadPackage("scikit-learn"),
+            config.maxRetries,
+            config.retryDelay
+          );
         }
 
         console.log('Loading calculator code...');
@@ -285,11 +336,15 @@ export async function initializePyodide(): Promise<void> {
           if (config.debugMode) {
             console.log('Fetching calculator from:', calculatorPath);
           }
-          const calculatorResponse = await fetch(calculatorPath);
-          if (!calculatorResponse.ok) {
-            throw new Error(`HTTP ${calculatorResponse.status}: ${calculatorResponse.statusText}`);
-          }
-          const calculatorCode = await calculatorResponse.text();
+
+          const calculatorCode = await retryWithBackoff(async () => {
+            const response = await fetch(calculatorPath);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return await response.text();
+          }, config.maxRetries, config.retryDelay);
+
           await pyodide.runPython(calculatorCode);
           console.log('Calculator code loaded successfully');
         } catch (err) {
@@ -305,11 +360,15 @@ export async function initializePyodide(): Promise<void> {
             if (config.debugMode) {
               console.log('Fetching ML optimizer from:', mlPath);
             }
-            const mlResponse = await fetch(mlPath);
-            if (!mlResponse.ok) {
-              throw new Error(`HTTP ${mlResponse.status}: ${mlResponse.statusText}`);
-            }
-            const mlCode = await mlResponse.text();
+
+            const mlCode = await retryWithBackoff(async () => {
+              const response = await fetch(mlPath);
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+              return await response.text();
+            }, config.maxRetries, config.retryDelay);
+
             await pyodide.runPython(mlCode);
             console.log('ML optimizer loaded successfully');
 
