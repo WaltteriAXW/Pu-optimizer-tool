@@ -100,7 +100,7 @@ describe('Constants - Conversions', () => {
 
   it('should convert cP to Pa·s correctly', () => {
     expect(CONVERSIONS.CP_TO_PA_S).toBe(0.001);
-    expect(350 * CONVERSIONS.CP_TO_PA_S).toBe(0.35);
+    expect(350 * CONVERSIONS.CP_TO_PA_S).toBeCloseTo(0.35, 10);
   });
 
   it('should convert pressure units correctly', () => {

@@ -6,9 +6,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Button } from '../button';
-import { Zap, Settings2, Square, Lightbulb, ArrowRight } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '../alert';
+import { Zap, Settings2, Square, Lightbulb, ArrowRight, AlertTriangle } from 'lucide-react';
 import { PipeSelector } from './PipeSelector';
 import { MoldSelector } from './MoldSelector';
 import {
@@ -18,6 +20,7 @@ import {
   getRecommendedMolds,
   calculateMaterialRequirements
 } from '../utils/dimensionsDatabaseLoader';
+import { logError, logInfo } from '../utils/errorTracking';
 
 /**
  * Quick Setup Component
@@ -36,11 +39,14 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
   const [showMoldSelector, setShowMoldSelector] = useState(false);
   const [loading, setLoading] = useState(true);
   const [recommendedMolds, setRecommendedMolds] = useState([]);
+  const [loadError, setLoadError] = useState(null);
 
   // Load databases on mount
   useEffect(() => {
     async function loadDatabases() {
       setLoading(true);
+      setLoadError(null);
+
       try {
         const [pipes, molds] = await Promise.all([
           loadPipeDatabase(),
@@ -49,8 +55,21 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
         setPipeDatabase(pipes);
         setMoldDatabase(molds);
         setRecommendedMolds(getRecommendedMolds(molds, 6));
+
+        logInfo('Quick Setup databases loaded successfully', {
+          component: 'QuickSetup',
+          pipesCount: pipes.length,
+          moldsCount: molds.length
+        });
       } catch (error) {
-        console.error('Failed to load databases:', error);
+        const errorMessage = 'Failed to load database. Please refresh the page or contact support.';
+        setLoadError(errorMessage);
+
+        logError(error, {
+          component: 'QuickSetup',
+          action: 'loadDatabases',
+          context: 'Critical: Quick Setup cannot function without databases'
+        });
       } finally {
         setLoading(false);
       }
@@ -130,6 +149,30 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
         <CardContent className="p-8 text-center">
           <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
           <p className="text-gray-600">Loading databases...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state if database loading failed
+  if (loadError) {
+    return (
+      <Card className="mb-6 border-red-200">
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Database Loading Failed</AlertTitle>
+            <AlertDescription>
+              <p className="mt-2">{loadError}</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -332,5 +375,17 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
     </>
   );
 }
+
+// PropTypes validation
+QuickSetup.propTypes = {
+  onApplyConfiguration: PropTypes.func.isRequired,
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func
+};
+
+QuickSetup.defaultProps = {
+  isOpen: true,
+  onClose: null
+};
 
 export default QuickSetup;
