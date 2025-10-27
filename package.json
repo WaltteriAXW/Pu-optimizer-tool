@@ -15,11 +15,12 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "lucide-react": "^0.263.1",
+    "prop-types": "^15.8.1",
+    "pyodide": "0.24.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.9.0",
-    "lucide-react": "^0.263.1",
-    "pyodide": "0.24.1"
+    "recharts": "^2.9.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",
@@ -28,14 +29,14 @@
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
-    "@vitest/ui": "^1.0.4",
+    "@vitest/ui": "^4.0.4",
     "autoprefixer": "^10.4.14",
     "gh-pages": "^6.0.0",
     "jsdom": "^23.0.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
-    "vite": "^4.4.5",
-    "vitest": "^1.0.4"
+    "vite": "^7.1.12",
+    "vitest": "^4.0.4"
   }
 }

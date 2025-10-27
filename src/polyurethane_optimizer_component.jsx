@@ -11,13 +11,15 @@ import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
 import { useDebounce } from './hooks/useDebounce';
 import { CalculationResultsSkeleton, LoadingSpinner } from './components/SkeletonLoader';
-import { validateInputs } from './validation';
+import { validateInputs, ValidationError } from './validation';
 import { UI_CONFIG, CONVERSIONS } from './constants';
 import * as CalcHelpers from './utils/calculationHelpers';
 import { generateWarnings } from './utils/warningGenerator';
 import { generateMLInsights } from './utils/mlInsights';
 import { QuickSetup } from './components/QuickSetup';
 import { ProductionPlanner } from './components/ProductionPlanner';
+import { logError, logInfo, logDebug } from './utils/errorTracking';
+import { measureAsync } from './utils/performance';
 
 // Italian Machine Specifications
 const MACHINE_SPECS = {
@@ -114,7 +116,7 @@ const MATERIAL_PRESETS = {
   }
 };
 
-const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
+const InputField = React.memo(({ label, unit, icon: Icon, helpText, ...props }) => (
   <div className="space-y-2 group">
     <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
       {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
@@ -130,9 +132,9 @@ const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
       </span>
     </div>
   </div>
-);
+));
 
-const SelectField = ({ label, icon: Icon, children, ...props }) => (
+const SelectField = React.memo(({ label, icon: Icon, children, ...props }) => (
   <div className="space-y-2 group">
     <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
       {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
@@ -145,9 +147,9 @@ const SelectField = ({ label, icon: Icon, children, ...props }) => (
       {children}
     </select>
   </div>
-);
+));
 
-const ResultCard = ({ title, value, unit, icon: Icon, status, helpText }) => {
+const ResultCard = React.memo(({ title, value, unit, icon: Icon, status, helpText }) => {
   const statusColors = {
     success: 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
     warning: 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20',
@@ -176,7 +178,7 @@ const ResultCard = ({ title, value, unit, icon: Icon, status, helpText }) => {
       )}
     </div>
   );
-};
+});
 
 const PolyurethaneOptimizer = () => {
   // State for view mode (simple vs advanced)
@@ -241,8 +243,8 @@ const PolyurethaneOptimizer = () => {
   const [loading, setLoading] = useState(false);
 
   // Debounce inputs to prevent excessive calculations on every keystroke
-  const debouncedInputs = useDebounce(inputs, 500);
-  const debouncedMoldDimensions = useDebounce(moldDimensions, 300);
+  const debouncedInputs = useDebounce(inputs, UI_CONFIG.INPUT_DEBOUNCE_DELAY);
+  const debouncedMoldDimensions = useDebounce(moldDimensions, UI_CONFIG.MOLD_DEBOUNCE_DELAY);
 
   // Memoize mold volume calculation to avoid recalculating on every render
   const calculatedMoldVolume = useMemo(() => {
@@ -422,7 +424,11 @@ const PolyurethaneOptimizer = () => {
     }
 
     // Show success message
-    console.log('✅ Quick Setup configuration applied:', config);
+    logInfo('Quick Setup configuration applied', {
+      component: 'PolyurethaneOptimizer',
+      action: 'applyQuickSetup',
+      config
+    });
 
     // Close Quick Setup
     setShowQuickSetup(false);
@@ -599,15 +605,34 @@ const PolyurethaneOptimizer = () => {
           notes: ''
         };
 
-        saveProcessEntry(trainingEntry);
-        console.log('✅ Process data saved for ML training');
+        const savedEntry = saveProcessEntry(trainingEntry);
+        logInfo('Process data saved for ML training', {
+          component: 'PolyurethaneOptimizer',
+          entryId: savedEntry?.id
+        });
       } catch (saveError) {
-        console.error('Failed to save training data:', saveError);
+        logError(saveError, {
+          component: 'PolyurethaneOptimizer',
+          action: 'saveTrainingData',
+          context: 'Non-critical: calculation succeeded but training data not saved'
+        });
         // Don't fail the whole calculation if saving fails
       }
 
     } catch (err) {
-      setError(err.message);
+      // Log error with context
+      logError(err, {
+        component: 'PolyurethaneOptimizer',
+        action: 'calculateResults',
+        inputs
+      });
+
+      // Set user-friendly error message
+      if (err instanceof ValidationError) {
+        setError(err.message);
+      } else {
+        setError(err.message || 'An unexpected error occurred during calculation. Please check your inputs and try again.');
+      }
     } finally {
       setLoading(false);
     }
