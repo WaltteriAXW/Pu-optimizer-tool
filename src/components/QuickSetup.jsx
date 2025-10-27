@@ -170,9 +170,9 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
               <div className="p-3 bg-blue-50 border border-blue-200 rounded mb-3">
                 <div className="font-medium">{selectedMold.type}</div>
                 <div className="text-sm text-gray-600">
-                  {selectedMold.shape} • {selectedMold.volume_liters.toFixed(2)}L
+                  {selectedMold.shape} • {selectedMold.volume_liters ? selectedMold.volume_liters.toFixed(2) : '0.00'}L
                 </div>
-                <div className="text-xs text-gray-500 mt-1">{selectedMold.application.split(',')[0]}</div>
+                <div className="text-xs text-gray-500 mt-1">{selectedMold.application ? selectedMold.application.split(',')[0] : ''}</div>
               </div>
             ) : (
               <>
@@ -190,7 +190,7 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
                         className="p-2 border rounded text-left hover:bg-blue-50 hover:border-blue-300 transition-colors text-sm"
                       >
                         <div className="font-medium truncate">{mold.type}</div>
-                        <div className="text-xs text-gray-500">{mold.volume_liters.toFixed(1)}L</div>
+                        <div className="text-xs text-gray-500">{mold.volume_liters ? mold.volume_liters.toFixed(1) : '0.0'}L</div>
                       </button>
                     ))}
                   </div>
@@ -242,8 +242,8 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Volume: {selectedPipe.volume_liters.toFixed(4)}L •
-                  Max Pressure: {selectedPipe.recommended_max_pressure_bar} bar
+                  Volume: {selectedPipe.volume_liters ? selectedPipe.volume_liters.toFixed(4) : '0.0000'}L •
+                  Max Pressure: {selectedPipe.recommended_max_pressure_bar || 0} bar
                 </div>
               </div>
             ) : (
@@ -273,19 +273,19 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-gray-600">Foam Volume:</span>
-                  <span className="font-medium ml-2">{selectedMold.volume_liters.toFixed(2)}L</span>
+                  <span className="font-medium ml-2">{selectedMold.volume_liters ? selectedMold.volume_liters.toFixed(2) : '0.00'}L</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Cycle Time:</span>
-                  <span className="font-medium ml-2">{Math.round(selectedMold.cycle_time_estimate_s)}s</span>
+                  <span className="font-medium ml-2">{selectedMold.cycle_time_estimate_s ? Math.round(selectedMold.cycle_time_estimate_s) : 0}s</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Injection Points:</span>
-                  <span className="font-medium ml-2">{selectedMold.injection_points}</span>
+                  <span className="font-medium ml-2">{selectedMold.injection_points || 1}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Material:</span>
-                  <span className="font-medium ml-2 text-xs">{selectedMold.typical_material.split(',')[0]}</span>
+                  <span className="font-medium ml-2 text-xs">{selectedMold.typical_material ? selectedMold.typical_material.split(',')[0] : 'N/A'}</span>
                 </div>
               </div>
             </div>

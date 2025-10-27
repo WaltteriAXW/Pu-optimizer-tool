@@ -251,20 +251,21 @@ const PolyurethaneOptimizer = () => {
     switch (moldShape) {
       case 'rectangular': {
         // Volume of rectangular cavity = L × W × H (in liters)
+        // 1 liter = 1,000,000 mm³
         const volumeMm3 = length * width * height;
-        return volumeMm3 / 1000; // Convert mm³ to liters
+        return volumeMm3 / 1000000; // Convert mm³ to liters
       }
       case 'cylinder': {
         // Volume of cylinder = π × r² × h
         const radius = diameter / 2;
         const volumeMm3 = Math.PI * radius * radius * cylinderHeight;
-        return volumeMm3 / 1000;
+        return volumeMm3 / 1000000; // Convert mm³ to liters
       }
       case 'sphere': {
         // Volume of sphere = 4/3 × π × r³
         const radius = sphereDiameter / 2;
         const volumeMm3 = (4 / 3) * Math.PI * Math.pow(radius, 3);
-        return volumeMm3 / 1000;
+        return volumeMm3 / 1000000; // Convert mm³ to liters
       }
       default:
         return 0;
