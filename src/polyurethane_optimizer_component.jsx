@@ -190,6 +190,9 @@ const PolyurethaneOptimizer = () => {
   const [showDatabase, setShowDatabase] = useState(false);
   const [selectedMaterialName, setSelectedMaterialName] = useState('');
 
+  // State for collapsible help section
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
+
   // State for machine and material selection
   const [selectedMachine, setSelectedMachine] = useState('cannon_std_legacy');
   const [selectedMaterial, setSelectedMaterial] = useState('ecofoam_standard');
@@ -215,7 +218,7 @@ const PolyurethaneOptimizer = () => {
   const [mixResults, setMixResults] = useState(null);
 
   // State for mold dimensions
-  const [moldDimensionsExpanded, setMoldDimensionsExpanded] = useState(true);
+  const [moldDimensionsExpanded, setMoldDimensionsExpanded] = useState(false);
   const [moldShape, setMoldShape] = useState('rectangular');
   const [moldDimensions, setMoldDimensions] = useState({
     // Rectangular
@@ -617,41 +620,44 @@ const PolyurethaneOptimizer = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
-      {/* View Mode Toggle and Quick Setup */}
-      <div className="flex justify-between items-center gap-2 flex-wrap">
-        {/* Quick Setup Button */}
-        <button
-          onClick={() => setShowQuickSetup(!showQuickSetup)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm sm:text-base ${
-            showQuickSetup
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-              : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white'
-          }`}
-        >
-          <Zap className="w-4 h-4" />
-          <span>{showQuickSetup ? 'Hide' : 'Quick Setup'}</span>
-          <span className="text-xs bg-white bg-opacity-20 px-2 py-0.5 rounded-full">
-            4,875 presets
-          </span>
-        </button>
+      {/* Header Section with Title and Actions */}
+      <div className="flex justify-between items-center gap-4 flex-wrap bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-xl shadow-xl">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1">PU Injection Optimizer</h1>
+          <p className="text-blue-100 text-sm">Calculate optimal pressure & predict part quality</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {/* Quick Setup Button */}
+          <button
+            onClick={() => setShowQuickSetup(!showQuickSetup)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm ${
+              showQuickSetup
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-white hover:bg-gray-50 text-blue-700'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            <span>{showQuickSetup ? 'Hide' : 'Quick Setup'}</span>
+          </button>
 
-        {/* View Mode Toggle */}
-        <button
-          onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-medium text-sm sm:text-base"
-        >
-          {viewMode === 'simple' ? (
-            <>
-              <Eye className="w-4 h-4" />
-              <span>Advanced View</span>
-            </>
-          ) : (
-            <>
-              <EyeOff className="w-4 h-4" />
-              <span>Simple View</span>
-            </>
-          )}
-        </button>
+          {/* View Mode Toggle */}
+          <button
+            onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm backdrop-blur-sm"
+          >
+            {viewMode === 'simple' ? (
+              <>
+                <Eye className="w-4 h-4" />
+                <span>Advanced</span>
+              </>
+            ) : (
+              <>
+                <EyeOff className="w-4 h-4" />
+                <span>Simple</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Beta Disclaimer */}
@@ -681,16 +687,26 @@ const PolyurethaneOptimizer = () => {
         />
       )}
 
-      {/* How to Use Guide - Different for Simple vs Advanced */}
-      {viewMode === 'simple' ? (
-        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border-2 border-blue-300 dark:border-blue-700 shadow-lg">
-          <CardHeader>
+      {/* How to Use Guide - Collapsible */}
+      <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border-2 border-blue-300 dark:border-blue-700 shadow-lg">
+        <CardHeader>
+          <button
+            onClick={() => setShowHelpGuide(!showHelpGuide)}
+            className="w-full flex items-center justify-between text-left group"
+          >
             <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-50">
-              <HelpCircle className="w-7 h-7 text-blue-600 animate-pulse" />
-              What Does This Tool Do? (Beginner's Guide)
+              <HelpCircle className="w-7 h-7 text-blue-600 group-hover:animate-pulse" />
+              {viewMode === 'simple' ? 'What Does This Tool Do? (Click to expand)' : 'Technical Overview (Click to expand)'}
             </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            {showHelpGuide ? (
+              <ChevronDown className="w-6 h-6 text-blue-600 transition-transform" />
+            ) : (
+              <ChevronRight className="w-6 h-6 text-blue-600 transition-transform" />
+            )}
+          </button>
+        </CardHeader>
+        {showHelpGuide && viewMode === 'simple' && (
+          <CardContent className="space-y-4 animate-slideIn">
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-600 shadow-md">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-4">
                 This tool answers 3 critical questions:
@@ -751,16 +767,9 @@ const PolyurethaneOptimizer = () => {
               </p>
             </div>
           </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-50 text-lg sm:text-xl">
-              <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
-              Advanced Mode - Technical Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100">
+        )}
+        {showHelpGuide && viewMode === 'advanced' && (
+          <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100 animate-slideIn">
             <p><strong>Advanced Fluid Dynamics Calculator</strong> for polyurethane injection molding optimization using Power Law and Arrhenius equations.</p>
             <div className="space-y-2">
               <p className="font-semibold text-blue-950 dark:text-blue-50">Features:</p>
@@ -776,8 +785,8 @@ const PolyurethaneOptimizer = () => {
               <strong>Training Data:</strong> Results are automatically saved to improve ML models. {getTrainingStats().totalEntries} calculations stored.
             </p>
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Input Section */}
@@ -785,6 +794,7 @@ const PolyurethaneOptimizer = () => {
           <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
               <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold mr-1">1</div>
                 <Settings2 className="w-5 h-5 text-blue-600" />
                 Machine Selection
               </CardTitle>
@@ -886,6 +896,7 @@ const PolyurethaneOptimizer = () => {
           <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 bg-gradient-to-br from-white via-purple-50 to-pink-50 dark:from-gray-800 dark:via-purple-900/20 dark:to-pink-900/20">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
               <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white text-sm font-bold mr-1">2</div>
                 <Thermometer className="w-5 h-5 text-purple-600" />
                 Process Parameters
               </CardTitle>
@@ -1248,6 +1259,17 @@ const PolyurethaneOptimizer = () => {
 
         {/* Results Section */}
         <div className="space-y-6">
+          {/* Results Header */}
+          <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-4 rounded-xl shadow-lg flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white text-emerald-600 text-lg font-bold">
+              ✓
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Results & Analysis</h2>
+              <p className="text-emerald-100 text-sm">Real-time calculations based on your parameters</p>
+            </div>
+          </div>
+
           {error && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -1340,11 +1362,12 @@ const PolyurethaneOptimizer = () => {
 
               {/* Primary Results */}
               <Card className="shadow-lg border-l-4 border-l-blue-500 animate-slideIn">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
-                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                    Optimization Results
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <TrendingUp className="w-6 h-6" />
+                    📊 Key Process Metrics
                   </CardTitle>
+                  <p className="text-blue-100 text-sm mt-1">These values determine if your setup will work</p>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

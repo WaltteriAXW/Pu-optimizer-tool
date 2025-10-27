@@ -53,8 +53,11 @@
  */
 
 /**
- * Parse CSV line into object
+ * Parse CSV line into object or array
  * @private
+ * @param {string} line - CSV line to parse
+ * @param {Array<string>|null} headers - Column headers (null to return raw array)
+ * @returns {Object|Array} Parsed object or array of values
  */
 function parseCSVLine(line, headers) {
   const values = [];
@@ -75,6 +78,12 @@ function parseCSVLine(line, headers) {
   }
   values.push(current.trim());
 
+  // If no headers provided, return raw values array
+  if (!headers) {
+    return values;
+  }
+
+  // Otherwise, map values to object using headers
   const obj = {};
   headers.forEach((header, index) => {
     let value = values[index] || '';
@@ -102,7 +111,13 @@ function parseCSV(csvText) {
   // Normalize line endings (handle both \r\n and \n)
   const normalizedText = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalizedText.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
+
+  // Use parseCSVLine for headers too to handle quoted fields with commas
+  const headers = parseCSVLine(lines[0], null).map(h => {
+    // Remove quotes if present
+    let header = h.replace(/^"|"$/g, '');
+    return header.trim();
+  });
 
   return lines.slice(1).map(line => parseCSVLine(line, headers));
 }

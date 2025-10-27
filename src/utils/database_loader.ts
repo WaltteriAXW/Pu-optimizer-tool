@@ -102,8 +102,12 @@ Ecofoam XHD RC,Extra High Density Panel/Cavity Fill,Ecofoam XHD RC Polyol,Ecofoa
  * Parse CSV string to array of objects
  */
 function parseCSV(csv: string): PolyurethaneProduct[] {
-  const lines = csv.trim().split('\n');
-  const headers = lines[0].split(',');
+  // Normalize line endings
+  const normalizedCsv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalizedCsv.trim().split('\n');
+
+  // Parse headers using parseCSVLine to handle quoted fields with commas
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
 
   return lines.slice(1).map(line => {
     const values = parseCSVLine(line);

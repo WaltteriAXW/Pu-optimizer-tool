@@ -172,11 +172,11 @@ export function calculateFlowCharacteristics(flowRateM3s, area, density, diamete
  * @returns {Object} Pressure results
  * @returns {number} return.pressureDrop - Pressure drop in Pa
  * @returns {number} return.pressureDropBar - Pressure drop in bar
- * @returns {number} return.totalPressureBar - Total pressure with safety factor in bar
+ * @returns {number} return.totalPressureBar - Total required gauge pressure with safety factor in bar
  *
  * @example
  * const pressure = calculatePressureDrop(0.38, 0.5, 0.0000833, 0.006, 0.85, 1.5);
- * // Returns: { pressureDrop: 185000, pressureDropBar: 1.85, totalPressureBar: 3.79 }
+ * // Returns: { pressureDrop: 185000, pressureDropBar: 1.85, totalPressureBar: 2.78 }
  */
 export function calculatePressureDrop(apparentViscosity, length, flowRateM3s, radius, powerLawIndex, safetyFactor) {
   const powerLawCorrection = (3 * powerLawIndex + 1) / (4 * powerLawIndex);
@@ -184,7 +184,9 @@ export function calculatePressureDrop(apparentViscosity, length, flowRateM3s, ra
     (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
 
   const pressureDropBar = pressureDrop * CONVERSIONS.PA_TO_BAR;
-  const totalPressureBar = PHYSICS.ATMOSPHERIC_PRESSURE_BAR + (pressureDropBar * safetyFactor);
+  // Injection molding machines use gauge pressure (relative to atmospheric)
+  // Apply safety factor to the pressure drop to get required machine pressure
+  const totalPressureBar = pressureDropBar * safetyFactor;
 
   return {
     pressureDrop,
@@ -264,8 +266,8 @@ export function generatePressureProfile(
     const lengthM = len * CONVERSIONS.MM_TO_M;
     const pressureDrop = ((8 * apparentViscosity * lengthM * flowRateM3s) /
       (Math.PI * Math.pow(radius, 4))) * powerLawCorrection;
-    const pressureBar = PHYSICS.ATMOSPHERIC_PRESSURE_BAR +
-      ((pressureDrop * CONVERSIONS.PA_TO_BAR) * safetyFactor);
+    // Use gauge pressure (no atmospheric pressure added)
+    const pressureBar = (pressureDrop * CONVERSIONS.PA_TO_BAR) * safetyFactor;
 
     pressureData.push({
       length: len,
