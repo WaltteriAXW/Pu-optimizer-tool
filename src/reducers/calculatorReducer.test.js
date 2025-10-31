@@ -4,7 +4,7 @@ import { calculatorReducer, initialState, ACTIONS, actionCreators } from './calc
 describe('Calculator Reducer - Initial State', () => {
   it('should have correct initial state', () => {
     expect(initialState.viewMode).toBe('simple');
-    expect(initialState.selectedMachine).toBe('cannon_std_legacy');
+    expect(initialState.selectedMachine).toBe('low_pressure');
     expect(initialState.selectedMaterial).toBe('ecofoam_standard');
     expect(initialState.loading).toBe(false);
     expect(initialState.error).toBe(null);
@@ -69,9 +69,9 @@ describe('Calculator Reducer - Input Actions', () => {
   });
 
   it('should set machine', () => {
-    const action = { type: ACTIONS.SET_MACHINE, payload: 'cannon_a500' };
+    const action = { type: ACTIONS.SET_MACHINE, payload: 'high_pressure' };
     const newState = calculatorReducer(initialState, action);
-    expect(newState.selectedMachine).toBe('cannon_a500');
+    expect(newState.selectedMachine).toBe('high_pressure');
   });
 
   it('should set material', () => {

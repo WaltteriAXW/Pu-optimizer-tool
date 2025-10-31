@@ -9,7 +9,7 @@ describe('useCalculatorState', () => {
 
     expect(result.current.state.viewMode).toBe('simple');
     expect(result.current.state.showDatabase).toBe(false);
-    expect(result.current.state.selectedMachine).toBe('cannon_std_legacy');
+    expect(result.current.state.selectedMachine).toBe('low_pressure');
     expect(result.current.state.selectedMaterial).toBe('ecofoam_standard');
     expect(result.current.state.loading).toBe(false);
     expect(result.current.state.error).toBe(null);
@@ -113,10 +113,10 @@ describe('useCalculatorState', () => {
       const { result } = renderHook(() => useCalculatorState());
 
       act(() => {
-        result.current.actions.setMachine('cannon_a205');
+        result.current.actions.setMachine('high_pressure');
       });
 
-      expect(result.current.state.selectedMachine).toBe('cannon_a205');
+      expect(result.current.state.selectedMachine).toBe('high_pressure');
     });
 
     it('should update selected material', () => {

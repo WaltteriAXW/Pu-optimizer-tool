@@ -87,7 +87,7 @@ calculateResults({
   temperature: 25,
   flowRate: 48,
   moldVolume: 48,
-  machineType: 'cannon_a500'  // 50-200 kg/min, 8 bar max
+  machineType: 'low_pressure'  // Low-Pressure System: 2-300+ kg/min, 5-20 bar
 });
 ```
 

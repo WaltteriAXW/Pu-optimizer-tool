@@ -250,7 +250,7 @@ describe('Defaults', () => {
   });
 
   it('should have default machine and material', () => {
-    expect(DEFAULTS.machine).toBe('cannon_std_legacy');
+    expect(DEFAULTS.machine).toBe('low_pressure');
     expect(DEFAULTS.material).toBe('ecofoam_standard');
   });
 });
