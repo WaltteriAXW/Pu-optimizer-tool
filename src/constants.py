@@ -199,7 +199,7 @@ class Defaults:
     DENSITY = 1120
     SPECIFIC_GRAVITY = 1.12
 
-    MACHINE = 'cannon_std_legacy'
+    MACHINE = 'low_pressure'
     MATERIAL = 'ecofoam_standard'
 
 

@@ -132,7 +132,7 @@ export const initialState = {
   selectedMaterialName: '',
 
   // Selection State
-  selectedMachine: 'cannon_std_legacy',
+  selectedMachine: 'low_pressure',
   selectedMaterial: 'ecofoam_standard',
 
   // Input State

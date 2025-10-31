@@ -363,7 +363,7 @@ export const UI_CONFIG = {
  * @property {number} isoSG - Default isocyanate specific gravity (1.23)
  * @property {number} partVolume - Default part volume in liters (1.0)
  *
- * @property {string} machine - Default machine preset ID ('cannon_std_legacy')
+ * @property {string} machine - Default machine preset ID ('low_pressure')
  * @property {string} material - Default material preset ID ('ecofoam_standard')
  *
  * @example
@@ -396,7 +396,7 @@ export const DEFAULTS = {
   partVolume: 1.0,
 
   // Machine and material
-  machine: 'cannon_std_legacy',
+  machine: 'low_pressure', // Default to Low-Pressure system
   material: 'ecofoam_standard'
 };
 

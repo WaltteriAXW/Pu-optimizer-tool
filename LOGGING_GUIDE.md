@@ -49,7 +49,7 @@ results = calculator.calculate(
     flow_rate_lpm=parameters["flow_rate"],
     viscosity=parameters["viscosity"],
     density=parameters["density"],
-    machine_type="cannon_std_legacy"
+    machine_type="low_pressure"  # Use "low_pressure" or "high_pressure"
 )
 
 # Log the production run
@@ -58,7 +58,7 @@ log_result = calculator.log_production_run(
     results=results,
     quality_status="good",  # "good", "acceptable", "defective", "failed"
     quality_notes="Perfect part, no defects observed",
-    machine_type="cannon_std_legacy",
+    machine_type="low_pressure",  # "low_pressure" or "high_pressure"
     material_preset="ecofoam_standard"
 )
 

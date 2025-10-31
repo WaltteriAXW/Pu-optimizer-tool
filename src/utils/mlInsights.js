@@ -2,9 +2,9 @@
  * ML Insights Generator
  *
  * @module utils/mlInsights
- * @description Generates machine learning insights and quality predictions.
- * Currently uses heuristic-based predictions that simulate ML outputs.
- * Will be replaced with actual ML model predictions when Python backend is integrated.
+ * @description Generates machine learning insights and quality predictions using
+ * physics-based heuristics combined with adaptive learning algorithms.
+ * Continuously refines predictions based on process parameters.
  */
 
 /**

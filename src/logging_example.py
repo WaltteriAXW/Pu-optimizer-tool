@@ -33,7 +33,7 @@ def example_basic_logging():
         flow_rate_lpm=parameters["flow_rate"],
         viscosity=parameters["viscosity"],
         density=parameters["density"],
-        machine_type="cannon_std_legacy"
+        machine_type="low_pressure"
     )
 
     # Log the production run
@@ -42,7 +42,7 @@ def example_basic_logging():
         results=results,
         quality_status="good",
         quality_notes="Perfect part, no defects observed",
-        machine_type="cannon_std_legacy",
+        machine_type="low_pressure",
         material_preset="ecofoam_standard"
     )
 
