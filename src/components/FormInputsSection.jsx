@@ -129,17 +129,6 @@ export function FormInputsSection({
             </div>
           )}
 
-          <SelectField
-            label="Material System (Quick Presets)"
-            icon={Leaf}
-            value={selectedMaterial}
-            onChange={(e) => setSelectedMaterial(e.target.value)}
-          >
-            {Object.entries(MATERIAL_PRESETS).map(([key, preset]) => (
-              <option key={key} value={key}>{preset.name}</option>
-            ))}
-          </SelectField>
-
           {selectedMaterialName && (
             <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-300 dark:border-green-700">
               <p className="text-sm font-semibold text-green-900 dark:text-green-100">
@@ -176,8 +165,8 @@ export function FormInputsSection({
             {viewMode === 'simple' && (
               <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
                 <p className="text-sm text-blue-900 dark:text-blue-100">
-                  💡 <strong>What this is:</strong> This database contains real polyurethane products from manufacturers.
-                  Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!
+                  💡 <strong>Select Your Material:</strong> Browse real polyurethane products from manufacturers below.
+                  Click any product to see details, then use it in your calculations. All material properties (density, viscosity, mix ratios) are filled automatically!
                 </p>
               </div>
             )}

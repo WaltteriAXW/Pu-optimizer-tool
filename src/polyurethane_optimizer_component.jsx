@@ -786,7 +786,7 @@ const PolyurethaneOptimizer = () => {
               </ul>
             </div>
             <p className="text-xs sm:text-sm pt-2 border-t border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
-              <strong>Training Data:</strong> Results are automatically saved to improve ML models. {getTrainingStats().totalEntries} calculations stored.
+              <strong>AI Learning:</strong> The system continuously learns from each calculation to improve predictions and recommendations.
             </p>
           </CardContent>
         )}

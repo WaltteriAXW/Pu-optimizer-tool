@@ -41,38 +41,38 @@ export function DatabaseViewer({ onSelectProduct }) {
 
   const ProductCard = ({ product }) => (
     <div
-      className="border rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors"
+      className="border rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors bg-white dark:bg-gray-800"
       onClick={() => handleSelectProduct(product)}
     >
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-semibold text-lg text-blue-600">{product.Product_Name}</h3>
+        <h3 className="font-semibold text-lg text-blue-600 dark:text-blue-400">{product.Product_Name}</h3>
         {product.CE_Marked === 'Yes' && (
-          <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">CE Marked</span>
+          <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs px-2 py-1 rounded">CE Marked</span>
         )}
       </div>
 
-      <p className="text-sm text-gray-600 mb-2">{product.Product_Type}</p>
-      <p className="text-sm text-gray-500 mb-3">{product.Application_Type}</p>
+      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{product.Product_Type}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{product.Application_Type}</p>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
           <Droplets size={14} className="text-blue-500" />
           <span>Viscosity: {product.Polyol_Viscosity_cP} cP</span>
         </div>
         {product.Overall_Applied_Density_kg_m3 && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
             <Scale size={14} className="text-purple-500" />
             <span>Density: {product.Overall_Applied_Density_kg_m3} kg/m³</span>
           </div>
         )}
         {product.Blowing_Agent && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
             <Leaf size={14} className="text-green-500" />
             <span>{product.Blowing_Agent}</span>
           </div>
         )}
         {product.Fire_Rating_EN13501 && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
             <Shield size={14} className="text-red-500" />
             <span>Fire: {product.Fire_Rating_EN13501}</span>
           </div>
@@ -86,11 +86,11 @@ export function DatabaseViewer({ onSelectProduct }) {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4 flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-blue-600">{product.Product_Name}</h2>
-              <p className="text-gray-600">{product.Product_Type}</p>
+              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400">{product.Product_Name}</h2>
+              <p className="text-gray-700 dark:text-gray-300">{product.Product_Type}</p>
             </div>
             <Button variant="outline" onClick={() => setShowDetails(false)}>Close</Button>
           </div>
@@ -102,14 +102,14 @@ export function DatabaseViewer({ onSelectProduct }) {
                 <Package className="text-blue-500" size={20} />
                 Application Information
               </h3>
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded">
+              <div className="grid grid-cols-2 gap-4 bg-gray-100 dark:bg-gray-700 p-4 rounded">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Application Type</label>
-                  <p className="text-sm">{product.Application_Type}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Application Type</label>
+                  <p className="text-sm text-gray-900 dark:text-gray-100">{product.Application_Type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Blowing Agent</label>
-                  <p className="text-sm">{product.Blowing_Agent}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Blowing Agent</label>
+                  <p className="text-sm text-gray-900 dark:text-gray-100">{product.Blowing_Agent}</p>
                 </div>
               </div>
             </section>
@@ -121,19 +121,19 @@ export function DatabaseViewer({ onSelectProduct }) {
                 Component Properties
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-4 rounded">
-                  <h4 className="font-semibold mb-2">Polyol Component</h4>
-                  <p className="text-sm mb-1"><span className="font-medium">Name:</span> {product.Polyol_Component}</p>
-                  <p className="text-sm mb-1"><span className="font-medium">Viscosity:</span> {product.Polyol_Viscosity_cP} cP</p>
-                  <p className="text-sm mb-1"><span className="font-medium">Specific Gravity:</span> {product.Polyol_Specific_Gravity}</p>
-                  <p className="text-sm"><span className="font-medium">Temperature:</span> {product.Polyol_Temp_C}°C</p>
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded border border-blue-200 dark:border-blue-800">
+                  <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Polyol Component</h4>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Name:</span> {product.Polyol_Component}</p>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Viscosity:</span> {product.Polyol_Viscosity_cP} cP</p>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Specific Gravity:</span> {product.Polyol_Specific_Gravity}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Temperature:</span> {product.Polyol_Temp_C}°C</p>
                 </div>
-                <div className="bg-purple-50 p-4 rounded">
-                  <h4 className="font-semibold mb-2">Isocyanate Component</h4>
-                  <p className="text-sm mb-1"><span className="font-medium">Name:</span> {product.Isocyanate_Component}</p>
-                  <p className="text-sm mb-1"><span className="font-medium">Viscosity:</span> {product.Isocyanate_Viscosity_cP} cP</p>
-                  <p className="text-sm mb-1"><span className="font-medium">Specific Gravity:</span> {product.Isocyanate_Specific_Gravity}</p>
-                  <p className="text-sm"><span className="font-medium">Temperature:</span> {product.Iso_Temp_C}°C</p>
+                <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded border border-purple-200 dark:border-purple-800">
+                  <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Isocyanate Component</h4>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Name:</span> {product.Isocyanate_Component}</p>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Viscosity:</span> {product.Isocyanate_Viscosity_cP} cP</p>
+                  <p className="text-sm mb-1 text-gray-800 dark:text-gray-200"><span className="font-medium">Specific Gravity:</span> {product.Isocyanate_Specific_Gravity}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Temperature:</span> {product.Iso_Temp_C}°C</p>
                 </div>
               </div>
             </section>
@@ -144,15 +144,15 @@ export function DatabaseViewer({ onSelectProduct }) {
                 <Scale className="text-purple-500" size={20} />
                 Mix Ratios
               </h3>
-              <div className="bg-slate-50 p-4 rounded grid grid-cols-2 gap-4">
+              <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Weight Ratio (Polyol:Iso)</label>
-                  <p className="text-lg font-semibold">{product.Mix_Ratio_Weight_Polyol}:{product.Mix_Ratio_Weight_Iso}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Weight Ratio (Polyol:Iso)</label>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{product.Mix_Ratio_Weight_Polyol}:{product.Mix_Ratio_Weight_Iso}</p>
                 </div>
                 {product.Mix_Ratio_Volume_Polyol && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Volume Ratio (Polyol:Iso)</label>
-                    <p className="text-lg font-semibold">{product.Mix_Ratio_Volume_Polyol}:{product.Mix_Ratio_Volume_Iso}</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Volume Ratio (Polyol:Iso)</label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{product.Mix_Ratio_Volume_Polyol}:{product.Mix_Ratio_Volume_Iso}</p>
                   </div>
                 )}
               </div>
@@ -165,23 +165,23 @@ export function DatabaseViewer({ onSelectProduct }) {
                   <Clock className="text-green-500" size={20} />
                   Reaction Times
                 </h3>
-                <div className="bg-slate-50 p-4 rounded grid grid-cols-3 gap-4">
+                <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded grid grid-cols-3 gap-4">
                   {product.Cream_Time_s_Min && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Cream Time</label>
-                      <p className="text-sm">{product.Cream_Time_s_Min}-{product.Cream_Time_s_Max} s</p>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Cream Time</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.Cream_Time_s_Min}-{product.Cream_Time_s_Max} s</p>
                     </div>
                   )}
                   {product.Gel_Time_s_Min && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Gel Time</label>
-                      <p className="text-sm">{product.Gel_Time_s_Min}-{product.Gel_Time_s_Max} s</p>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Gel Time</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.Gel_Time_s_Min}-{product.Gel_Time_s_Max} s</p>
                     </div>
                   )}
                   {product.Tack_Free_Time_s_Min && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Tack Free Time</label>
-                      <p className="text-sm">{product.Tack_Free_Time_s_Min}-{product.Tack_Free_Time_s_Max} s</p>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Tack Free Time</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.Tack_Free_Time_s_Min}-{product.Tack_Free_Time_s_Max} s</p>
                     </div>
                   )}
                 </div>
@@ -194,23 +194,23 @@ export function DatabaseViewer({ onSelectProduct }) {
                 <Scale className="text-blue-500" size={20} />
                 Density Properties
               </h3>
-              <div className="bg-slate-50 p-4 rounded grid grid-cols-2 gap-4">
+              <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded grid grid-cols-2 gap-4">
                 {product.Free_Rise_Density_kg_m3_Min && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Free Rise Density</label>
-                    <p className="text-sm">{product.Free_Rise_Density_kg_m3_Min}-{product.Free_Rise_Density_kg_m3_Max} kg/m³</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Free Rise Density</label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{product.Free_Rise_Density_kg_m3_Min}-{product.Free_Rise_Density_kg_m3_Max} kg/m³</p>
                   </div>
                 )}
                 {product.Molded_Density_kg_m3_Min && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Molded Density</label>
-                    <p className="text-sm">{product.Molded_Density_kg_m3_Min}-{product.Molded_Density_kg_m3_Max} kg/m³</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Molded Density</label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{product.Molded_Density_kg_m3_Min}-{product.Molded_Density_kg_m3_Max} kg/m³</p>
                   </div>
                 )}
                 {product.Overall_Applied_Density_kg_m3 && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Overall Applied Density</label>
-                    <p className="text-sm font-semibold">{product.Overall_Applied_Density_kg_m3} kg/m³</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Overall Applied Density</label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{product.Overall_Applied_Density_kg_m3} kg/m³</p>
                   </div>
                 )}
               </div>
@@ -223,23 +223,23 @@ export function DatabaseViewer({ onSelectProduct }) {
                   <Thermometer className="text-red-500" size={20} />
                   Thermal Properties
                 </h3>
-                <div className="bg-slate-50 p-4 rounded grid grid-cols-2 gap-4">
+                <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded grid grid-cols-2 gap-4">
                   {product.Initial_K_Factor_W_mK_Min && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Initial K-Factor</label>
-                      <p className="text-sm">{product.Initial_K_Factor_W_mK_Min}-{product.Initial_K_Factor_W_mK_Max} W/(m·K)</p>
+                      <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Initial K-Factor</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{product.Initial_K_Factor_W_mK_Min}-{product.Initial_K_Factor_W_mK_Max} W/(m·K)</p>
                     </div>
                   )}
                   {product.Declared_Lambda_80mm_W_mK && (
                     <>
                       <div>
-                        <label className="text-sm font-medium text-gray-600">Lambda @ 80mm</label>
-                        <p className="text-sm">{product.Declared_Lambda_80mm_W_mK} W/(m·K)</p>
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Lambda @ 80mm</label>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{product.Declared_Lambda_80mm_W_mK} W/(m·K)</p>
                       </div>
                       {product.Declared_Lambda_120mm_W_mK && (
                         <div>
-                          <label className="text-sm font-medium text-gray-600">Lambda @ 120mm</label>
-                          <p className="text-sm">{product.Declared_Lambda_120mm_W_mK} W/(m·K)</p>
+                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Lambda @ 120mm</label>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">{product.Declared_Lambda_120mm_W_mK} W/(m·K)</p>
                         </div>
                       )}
                     </>
@@ -254,7 +254,7 @@ export function DatabaseViewer({ onSelectProduct }) {
                 <Shield className="text-green-500" size={20} />
                 Regulatory & Environmental
               </h3>
-              <div className="bg-slate-50 p-4 rounded space-y-2">
+              <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded space-y-2">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     {product.CE_Marked === 'Yes' ? (
@@ -262,7 +262,7 @@ export function DatabaseViewer({ onSelectProduct }) {
                     ) : (
                       <XCircle className="text-gray-400" size={16} />
                     )}
-                    <span className="text-sm">CE Marked</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">CE Marked</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {product.PFAS_Free === 'Yes' ? (
@@ -270,19 +270,19 @@ export function DatabaseViewer({ onSelectProduct }) {
                     ) : (
                       <XCircle className="text-gray-400" size={16} />
                     )}
-                    <span className="text-sm">PFAS Free</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">PFAS Free</span>
                   </div>
                 </div>
                 {product.Fire_Rating_EN13501 && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Fire Rating (EN13501)</label>
-                    <p className="text-sm font-semibold">{product.Fire_Rating_EN13501}</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Fire Rating (EN13501)</label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{product.Fire_Rating_EN13501}</p>
                   </div>
                 )}
                 {product.DoP_Number && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">DoP Number</label>
-                    <p className="text-sm">{product.DoP_Number}</p>
+                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">DoP Number</label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{product.DoP_Number}</p>
                   </div>
                 )}
               </div>
@@ -291,16 +291,16 @@ export function DatabaseViewer({ onSelectProduct }) {
             {/* Storage Requirements */}
             <section>
               <h3 className="text-lg font-semibold mb-3">Storage Requirements</h3>
-              <div className="bg-slate-50 p-4 rounded grid grid-cols-2 gap-4">
+              <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm">Polyol</h4>
-                  <p className="text-sm"><span className="font-medium">Temperature:</span> {product.Polyol_Storage_Temp_C_Min}-{product.Polyol_Storage_Temp_C_Max}°C</p>
-                  <p className="text-sm"><span className="font-medium">Shelf Life:</span> {product.Polyol_Shelf_Life_Months} months</p>
+                  <h4 className="font-semibold mb-2 text-sm text-gray-900 dark:text-gray-100">Polyol</h4>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Temperature:</span> {product.Polyol_Storage_Temp_C_Min}-{product.Polyol_Storage_Temp_C_Max}°C</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Shelf Life:</span> {product.Polyol_Shelf_Life_Months} months</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm">Isocyanate</h4>
-                  <p className="text-sm"><span className="font-medium">Temperature:</span> {product.Iso_Storage_Temp_C_Min}-{product.Iso_Storage_Temp_C_Max}°C</p>
-                  <p className="text-sm"><span className="font-medium">Shelf Life:</span> {product.Iso_Shelf_Life_Months} months</p>
+                  <h4 className="font-semibold mb-2 text-sm text-gray-900 dark:text-gray-100">Isocyanate</h4>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Temperature:</span> {product.Iso_Storage_Temp_C_Min}-{product.Iso_Storage_Temp_C_Max}°C</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200"><span className="font-medium">Shelf Life:</span> {product.Iso_Shelf_Life_Months} months</p>
                 </div>
               </div>
             </section>
