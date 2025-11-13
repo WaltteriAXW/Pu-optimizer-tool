@@ -10,19 +10,19 @@ export const Button = React.forwardRef(({
   const getVariantClasses = () => {
     switch (variant) {
       case 'destructive':
-        return 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 border border-red-700';
+        return 'bg-accent-red text-white hover:shadow-[0_0_16px_rgba(255,59,92,0.3)] active:transform active:scale-[0.98] border border-accent-red/30 transition-all duration-200';
       case 'outline':
-        return 'border-2 border-gray-400 dark:border-gray-500 bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
+        return 'border-2 bg-transparent text-neutral-light dark:text-neutral-light hover:bg-accent-cyan/10 hover:border-accent-cyan/60 border-accent-cyan/30 transition-all duration-200';
       case 'ghost':
-        return 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
+        return 'bg-transparent text-neutral-light dark:text-neutral-light hover:bg-neutral-medium dark:hover:bg-neutral-medium transition-all duration-200';
       case 'success':
-        return 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 border border-green-700';
+        return 'bg-accent-green text-white hover:shadow-[0_0_16px_rgba(0,208,132,0.3)] active:transform active:scale-[0.98] border border-accent-green/30 transition-all duration-200';
       case 'warning':
-        return 'bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 border border-amber-700';
+        return 'bg-accent-orange text-white hover:shadow-[0_0_16px_rgba(255,107,53,0.3)] active:transform active:scale-[0.98] border border-accent-orange/30 transition-all duration-200';
       case 'primary':
-        return 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 border border-blue-700';
+        return 'bg-accent-cyan text-neutral-dark hover:shadow-[0_0_16px_rgba(0,217,255,0.3)] active:transform active:scale-[0.98] border border-accent-cyan/30 font-semibold transition-all duration-200';
       default:
-        return 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 border border-blue-700';
+        return 'bg-accent-cyan text-neutral-dark hover:shadow-[0_0_16px_rgba(0,217,255,0.3)] active:transform active:scale-[0.98] border border-accent-cyan/30 font-semibold transition-all duration-200';
     }
   };
 

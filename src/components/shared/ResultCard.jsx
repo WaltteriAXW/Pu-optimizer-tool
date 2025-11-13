@@ -12,30 +12,30 @@ import React from 'react';
  */
 export const ResultCard = React.memo(({ title, value, unit, icon: Icon, status, helpText }) => {
   const statusClasses = {
-    success: 'bg-green-50 dark:bg-gray-700 border-l-4 border-l-green-600',
-    warning: 'bg-amber-50 dark:bg-gray-700 border-l-4 border-l-amber-600',
-    error: 'bg-red-50 dark:bg-gray-700 border-l-4 border-l-red-600',
-    default: 'bg-blue-50 dark:bg-gray-700 border-l-4 border-l-blue-600'
+    success: 'modal-success border-l-4 border-l-accent-green',
+    warning: 'modal-warning border-l-4 border-l-accent-orange',
+    error: 'modal-error border-l-4 border-l-accent-red',
+    default: 'bg-neutral-medium border-l-4 border-l-accent-cyan'
   };
 
   const iconColors = {
-    success: 'text-green-600 dark:text-green-400',
-    warning: 'text-amber-600 dark:text-amber-400',
-    error: 'text-red-600 dark:text-red-400',
-    default: 'text-blue-600 dark:text-blue-400'
+    success: 'text-accent-green',
+    warning: 'text-accent-orange',
+    error: 'text-accent-red',
+    default: 'text-accent-cyan'
   };
 
   return (
-    <div className={`p-4 rounded-md transition-colors duration-150 ${statusClasses[status] || statusClasses.default}`}>
-      <h3 className="text-sm flex items-center font-semibold text-gray-700 dark:text-gray-300">
+    <div className={`p-4 rounded-lg transition-all duration-200 ${statusClasses[status] || statusClasses.default}`}>
+      <h3 className="text-sm flex items-center font-semibold" style={{ color: '#E0E2E9' }}>
         {Icon && <Icon className={`w-4 h-4 mr-2 ${iconColors[status] || iconColors.default}`} />}
         {title}
       </h3>
-      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-        {value} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{unit}</span>
+      <p className="mt-2 text-2xl font-bold" style={{ color: '#E0E2E9' }}>
+        {value} <span className="text-sm font-normal" style={{ color: '#A8ABB3' }}>{unit}</span>
       </p>
       {helpText && (
-        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">{helpText}</p>
+        <p className="mt-2 text-xs" style={{ color: '#A8ABB3' }}>{helpText}</p>
       )}
     </div>
   );
