@@ -132,18 +132,8 @@ const AppComponent = () => {
           </div>
 
           <div className="mt-4 flex flex-wrap justify-center gap-4 items-center animate-slideUp">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm hover-lift transition-all" style={{ backgroundColor: 'rgba(26, 31, 46, 0.5)', border: '1px solid rgba(0, 217, 255, 0.1)' }}>
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#00D9FF' }}></div>
-              <span className="text-xs font-medium" style={{ color: '#A8ABB3' }}>
-                <span className="font-semibold" style={{ color: '#00D9FF' }}>Cannon</span> •
-                <span className="font-semibold" style={{ color: '#00D9FF' }}> AMA Gusberti</span> •
-                <span className="font-semibold" style={{ color: '#00D9FF' }}> SAIP</span> •
-                <span className="font-semibold" style={{ color: '#00D9FF' }}> ISC Italy</span>
-              </span>
-            </div>
-
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm hover-lift transition-all" style={{ backgroundColor: 'rgba(26, 31, 46, 0.5)', border: '1px solid rgba(0, 208, 132, 0.1)' }}>
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#00D084', animationDelay: '0.5s' }}></div>
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#00D084' }}></div>
               <span className="text-xs font-medium" style={{ color: '#A8ABB3' }}>
                 <span className="font-semibold" style={{ color: '#00D084' }}>Ecofoam</span> •
                 <span className="font-semibold" style={{ color: '#00D084' }}> Ecomate</span> Materials

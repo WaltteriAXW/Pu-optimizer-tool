@@ -238,12 +238,12 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
           )}
 
           {moldVolume > 0 && (
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg space-y-2 text-sm">
-              <h4 className="font-semibold text-purple-900 dark:text-purple-100">Calculated Mold Volume:</h4>
-              <p className="text-purple-800 dark:text-purple-200">
+            <div className="p-4 rounded-lg space-y-2 text-sm" style={{ backgroundColor: 'rgba(0, 217, 255, 0.1)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+              <h4 className="font-semibold" style={{ color: '#00D9FF' }}>Calculated Mold Volume:</h4>
+              <p style={{ color: '#E0E2E9' }}>
                 Cavity volume: <span className="font-semibold">{moldVolume.toFixed(3)} L</span>
               </p>
-              <p className="text-xs text-purple-600 dark:text-purple-400 italic">
+              <p className="text-xs italic" style={{ color: '#A8ABB3' }}>
                 This volume will be used to calculate accurate injection time and material requirements
               </p>
             </div>
