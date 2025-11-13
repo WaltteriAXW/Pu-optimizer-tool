@@ -11,31 +11,31 @@ import React from 'react';
  * @param {string} props.helpText - Optional help text to display below value
  */
 export const ResultCard = React.memo(({ title, value, unit, icon: Icon, status, helpText }) => {
-  const statusColors = {
-    success: 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-    warning: 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20',
-    error: 'border-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20',
-    default: 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
+  const statusClasses = {
+    success: 'bg-green-50 dark:bg-gray-700 border-l-4 border-l-green-600',
+    warning: 'bg-amber-50 dark:bg-gray-700 border-l-4 border-l-amber-600',
+    error: 'bg-red-50 dark:bg-gray-700 border-l-4 border-l-red-600',
+    default: 'bg-blue-50 dark:bg-gray-700 border-l-4 border-l-blue-600'
   };
 
   const iconColors = {
     success: 'text-green-600 dark:text-green-400',
-    warning: 'text-yellow-600 dark:text-yellow-400',
+    warning: 'text-amber-600 dark:text-amber-400',
     error: 'text-red-600 dark:text-red-400',
     default: 'text-blue-600 dark:text-blue-400'
   };
 
   return (
-    <div className={`p-4 rounded-lg shadow-md hover:shadow-lg border-l-4 ${statusColors[status] || statusColors.default} transition-all duration-200 transform hover:scale-105 animate-slideIn`}>
-      <h3 className="text-sm flex items-center font-medium text-gray-700 dark:text-gray-300">
+    <div className={`p-4 rounded-md transition-colors duration-150 ${statusClasses[status] || statusClasses.default}`}>
+      <h3 className="text-sm flex items-center font-semibold text-gray-700 dark:text-gray-300">
         {Icon && <Icon className={`w-4 h-4 mr-2 ${iconColors[status] || iconColors.default}`} />}
         {title}
       </h3>
-      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
         {value} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{unit}</span>
       </p>
       {helpText && (
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">{helpText}</p>
+        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">{helpText}</p>
       )}
     </div>
   );

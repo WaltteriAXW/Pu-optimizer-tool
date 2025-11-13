@@ -111,7 +111,7 @@ export const ProductionPlanner = React.memo(function ProductionPlanner({ selecte
   if (!isVisible || !selectedMold) return null;
 
   return (
-    <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+    <Card className="border-l-4 border-l-purple-600">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5 text-purple-600" />

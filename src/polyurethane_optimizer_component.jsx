@@ -509,45 +509,23 @@ const PolyurethaneOptimizer = () => {
   }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
-      {/* Animated background particles */}
-      <div className="fixed inset-0 pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-float opacity-20"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${3 + Math.random() * 4}s`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Animated gradient orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-      </div>
+    <div className="min-h-screen w-full bg-gray-900 relative overflow-hidden dark:bg-gray-950">
 
       <div className="relative z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
         {/* Header Section with Title and Actions */}
-        <div className="flex justify-between items-center gap-4 flex-wrap bg-white/10 backdrop-blur-md border border-white/20 text-white p-6 rounded-xl shadow-xl">
+        <div className="flex justify-between items-center gap-4 flex-wrap bg-gray-800 border border-gray-700 text-white p-6 rounded-md shadow-lg">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-white">PU Injection Optimizer</h1>
-          <p className="text-blue-100 text-sm">Calculate optimal pressure & predict part quality</p>
+          <p className="text-gray-300 text-sm">Calculate optimal pressure & predict part quality</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {/* Quick Setup Button */}
           <button
             onClick={() => setShowQuickSetup(!showQuickSetup)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-semibold text-sm transition-colors duration-150 ${
               showQuickSetup
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-white hover:bg-gray-50 text-blue-700'
+                ? 'bg-green-600 hover:bg-green-700 text-white border border-green-700'
+                : 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
             }`}
           >
             <Zap className="w-4 h-4" />
@@ -557,7 +535,7 @@ const PolyurethaneOptimizer = () => {
           {/* View Mode Toggle */}
           <button
             onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-gray-900 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm backdrop-blur-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md font-semibold text-sm transition-colors duration-150 border border-gray-600"
           >
             {viewMode === 'simple' ? (
               <>

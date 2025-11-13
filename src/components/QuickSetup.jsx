@@ -144,7 +144,7 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
 
   return (
     <>
-      <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <Card className="mb-6 border-l-4 border-l-blue-600">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-blue-600" />
@@ -158,9 +158,9 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
         <CardContent className="space-y-4">
           {/* Loading/Error State */}
           {loading && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3">
-              <div className="animate-spin h-5 w-5 border-3 border-blue-500 border-t-transparent rounded-full"></div>
-              <p className="text-sm text-blue-800">Loading databases...</p>
+            <div className="bg-blue-50 dark:bg-gray-700 border border-blue-200 dark:border-blue-800 p-3 rounded-md flex items-center gap-3">
+              <div className="animate-rotate h-5 w-5 border-3 border-gray-300 dark:border-gray-500 border-t-blue-600 dark:border-t-blue-400 rounded-full"></div>
+              <p className="text-sm text-gray-900 dark:text-gray-100">Loading databases...</p>
             </div>
           )}
 
