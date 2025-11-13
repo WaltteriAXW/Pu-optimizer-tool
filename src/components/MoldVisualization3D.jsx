@@ -156,9 +156,9 @@ const InjectionPipe = ({ diameter, length, position = [0, 0, 0], rotation = [0, 
         <cylinderGeometry args={[radius, radius, len, 16]} />
         <meshBasicMaterial color="#4f46e5" wireframe linewidth={2} />
       </mesh>
-      {/* Injection point indicator */}
-      <mesh position={[0, len / 2, 0]}>
-        <sphereGeometry args={[radius * 1.5, 16, 16]} />
+      {/* Injection point indicator - at the end pointing toward mold */}
+      <mesh position={[0, -len / 2, 0]}>
+        <sphereGeometry args={[radius * 2, 16, 16]} />
         <meshStandardMaterial
           color="#f472b6"
           emissive="#f472b6"
@@ -289,19 +289,42 @@ const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe =
       )}
 
       {/* Injection Pipe */}
-      {showPipe && pipeLength > 0 && pipeDiameter > 0 && (
-        <InjectionPipe
-          diameter={pipeDiameter}
-          length={pipeLength}
-          position={moldShape === 'sphere'
-            ? [0, (moldDimensions.sphereDiameter / 100) + (pipeLength / 200), 0]
-            : moldShape === 'cylinder'
-            ? [0, (moldDimensions.cylinderHeight / 100) + (pipeLength / 200), 0]
-            : [0, (moldDimensions.height / 100) + (pipeLength / 200), 0]
-          }
-          rotation={[0, 0, 0]}
-        />
-      )}
+      {showPipe && pipeLength > 0 && pipeDiameter > 0 && (() => {
+        let pipePosition, pipeRotation;
+        const pipeOffset = 1.5; // 15cm above edge
+        const len = pipeLength / 100;
+
+        if (moldShape === 'rectangular') {
+          const w = moldDimensions.width / 100;
+          const h = moldDimensions.height / 100;
+          // Position on the short side edge, pointing toward center
+          pipePosition = [w / 2 + len / 2, h + pipeOffset, 0];
+          // Rotate to horizontal, slight downward angle toward mold
+          pipeRotation = [0, 0, -Math.PI / 2]; // Horizontal, pointing inward
+        } else if (moldShape === 'cylinder') {
+          const r = (moldDimensions.diameter / 2) / 100;
+          const h = moldDimensions.cylinderHeight / 100;
+          // Position on side edge
+          pipePosition = [r + len / 2, h / 2 + pipeOffset, 0];
+          // Horizontal pointing toward center
+          pipeRotation = [0, 0, -Math.PI / 2];
+        } else if (moldShape === 'sphere') {
+          const r = (moldDimensions.sphereDiameter / 2) / 100;
+          // Position on side edge
+          pipePosition = [r + len / 2, r + pipeOffset, 0];
+          // Horizontal pointing toward center
+          pipeRotation = [0, 0, -Math.PI / 2];
+        }
+
+        return (
+          <InjectionPipe
+            diameter={pipeDiameter}
+            length={pipeLength}
+            position={pipePosition}
+            rotation={pipeRotation}
+          />
+        );
+      })()}
 
       {/* Dimension Labels */}
       {showLabels && (
