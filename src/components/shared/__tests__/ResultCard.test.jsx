@@ -6,7 +6,10 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Settings2 } from 'lucide-react';
+import { axe, a11yMatchers } from '../../../utils/testA11y';
 import { ResultCard } from '../index';
+
+expect.extend(a11yMatchers);
 
 describe('ResultCard Component', () => {
   const defaultProps = {
@@ -156,6 +159,46 @@ describe('ResultCard Component', () => {
       delete props.helpText;
       render(<ResultCard {...props} />);
       expect(screen.getByText('Test Result')).toBeInTheDocument();
+    });
+  });
+
+  describe('Accessibility (a11y)', () => {
+    it('should have no accessibility violations', async () => {
+      const { container } = render(<ResultCard {...defaultProps} />);
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no violations with different statuses', async () => {
+      for (const status of ['success', 'error', 'warning', 'default']) {
+        const { container } = render(
+          <ResultCard {...defaultProps} status={status} />
+        );
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
+      }
+    });
+
+    it('should have no violations with empty unit', async () => {
+      const { container } = render(<ResultCard {...defaultProps} unit="" />);
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have proper contrast ratios', async () => {
+      const { container } = render(<ResultCard {...defaultProps} />);
+      const results = await axe(container);
+      const contrastViolations = results.violations?.filter(
+        (v) => v.id === 'color-contrast'
+      );
+      expect(contrastViolations).toHaveLength(0);
+    });
+
+    it('should have descriptive content for assistive technologies', () => {
+      render(<ResultCard {...defaultProps} />);
+      expect(screen.getByText('Test Result')).toBeInTheDocument();
+      expect(screen.getByText('42.5')).toBeInTheDocument();
+      expect(screen.getByText('bar')).toBeInTheDocument();
     });
   });
 });
