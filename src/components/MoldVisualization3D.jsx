@@ -186,7 +186,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[l / 2 + 1, 0, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#ffffff"
+          color="#000000"
           anchorX="left"
         >
           {length}mm
@@ -195,7 +195,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, h / 2 + 1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#ffffff"
+          color="#000000"
           anchorX="center"
         >
           {height}mm
@@ -213,7 +213,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, h + 1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#ffffff"
+          color="#000000"
           anchorX="center"
         >
           H: {cylinderHeight}mm
@@ -222,7 +222,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, -1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#ffffff"
+          color="#000000"
           anchorX="center"
         >
           ∅{diameter}mm
@@ -240,7 +240,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[r + 1, r, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#ffffff"
+          color="#000000"
           anchorX="left"
         >
           ∅{sphereDiameter}mm
@@ -299,34 +299,44 @@ const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe =
           const w = moldDimensions.width / 100;
           const h = moldDimensions.height / 100;
 
-          // Position pipe at edge of short side, close to mold
-          // X: centered along length
-          // Y: top of mold + 1.5 (15cm above top edge)
-          // Z: edge of mold + small offset for pipe to extend from
-          pipePosition = [0, h + 1.5, w / 2 + 0.5];
+          // Position pipe at edge of short side (width direction)
+          // Pipe extends from outside toward mold center
+          // X: centered along length (0)
+          // Y: 1.5 units above ground (15cm)
+          // Z: at edge of mold (w/2) + half pipe length extending outward
+          const offsetZ = len / 2 * Math.cos(angleRad); // Account for angle in Z direction
+          const offsetY = len / 2 * Math.sin(angleRad); // Account for angle in Y direction
+
+          pipePosition = [0, 1.5 + offsetY, w / 2 + offsetZ];
 
           // Rotation:
-          // X rotation: -22 degrees (pointing down toward mold)
-          // Y rotation: 0
-          // Z rotation: 90 degrees (horizontal along Z, pointing toward mold)
-          pipeRotation = [-angleRad, 0, Math.PI / 2];
+          // X rotation: -22 degrees (pointing down toward mold center)
+          // Y rotation: 0 (not rotating horizontally)
+          // Z rotation: 90 degrees (making it horizontal, pointing along -Z toward center)
+          pipeRotation = [-angleRad, 0, -Math.PI / 2];
 
         } else if (moldShape === 'cylinder') {
           const r = (moldDimensions.diameter / 2) / 100;
           const h = moldDimensions.cylinderHeight / 100;
 
-          // Position on side edge, close to cylinder
-          pipePosition = [r + 0.5, h / 2 + 1.5, 0];
-          // 22 degree angle toward center, horizontal orientation
-          pipeRotation = [-angleRad, 0, -Math.PI / 2];
+          const offsetX = len / 2 * Math.cos(angleRad);
+          const offsetY = len / 2 * Math.sin(angleRad);
+
+          // Position on side edge of cylinder
+          pipePosition = [r + offsetX, h / 2 + offsetY, 0];
+          // 22 degree angle toward center
+          pipeRotation = [0, -angleRad, 0];
 
         } else if (moldShape === 'sphere') {
           const r = (moldDimensions.sphereDiameter / 2) / 100;
 
-          // Position on side edge, close to sphere
-          pipePosition = [r + 0.5, r + 1, 0];
+          const offsetX = len / 2 * Math.cos(angleRad);
+          const offsetY = len / 2 * Math.sin(angleRad);
+
+          // Position on side edge of sphere
+          pipePosition = [r + offsetX, r + offsetY, 0];
           // 22 degree angle toward center
-          pipeRotation = [-angleRad, 0, -Math.PI / 2];
+          pipeRotation = [0, -angleRad, 0];
         }
 
         return (
