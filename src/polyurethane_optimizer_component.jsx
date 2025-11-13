@@ -50,7 +50,7 @@ const MACHINE_SPECS = {
     output: "2-300+ kg/min",
     outputRange: { min: 2, max: 300 }, // kg/min
     maxPressure: 20.0, // bar (gentle, controlled delivery)
-    pressureRange: { min: 5, max: 20 }, // bar
+    pressureRange: { min: 8, max: 20 }, // bar
     tankCapacity: "Variable (Modular)",
     feedLineDiameterA: "10-16 mm", // A component (larger lines reduce shear)
     feedLineDiameterB: "10-16 mm", // B component (generous sizing)
@@ -478,7 +478,8 @@ const PolyurethaneOptimizer = () => {
 
       // === STEP 9: Machine Compatibility ===
       const machine = MACHINE_SPECS[selectedMachine];
-      const compatible = CalcHelpers.checkMachineCompatibility(totalPressureBar, machine);
+      const compatibilityResult = CalcHelpers.checkMachineCompatibility(totalPressureBar, machine);
+      const compatible = compatibilityResult.compatible;
 
       // === STEP 10: Generate Warnings and Recommendations ===
       const flowRateKgMin = inputs.flowRate * inputs.density / 1000;
@@ -492,6 +493,7 @@ const PolyurethaneOptimizer = () => {
         moldVolume,
         flowRateKgMin,
         compatible,
+        compatibilityResult,
         machine,
         correctedViscosity,
         density: inputs.density,

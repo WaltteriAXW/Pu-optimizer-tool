@@ -126,26 +126,51 @@ function addShearRateWarnings(params, warnings, recommendations) {
  * @private
  */
 function addMachineCompatibilityWarnings(params, warnings, recommendations) {
-  const { compatible, totalPressureBar, machine, machineSpecs } = params;
+  const { compatible, compatibilityResult, totalPressureBar, machine, machineSpecs } = params;
 
-  if (!compatible) {
-    warnings.push(
-      `Required pressure (${totalPressureBar.toFixed(2)} bar) exceeds machine capacity (${machine.maxPressure} bar)`
-    );
-    recommendations.push(
-      'Reduce flow rate, increase pipe diameter, or select a higher capacity machine'
-    );
+  if (!compatible && compatibilityResult) {
+    const minPressure = machine.pressureRange?.min || 0;
+    const maxPressure = machine.maxPressure;
 
-    // Suggest suitable machines
-    if (machineSpecs) {
-      const suitableMachines = Object.entries(machineSpecs)
-        .filter(([_, spec]) => spec.maxPressure >= totalPressureBar)
-        .slice(0, 2);
+    if (compatibilityResult.tooLow) {
+      // Pressure is below the minimum operating range
+      warnings.push(
+        `Required pressure (${totalPressureBar.toFixed(2)} bar) is below the minimum operating range for ${machine.name} (${minPressure}-${maxPressure} bar)`
+      );
+      recommendations.push(
+        `Increase flow rate, reduce pipe diameter, or increase pipe length to reach minimum ${minPressure} bar`
+      );
 
-      if (suitableMachines.length > 0) {
+      // Suggest switching to low-pressure system if currently using high-pressure
+      if (machine.category === 'High-Pressure' && machineSpecs) {
         recommendations.push(
-          `Consider upgrading to: ${suitableMachines.map(([_, s]) => s.name).join(' or ')}`
+          'Consider using a Low-Pressure (LP) system which operates at 8-20 bar'
         );
+      }
+    } else if (compatibilityResult.tooHigh) {
+      // Pressure exceeds the maximum capacity
+      warnings.push(
+        `Required pressure (${totalPressureBar.toFixed(2)} bar) exceeds machine capacity (${maxPressure} bar)`
+      );
+      recommendations.push(
+        'Reduce flow rate, increase pipe diameter, or select a higher capacity machine'
+      );
+
+      // Suggest suitable machines
+      if (machineSpecs) {
+        const suitableMachines = Object.entries(machineSpecs)
+          .filter(([_, spec]) => {
+            const specMin = spec.pressureRange?.min || 0;
+            const specMax = spec.maxPressure;
+            return totalPressureBar >= specMin && totalPressureBar <= specMax;
+          })
+          .slice(0, 2);
+
+        if (suitableMachines.length > 0) {
+          recommendations.push(
+            `Consider switching to: ${suitableMachines.map(([_, s]) => s.name).join(' or ')}`
+          );
+        }
       }
     }
   }

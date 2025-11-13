@@ -317,22 +317,49 @@ describe('calculationHelpers', () => {
   });
 
   describe('checkMachineCompatibility', () => {
-    it('should return true when pressure is within machine capacity', () => {
-      const machineSpec = { maxPressure: 6.0 };
+    it('should return compatible=true when pressure is within machine capacity', () => {
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(4.5, machineSpec);
-      expect(result).toBe(true);
+      expect(result.compatible).toBe(true);
+      expect(result.tooLow).toBe(false);
+      expect(result.tooHigh).toBe(false);
+      expect(result.reason).toBe(null);
     });
 
-    it('should return false when pressure exceeds machine capacity', () => {
-      const machineSpec = { maxPressure: 6.0 };
+    it('should return compatible=false when pressure exceeds machine capacity', () => {
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(7.0, machineSpec);
-      expect(result).toBe(false);
+      expect(result.compatible).toBe(false);
+      expect(result.tooHigh).toBe(true);
+      expect(result.tooLow).toBe(false);
+      expect(result.reason).toBe('exceeds_maximum');
     });
 
     it('should handle exact capacity match', () => {
-      const machineSpec = { maxPressure: 6.0 };
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(6.0, machineSpec);
-      expect(result).toBe(true);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return compatible=false when pressure is below minimum operating range', () => {
+      const machineSpec = { maxPressure: 200, pressureRange: { min: 100, max: 200 } };
+      const result = checkMachineCompatibility(50, machineSpec);
+      expect(result.compatible).toBe(false);
+      expect(result.tooLow).toBe(true);
+      expect(result.tooHigh).toBe(false);
+      expect(result.reason).toBe('below_minimum');
+    });
+
+    it('should work with HP system (100-200 bar)', () => {
+      const machineSpec = { maxPressure: 200, pressureRange: { min: 100, max: 200 } };
+      const result = checkMachineCompatibility(150, machineSpec);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should work with LP system (8-20 bar)', () => {
+      const machineSpec = { maxPressure: 20, pressureRange: { min: 8, max: 20 } };
+      const result = checkMachineCompatibility(15, machineSpec);
+      expect(result.compatible).toBe(true);
     });
   });
 
@@ -458,9 +485,12 @@ describe('calculationHelpers', () => {
       expect(totalPressureBar).toBeLessThan(10); // Reasonable for this scenario
 
       // Step 8: Check compatibility
-      const machineSpec = { maxPressure: 6.0 };
-      const compatible = checkMachineCompatibility(totalPressureBar, machineSpec);
-      expect(typeof compatible).toBe('boolean');
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
+      const compatibilityResult = checkMachineCompatibility(totalPressureBar, machineSpec);
+      expect(compatibilityResult).toHaveProperty('compatible');
+      expect(compatibilityResult).toHaveProperty('tooLow');
+      expect(compatibilityResult).toHaveProperty('tooHigh');
+      expect(typeof compatibilityResult.compatible).toBe('boolean');
     });
   });
 });

@@ -45,7 +45,7 @@ MACHINE_SPECS = {
         "output": "2-300+ kg/min",
         "output_range": {"min": 2, "max": 300},  # kg/min
         "max_pressure": 20.0,  # bar (gentle, controlled delivery)
-        "pressure_range": {"min": 5, "max": 20},  # bar
+        "pressure_range": {"min": 8, "max": 20},  # bar
         "tank_capacity": "Variable (Modular)",
         "feed_line_diameter_a": "10-16 mm",  # A component (larger lines reduce shear)
         "feed_line_diameter_b": "10-16 mm",  # B component (generous sizing)
@@ -226,12 +226,20 @@ class PolyurethaneCalculator:
             # Determine flow regime
             flow_regime = "laminar" if reynolds < 2300 else "turbulent"
 
-            # Check machine compatibility
+            # Check machine compatibility - validate operating range
             machine_compatible = False
             machine_info = None
+            pressure_too_low = False
+            pressure_too_high = False
+
             if machine_type in MACHINE_SPECS:
                 machine_info = MACHINE_SPECS[machine_type]
-                machine_compatible = total_pressure_bar <= machine_info["max_pressure"]
+                min_pressure = machine_info.get("pressure_range", {}).get("min", 0)
+                max_pressure = machine_info["max_pressure"]
+
+                pressure_too_low = total_pressure_bar < min_pressure
+                pressure_too_high = total_pressure_bar > max_pressure
+                machine_compatible = not pressure_too_low and not pressure_too_high
 
             # Generate warnings and recommendations
             warnings = []
@@ -253,8 +261,31 @@ class PolyurethaneCalculator:
                 recommendations.append("Reduce flow rate or increase pipe diameter")
 
             if not machine_compatible and machine_info:
-                warnings.append(f"Required pressure ({total_pressure_bar:.2f} bar) exceeds machine capacity ({machine_info['max_pressure']} bar)")
-                recommendations.append("Reduce flow rate, increase pipe diameter, or increase temperature")
+                min_pressure = machine_info.get("pressure_range", {}).get("min", 0)
+                max_pressure = machine_info["max_pressure"]
+
+                if pressure_too_low:
+                    warnings.append(
+                        f"Required pressure ({total_pressure_bar:.2f} bar) is below the minimum "
+                        f"operating range for {machine_info['name']} ({min_pressure}-{max_pressure} bar)"
+                    )
+                    recommendations.append(
+                        f"Increase flow rate, reduce pipe diameter, or increase pipe length to "
+                        f"reach minimum {min_pressure} bar"
+                    )
+                    # Suggest switching to LP if using HP system
+                    if machine_info.get("category") == "High-Pressure":
+                        recommendations.append(
+                            "Consider using a Low-Pressure (LP) system which operates at 8-20 bar"
+                        )
+                elif pressure_too_high:
+                    warnings.append(
+                        f"Required pressure ({total_pressure_bar:.2f} bar) exceeds machine "
+                        f"capacity ({max_pressure} bar)"
+                    )
+                    recommendations.append(
+                        "Reduce flow rate, increase pipe diameter, or increase temperature"
+                    )
 
             # Get ML predictions if available
             ml_insights = None

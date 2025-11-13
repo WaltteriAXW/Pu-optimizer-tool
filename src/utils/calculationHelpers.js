@@ -280,19 +280,58 @@ export function generatePressureProfile(
 }
 
 /**
- * Check machine compatibility
+ * Check machine compatibility - validates pressure is within operating range
  *
  * @param {number} totalPressureBar - Required pressure in bar
  * @param {Object} machineSpec - Machine specifications
  * @param {number} machineSpec.maxPressure - Machine max pressure in bar
- * @returns {boolean} True if machine can handle the pressure
+ * @param {Object} [machineSpec.pressureRange] - Operating pressure range
+ * @param {number} [machineSpec.pressureRange.min] - Minimum operating pressure in bar
+ * @param {number} [machineSpec.pressureRange.max] - Maximum operating pressure in bar
+ * @returns {Object} Compatibility result
+ * @returns {boolean} return.compatible - True if pressure is within operating range
+ * @returns {string|null} return.reason - Reason for incompatibility ('below_minimum', 'exceeds_maximum', or null)
+ * @returns {boolean} return.tooLow - True if pressure is below minimum operating range
+ * @returns {boolean} return.tooHigh - True if pressure exceeds maximum operating range
  *
  * @example
- * const compatible = checkMachineCompatibility(3.5, { maxPressure: 6.0 });
- * // Returns: true
+ * const result = checkMachineCompatibility(3.5, { maxPressure: 20, pressureRange: { min: 5, max: 20 } });
+ * // Returns: { compatible: true, reason: null, tooLow: false, tooHigh: false }
+ *
+ * const result2 = checkMachineCompatibility(50, { maxPressure: 200, pressureRange: { min: 100, max: 200 } });
+ * // Returns: { compatible: false, reason: 'below_minimum', tooLow: true, tooHigh: false }
  */
 export function checkMachineCompatibility(totalPressureBar, machineSpec) {
-  return totalPressureBar <= machineSpec.maxPressure;
+  const minPressure = machineSpec.pressureRange?.min || 0;
+  const maxPressure = machineSpec.maxPressure;
+
+  const tooLow = totalPressureBar < minPressure;
+  const tooHigh = totalPressureBar > maxPressure;
+
+  if (tooLow) {
+    return {
+      compatible: false,
+      reason: 'below_minimum',
+      tooLow: true,
+      tooHigh: false
+    };
+  }
+
+  if (tooHigh) {
+    return {
+      compatible: false,
+      reason: 'exceeds_maximum',
+      tooLow: false,
+      tooHigh: true
+    };
+  }
+
+  return {
+    compatible: true,
+    reason: null,
+    tooLow: false,
+    tooHigh: false
+  };
 }
 
 /**
