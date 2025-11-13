@@ -110,12 +110,7 @@ export const FormInputsSection = React.memo(function FormInputsSection({
             <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-gray-50">
               <Database className="w-5 h-5 text-green-600" />
               Material Database
-              <IconTooltip
-                content="Browse polyurethane products from the database. All properties (density, viscosity, mix ratios) are auto-filled when selected."
-                icon={Lightbulb}
-                iconClassName="w-4 h-4 text-green-600"
-              />
-              <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200 font-normal">
+              <span className="text-xs px-2 py-1 rounded font-normal" style={{ backgroundColor: 'rgba(0, 217, 255, 0.15)', color: '#E0E2E9' }}>
                 {getAllMaterialPresets().length} products
               </span>
             </CardTitle>

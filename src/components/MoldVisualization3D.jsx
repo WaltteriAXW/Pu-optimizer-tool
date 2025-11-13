@@ -426,18 +426,18 @@ export const MoldVisualization3D = ({
       </Canvas>
 
       {/* Controls overlay with glassmorphism */}
-      <div className="absolute top-2 right-2 bg-white/15 backdrop-blur-md border border-white/30 rounded-lg p-2 shadow-lg">
+      <div className="absolute top-2 right-2 backdrop-blur-md rounded-lg p-2 shadow-lg" style={{ backgroundColor: 'rgba(26, 31, 46, 0.8)', border: '1px solid rgba(0, 217, 255, 0.3)' }}>
         <div className="text-xs space-y-1">
-          <div className="font-semibold text-white border-b border-white/30 pb-1 mb-1">3D Controls</div>
-          <div className="text-blue-100">🖱️ Rotate: Click + Drag</div>
-          <div className="text-blue-100">🔍 Zoom: Scroll</div>
-          <div className="text-blue-100">✋ Pan: Right Click + Drag</div>
+          <div className="font-semibold border-b pb-1 mb-1" style={{ color: '#00D9FF', borderColor: 'rgba(0, 217, 255, 0.3)' }}>3D Controls</div>
+          <div style={{ color: '#E0E2E9' }}>🖱️ Rotate: Click + Drag</div>
+          <div style={{ color: '#E0E2E9' }}>🔍 Zoom: Scroll</div>
+          <div style={{ color: '#E0E2E9' }}>✋ Pan: Right Click + Drag</div>
         </div>
       </div>
 
       {/* Shape info overlay with glassmorphism */}
-      <div className="absolute top-2 left-2 bg-white/15 backdrop-blur-md border border-white/30 rounded-lg px-3 py-2 shadow-lg">
-        <div className="text-sm font-semibold text-white">
+      <div className="absolute top-2 left-2 backdrop-blur-md rounded-lg px-3 py-2 shadow-lg" style={{ backgroundColor: 'rgba(26, 31, 46, 0.8)', border: '1px solid rgba(0, 217, 255, 0.3)' }}>
+        <div className="text-sm font-semibold" style={{ color: '#00D9FF' }}>
           {moldShape === 'rectangular' && '📦 Rectangular Mold'}
           {moldShape === 'cylinder' && '🥫 Cylindrical Mold'}
           {moldShape === 'sphere' && '🔵 Spherical Mold'}
