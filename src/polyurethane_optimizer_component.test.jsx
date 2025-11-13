@@ -30,10 +30,6 @@ describe('PolyurethaneOptimizer Component', () => {
       expect(screen.getByText('PU Injection Optimizer')).toBeInTheDocument();
     });
 
-    it('should display the beta disclaimer', () => {
-      render(<PolyurethaneOptimizer />);
-      expect(screen.getByText(/BETA VERSION/i)).toBeInTheDocument();
-    });
 
     it('should render machine selection dropdown', () => {
       render(<PolyurethaneOptimizer />);

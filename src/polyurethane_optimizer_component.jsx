@@ -3,8 +3,9 @@ import { Button } from './button';
 import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb } from 'lucide-react';
+import { IconTooltip } from './tooltip';
 import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
 import { saveProcessEntry, getTrainingStats } from './training_data_storage';
@@ -552,15 +553,6 @@ const PolyurethaneOptimizer = () => {
         </div>
       </div>
 
-      {/* Beta Disclaimer */}
-      <Alert className="bg-yellow-400/15 backdrop-blur-md border border-yellow-400/40 shadow-lg">
-        <AlertTriangle className="h-4 w-4 text-yellow-700" />
-        <AlertTitle className="text-yellow-900 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
-        <AlertDescription className="text-yellow-900 text-sm">
-          This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
-          Always conduct thorough testing before implementing in production environments.
-        </AlertDescription>
-      </Alert>
 
       {/* Quick Setup Component */}
       {showQuickSetup && (
@@ -760,6 +752,11 @@ const PolyurethaneOptimizer = () => {
                 <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Material Database Browser
+                  <IconTooltip
+                    content="This database contains real polyurethane products from manufacturers. Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!"
+                    icon={Lightbulb}
+                    iconClassName="w-4 h-4 text-green-600"
+                  />
                   <span className="text-xs bg-green-400/20 px-2 py-1 rounded-full text-green-700 font-normal">
                     {getAllMaterialPresets().length} Real Products
                   </span>
@@ -772,14 +769,6 @@ const PolyurethaneOptimizer = () => {
             </CardHeader>
             {showDatabase && (
               <CardContent className="pt-4 animate-slideIn">
-                {viewMode === 'simple' && (
-                  <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
-                    <p className="text-sm text-blue-800">
-                      💡 <strong>What this is:</strong> This database contains real polyurethane products from manufacturers.
-                      Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!
-                    </p>
-                  </div>
-                )}
                 <DatabaseViewer onSelectProduct={handleSelectFromDatabase} />
               </CardContent>
             )}
@@ -1398,16 +1387,14 @@ const PolyurethaneOptimizer = () => {
                     <CardTitle className="flex items-center gap-2 text-gray-900">
                       <AlertTriangle className="w-5 h-5 text-yellow-600 animate-pulse" />
                       Warnings & Recommendations
+                      <IconTooltip
+                        content="⚠️ Warnings show problems with your current settings that will cause defects or won't work. 💡 Recommendations are solutions to fix these problems and get perfect parts."
+                        icon={Lightbulb}
+                        iconClassName="w-4 h-4 text-yellow-600"
+                      />
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-4">
-                    {viewMode === 'simple' && results.warnings.length > 0 && (
-                      <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded-r-lg mb-4">
-                        <p className="text-sm text-red-900 dark:text-red-100 font-semibold">
-                          ⚠️ <strong>Problems Found:</strong> These warnings mean your current settings will cause defects or won't work at all. Read carefully!
-                        </p>
-                      </div>
-                    )}
                     {results.warnings.map((warning, idx) => (
                       <Alert key={idx} className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600 shadow-sm">
                         <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
@@ -1418,13 +1405,6 @@ const PolyurethaneOptimizer = () => {
                     ))}
                     {results.recommendations.length > 0 && (
                       <>
-                        {viewMode === 'simple' && (
-                          <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded-r-lg mt-4">
-                            <p className="text-sm text-green-700 font-semibold">
-                              💡 <strong>How to Fix:</strong> Follow these solutions to fix the problems and get perfect parts.
-                            </p>
-                          </div>
-                        )}
                         {results.recommendations.map((rec, idx) => (
                           <div key={idx} className="flex items-start gap-3 text-sm bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 shadow-sm">
                             <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">→</span>
@@ -1455,7 +1435,7 @@ const PolyurethaneOptimizer = () => {
                           <YAxis
                             label={{ value: 'Pressure (bar)', angle: -90, position: 'insideLeft' }}
                           />
-                          <Tooltip />
+                          <ChartTooltip />
                           <Legend />
                           <Line
                             type="monotone"
