@@ -509,8 +509,31 @@ const PolyurethaneOptimizer = () => {
   }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
+      {/* Animated background particles */}
+      <div className="fixed inset-0 pointer-events-none">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full animate-float opacity-20"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Animated gradient orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
         {/* Header Section with Title and Actions */}
         <div className="flex justify-between items-center gap-4 flex-wrap bg-white/10 backdrop-blur-md border border-white/20 text-white p-6 rounded-xl shadow-xl">
         <div>
@@ -552,10 +575,10 @@ const PolyurethaneOptimizer = () => {
       </div>
 
       {/* Beta Disclaimer */}
-      <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 shadow-sm">
-        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-        <AlertTitle className="text-yellow-900 dark:text-yellow-200 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
-        <AlertDescription className="text-yellow-800 dark:text-yellow-300 text-sm">
+      <Alert className="bg-yellow-400/10 backdrop-blur-md border border-yellow-400/30 shadow-lg">
+        <AlertTriangle className="h-4 w-4 text-yellow-300" />
+        <AlertTitle className="text-yellow-100 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
+        <AlertDescription className="text-yellow-200/90 text-sm">
           This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
           Always conduct thorough testing before implementing in production environments.
         </AlertDescription>
@@ -579,63 +602,63 @@ const PolyurethaneOptimizer = () => {
       )}
 
       {/* How to Use Guide - Collapsible */}
-      <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border-2 border-blue-300 dark:border-blue-700 shadow-lg">
-        <CardHeader>
+      <Card className="bg-white/5 backdrop-blur-sm border border-blue-400/30 shadow-lg">
+        <CardHeader className="bg-white/5 backdrop-blur-md border-b border-blue-400/20">
           <button
             onClick={() => setShowHelpGuide(!showHelpGuide)}
             className="w-full flex items-center justify-between text-left group"
           >
-            <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-50">
-              <HelpCircle className="w-7 h-7 text-blue-600 group-hover:animate-pulse" />
+            <CardTitle className="flex items-center gap-3 text-xl text-white">
+              <HelpCircle className="w-7 h-7 text-blue-400 group-hover:animate-pulse" />
               {viewMode === 'simple' ? 'What Does This Tool Do? (Click to expand)' : 'Technical Overview (Click to expand)'}
             </CardTitle>
             {showHelpGuide ? (
-              <ChevronDown className="w-6 h-6 text-blue-600 transition-transform" />
+              <ChevronDown className="w-6 h-6 text-blue-400 transition-transform" />
             ) : (
-              <ChevronRight className="w-6 h-6 text-blue-600 transition-transform" />
+              <ChevronRight className="w-6 h-6 text-blue-400 transition-transform" />
             )}
           </button>
         </CardHeader>
         {showHelpGuide && viewMode === 'simple' && (
           <CardContent className="space-y-4 animate-slideIn">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-600 shadow-md">
-              <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-4">
+            <div className="bg-white/5 backdrop-blur-sm p-5 rounded-xl border border-blue-400/30 shadow-md">
+              <h3 className="font-bold text-lg text-white mb-4">
                 This tool answers 3 critical questions:
               </h3>
               <div className="space-y-3">
-                <div className="flex gap-3 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-300 dark:border-green-700">
-                  <CheckCircle2 className="w-7 h-7 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex gap-3 p-4 bg-green-400/10 backdrop-blur-sm rounded-lg border border-green-400/30">
+                  <CheckCircle2 className="w-7 h-7 text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-green-900 dark:text-green-100 text-base">
+                    <p className="font-bold text-green-100 text-base">
                       1. Can my machine handle this job?
                     </p>
-                    <p className="text-sm text-green-800 dark:text-green-200 mt-1">
+                    <p className="text-sm text-green-200/90 mt-1">
                       We check if your machine is powerful enough to push foam through your tubes and into the mold.
                       If your machine isn't strong enough, you'll get incomplete parts or the machine will struggle.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-3 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-700">
-                  <Info className="w-7 h-7 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex gap-3 p-4 bg-blue-400/10 backdrop-blur-sm rounded-lg border border-blue-400/30">
+                  <Info className="w-7 h-7 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-blue-900 dark:text-blue-100 text-base">
+                    <p className="font-bold text-blue-100 text-base">
                       2. What pressure do I need?
                     </p>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                    <p className="text-sm text-blue-200/90 mt-1">
                       We calculate exactly how much pressure (in bar) you need to push foam smoothly through your setup.
                       Too little pressure = incomplete parts. Too much = wasted energy and potential damage.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-3 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-700">
-                  <AlertTriangle className="w-7 h-7 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div className="flex gap-3 p-4 bg-purple-400/10 backdrop-blur-sm rounded-lg border border-purple-400/30">
+                  <AlertTriangle className="w-7 h-7 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-purple-900 dark:text-purple-100 text-base">
+                    <p className="font-bold text-purple-100 text-base">
                       3. Will I get good quality parts?
                     </p>
-                    <p className="text-sm text-purple-800 dark:text-purple-200 mt-1">
+                    <p className="text-sm text-purple-200/90 mt-1">
                       We predict if your settings will make quality parts or if you'll have defects like bubbles,
                       weak spots, voids, or incomplete filling. We also suggest how to fix problems!
                     </p>
@@ -644,15 +667,15 @@ const PolyurethaneOptimizer = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 p-4 rounded-lg border-l-4 border-yellow-500">
-              <p className="text-sm text-yellow-900 dark:text-yellow-100 font-semibold">
+            <div className="bg-yellow-400/10 backdrop-blur-sm p-4 rounded-lg border-l-4 border-yellow-400">
+              <p className="text-sm text-yellow-100 font-semibold">
                 ⚡ <strong>Quick Tip:</strong> Use the sliders to quickly try different settings, then fine-tune the exact numbers in the boxes.
                 The tool updates your results instantly as you change settings!
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-4 rounded-lg border-l-4 border-green-500">
-              <p className="text-sm text-green-900 dark:text-green-100">
+            <div className="bg-green-400/10 backdrop-blur-sm p-4 rounded-lg border-l-4 border-green-400">
+              <p className="text-sm text-green-100">
                 <strong>New to foam injection?</strong> Don't worry! Every setting has a plain-English explanation.
                 Just look for the blue boxes under each slider. We'll explain what it does and how it affects your parts.
               </p>
@@ -660,11 +683,11 @@ const PolyurethaneOptimizer = () => {
           </CardContent>
         )}
         {showHelpGuide && viewMode === 'advanced' && (
-          <CardContent className="space-y-3 text-sm sm:text-base text-blue-900 dark:text-blue-100 animate-slideIn">
+          <CardContent className="space-y-3 text-sm sm:text-base text-blue-100 animate-slideIn">
             <p><strong>Advanced Fluid Dynamics Calculator</strong> for polyurethane injection molding optimization using Power Law and Arrhenius equations.</p>
             <div className="space-y-2">
-              <p className="font-semibold text-blue-950 dark:text-blue-50">Features:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2 text-blue-800 dark:text-blue-200">
+              <p className="font-semibold text-blue-50">Features:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2 text-blue-200">
                 <li>Modified Hagen-Poiseuille equation with Power Law correction for non-Newtonian fluids</li>
                 <li>Temperature-dependent viscosity using Arrhenius model</li>
                 <li>Reynolds number analysis for flow regime determination</li>
@@ -672,7 +695,7 @@ const PolyurethaneOptimizer = () => {
                 <li>ML-based quality prediction and defect risk assessment</li>
               </ul>
             </div>
-            <p className="text-xs sm:text-sm pt-2 border-t border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300">
+            <p className="text-xs sm:text-sm pt-2 border-t border-blue-400/30 text-blue-200">
               <strong>AI Learning:</strong> The system continuously learns from each calculation to improve predictions and recommendations.
             </p>
           </CardContent>
