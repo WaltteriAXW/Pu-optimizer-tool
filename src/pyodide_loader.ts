@@ -1,10 +1,13 @@
 /**
  * Improved Pyodide loader for PolyurethaneCalculator
- * 
+ *
  * This module handles loading Pyodide and the Python calculator code,
  * then provides functions to call the Python code from JavaScript.
  */
 import { loadPyodide } from 'pyodide';
+import { createLogger } from './utils/errorTracking';
+
+const logger = createLogger('PyodideLoader');
 
 // Types for calculation parameters and results
 export interface ProcessParameters {
@@ -244,9 +247,9 @@ async function retryWithBackoff<T>(
 
       if (attempt < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.warn(
-          `Attempt ${attempt + 1}/${maxRetries} failed: ${lastError.message}. ` +
-          `Retrying in ${delay}ms...`
+        logger.warning(
+          `Attempt ${attempt + 1}/${maxRetries} failed. Retrying in ${delay}ms...`,
+          { error: lastError.message, attempt, maxRetries }
         );
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -289,14 +292,14 @@ export async function initializePyodide(): Promise<void> {
       const config = getConfig();
 
       if (config.debugMode) {
-        console.log('Pyodide configuration:', config);
+        logger.debug('Pyodide configuration loaded', config);
       }
 
-      console.log('Loading Pyodide...');
+      logger.info('Starting Pyodide initialization...');
 
       // Check if window is available (client-side only)
       if (typeof window === 'undefined') {
-        console.log('Window not available, skipping Pyodide load');
+        logger.info('Window not available, skipping Pyodide load');
         isInitializing = false;
         return;
       }
@@ -308,14 +311,14 @@ export async function initializePyodide(): Promise<void> {
             const instance = await loadPyodide({
               indexURL: config.pyodideCDN,
             });
-            console.log('Pyodide loaded successfully');
+            logger.info('Pyodide loaded successfully');
             return instance;
           },
           config.maxRetries,
           config.retryDelay
         );
 
-        console.log('Loading NumPy...');
+        logger.info('Loading NumPy package...');
         await retryWithBackoff(
           () => pyodide.loadPackage("numpy"),
           config.maxRetries,
@@ -323,7 +326,7 @@ export async function initializePyodide(): Promise<void> {
         );
 
         if (config.enableML) {
-          console.log('Loading scikit-learn for ML models...');
+          logger.info('Loading scikit-learn for ML models...');
           await retryWithBackoff(
             () => pyodide.loadPackage("scikit-learn"),
             config.maxRetries,
@@ -331,12 +334,12 @@ export async function initializePyodide(): Promise<void> {
           );
         }
 
-        console.log('Loading calculator code...');
+        logger.info('Loading calculator code...');
         // Load the polyurethane calculator code from file
         try {
           const calculatorPath = `${config.basePath}src/polyurethane_calculator.py`;
           if (config.debugMode) {
-            console.log('Fetching calculator from:', calculatorPath);
+            logger.debug('Fetching calculator from path', { calculatorPath });
           }
 
           const calculatorCode = await retryWithBackoff(async () => {
@@ -348,19 +351,21 @@ export async function initializePyodide(): Promise<void> {
           }, config.maxRetries, config.retryDelay);
 
           await pyodide.runPython(calculatorCode);
-          console.log('Calculator code loaded successfully');
+          logger.info('Calculator code loaded successfully from file');
         } catch (err) {
-          console.warn('Failed to load calculator from file, using embedded code', err);
+          logger.warning('Failed to load calculator from file, using embedded code', {
+            error: err instanceof Error ? err.message : String(err)
+          });
           calculatorCode = getPythonCalculatorCode();
           await pyodide.runPython(calculatorCode);
         }
 
         if (config.enableML) {
-          console.log('Loading ML optimizer module...');
+          logger.info('Loading ML optimizer module...');
           try {
             const mlPath = `${config.basePath}src/process_optimizer_ml.py`;
             if (config.debugMode) {
-              console.log('Fetching ML optimizer from:', mlPath);
+              logger.debug('Fetching ML optimizer from path', { mlPath });
             }
 
             const mlCode = await retryWithBackoff(async () => {
@@ -372,32 +377,40 @@ export async function initializePyodide(): Promise<void> {
             }, config.maxRetries, config.retryDelay);
 
             await pyodide.runPython(mlCode);
-            console.log('ML optimizer loaded successfully');
+            logger.info('ML optimizer loaded successfully');
 
-            console.log('Training ML models...');
+            logger.info('Initializing ML models...');
             await pyodide.runPython(`
 from process_optimizer_ml import initialize_ml_models
 metrics = initialize_ml_models()
 print(f"ML models initialized with {metrics['n_samples']} samples")
 print(f"Quality classifier accuracy: {metrics['quality_accuracy']*100:.1f}%")
             `);
-            console.log('ML models trained and ready');
+            logger.info('ML models initialized and ready for inference');
           } catch (err) {
-            console.warn('Failed to load ML module - running without ML features', err);
+            logger.warning('Failed to load ML module - running without ML features', {
+              error: err instanceof Error ? err.message : String(err)
+            });
           }
         }
 
-        console.log('Pyodide initialization completed successfully');
+        logger.info('Pyodide initialization completed successfully');
       } catch (err) {
-        console.error('Failed to load Pyodide:', err);
+        logger.error(err instanceof Error ? err : new Error(String(err)), {
+          context: 'PyodideLoadingFailed',
+          action: 'loadPyodide'
+        });
         pyodide = null;
         throw err;
       }
-      
+
     } catch (err) {
-      console.error('Pyodide initialization failed:', err);
+      logger.error(err instanceof Error ? err : new Error(String(err)), {
+        context: 'PyodideInitializationFailed',
+        action: 'initializePyodide'
+      });
       pyodide = null;
-      throw new PyodideError(`Failed to initialize Pyodide: ${err.message}`);
+      throw new PyodideError(`Failed to initialize Pyodide: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       isInitializing = false;
     }
@@ -502,13 +515,15 @@ export async function calculateParameters(params: ProcessParameters): Promise<Ca
       try {
         await initializePyodide();
       } catch (err) {
-        console.warn('Pyodide initialization failed, using fallback mode:', err);
+        logger.warning('Pyodide initialization failed, using fallback mode', {
+          error: err instanceof Error ? err.message : String(err)
+        });
         return calculateParametersFallback(params);
       }
     }
-    
+
     if (!pyodide) {
-      console.log('Pyodide not available, using fallback calculations');
+      logger.info('Pyodide not available, using fallback JavaScript calculations');
       return calculateParametersFallback(params);
     }
     
@@ -547,24 +562,26 @@ else:
     // Check for errors
     const error = pyodide.globals.get('error').toJs();
     if (error) {
-      console.warn('Python calculation error:', error);
+      logger.warning('Python calculation error', { pythonError: error });
       if (error.type === 'ValidationError') {
         throw new ValidationError(error.message);
       } else {
         throw new Error(error.message);
       }
     }
-    
+
     // Get results and convert to JavaScript object
     const results = pyodide.globals.get('results').toJs();
     return results as CalculationResults;
-    
+
   } catch (err) {
     if (err instanceof ValidationError) {
       throw err;
     }
-    
-    console.error('Calculation error:', err);
+
+    logger.warning('Calculation error, using fallback', {
+      error: err instanceof Error ? err.message : String(err)
+    });
     return calculateParametersFallback(params);
   }
 }
@@ -585,13 +602,15 @@ export async function calculateEnvironmentalImpact(
       try {
         await initializePyodide();
       } catch (err) {
-        console.warn('Pyodide initialization failed, using fallback environmental impact:', err);
+        logger.warning('Pyodide initialization failed, using fallback environmental impact', {
+          error: err instanceof Error ? err.message : String(err)
+        });
         return calculateEnvironmentalImpactFallback(agentType, annualConsumption);
       }
     }
-    
+
     if (!pyodide) {
-      console.log('Pyodide not available, using fallback environmental impact');
+      logger.info('Pyodide not available, using fallback environmental impact calculations');
       return calculateEnvironmentalImpactFallback(agentType, annualConsumption);
     }
     
@@ -610,16 +629,19 @@ else:
     // Check for errors
     const error = pyodide.globals.get('env_error');
     if (error && !error.isNone()) {
-      console.warn('Environment impact calculation error:', error.toJs());
-      throw new Error(error.toJs().message);
+      const errorDetails = error.toJs();
+      logger.warning('Environmental impact calculation error', { pythonError: errorDetails });
+      throw new Error(errorDetails.message);
     }
-    
+
     // Get results and convert to JavaScript object
     const results = pyodide.globals.get('env_impact').toJs();
     return results as EnvironmentalImpact;
-    
+
   } catch (err) {
-    console.error('Environmental impact calculation error:', err);
+    logger.warning('Environmental impact calculation error, using fallback', {
+      error: err instanceof Error ? err.message : String(err)
+    });
     return calculateEnvironmentalImpactFallback(agentType, annualConsumption);
   }
 }
