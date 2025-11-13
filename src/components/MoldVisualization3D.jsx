@@ -397,7 +397,7 @@ export const MoldVisualization3D = ({
   const [autoRotate, setAutoRotate] = useState(false);
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 rounded-lg overflow-hidden border border-blue-400/30 shadow-lg backdrop-blur-sm">
+    <div className="relative w-full bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-indigo-400/20 rounded-lg overflow-hidden border border-blue-400/40 shadow-xl backdrop-blur-sm">
       <Canvas
         shadows
         style={{ height: `${height}px` }}
@@ -417,9 +417,9 @@ export const MoldVisualization3D = ({
       </Canvas>
 
       {/* Controls overlay with glassmorphism */}
-      <div className="absolute top-2 right-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-2 shadow-lg">
+      <div className="absolute top-2 right-2 bg-white/15 backdrop-blur-md border border-white/30 rounded-lg p-2 shadow-lg">
         <div className="text-xs space-y-1">
-          <div className="font-semibold text-white border-b border-white/20 pb-1 mb-1">3D Controls</div>
+          <div className="font-semibold text-white border-b border-white/30 pb-1 mb-1">3D Controls</div>
           <div className="text-blue-100">🖱️ Rotate: Click + Drag</div>
           <div className="text-blue-100">🔍 Zoom: Scroll</div>
           <div className="text-blue-100">✋ Pan: Right Click + Drag</div>
@@ -427,7 +427,7 @@ export const MoldVisualization3D = ({
       </div>
 
       {/* Shape info overlay with glassmorphism */}
-      <div className="absolute top-2 left-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-3 py-2 shadow-lg">
+      <div className="absolute top-2 left-2 bg-white/15 backdrop-blur-md border border-white/30 rounded-lg px-3 py-2 shadow-lg">
         <div className="text-sm font-semibold text-white">
           {moldShape === 'rectangular' && '📦 Rectangular Mold'}
           {moldShape === 'cylinder' && '🥫 Cylindrical Mold'}
