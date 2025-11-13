@@ -1,13 +1,9 @@
 import React from 'react';
 
-export const Card = React.forwardRef(({ className = '', shine = false, animated = true, ...props }, ref) => (
+export const Card = React.forwardRef(({ className = '', ...props }, ref) => (
   <div
     ref={ref}
-    className={`bg-white dark:bg-gray-800 rounded-lg shadow transition-smooth ${
-      shine ? 'card-shine' : ''
-    } ${
-      animated ? 'hover-lift' : ''
-    } ${className}`}
+    className={`bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-150 ${className}`}
     {...props}
   />
 ));
@@ -15,7 +11,7 @@ export const Card = React.forwardRef(({ className = '', shine = false, animated 
 export const CardHeader = React.forwardRef(({ className = '', ...props }, ref) => (
   <div
     ref={ref}
-    className={`p-6 ${className}`}
+    className={`p-6 border-b border-gray-200 dark:border-gray-700 ${className}`}
     {...props}
   />
 ));
@@ -23,7 +19,7 @@ export const CardHeader = React.forwardRef(({ className = '', ...props }, ref) =
 export const CardTitle = React.forwardRef(({ className = '', ...props }, ref) => (
   <h3
     ref={ref}
-    className={`text-xl font-semibold text-shadow-sm ${className}`}
+    className={`text-lg font-semibold text-gray-900 dark:text-gray-100 ${className}`}
     {...props}
   />
 ));

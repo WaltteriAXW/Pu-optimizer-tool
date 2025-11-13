@@ -5,23 +5,24 @@ export const Button = React.forwardRef(({
   className = '',
   variant = 'default',
   size = 'default',
-  animated = true,
   ...props
 }, ref) => {
   const getVariantClasses = () => {
     switch (variant) {
       case 'destructive':
-        return 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg';
+        return 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 border border-red-700';
       case 'outline':
-        return 'border-2 border-gray-300 dark:border-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-400';
+        return 'border-2 border-gray-400 dark:border-gray-500 bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
       case 'ghost':
-        return 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800';
+        return 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700';
       case 'success':
-        return 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg';
+        return 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 border border-green-700';
+      case 'warning':
+        return 'bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 border border-amber-700';
       case 'primary':
-        return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-xl';
+        return 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 border border-blue-700';
       default:
-        return 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-xl';
+        return 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 border border-blue-700';
     }
   };
 
@@ -30,9 +31,9 @@ export const Button = React.forwardRef(({
       case 'sm':
         return 'text-sm px-3 py-1.5 rounded-md';
       case 'lg':
-        return 'text-lg px-6 py-3 rounded-lg';
+        return 'text-lg px-6 py-3 rounded-md';
       default:
-        return 'px-4 py-2 rounded-lg';
+        return 'px-4 py-2 rounded-md';
     }
   };
 
@@ -40,9 +41,7 @@ export const Button = React.forwardRef(({
 
   return (
     <button
-      className={`font-medium transition-all duration-200 ${
-        animated && !isDisabled ? 'btn-3d hover-lift active:scale-95' : ''
-      } ${
+      className={`font-semibold transition-colors duration-150 ${
         isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       } ${getVariantClasses()} ${getSizeClasses()} ${className}`}
       ref={ref}

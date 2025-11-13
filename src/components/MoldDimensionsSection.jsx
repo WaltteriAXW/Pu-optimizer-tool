@@ -64,8 +64,8 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
   }, [moldShape, debouncedDimensions, setMoldVolume]);
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-indigo-500">
-      <CardHeader className="bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20">
+    <Card className="border-l-4 border-l-indigo-600">
+      <CardHeader>
         <button
           type="button"
           className="w-full flex items-center justify-between text-left group"

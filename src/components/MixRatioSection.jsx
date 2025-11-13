@@ -22,20 +22,20 @@ export const MixRatioSection = React.memo(function MixRatioSection({
   mixResults
 }) {
   return (
-    <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
-      <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
+    <Card className="border-l-4 border-l-green-600">
+      <CardHeader>
         <button
           type="button"
-          className="w-full flex items-center justify-between text-left group"
+          className="w-full flex items-center justify-between text-left hover:opacity-80 transition-opacity duration-150"
           onClick={() => setMixRatioExpanded(!mixRatioExpanded)}
         >
-          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
-            <Leaf className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
+          <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-gray-50">
+            <Leaf className="w-5 h-5 text-green-600" />
             Advanced Mix Ratio Calculator
           </CardTitle>
           {mixRatioExpanded ?
-            <ChevronDown className="w-5 h-5 text-green-600 transition-transform" /> :
-            <ChevronRight className="w-5 h-5 text-green-600 transition-transform" />
+            <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform" /> :
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform" />
           }
         </button>
       </CardHeader>
@@ -89,24 +89,24 @@ export const MixRatioSection = React.memo(function MixRatioSection({
           />
 
           {mixResults && (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg space-y-3 text-sm border border-green-200 dark:border-green-700 shadow-sm">
-              <h4 className="font-bold text-green-950 dark:text-green-50 text-base flex items-center gap-2">
+            <div className="bg-green-50 dark:bg-gray-700 p-4 rounded-md space-y-3 text-sm border border-green-200 dark:border-green-800">
+              <h4 className="font-bold text-gray-900 dark:text-gray-100 text-base flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
                 Component Requirements:
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Polyol</p>
-                  <p className="text-green-800 dark:text-green-200 font-bold">
+                <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded border border-gray-300 dark:border-gray-500">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">Polyol</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-bold mt-1">
                     {mixResults.polyolKg} kg
                   </p>
                   <p className="text-xs text-green-700 dark:text-green-300">
                     ({mixResults.polyolL} L)
                   </p>
                 </div>
-                <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Isocyanate</p>
-                  <p className="text-green-800 dark:text-green-200 font-bold">
+                <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded border border-gray-300 dark:border-gray-500">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">Isocyanate</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-bold mt-1">
                     {mixResults.isoKg} kg
                   </p>
                   <p className="text-xs text-green-700 dark:text-green-300">
@@ -114,18 +114,18 @@ export const MixRatioSection = React.memo(function MixRatioSection({
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-green-300 dark:border-green-600">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-green-200 dark:border-green-800">
                 <div className="text-center">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Total Weight</p>
-                  <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.totalWeight} kg</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">Total Weight</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-bold mt-1">{mixResults.totalWeight} kg</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Density</p>
-                  <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.density} kg/m³</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">Density</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-bold mt-1">{mixResults.density} kg/m³</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Ratio</p>
-                  <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.weightRatio}</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-semibold">Ratio</p>
+                  <p className="text-gray-900 dark:text-gray-100 font-bold mt-1">{mixResults.weightRatio}</p>
                 </div>
               </div>
             </div>

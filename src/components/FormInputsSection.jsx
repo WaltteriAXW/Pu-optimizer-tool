@@ -43,10 +43,10 @@ export const FormInputsSection = React.memo(function FormInputsSection({
   return (
     <>
       {/* Machine and Material Selection */}
-      <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
-          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold mr-1">1</div>
+      <Card className="border-l-4 border-l-blue-600">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-gray-50">
+            <div className="flex items-center justify-center w-8 h-8 rounded bg-blue-600 text-white text-sm font-bold">1</div>
             <Settings2 className="w-5 h-5 text-blue-600" />
             Machine Selection
           </CardTitle>
@@ -64,34 +64,34 @@ export const FormInputsSection = React.memo(function FormInputsSection({
           </SelectField>
 
           {MACHINE_SPECS[selectedMachine] && (
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 p-4 rounded-lg text-sm border border-blue-200 dark:border-blue-700 transform transition-all duration-200 hover:scale-[1.02]">
-              <p className="font-bold text-blue-950 dark:text-blue-50 text-base">
+            <div className="bg-blue-50 dark:bg-gray-700 p-4 rounded-md text-sm border border-blue-200 dark:border-blue-800">
+              <p className="font-bold text-gray-900 dark:text-gray-100 text-base">
                 {MACHINE_SPECS[selectedMachine].name}
               </p>
-              <p className="text-blue-800 dark:text-blue-200 mt-1">
+              <p className="text-gray-700 dark:text-gray-300 mt-1 text-sm">
                 {MACHINE_SPECS[selectedMachine].manufacturer}
               </p>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                  <p className="text-gray-600 dark:text-gray-400">Max Output</p>
-                  <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].output}</p>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-gray-100 dark:bg-gray-600 p-2 rounded border border-gray-300 dark:border-gray-500">
+                  <p className="text-gray-700 dark:text-gray-300 text-xs font-semibold">Max Output</p>
+                  <p className="font-bold text-gray-900 dark:text-gray-100 mt-1">{MACHINE_SPECS[selectedMachine].output}</p>
                 </div>
-                <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                  <p className="text-gray-600 dark:text-gray-400">Max Pressure</p>
-                  <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
+                <div className="bg-gray-100 dark:bg-gray-600 p-2 rounded border border-gray-300 dark:border-gray-500">
+                  <p className="text-gray-700 dark:text-gray-300 text-xs font-semibold">Max Pressure</p>
+                  <p className="font-bold text-gray-900 dark:text-gray-100 mt-1">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
                 </div>
-                <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                  <p className="text-gray-600 dark:text-gray-400">Tank</p>
-                  <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
+                <div className="bg-gray-100 dark:bg-gray-600 p-2 rounded border border-gray-300 dark:border-gray-500">
+                  <p className="text-gray-700 dark:text-gray-300 text-xs font-semibold">Tank</p>
+                  <p className="font-bold text-gray-900 dark:text-gray-100 mt-1">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
                 </div>
               </div>
             </div>
           )}
 
           {selectedMaterialName && (
-            <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-300 dark:border-green-700">
-              <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                ✅ Using: {selectedMaterialName}
+            <div className="bg-green-50 dark:bg-gray-700 p-3 rounded-md border-l-4 border-l-green-600">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                ✓ Material: {selectedMaterialName}
               </p>
             </div>
           )}
@@ -99,33 +99,32 @@ export const FormInputsSection = React.memo(function FormInputsSection({
       </Card>
 
       {/* Material Database Browser */}
-      <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-white via-green-50 to-emerald-50 dark:from-gray-800 dark:via-green-900/20 dark:to-emerald-900/20">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
+      <Card className="border-l-4 border-l-green-600">
+        <CardHeader>
           <button
             type="button"
-            className="w-full flex items-center justify-between text-left group"
+            className="w-full flex items-center justify-between text-left hover:opacity-80 transition-opacity duration-150"
             onClick={() => setShowDatabase(!showDatabase)}
           >
-            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
-              <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
-              Material Database Browser
-              <span className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full text-green-800 dark:text-green-200 font-normal">
-                {getAllMaterialPresets().length} Real Products
+            <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-gray-50">
+              <Database className="w-5 h-5 text-green-600" />
+              Material Database
+              <span className="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200 font-normal">
+                {getAllMaterialPresets().length} products
               </span>
             </CardTitle>
             {showDatabase ?
-              <ChevronDown className="w-5 h-5 text-green-600 transition-transform" /> :
-              <ChevronRight className="w-5 h-5 text-green-600 transition-transform" />
+              <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform" /> :
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform" />
             }
           </button>
         </CardHeader>
         {showDatabase && (
-          <CardContent className="pt-4 animate-slideIn">
+          <CardContent className="pt-4">
             {viewMode === 'simple' && (
-              <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  💡 <strong>Select Your Material:</strong> Browse real polyurethane products from manufacturers below.
-                  Click any product to see details, then use it in your calculations. All material properties (density, viscosity, mix ratios) are filled automatically!
+              <div className="bg-blue-50 dark:bg-gray-700 border-l-4 border-l-blue-600 p-3 rounded-r-md mb-4">
+                <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
+                  <strong>Select Material:</strong> Browse polyurethane products from the database. All properties (density, viscosity, mix ratios) are auto-filled when selected.
                 </p>
               </div>
             )}
@@ -135,10 +134,10 @@ export const FormInputsSection = React.memo(function FormInputsSection({
       </Card>
 
       {/* Process Parameters Input */}
-      <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 bg-gradient-to-br from-white via-purple-50 to-pink-50 dark:from-gray-800 dark:via-purple-900/20 dark:to-pink-900/20">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
-          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white text-sm font-bold mr-1">2</div>
+      <Card className="border-l-4 border-l-purple-600">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-gray-50">
+            <div className="flex items-center justify-center w-8 h-8 rounded bg-purple-600 text-white text-sm font-bold">2</div>
             <Thermometer className="w-5 h-5 text-purple-600" />
             Process Parameters
           </CardTitle>
