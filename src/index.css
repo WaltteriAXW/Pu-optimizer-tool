@@ -502,3 +502,122 @@ html {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 217, 255, 0.4);
 }
+
+/* Global Text Color Overrides for Modern Industrial Theme */
+/* Override all gray text colors with the new color palette */
+
+/* Primary text - headings and important content */
+.text-gray-900,
+.dark .text-gray-900,
+.text-gray-800,
+.dark .text-gray-800,
+.dark\:text-gray-50,
+.dark\:text-gray-100 {
+  color: var(--color-neutral-light) !important;
+}
+
+/* Secondary text - labels and descriptions */
+.text-gray-700,
+.dark .text-gray-700,
+.text-gray-600,
+.dark .text-gray-600,
+.dark\:text-gray-200,
+.dark\:text-gray-300 {
+  color: var(--color-neutral-secondary) !important;
+}
+
+/* Tertiary text - hints and less important info */
+.text-gray-500,
+.dark .text-gray-500,
+.text-gray-400,
+.dark .text-gray-400 {
+  color: var(--color-neutral-tertiary) !important;
+}
+
+/* Background overrides for info cards */
+.bg-blue-50,
+.dark .bg-blue-50,
+.bg-gray-100,
+.dark .bg-gray-100 {
+  background-color: rgba(26, 31, 46, 0.5) !important;
+}
+
+.dark .bg-gray-600,
+.dark .bg-gray-700 {
+  background-color: var(--color-neutral-medium) !important;
+}
+
+/* Border overrides */
+.border-gray-300,
+.dark .border-gray-300,
+.dark .border-gray-500,
+.dark .border-gray-600 {
+  border-color: rgba(0, 217, 255, 0.2) !important;
+}
+
+/* Update blue accents to cyan */
+.text-blue-600,
+.dark .text-blue-600,
+.text-blue-400,
+.dark .text-blue-400 {
+  color: var(--color-accent-cyan) !important;
+}
+
+.bg-blue-600,
+.dark .bg-blue-600 {
+  background-color: var(--color-accent-cyan) !important;
+}
+
+.border-blue-600,
+.dark .border-blue-600,
+.border-l-blue-600,
+.dark .border-l-blue-600 {
+  border-color: var(--color-accent-cyan) !important;
+}
+
+/* Update purple accents to cyan */
+.text-purple-600,
+.dark .text-purple-600 {
+  color: var(--color-accent-cyan) !important;
+}
+
+.bg-purple-600,
+.dark .bg-purple-600 {
+  background-color: var(--color-accent-cyan) !important;
+}
+
+.border-purple-600,
+.dark .border-purple-600,
+.border-l-purple-600,
+.dark .border-l-purple-600 {
+  border-color: var(--color-accent-cyan) !important;
+}
+
+/* Update indigo accents to cyan */
+.text-indigo-600,
+.dark .text-indigo-600 {
+  color: var(--color-accent-cyan) !important;
+}
+
+.bg-indigo-600,
+.dark .bg-indigo-600 {
+  background-color: var(--color-accent-cyan) !important;
+}
+
+.border-indigo-600,
+.dark .border-indigo-600,
+.border-l-indigo-600,
+.dark .border-l-indigo-600 {
+  border-color: var(--color-accent-cyan) !important;
+}
+
+/* Green success colors */
+.bg-green-50,
+.dark .bg-green-50 {
+  background-color: rgba(0, 208, 132, 0.1) !important;
+}
+
+.border-l-green-600,
+.dark .border-l-green-600 {
+  border-left-color: var(--color-accent-green) !important;
+}
