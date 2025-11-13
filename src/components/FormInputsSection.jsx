@@ -216,7 +216,10 @@ export const FormInputsSection = React.memo(function FormInputsSection({
                 max="10000"
                 step="10"
                 value={inputs.viscosity}
-                onChange={(e) => setInputs(prev => ({ ...prev, viscosity: Number(e.target.value) }))}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? '' : Number(e.target.value);
+                  setInputs(prev => ({ ...prev, viscosity: value }));
+                }}
                 helpText="Dynamic viscosity at reference temperature (25°C)"
               />
 
@@ -229,7 +232,10 @@ export const FormInputsSection = React.memo(function FormInputsSection({
                 max="1500"
                 step="10"
                 value={inputs.density}
-                onChange={(e) => setInputs(prev => ({ ...prev, density: Number(e.target.value) }))}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? '' : Number(e.target.value);
+                  setInputs(prev => ({ ...prev, density: value }));
+                }}
                 helpText="Material density for flow calculations"
               />
             </>

@@ -49,7 +49,10 @@ export const MixRatioSection = React.memo(function MixRatioSection({
               type="number"
               step="0.01"
               value={mixInputs.polyolSG}
-              onChange={(e) => setMixInputs(prev => ({ ...prev, polyolSG: Number(e.target.value) }))}
+              onChange={(e) => {
+                const value = e.target.value === '' ? '' : Number(e.target.value);
+                setMixInputs(prev => ({ ...prev, polyolSG: value }));
+              }}
               helpText="Specific gravity of polyol component"
               placeholder="1.12"
             />
@@ -61,7 +64,10 @@ export const MixRatioSection = React.memo(function MixRatioSection({
               type="number"
               step="0.01"
               value={mixInputs.isoSG}
-              onChange={(e) => setMixInputs(prev => ({ ...prev, isoSG: Number(e.target.value) }))}
+              onChange={(e) => {
+                const value = e.target.value === '' ? '' : Number(e.target.value);
+                setMixInputs(prev => ({ ...prev, isoSG: value }));
+              }}
               helpText="Specific gravity of isocyanate"
               placeholder="1.23"
             />
@@ -74,7 +80,10 @@ export const MixRatioSection = React.memo(function MixRatioSection({
             type="number"
             step="0.1"
             value={mixInputs.partVolume}
-            onChange={(e) => setMixInputs(prev => ({ ...prev, partVolume: Number(e.target.value) }))}
+            onChange={(e) => {
+              const value = e.target.value === '' ? '' : Number(e.target.value);
+              setMixInputs(prev => ({ ...prev, partVolume: value }));
+            }}
             helpText="Total volume of part to be filled"
             placeholder="1.0"
           />

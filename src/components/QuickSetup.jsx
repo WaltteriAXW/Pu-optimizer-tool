@@ -142,41 +142,6 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
 
   if (!isOpen) return null;
 
-  if (loading) {
-    return (
-      <Card className="mb-6">
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-          <p className="text-gray-600">Loading databases...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show error state if database loading failed
-  if (loadError) {
-    return (
-      <Card className="mb-6 border-red-200">
-        <CardContent className="p-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Database Loading Failed</AlertTitle>
-            <AlertDescription>
-              <p className="mt-2">{loadError}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Refresh Page
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <>
       <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -191,6 +156,32 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Loading/Error State */}
+          {loading && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3">
+              <div className="animate-spin h-5 w-5 border-3 border-blue-500 border-t-transparent rounded-full"></div>
+              <p className="text-sm text-blue-800">Loading databases...</p>
+            </div>
+          )}
+
+          {loadError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Database Loading Failed</AlertTitle>
+              <AlertDescription>
+                <p className="mt-1 text-sm">{loadError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Step 1: Select Mold */}
           <div className="bg-white p-4 rounded-lg border">
             <div className="flex items-center justify-between mb-3">
@@ -244,10 +235,11 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
               onClick={() => setShowMoldSelector(true)}
               className="w-full"
               variant="outline"
+              disabled={loading || loadError}
             >
               <Square className="h-4 w-4 mr-2" />
-              {selectedMold ? 'Change Mold' : 'Browse All Molds'}
-              <span className="ml-2 text-xs text-gray-500">({moldDatabase.length} options)</span>
+              {loading ? 'Loading...' : (selectedMold ? 'Change Mold' : 'Browse All Molds')}
+              {!loading && <span className="ml-2 text-xs text-gray-500">({moldDatabase.length} options)</span>}
             </Button>
           </div>
 
@@ -301,10 +293,11 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
               onClick={() => setShowPipeSelector(true)}
               className="w-full"
               variant="outline"
+              disabled={loading || loadError}
             >
               <Settings2 className="h-4 w-4 mr-2" />
-              {selectedPipe ? 'Change Pipe' : 'Browse All Pipes'}
-              <span className="ml-2 text-xs text-gray-500">({pipeDatabase.length} options)</span>
+              {loading ? 'Loading...' : (selectedPipe ? 'Change Pipe' : 'Browse All Pipes')}
+              {!loading && <span className="ml-2 text-xs text-gray-500">({pipeDatabase.length} options)</span>}
             </Button>
           </div>
 
@@ -337,7 +330,7 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
           <div className="flex gap-2">
             <Button
               onClick={handleApply}
-              disabled={!selectedPipe && !selectedMold}
+              disabled={loading || loadError || (!selectedPipe && !selectedMold)}
               className="flex-1"
             >
               Apply Configuration

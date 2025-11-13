@@ -1,10 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PythonCalculationErrorBoundary from './error_boundary';
 import { PythonRuntimeErrorBoundary } from './specialized_error_boundaries';
 import PolyurethaneOptimizer from './polyurethane_optimizer_component';
+import { LoadingScreen } from './components/LoadingScreen';
 
 const AppComponent = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStage, setLoadingStage] = useState('initializing');
+
+  useEffect(() => {
+    // Simulate app initialization with stages
+    const stages = [
+      { name: 'initializing', duration: 300, progress: 20 },
+      { name: 'loading', duration: 400, progress: 40 },
+      { name: 'database', duration: 500, progress: 70 },
+      { name: 'calculations', duration: 400, progress: 90 },
+      { name: 'ready', duration: 200, progress: 100 }
+    ];
+
+    let totalDelay = 0;
+
+    stages.forEach((stage, index) => {
+      setTimeout(() => {
+        setLoadingStage(stage.name);
+        setLoadingProgress(stage.progress);
+
+        if (index === stages.length - 1) {
+          setTimeout(() => setIsLoading(false), stage.duration);
+        }
+      }, totalDelay);
+
+      totalDelay += stage.duration;
+    });
+  }, []);
+
   return (
+    <>
+      <LoadingScreen
+        isLoading={isLoading}
+        progress={loadingProgress}
+        stage={loadingStage}
+      />
     <div className="relative bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -125,6 +162,7 @@ const AppComponent = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 
