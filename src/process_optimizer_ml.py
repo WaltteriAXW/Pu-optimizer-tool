@@ -1,17 +1,35 @@
 """
 Machine Learning Process Optimizer for Polyurethane Injection
-Uses scikit-learn for intelligent parameter optimization and quality prediction
+Uses scikit-learn and XGBoost for intelligent parameter optimization and quality prediction
+Enhanced with feature engineering, ensemble methods, and comprehensive evaluation
 """
 
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, GradientBoostingRegressor, VotingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.calibration import CalibratedClassifierCV
 import json
 import os
 from datetime import datetime
 from pathlib import Path
 import pickle
+
+# XGBoost for improved performance
+try:
+    from xgboost import XGBClassifier, XGBRegressor
+    XGBOOST_AVAILABLE = True
+except ImportError:
+    print("Warning: XGBoost not available. Install with: pip install xgboost>=1.7.0")
+    XGBOOST_AVAILABLE = False
+
+# Model evaluation
+try:
+    from model_evaluator import ModelEvaluator
+    EVALUATOR_AVAILABLE = True
+except ImportError:
+    print("Warning: ModelEvaluator not available")
+    EVALUATOR_AVAILABLE = False
 
 
 class ProcessOptimizerML:
@@ -154,6 +172,55 @@ class ProcessOptimizerML:
 
         return training_data
 
+    def create_engineered_features(self, training_data):
+        """
+        Create advanced engineered features for better ML performance
+
+        Adds:
+        - Interaction terms (temperature × viscosity, pipe geometry ratios)
+        - Domain-specific features (temperature deviation from optimal)
+        - Polynomial features (squared terms for non-linear relationships)
+
+        Args:
+            training_data: List of training data dictionaries
+
+        Returns:
+            np.array: Engineered feature matrix with 13 features
+        """
+        features_list = []
+
+        for d in training_data:
+            # Base features (8)
+            base = [
+                d['pipe_length'],
+                d['pipe_diameter'],
+                d['temperature'],
+                d['flow_rate'],
+                d['viscosity'],
+                d['density'],
+                d['required_pressure'],
+                d['reynolds_number']
+            ]
+
+            # Interaction features (3)
+            temp_viscosity = d['temperature'] * d['viscosity']  # Temperature-viscosity coupling
+            geometry_ratio = d['pipe_length'] / (d['pipe_diameter'] + 1e-6)  # L/D ratio
+            flow_viscosity = d['flow_rate'] * d['viscosity']  # Shear stress indicator
+
+            interactions = [temp_viscosity, geometry_ratio, flow_viscosity]
+
+            # Temperature deviation from optimal (25°C) - 2 features
+            temp_dev = abs(d['temperature'] - 25.0)
+            temp_dev_squared = (d['temperature'] - 25.0) ** 2
+
+            temp_features = [temp_dev, temp_dev_squared]
+
+            # Combine all features (8 + 3 + 2 = 13 features)
+            all_features = base + interactions + temp_features
+            features_list.append(all_features)
+
+        return np.array(features_list)
+
     def train_models(self, training_data=None):
         """Train all ML models on the provided or generated data"""
 
@@ -168,11 +235,9 @@ class ProcessOptimizerML:
             d['density'], d['flow_index'], d['activation_energy']
         ] for d in training_data])
 
-        X_quality = np.array([[
-            d['pipe_length'], d['pipe_diameter'], d['temperature'],
-            d['flow_rate'], d['viscosity'], d['density'],
-            d['required_pressure'], d['reynolds_number']
-        ] for d in training_data])
+        # Use engineered features for quality prediction
+        print("Creating engineered features...")
+        X_quality_engineered = self.create_engineered_features(training_data)
 
         # Target variables
         y_quality = np.array([d['is_good_part'] for d in training_data])
@@ -189,7 +254,7 @@ class ProcessOptimizerML:
 
         # Scale features
         X_param_scaled = self.param_scaler.fit_transform(X_param)
-        X_quality_scaled = self.quality_scaler.fit_transform(X_quality)
+        X_quality_scaled = self.quality_scaler.fit_transform(X_quality_engineered)
 
         # Train parameter optimizer (predicts optimal temp and flow)
         print("Training parameter optimizer...")
@@ -200,11 +265,52 @@ class ProcessOptimizerML:
         self.parameter_optimizer['temperature'].fit(X_param_scaled, y_temp)
         self.parameter_optimizer['flow_rate'].fit(X_param_scaled, y_flow)
 
-        # Train quality classifier
-        print("Training quality classifier...")
-        self.quality_classifier = RandomForestClassifier(
-            n_estimators=100, max_depth=10, random_state=42
-        )
+        # Train quality classifier with XGBoost ensemble
+        print("Training quality classifier with XGBoost ensemble...")
+
+        if XGBOOST_AVAILABLE:
+            # XGBoost with regularization
+            xgb_clf = XGBClassifier(
+                n_estimators=200,
+                max_depth=6,
+                learning_rate=0.05,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.1,
+                reg_lambda=1.0,
+                random_state=42,
+                eval_metric='logloss',
+                use_label_encoder=False
+            )
+
+            # RandomForest for diversity
+            rf_clf = RandomForestClassifier(
+                n_estimators=150,
+                max_depth=12,
+                min_samples_split=5,
+                min_samples_leaf=2,
+                max_features='sqrt',
+                random_state=42
+            )
+
+            # Voting ensemble
+            ensemble = VotingClassifier(
+                estimators=[('xgb', xgb_clf), ('rf', rf_clf)],
+                voting='soft',
+                weights=[0.6, 0.4]
+            )
+
+            # Calibrate probabilities for better confidence estimates
+            self.quality_classifier = CalibratedClassifierCV(
+                ensemble, method='sigmoid', cv=3
+            )
+        else:
+            # Fallback to RandomForest if XGBoost not available
+            print("  Using RandomForest (XGBoost not available)")
+            self.quality_classifier = RandomForestClassifier(
+                n_estimators=150, max_depth=12, random_state=42
+            )
+
         self.quality_classifier.fit(X_quality_scaled, y_quality)
 
         # Train defect predictor
@@ -230,12 +336,50 @@ class ProcessOptimizerML:
         self.is_trained = True
         print("All models trained successfully!")
 
-        # Calculate and return training metrics
-        train_score = self.quality_classifier.score(X_quality_scaled, y_quality)
-        return {
-            'quality_accuracy': train_score,
-            'n_samples': len(training_data)
+        # Comprehensive model evaluation
+        metrics = {
+            'n_samples': len(training_data),
+            'n_features': X_quality_scaled.shape[1]
         }
+
+        if EVALUATOR_AVAILABLE:
+            print("\n" + "="*70)
+            print("MODEL EVALUATION WITH CROSS-VALIDATION")
+            print("="*70)
+
+            evaluator = ModelEvaluator()
+
+            # Evaluate quality classifier
+            quality_report = evaluator.evaluate_classifier(
+                self.quality_classifier,
+                X_quality_scaled,
+                y_quality,
+                cv=5,
+                model_name="Quality Classifier (XGBoost Ensemble)" if XGBOOST_AVAILABLE else "Quality Classifier (RandomForest)"
+            )
+            evaluator.print_report(quality_report)
+
+            # Store evaluation results
+            metrics['quality_classifier'] = quality_report['metrics']
+
+            # Evaluate pressure predictor
+            pressure_report = evaluator.evaluate_regressor(
+                self.pressure_predictor,
+                X_quality_scaled[:, :6],
+                y_pressure,
+                cv=5,
+                model_name="Pressure Predictor (GradientBoosting)"
+            )
+            evaluator.print_report(pressure_report)
+            metrics['pressure_predictor'] = pressure_report['metrics']
+
+        else:
+            # Basic evaluation if ModelEvaluator not available
+            train_score = self.quality_classifier.score(X_quality_scaled, y_quality)
+            metrics['quality_accuracy'] = train_score
+            print(f"Quality classifier training accuracy: {train_score:.4f}")
+
+        return metrics
 
     def predict_optimal_parameters(self, pipe_length, pipe_diameter, viscosity,
                                    density, flow_index, activation_energy):
@@ -255,6 +399,31 @@ class ProcessOptimizerML:
             'optimal_flow_rate': round(optimal_flow, 1)
         }
 
+    def _create_engineered_features_single(self, pipe_length, pipe_diameter, temperature,
+                                          flow_rate, viscosity, density, required_pressure,
+                                          reynolds_number):
+        """Create engineered features for a single prediction"""
+        # Base features
+        base = [pipe_length, pipe_diameter, temperature, flow_rate,
+                viscosity, density, required_pressure, reynolds_number]
+
+        # Interactions
+        temp_viscosity = temperature * viscosity
+        geometry_ratio = pipe_length / (pipe_diameter + 1e-6)
+        flow_viscosity = flow_rate * viscosity
+
+        interactions = [temp_viscosity, geometry_ratio, flow_viscosity]
+
+        # Temperature deviation from optimal (25°C)
+        temp_dev = abs(temperature - 25.0)
+        temp_dev_squared = (temperature - 25.0) ** 2
+
+        temp_features = [temp_dev, temp_dev_squared]
+
+        # Combine all features
+        all_features = base + interactions + temp_features
+        return np.array([all_features])
+
     def predict_quality(self, pipe_length, pipe_diameter, temperature, flow_rate,
                        viscosity, density, required_pressure, reynolds_number):
         """Predict if parameters will produce a good part"""
@@ -262,8 +431,11 @@ class ProcessOptimizerML:
         if not self.is_trained:
             return None
 
-        X = np.array([[pipe_length, pipe_diameter, temperature, flow_rate,
-                      viscosity, density, required_pressure, reynolds_number]])
+        # Create engineered features
+        X = self._create_engineered_features_single(
+            pipe_length, pipe_diameter, temperature, flow_rate,
+            viscosity, density, required_pressure, reynolds_number
+        )
         X_scaled = self.quality_scaler.transform(X)
 
         prediction = self.quality_classifier.predict(X_scaled)[0]
@@ -282,8 +454,11 @@ class ProcessOptimizerML:
         if not self.is_trained:
             return None
 
-        X = np.array([[pipe_length, pipe_diameter, temperature, flow_rate,
-                      viscosity, density, required_pressure, reynolds_number]])
+        # Create engineered features
+        X = self._create_engineered_features_single(
+            pipe_length, pipe_diameter, temperature, flow_rate,
+            viscosity, density, required_pressure, reynolds_number
+        )
         X_scaled = self.quality_scaler.transform(X)
 
         void_prob = max(0, min(100, self.defect_predictor['voids'].predict(X_scaled)[0] * 100))
