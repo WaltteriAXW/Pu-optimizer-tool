@@ -509,9 +509,10 @@ const PolyurethaneOptimizer = () => {
   }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
-      {/* Header Section with Title and Actions */}
-      <div className="flex justify-between items-center gap-4 flex-wrap bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-xl shadow-xl">
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
+        {/* Header Section with Title and Actions */}
+        <div className="flex justify-between items-center gap-4 flex-wrap bg-white/10 backdrop-blur-md border border-white/20 text-white p-6 rounded-xl shadow-xl">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-1">PU Injection Optimizer</h1>
           <p className="text-blue-100 text-sm">Calculate optimal pressure & predict part quality</p>
@@ -681,9 +682,9 @@ const PolyurethaneOptimizer = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Input Section */}
         <div className="space-y-4 sm:space-y-6">
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-blue-400/30 bg-white/5 backdrop-blur-sm">
+            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-blue-400/20">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold mr-1">1</div>
                 <Settings2 className="w-5 h-5 text-blue-600" />
                 Machine Selection
@@ -748,14 +749,14 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Material Database Browser */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-white via-green-50 to-emerald-50 dark:from-gray-800 dark:via-green-900/20 dark:to-emerald-900/20">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-300 border border-green-400/30 bg-white/5 backdrop-blur-sm">
+            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-green-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left group"
                 onClick={() => setShowDatabase(!showDatabase)}
               >
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Material Database Browser
                   <span className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full text-green-800 dark:text-green-200 font-normal">
@@ -783,9 +784,9 @@ const PolyurethaneOptimizer = () => {
             )}
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 bg-gradient-to-br from-white via-purple-50 to-pink-50 dark:from-gray-800 dark:via-purple-900/20 dark:to-pink-900/20">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-purple-400/30 bg-white/5 backdrop-blur-sm">
+            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-purple-400/20">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white text-sm font-bold mr-1">2</div>
                 <Thermometer className="w-5 h-5 text-purple-600" />
                 Process Parameters
@@ -879,16 +880,16 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mold Dimensions */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-indigo-500">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-indigo-400/30 bg-white/5 backdrop-blur-sm">
+            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-indigo-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left"
                 onClick={() => setMoldDimensionsExpanded(!moldDimensionsExpanded)}
               >
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold mr-1">3</div>
-                  <Scale className="w-5 h-5 text-indigo-600" />
+                  <Scale className="w-5 h-5 text-indigo-400" />
                   Mold Dimensions (Optional)
                 </CardTitle>
                 {moldDimensionsExpanded ? <ChevronDown className="w-5 h-5 text-indigo-600" /> : <ChevronRight className="w-5 h-5 text-indigo-600" />}
@@ -1064,14 +1065,14 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mix Ratio Calculator */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800 dark:to-green-900/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-green-400/30 bg-white/5 backdrop-blur-sm">
+            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-green-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left group"
                 onClick={() => setMixRatioExpanded(!mixRatioExpanded)}
               >
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-50">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <Leaf className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Advanced Mix Ratio Calculator
                 </CardTitle>
@@ -1691,6 +1692,7 @@ const PolyurethaneOptimizer = () => {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 };
