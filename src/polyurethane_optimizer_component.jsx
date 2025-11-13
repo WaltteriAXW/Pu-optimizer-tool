@@ -31,6 +31,14 @@ const MACHINE_SPECS = {
     outputRange: { min: 5, max: 200 }, // kg/min
     maxPressure: 200.0, // bar (typical max ~197 bar / 2800 PSI)
     pressureRange: { min: 100, max: 200 }, // bar
+    minOperatingPressure: 100, // bar - minimum pressure for proper operation
+    processLoss: {
+      mixingHead: 15, // bar - High-energy impingement mixing head loss
+      valves: 5, // bar - Check valves, shut-off valves
+      filters: 3, // bar - In-line filters
+      fittings: 2, // bar - Hose connections and fittings
+      total: 25 // bar - Total process losses
+    },
     tankCapacity: "Variable",
     feedLineDiameterA: "4-8 mm", // A component (tight lines, high shear)
     feedLineDiameterB: "4-8 mm", // B component (symmetric for 1:1 ratio)
@@ -51,6 +59,14 @@ const MACHINE_SPECS = {
     outputRange: { min: 2, max: 300 }, // kg/min
     maxPressure: 20.0, // bar (gentle, controlled delivery)
     pressureRange: { min: 8, max: 20 }, // bar
+    minOperatingPressure: 8, // bar - minimum pressure for proper operation
+    processLoss: {
+      mixingHead: 2, // bar - Mechanical mixer chamber loss
+      valves: 1, // bar - Check valves, shut-off valves
+      filters: 0.5, // bar - In-line filters
+      fittings: 0.5, // bar - Hose connections and fittings
+      total: 4 // bar - Total process losses
+    },
     tankCapacity: "Variable (Modular)",
     feedLineDiameterA: "10-16 mm", // A component (larger lines reduce shear)
     feedLineDiameterB: "10-16 mm", // B component (generous sizing)
@@ -458,17 +474,29 @@ const PolyurethaneOptimizer = () => {
         correctedViscosity
       );
 
-      // === STEP 7: Pressure Drop (Hagen-Poiseuille for Power Law Fluids) ===
-      const { pressureDrop, pressureDropBar, totalPressureBar } = CalcHelpers.calculatePressureDrop(
+      // === STEP 7: Load Machine Specifications ===
+      const machine = MACHINE_SPECS[selectedMachine];
+
+      // === STEP 8: Pressure Drop (Hagen-Poiseuille + Process Loss + Min Operating Pressure) ===
+      const {
+        pressureDrop,
+        pipeLossBar,
+        processLossBar,
+        minOperatingPressureBar,
+        requiredPumpSettingBar,
+        pressureDropBar,
+        totalPressureBar
+      } = CalcHelpers.calculatePressureDrop(
         apparentViscosity,
         length,
         flowRateM3s,
         radius,
         powerLawIndex,
-        safetyFactor
+        safetyFactor,
+        machine
       );
 
-      // === STEP 8: Injection Times ===
+      // === STEP 9: Injection Times ===
       const { pipeVolume, pipeFillingTime, moldFillingTime, injectionTime } = CalcHelpers.calculateInjectionTimes(
         radius,
         length,
@@ -476,8 +504,7 @@ const PolyurethaneOptimizer = () => {
         moldVolume
       );
 
-      // === STEP 9: Machine Compatibility ===
-      const machine = MACHINE_SPECS[selectedMachine];
+      // === STEP 10: Machine Compatibility ===
       const compatibilityResult = CalcHelpers.checkMachineCompatibility(totalPressureBar, machine);
       const compatible = compatibilityResult.compatible;
 
@@ -531,8 +558,14 @@ const PolyurethaneOptimizer = () => {
       setResults({
         // Primary pressure results
         optimalPressureBar: parseFloat(totalPressureBar.toFixed(3)),
+        requiredPumpSettingBar: parseFloat(requiredPumpSettingBar.toFixed(3)),
         pressureDropBar: parseFloat(pressureDropBar.toFixed(3)),
         pressureDropKpa: parseFloat((pressureDropBar * CONVERSIONS.BAR_TO_KPA).toFixed(2)),
+
+        // Pressure breakdown components
+        pipeLossBar: parseFloat(pipeLossBar.toFixed(3)),
+        processLossBar: parseFloat(processLossBar.toFixed(3)),
+        minOperatingPressureBar: parseFloat(minOperatingPressureBar.toFixed(3)),
 
         // Flow characteristics
         reynoldsNumber: parseFloat(reynolds.toFixed(1)),

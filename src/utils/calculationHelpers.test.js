@@ -184,7 +184,7 @@ describe('calculationHelpers', () => {
   });
 
   describe('calculatePressureDrop', () => {
-    it('should calculate pressure drop in Pa and bar', () => {
+    it('should calculate pressure drop in Pa and bar (without machine spec)', () => {
       const apparentViscosity = 0.38; // Pa·s
       const length = 0.5; // m
       const flowRate = 0.0000833; // m³/s
@@ -202,9 +202,73 @@ describe('calculationHelpers', () => {
       );
 
       expect(result.pressureDrop).toBeGreaterThan(0);
-      expect(result.pressureDropBar).toBeGreaterThan(0);
-      expect(result.totalPressureBar).toBeGreaterThan(result.pressureDropBar);
-      expect(result.totalPressureBar).toBeCloseTo(result.pressureDropBar * safetyFactor, 2);
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(0);
+      expect(result.minOperatingPressureBar).toBe(0);
+      expect(result.requiredPumpSettingBar).toBe(result.pipeLossBar);
+      // Backwards compatibility
+      expect(result.pressureDropBar).toBe(result.pipeLossBar);
+      expect(result.totalPressureBar).toBe(result.requiredPumpSettingBar);
+    });
+
+    it('should calculate required pump setting with HP machine spec', () => {
+      const apparentViscosity = 0.38;
+      const length = 0.5;
+      const flowRate = 0.0000833;
+      const radius = 0.006;
+      const powerLawIndex = 0.85;
+      const safetyFactor = 1.5;
+      const machineSpec = {
+        processLoss: { total: 25 },
+        minOperatingPressure: 100
+      };
+
+      const result = calculatePressureDrop(
+        apparentViscosity,
+        length,
+        flowRate,
+        radius,
+        powerLawIndex,
+        safetyFactor,
+        machineSpec
+      );
+
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(25);
+      expect(result.minOperatingPressureBar).toBe(100);
+      expect(result.requiredPumpSettingBar).toBe(
+        result.pipeLossBar + 25 + 100
+      );
+    });
+
+    it('should calculate required pump setting with LP machine spec', () => {
+      const apparentViscosity = 0.38;
+      const length = 0.5;
+      const flowRate = 0.0000833;
+      const radius = 0.006;
+      const powerLawIndex = 0.85;
+      const safetyFactor = 1.5;
+      const machineSpec = {
+        processLoss: { total: 4 },
+        minOperatingPressure: 8
+      };
+
+      const result = calculatePressureDrop(
+        apparentViscosity,
+        length,
+        flowRate,
+        radius,
+        powerLawIndex,
+        safetyFactor,
+        machineSpec
+      );
+
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(4);
+      expect(result.minOperatingPressureBar).toBe(8);
+      expect(result.requiredPumpSettingBar).toBe(
+        result.pipeLossBar + 4 + 8
+      );
     });
 
     it('should increase pressure with length', () => {

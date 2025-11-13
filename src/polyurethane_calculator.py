@@ -26,6 +26,14 @@ MACHINE_SPECS = {
         "output_range": {"min": 5, "max": 200},  # kg/min
         "max_pressure": 200.0,  # bar (typical max ~197 bar / 2800 PSI)
         "pressure_range": {"min": 100, "max": 200},  # bar
+        "min_operating_pressure": 100,  # bar - minimum pressure for proper operation
+        "process_loss": {
+            "mixing_head": 15,  # bar - High-energy impingement mixing head loss
+            "valves": 5,  # bar - Check valves, shut-off valves
+            "filters": 3,  # bar - In-line filters
+            "fittings": 2,  # bar - Hose connections and fittings
+            "total": 25  # bar - Total process losses
+        },
         "tank_capacity": "Variable",
         "feed_line_diameter_a": "4-8 mm",  # A component (tight lines, high shear)
         "feed_line_diameter_b": "4-8 mm",  # B component (symmetric for 1:1 ratio)
@@ -46,6 +54,14 @@ MACHINE_SPECS = {
         "output_range": {"min": 2, "max": 300},  # kg/min
         "max_pressure": 20.0,  # bar (gentle, controlled delivery)
         "pressure_range": {"min": 8, "max": 20},  # bar
+        "min_operating_pressure": 8,  # bar - minimum pressure for proper operation
+        "process_loss": {
+            "mixing_head": 2,  # bar - Mechanical mixer chamber loss
+            "valves": 1,  # bar - Check valves, shut-off valves
+            "filters": 0.5,  # bar - In-line filters
+            "fittings": 0.5,  # bar - Hose connections and fittings
+            "total": 4  # bar - Total process losses
+        },
         "tank_capacity": "Variable (Modular)",
         "feed_line_diameter_a": "10-16 mm",  # A component (larger lines reduce shear)
         "feed_line_diameter_b": "10-16 mm",  # B component (generous sizing)
@@ -203,9 +219,21 @@ class PolyurethaneCalculator:
             pressure_drop_kpa = pressure_drop / 1000
             pressure_drop_bar = pressure_drop_kpa / 100
 
-            # Add atmospheric pressure and safety factor for total system pressure
-            atmospheric_pressure_bar = 1.01325
-            total_pressure_bar = atmospheric_pressure_bar + (pressure_drop_bar * self.safety_factor)
+            # Apply safety factor to pipe loss
+            pipe_loss_bar = pressure_drop_bar * self.safety_factor
+
+            # Get process loss and minimum operating pressure from machine spec
+            if machine_type in MACHINE_SPECS:
+                machine_info = MACHINE_SPECS[machine_type]
+                process_loss_bar = machine_info.get("process_loss", {}).get("total", 0)
+                min_operating_pressure_bar = machine_info.get("min_operating_pressure", 0)
+            else:
+                process_loss_bar = 0
+                min_operating_pressure_bar = 0
+
+            # Required Pump Setting = Pipe Loss + Process Loss + Machine Minimum Operating Pressure
+            required_pump_setting_bar = pipe_loss_bar + process_loss_bar + min_operating_pressure_bar
+            total_pressure_bar = required_pump_setting_bar
 
             # Generate pressure profile along pipe length
             pressure_profile = []
@@ -228,12 +256,10 @@ class PolyurethaneCalculator:
 
             # Check machine compatibility - validate operating range
             machine_compatible = False
-            machine_info = None
             pressure_too_low = False
             pressure_too_high = False
 
-            if machine_type in MACHINE_SPECS:
-                machine_info = MACHINE_SPECS[machine_type]
+            if machine_info:
                 min_pressure = machine_info.get("pressure_range", {}).get("min", 0)
                 max_pressure = machine_info["max_pressure"]
 
