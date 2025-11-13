@@ -186,7 +186,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[l / 2 + 1, 0, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#333333"
+          color="#ffffff"
           anchorX="left"
         >
           {length}mm
@@ -195,7 +195,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, h / 2 + 1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#333333"
+          color="#ffffff"
           anchorX="center"
         >
           {height}mm
@@ -213,7 +213,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, h + 1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#333333"
+          color="#ffffff"
           anchorX="center"
         >
           H: {cylinderHeight}mm
@@ -222,7 +222,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[0, -1, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#333333"
+          color="#ffffff"
           anchorX="center"
         >
           ∅{diameter}mm
@@ -240,7 +240,7 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
           position={[r + 1, r, 0]}
           rotation={[0, 0, 0]}
           fontSize={0.5}
-          color="#333333"
+          color="#ffffff"
           anchorX="left"
         >
           ∅{sphereDiameter}mm
@@ -291,29 +291,43 @@ const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe =
       {/* Injection Pipe */}
       {showPipe && pipeLength > 0 && pipeDiameter > 0 && (() => {
         let pipePosition, pipeRotation;
-        const pipeOffset = 1.5; // 15cm above edge
+        const pipeOffset = 1.5; // 15cm above bottom edge
         const len = pipeLength / 100;
+        const angleRad = 22 * (Math.PI / 180); // 22 degrees to radians
 
         if (moldShape === 'rectangular') {
+          const l = moldDimensions.length / 100;
           const w = moldDimensions.width / 100;
           const h = moldDimensions.height / 100;
-          // Position on the short side edge, pointing toward center
-          pipePosition = [w / 2 + len / 2, h + pipeOffset, 0];
-          // Rotate to horizontal, slight downward angle toward mold
-          pipeRotation = [0, 0, -Math.PI / 2]; // Horizontal, pointing inward
+
+          // Position on the edge of short side (width), extending outward
+          // X: centered along length
+          // Y: 15cm above bottom of mold
+          // Z: at the edge of width + half pipe length extending out
+          pipePosition = [0, pipeOffset, w / 2 + len / 2];
+
+          // Rotation: horizontal with 22 degree downward angle toward center
+          // X rotation: -22 degrees (pointing down toward mold)
+          // Y rotation: 0 (not rotating left/right)
+          // Z rotation: 90 degrees (making it horizontal along Z axis)
+          pipeRotation = [-angleRad, 0, Math.PI / 2];
+
         } else if (moldShape === 'cylinder') {
           const r = (moldDimensions.diameter / 2) / 100;
           const h = moldDimensions.cylinderHeight / 100;
+
           // Position on side edge
-          pipePosition = [r + len / 2, h / 2 + pipeOffset, 0];
-          // Horizontal pointing toward center
-          pipeRotation = [0, 0, -Math.PI / 2];
+          pipePosition = [r + len / 2, pipeOffset, 0];
+          // 22 degree angle toward center
+          pipeRotation = [-angleRad, 0, -Math.PI / 2];
+
         } else if (moldShape === 'sphere') {
           const r = (moldDimensions.sphereDiameter / 2) / 100;
+
           // Position on side edge
-          pipePosition = [r + len / 2, r + pipeOffset, 0];
-          // Horizontal pointing toward center
-          pipeRotation = [0, 0, -Math.PI / 2];
+          pipePosition = [r + len / 2, r + pipeOffset / 2, 0];
+          // 22 degree angle toward center
+          pipeRotation = [-angleRad, 0, -Math.PI / 2];
         }
 
         return (
