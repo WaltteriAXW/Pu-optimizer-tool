@@ -22,6 +22,7 @@ import { measureAsync } from './utils/performance';
 import { InputField, SelectField, ResultCard } from './components/shared';
 import { MACHINE_SPECS } from './config/machineSpecs';
 import { MATERIAL_PRESETS } from './config/materialPresets';
+import { MoldVisualization3D } from './components/MoldVisualization3D';
 
 
 const PolyurethaneOptimizer = () => {
@@ -1038,6 +1039,26 @@ const PolyurethaneOptimizer = () => {
                     </p>
                   </div>
                 )}
+
+                {/* 3D Visualization */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-indigo-600" />
+                    3D Visualization
+                  </h4>
+                  <MoldVisualization3D
+                    moldShape={moldShape}
+                    moldDimensions={moldDimensions}
+                    pipeLength={inputs.pipeLength}
+                    pipeDiameter={inputs.pipeDiameter}
+                    showPipe={true}
+                    showLabels={true}
+                    height={500}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center">
+                    Interactive 3D preview - Use mouse to rotate, zoom, and pan
+                  </p>
+                </div>
               </CardContent>
             )}
           </Card>
