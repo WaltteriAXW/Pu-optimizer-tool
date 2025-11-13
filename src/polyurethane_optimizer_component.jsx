@@ -575,7 +575,7 @@ const PolyurethaneOptimizer = () => {
       </div>
 
       {/* Beta Disclaimer */}
-      <Alert className="bg-yellow-400/10 backdrop-blur-md border border-yellow-400/30 shadow-lg">
+      <Alert className="bg-yellow-400/15 backdrop-blur-md border border-yellow-400/40 shadow-lg">
         <AlertTriangle className="h-4 w-4 text-yellow-300" />
         <AlertTitle className="text-yellow-100 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
         <AlertDescription className="text-yellow-200/90 text-sm">
@@ -602,8 +602,8 @@ const PolyurethaneOptimizer = () => {
       )}
 
       {/* How to Use Guide - Collapsible */}
-      <Card className="bg-white/5 backdrop-blur-sm border border-blue-400/30 shadow-lg">
-        <CardHeader className="bg-white/5 backdrop-blur-md border-b border-blue-400/20">
+      <Card className="bg-gradient-to-br from-blue-400/10 to-white/15 backdrop-blur-sm border border-blue-400/40 shadow-lg">
+        <CardHeader className="bg-white/10 backdrop-blur-md border-b border-blue-400/20">
           <button
             onClick={() => setShowHelpGuide(!showHelpGuide)}
             className="w-full flex items-center justify-between text-left group"
@@ -621,12 +621,12 @@ const PolyurethaneOptimizer = () => {
         </CardHeader>
         {showHelpGuide && viewMode === 'simple' && (
           <CardContent className="space-y-4 animate-slideIn">
-            <div className="bg-white/5 backdrop-blur-sm p-5 rounded-xl border border-blue-400/30 shadow-md">
+            <div className="bg-white/15 backdrop-blur-sm p-5 rounded-xl border border-blue-400/40 shadow-md">
               <h3 className="font-bold text-lg text-white mb-4">
                 This tool answers 3 critical questions:
               </h3>
               <div className="space-y-3">
-                <div className="flex gap-3 p-4 bg-green-400/10 backdrop-blur-sm rounded-lg border border-green-400/30">
+                <div className="flex gap-3 p-4 bg-green-400/15 backdrop-blur-sm rounded-lg border border-green-400/40">
                   <CheckCircle2 className="w-7 h-7 text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-green-100 text-base">
@@ -639,7 +639,7 @@ const PolyurethaneOptimizer = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3 p-4 bg-blue-400/10 backdrop-blur-sm rounded-lg border border-blue-400/30">
+                <div className="flex gap-3 p-4 bg-blue-400/15 backdrop-blur-sm rounded-lg border border-blue-400/40">
                   <Info className="w-7 h-7 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-blue-100 text-base">
@@ -652,7 +652,7 @@ const PolyurethaneOptimizer = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3 p-4 bg-purple-400/10 backdrop-blur-sm rounded-lg border border-purple-400/30">
+                <div className="flex gap-3 p-4 bg-purple-400/15 backdrop-blur-sm rounded-lg border border-purple-400/40">
                   <AlertTriangle className="w-7 h-7 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-purple-100 text-base">
@@ -667,14 +667,14 @@ const PolyurethaneOptimizer = () => {
               </div>
             </div>
 
-            <div className="bg-yellow-400/10 backdrop-blur-sm p-4 rounded-lg border-l-4 border-yellow-400">
+            <div className="bg-yellow-400/15 backdrop-blur-sm p-4 rounded-lg border-l-4 border-yellow-400">
               <p className="text-sm text-yellow-100 font-semibold">
                 ⚡ <strong>Quick Tip:</strong> Use the sliders to quickly try different settings, then fine-tune the exact numbers in the boxes.
                 The tool updates your results instantly as you change settings!
               </p>
             </div>
 
-            <div className="bg-green-400/10 backdrop-blur-sm p-4 rounded-lg border-l-4 border-green-400">
+            <div className="bg-green-400/15 backdrop-blur-sm p-4 rounded-lg border-l-4 border-green-400">
               <p className="text-sm text-green-100">
                 <strong>New to foam injection?</strong> Don't worry! Every setting has a plain-English explanation.
                 Just look for the blue boxes under each slider. We'll explain what it does and how it affects your parts.
@@ -705,8 +705,8 @@ const PolyurethaneOptimizer = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Input Section */}
         <div className="space-y-4 sm:space-y-6">
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-blue-400/30 bg-white/5 backdrop-blur-sm">
-            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-blue-400/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-blue-400/40 bg-gradient-to-br from-blue-400/10 to-white/15 backdrop-blur-sm">
+            <CardHeader className="bg-white/10 backdrop-blur-md border-b border-blue-400/20">
               <CardTitle className="flex items-center gap-2 text-white">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold mr-1">1</div>
                 <Settings2 className="w-5 h-5 text-blue-600" />
@@ -772,8 +772,8 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Material Database Browser */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-300 border border-green-400/30 bg-white/5 backdrop-blur-sm">
-            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-green-400/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-300 border border-green-400/40 bg-gradient-to-br from-green-400/10 to-white/15 backdrop-blur-sm">
+            <CardHeader className="bg-white/10 backdrop-blur-md border-b border-green-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left group"
@@ -807,8 +807,8 @@ const PolyurethaneOptimizer = () => {
             )}
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-purple-400/30 bg-white/5 backdrop-blur-sm">
-            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-purple-400/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-purple-400/40 bg-gradient-to-br from-purple-400/10 to-white/15 backdrop-blur-sm">
+            <CardHeader className="bg-white/10 backdrop-blur-md border-b border-purple-400/20">
               <CardTitle className="flex items-center gap-2 text-white">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white text-sm font-bold mr-1">2</div>
                 <Thermometer className="w-5 h-5 text-purple-600" />
@@ -903,8 +903,8 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mold Dimensions */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-indigo-400/30 bg-white/5 backdrop-blur-sm">
-            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-indigo-400/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-indigo-400/40 bg-gradient-to-br from-indigo-400/10 to-white/15 backdrop-blur-sm">
+            <CardHeader className="bg-white/10 backdrop-blur-md border-b border-indigo-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left"
@@ -1088,8 +1088,8 @@ const PolyurethaneOptimizer = () => {
           </Card>
 
           {/* Mix Ratio Calculator */}
-          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-green-400/30 bg-white/5 backdrop-blur-sm">
-            <CardHeader className="bg-white/5 backdrop-blur-md border-b border-green-400/20">
+          <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-green-400/40 bg-gradient-to-br from-green-400/10 to-white/15 backdrop-blur-sm">
+            <CardHeader className="bg-white/10 backdrop-blur-md border-b border-green-400/20">
               <button
                 type="button"
                 className="w-full flex items-center justify-between text-left group"
