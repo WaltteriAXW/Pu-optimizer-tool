@@ -22,7 +22,7 @@ import { measureAsync } from './utils/performance';
 import { InputField, SelectField, ResultCard } from './components/shared';
 import { MACHINE_SPECS } from './config/machineSpecs';
 import { MATERIAL_PRESETS } from './config/materialPresets';
-import { MoldVisualization3D } from './components/MoldVisualization3D';
+import { MoldVisualization3DLazy } from './components/MoldVisualization3DLazy';
 
 
 const PolyurethaneOptimizer = () => {
@@ -1048,7 +1048,7 @@ const PolyurethaneOptimizer = () => {
                     <Eye className="w-4 h-4 text-indigo-600" />
                     3D Visualization
                   </h4>
-                  <MoldVisualization3D
+                  <MoldVisualization3DLazy
                     moldShape={moldShape}
                     moldDimensions={moldDimensions}
                     pipeLength={inputs.pipeLength}

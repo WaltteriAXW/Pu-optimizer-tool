@@ -21,6 +21,8 @@ export default defineConfig({
         manualChunks: {
           // React core (changes infrequently)
           'react-vendor': ['react', 'react-dom'],
+          // Three.js and 3D visualization (lazy-loaded, so separate chunk)
+          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
           // Chart library (large, used only in results)
           'charts': ['recharts'],
           // Icon library (large, used throughout)
