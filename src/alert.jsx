@@ -9,13 +9,13 @@ export const Alert = React.forwardRef(({
   const getVariantClasses = () => {
     switch (variant) {
       case 'destructive':
-        return 'bg-red-100 border-l-4 border-l-red-700 text-red-900 dark:bg-red-900 dark:border-l-red-500 dark:text-red-100';
+        return 'border-l-4 border-l-accent-red text-neutral-light modal-error';
       case 'warning':
-        return 'bg-amber-100 border-l-4 border-l-amber-700 text-amber-900 dark:bg-amber-900 dark:border-l-amber-500 dark:text-amber-100';
+        return 'border-l-4 border-l-accent-orange text-neutral-light modal-warning';
       case 'success':
-        return 'bg-green-100 border-l-4 border-l-green-700 text-green-900 dark:bg-green-900 dark:border-l-green-500 dark:text-green-100';
+        return 'border-l-4 border-l-accent-green text-neutral-light modal-success';
       default:
-        return 'bg-blue-100 border-l-4 border-l-blue-700 text-blue-900 dark:bg-blue-900 dark:border-l-blue-500 dark:text-blue-100';
+        return 'border-l-4 border-l-accent-cyan text-neutral-light';
     }
   };
 

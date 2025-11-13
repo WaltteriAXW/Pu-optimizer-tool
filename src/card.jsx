@@ -3,7 +3,8 @@ import React from 'react';
 export const Card = React.forwardRef(({ className = '', ...props }, ref) => (
   <div
     ref={ref}
-    className={`bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-150 ${className}`}
+    className={`bg-neutral-medium dark:bg-neutral-medium rounded-lg border shadow-sm transition-all duration-200 hover:shadow-glow-cyan hover:border-accent-cyan/30 ${className}`}
+    style={{ borderColor: 'rgba(0, 217, 255, 0.1)' }}
     {...props}
   />
 ));
@@ -11,7 +12,8 @@ export const Card = React.forwardRef(({ className = '', ...props }, ref) => (
 export const CardHeader = React.forwardRef(({ className = '', ...props }, ref) => (
   <div
     ref={ref}
-    className={`p-6 border-b border-gray-200 dark:border-gray-700 ${className}`}
+    className={`p-6 border-b ${className}`}
+    style={{ borderColor: 'rgba(0, 217, 255, 0.1)' }}
     {...props}
   />
 ));
@@ -19,7 +21,8 @@ export const CardHeader = React.forwardRef(({ className = '', ...props }, ref) =
 export const CardTitle = React.forwardRef(({ className = '', ...props }, ref) => (
   <h3
     ref={ref}
-    className={`text-lg font-semibold text-gray-900 dark:text-gray-100 ${className}`}
+    className={`text-lg font-semibold ${className}`}
+    style={{ color: '#E0E2E9' }}
     {...props}
   />
 ));
