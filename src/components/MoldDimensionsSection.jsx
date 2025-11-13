@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Scale, FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react';
 import { InputField, SelectField } from './shared';
+import { useDebounce } from '../../hooks/useDebounce';
 
 /**
  * MoldDimensionsSection Component
@@ -27,17 +28,20 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
   moldVolume,
   setMoldVolume
 }) {
-  // Calculate mold volume whenever dimensions change
+  // Debounce dimensions to prevent excessive calculations while typing
+  const debouncedDimensions = useDebounce(moldDimensions, 300);
+
+  // Calculate mold volume whenever debounced dimensions change
   useEffect(() => {
     let volume = 0;
 
     if (moldShape === 'rectangular') {
-      const { length, width, height } = moldDimensions;
+      const { length, width, height } = debouncedDimensions;
       if (length > 0 && width > 0 && height > 0) {
         volume = (length * width * height) / 1000000; // Convert mm³ to L
       }
     } else if (moldShape === 'cylinder') {
-      const { diameter, cylinderHeight, wallThickness } = moldDimensions;
+      const { diameter, cylinderHeight, wallThickness } = debouncedDimensions;
       if (diameter > 0 && cylinderHeight > 0 && wallThickness > 0) {
         const outerRadius = diameter / 2;
         const innerRadius = outerRadius - wallThickness;
@@ -46,7 +50,7 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
         volume = (outerVolume - innerVolume) / 1000000; // Shell volume in L
       }
     } else if (moldShape === 'sphere') {
-      const { sphereDiameter, wallThickness } = moldDimensions;
+      const { sphereDiameter, wallThickness } = debouncedDimensions;
       if (sphereDiameter > 0 && wallThickness > 0) {
         const outerRadius = sphereDiameter / 2;
         const innerRadius = outerRadius - wallThickness;
@@ -57,7 +61,7 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
     }
 
     setMoldVolume(volume);
-  }, [moldShape, moldDimensions, setMoldVolume]);
+  }, [moldShape, debouncedDimensions, setMoldVolume]);
 
   return (
     <Card className="shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-indigo-500">
@@ -103,7 +107,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="10"
                   step="10"
                   value={moldDimensions.length}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, length: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, length: value }));
+                  }}
                   helpText="Mold cavity length"
                   placeholder="1000"
                 />
@@ -115,7 +122,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="10"
                   step="10"
                   value={moldDimensions.width}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, width: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, width: value }));
+                  }}
                   helpText="Mold cavity width"
                   placeholder="500"
                 />
@@ -127,7 +137,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="1"
                   step="1"
                   value={moldDimensions.height}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, height: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, height: value }));
+                  }}
                   helpText="Panel thickness"
                   placeholder="50"
                 />
@@ -146,7 +159,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="10"
                   step="10"
                   value={moldDimensions.diameter}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, diameter: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, diameter: value }));
+                  }}
                   helpText="Outer diameter of cylinder"
                   placeholder="500"
                 />
@@ -158,7 +174,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="10"
                   step="10"
                   value={moldDimensions.cylinderHeight}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, cylinderHeight: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, cylinderHeight: value }));
+                  }}
                   helpText="Cylinder height"
                   placeholder="1000"
                 />
@@ -170,7 +189,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="1"
                   step="1"
                   value={moldDimensions.wallThickness}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, wallThickness: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, wallThickness: value }));
+                  }}
                   helpText="Foam layer thickness"
                   placeholder="50"
                 />
@@ -189,7 +211,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="10"
                   step="10"
                   value={moldDimensions.sphereDiameter}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, sphereDiameter: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, sphereDiameter: value }));
+                  }}
                   helpText="Outer diameter of sphere"
                   placeholder="500"
                 />
@@ -201,7 +226,10 @@ export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
                   min="1"
                   step="1"
                   value={moldDimensions.wallThickness}
-                  onChange={(e) => setMoldDimensions(prev => ({ ...prev, wallThickness: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    setMoldDimensions(prev => ({ ...prev, wallThickness: value }));
+                  }}
                   helpText="Foam layer thickness"
                   placeholder="50"
                 />

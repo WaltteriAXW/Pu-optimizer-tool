@@ -13,6 +13,7 @@ import {
   filterMoldsByApplication,
   filterMoldsByVolume
 } from '../utils/dimensionsDatabaseLoader';
+import { useDebounce } from '../hooks/useDebounce';
 
 /**
  * Mold Selector Component
@@ -35,6 +36,9 @@ export const MoldSelector = React.memo(function MoldSelector({
   const [applicationFilter, setApplicationFilter] = useState('');
   const [volumeRange, setVolumeRange] = useState({ min: 0, max: Infinity });
 
+  // Debounce application filter to reduce filtering lag while typing
+  const debouncedApplicationFilter = useDebounce(applicationFilter, 300);
+
   // Apply filters
   const filteredMolds = useMemo(() => {
     let result = moldDatabase;
@@ -44,16 +48,16 @@ export const MoldSelector = React.memo(function MoldSelector({
       result = filterMoldsByShape(result, selectedShape);
     }
 
-    // Application filter
-    if (applicationFilter) {
-      result = filterMoldsByApplication(result, applicationFilter);
+    // Application filter (debounced)
+    if (debouncedApplicationFilter) {
+      result = filterMoldsByApplication(result, debouncedApplicationFilter);
     }
 
     // Volume range filter
     result = filterMoldsByVolume(result, volumeRange.min, volumeRange.max);
 
     return result;
-  }, [moldDatabase, selectedShape, applicationFilter, volumeRange]);
+  }, [moldDatabase, selectedShape, debouncedApplicationFilter, volumeRange]);
 
   // Get unique applications for quick filters
   const commonApplications = useMemo(() => {
