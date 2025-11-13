@@ -1,4 +1,6 @@
 import React from 'react';
+import { IconTooltip } from './tooltip';
+import { Lightbulb } from 'lucide-react';
 
 /**
  * SliderInput - Combined slider and number input for better UX
@@ -34,25 +36,20 @@ export const SliderInput = ({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {/* Label with Icon */}
-      <label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
-        {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
-        {label}
-      </label>
-
-      {/* Simple Mode Explanation */}
-      {showSimpleMode && simpleExplanation && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg">
-          <p className="text-sm text-blue-900 dark:text-blue-100 leading-relaxed">
-            💡 <strong>What this means:</strong> {simpleExplanation}
-          </p>
-        </div>
-      )}
-
-      {/* Technical Help Text */}
-      {!showSimpleMode && helpText && (
-        <p className="text-xs text-gray-700 dark:text-gray-300 -mt-1 mb-1">{helpText}</p>
-      )}
+      {/* Label with Icon and Tooltip */}
+      <div className="flex items-center">
+        <label className="flex items-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
+          {label}
+        </label>
+        {(simpleExplanation || helpText) && (
+          <IconTooltip
+            content={simpleExplanation || helpText}
+            icon={Lightbulb}
+            iconClassName="w-4 h-4 text-blue-600 dark:text-blue-400"
+          />
+        )}
+      </div>
 
       {/* Slider and Input Container */}
       <div className="flex items-center gap-3">

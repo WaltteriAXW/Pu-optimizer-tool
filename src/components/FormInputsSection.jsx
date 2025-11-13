@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
-import { Settings2, Thermometer, FileSpreadsheet, Leaf, Database, ChevronDown, ChevronRight } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, Leaf, Database, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
+import { IconTooltip } from '../tooltip';
 import { SliderInput } from '../slider_input';
 import { DatabaseViewer } from '../database_viewer';
 import { getAllMaterialPresets } from '../utils/database_loader';
@@ -121,13 +122,6 @@ export const FormInputsSection = React.memo(function FormInputsSection({
         </CardHeader>
         {showDatabase && (
           <CardContent className="pt-4">
-            {viewMode === 'simple' && (
-              <div className="bg-blue-50 dark:bg-gray-700 border-l-4 border-l-blue-600 p-3 rounded-r-md mb-4">
-                <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
-                  <strong>Select Material:</strong> Browse polyurethane products from the database. All properties (density, viscosity, mix ratios) are auto-filled when selected.
-                </p>
-              </div>
-            )}
             <DatabaseViewer onSelectProduct={handleSelectFromDatabase} />
           </CardContent>
         )}
