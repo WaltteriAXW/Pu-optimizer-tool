@@ -727,24 +727,24 @@ const PolyurethaneOptimizer = () => {
 
               {MACHINE_SPECS[selectedMachine] && (
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 p-4 rounded-lg text-sm border border-blue-200 dark:border-blue-700 transform transition-all duration-200 hover:scale-[1.02]">
-                  <p className="font-bold text-blue-950 dark:text-blue-50 text-base">
+                  <p className="font-bold text-blue-50 text-base">
                     {MACHINE_SPECS[selectedMachine].name}
                   </p>
-                  <p className="text-blue-800 dark:text-blue-200 mt-1">
+                  <p className="text-blue-100 mt-1">
                     {MACHINE_SPECS[selectedMachine].manufacturer}
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
                       <p className="text-gray-300">Max Output</p>
-                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].output}</p>
+                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].output}</p>
                     </div>
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
                       <p className="text-gray-300">Max Pressure</p>
-                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
+                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
                     </div>
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
                       <p className="text-gray-300">Tank</p>
-                      <p className="font-semibold text-blue-700 dark:text-blue-300">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
+                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
                     </div>
                   </div>
                 </div>
@@ -763,7 +763,7 @@ const PolyurethaneOptimizer = () => {
 
               {selectedMaterialName && (
                 <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-300 dark:border-green-700">
-                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                  <p className="text-sm font-semibold text-green-200">
                     ✅ Using: {selectedMaterialName}
                   </p>
                 </div>
@@ -782,7 +782,7 @@ const PolyurethaneOptimizer = () => {
                 <CardTitle className="flex items-center gap-2 text-white">
                   <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Material Database Browser
-                  <span className="text-xs bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full text-green-800 dark:text-green-200 font-normal">
+                  <span className="text-xs bg-green-400/20 px-2 py-1 rounded-full text-green-200 font-normal">
                     {getAllMaterialPresets().length} Real Products
                   </span>
                 </CardTitle>
@@ -796,7 +796,7 @@ const PolyurethaneOptimizer = () => {
               <CardContent className="pt-4 animate-slideIn">
                 {viewMode === 'simple' && (
                   <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
-                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <p className="text-sm text-blue-100">
                       💡 <strong>What this is:</strong> This database contains real polyurethane products from manufacturers.
                       Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!
                     </p>
@@ -1054,8 +1054,8 @@ const PolyurethaneOptimizer = () => {
 
                 {moldVolume > 0 && (
                   <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg space-y-2 text-sm">
-                    <h4 className="font-semibold text-purple-900 dark:text-purple-100">Calculated Mold Volume:</h4>
-                    <p className="text-purple-800 dark:text-purple-200">
+                    <h4 className="font-semibold text-purple-100">Calculated Mold Volume:</h4>
+                    <p className="text-purple-100">
                       Cavity volume: <span className="font-semibold">{moldVolume.toFixed(3)} L</span>
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400 italic">
@@ -1147,14 +1147,14 @@ const PolyurethaneOptimizer = () => {
 
                 {mixResults && (
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg space-y-3 text-sm border border-green-200 dark:border-green-700 shadow-sm">
-                    <h4 className="font-bold text-green-950 dark:text-green-50 text-base flex items-center gap-2">
+                    <h4 className="font-bold text-green-50 text-base flex items-center gap-2">
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                       Component Requirements:
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
                         <p className="text-xs text-gray-300">Polyol</p>
-                        <p className="text-green-800 dark:text-green-200 font-bold">
+                        <p className="text-green-200 font-bold">
                           {mixResults.polyolKg} kg
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300">
@@ -1163,7 +1163,7 @@ const PolyurethaneOptimizer = () => {
                       </div>
                       <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
                         <p className="text-xs text-gray-300">Isocyanate</p>
-                        <p className="text-green-800 dark:text-green-200 font-bold">
+                        <p className="text-green-200 font-bold">
                           {mixResults.isoKg} kg
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300">
@@ -1174,15 +1174,15 @@ const PolyurethaneOptimizer = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-green-300 dark:border-green-600">
                       <div className="text-center">
                         <p className="text-xs text-gray-300">Total Weight</p>
-                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.totalWeight} kg</p>
+                        <p className="text-green-200 font-semibold">{mixResults.totalWeight} kg</p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-gray-300">Density</p>
-                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.density} kg/m³</p>
+                        <p className="text-green-200 font-semibold">{mixResults.density} kg/m³</p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-gray-300">Ratio</p>
-                        <p className="text-green-900 dark:text-green-100 font-semibold">{mixResults.weightRatio}</p>
+                        <p className="text-green-200 font-semibold">{mixResults.weightRatio}</p>
                       </div>
                     </div>
                   </div>
@@ -1226,10 +1226,10 @@ const PolyurethaneOptimizer = () => {
                         <XCircle className="w-8 h-8 text-red-600 animate-pulse" />
                       )}
                       <div>
-                        <p className={`font-bold text-lg ${results.compatible ? 'text-green-950 dark:text-green-50' : 'text-red-950 dark:text-red-50'}`}>
+                        <p className={`font-bold text-lg ${results.compatible ? 'text-green-50' : 'text-red-50'}`}>
                           {results.compatible ? '✓ Machine Compatible' : '✗ Not Compatible'}
                         </p>
-                        <p className={`text-sm ${results.compatible ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                        <p className={`text-sm ${results.compatible ? 'text-green-200' : 'text-red-200'}`}>
                           {results.machine.name}
                         </p>
                       </div>
@@ -1257,8 +1257,8 @@ const PolyurethaneOptimizer = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-4">
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
-                      <h4 className="font-semibold text-indigo-950 dark:text-indigo-50 mb-2 flex items-center gap-2">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-400/40">
+                      <h4 className="font-semibold text-indigo-50 mb-2 flex items-center gap-2">
                         <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
                       </h4>
                       <div className="text-sm text-indigo-900 dark:text-indigo-100 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded shadow-sm">
@@ -1270,23 +1270,23 @@ const PolyurethaneOptimizer = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
-                        <h4 className="font-semibold text-purple-950 dark:text-purple-50 mb-1 text-sm flex items-center gap-1">
+                        <h4 className="font-semibold text-purple-50 mb-1 text-sm flex items-center gap-1">
                           <span>🌡️</span> Arrhenius Equation
                         </h4>
-                        <p className="text-xs font-mono text-purple-900 dark:text-purple-100">
+                        <p className="text-xs font-mono text-purple-100">
                           μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
                         </p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <h4 className="font-semibold text-blue-950 dark:text-blue-50 mb-1 text-sm flex items-center gap-1">
+                        <h4 className="font-semibold text-blue-50 mb-1 text-sm flex items-center gap-1">
                           <span>💧</span> Power Law Model
                         </h4>
-                        <p className="text-xs font-mono text-blue-900 dark:text-blue-100">
+                        <p className="text-xs font-mono text-blue-100">
                           μ = K × γ̇⁽ⁿ⁻¹⁾
                         </p>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-200 italic pt-2 border-t border-indigo-200 dark:border-indigo-700">
+                    <div className="text-xs text-gray-200 italic pt-2 border-t border-indigo-400/40">
                       <p>✓ Temperature-dependent viscosity correction</p>
                       <p>✓ Shear-thinning behavior for polyurethane systems</p>
                       <p>✓ Reynolds number analysis for flow regime determination</p>
@@ -1357,26 +1357,26 @@ const PolyurethaneOptimizer = () => {
                   </div>
 
                   <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-5 rounded-lg text-sm space-y-3 border-2 border-blue-300 dark:border-blue-600 shadow-md">
-                    <h4 className="font-bold text-blue-950 dark:text-blue-50 mb-3 flex items-center gap-2 text-base">
+                    <h4 className="font-bold text-blue-50 mb-3 flex items-center gap-2 text-base">
                       <Activity className="w-5 h-5" />
                       Detailed Flow Analysis
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
                         <p className="text-xs font-medium text-gray-300">Shear Rate</p>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.shearRate} <span className="text-sm font-normal">s⁻¹</span></p>
+                        <p className="text-xl font-bold text-blue-200 mt-1">{results.shearRate} <span className="text-sm font-normal">s⁻¹</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
                         <p className="text-xs font-medium text-gray-300">Apparent Viscosity</p>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.apparentViscosity} <span className="text-sm font-normal">Pa·s</span></p>
+                        <p className="text-xl font-bold text-blue-200 mt-1">{results.apparentViscosity} <span className="text-sm font-normal">Pa·s</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
                         <p className="text-xs font-medium text-gray-300">Pipe Volume</p>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{results.pipeVolume} <span className="text-sm font-normal">L</span></p>
+                        <p className="text-xl font-bold text-blue-200 mt-1">{results.pipeVolume} <span className="text-sm font-normal">L</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
                         <p className="text-xs font-medium text-gray-300">Temperature</p>
-                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300 mt-1">{inputs.temperature} <span className="text-sm font-normal">°C</span></p>
+                        <p className="text-xl font-bold text-blue-200 mt-1">{inputs.temperature} <span className="text-sm font-normal">°C</span></p>
                       </div>
                     </div>
                   </div>
@@ -1384,7 +1384,7 @@ const PolyurethaneOptimizer = () => {
                   {/* Mold Filling Information */}
                   {results.moldVolume > 0 && (
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg text-sm space-y-2 border border-purple-200 dark:border-purple-700">
-                      <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-purple-100 mb-2 flex items-center gap-2">
                         <Scale className="w-4 h-4" />
                         Mold Filling Analysis
                       </h4>
@@ -1442,7 +1442,7 @@ const PolyurethaneOptimizer = () => {
                       <>
                         {viewMode === 'simple' && (
                           <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded-r-lg mt-4">
-                            <p className="text-sm text-green-900 dark:text-green-100 font-semibold">
+                            <p className="text-sm text-green-200 font-semibold">
                               💡 <strong>How to Fix:</strong> Follow these solutions to fix the problems and get perfect parts.
                             </p>
                           </div>
@@ -1450,7 +1450,7 @@ const PolyurethaneOptimizer = () => {
                         {results.recommendations.map((rec, idx) => (
                           <div key={idx} className="flex items-start gap-3 text-sm bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 shadow-sm">
                             <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">→</span>
-                            <span className="text-blue-900 dark:text-blue-100 font-medium leading-relaxed">{simplifyRecommendation(rec)}</span>
+                            <span className="text-blue-100 font-medium leading-relaxed">{simplifyRecommendation(rec)}</span>
                           </div>
                         ))}
                       </>
@@ -1518,7 +1518,7 @@ const PolyurethaneOptimizer = () => {
                     {/* Optimal Parameters Prediction */}
                     {results.mlInsights.optimal_parameters && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                        <h3 className="flex items-center gap-2 font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                        <h3 className="flex items-center gap-2 font-semibold text-blue-100 mb-3">
                           <Target className="w-5 h-5" />
                           Recommended Optimal Parameters
                         </h3>
@@ -1560,7 +1560,7 @@ const PolyurethaneOptimizer = () => {
                           }`} />
                           <span className={
                             results.mlInsights.quality_prediction.is_good_part
-                              ? 'text-green-900 dark:text-green-100'
+                              ? 'text-green-200'
                               : 'text-orange-900 dark:text-orange-100'
                           }>
                             Process Quality Prediction
