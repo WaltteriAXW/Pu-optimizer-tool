@@ -26,9 +26,10 @@ import { useState, useEffect } from 'react';
  * operations like API calls, calculations, or renders triggered by rapid
  * user input.
  *
- * @param {*} value - The value to debounce (can be any type)
+ * @template T
+ * @param {T} value - The value to debounce (can be any type)
  * @param {number} [delay=500] - Delay in milliseconds before updating
- * @returns {*} The debounced value (same type as input)
+ * @returns {T} The debounced value (same type as input)
  *
  * @example
  * // Debounce search input
@@ -45,8 +46,8 @@ import { useState, useEffect } from 'react';
  * const debouncedInputs = useDebounce(inputs, 300);
  * const results = calculateResults(debouncedInputs);
  */
-export function useDebounce(value, delay = 500) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+export function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     // Set up the timeout to update debounced value
@@ -70,9 +71,10 @@ export function useDebounce(value, delay = 500) {
  * until after the specified delay has elapsed since the last invocation.
  * Automatically cleans up pending timeouts when the component unmounts.
  *
- * @param {Function} callback - The function to debounce
+ * @template T
+ * @param {(...args: T[]) => void} callback - The function to debounce
  * @param {number} [delay=500] - Delay in milliseconds before executing
- * @returns {Function} The debounced function with same signature as callback
+ * @returns {(...args: T[]) => void} The debounced function with same signature as callback
  *
  * @example
  * // Debounce form submission
@@ -95,10 +97,13 @@ export function useDebounce(value, delay = 500) {
  *
  * <input onChange={(e) => debouncedFetch(e.target.value)} />
  */
-export function useDebouncedCallback(callback, delay = 500) {
-  const [timeoutId, setTimeoutId] = useState(null);
+export function useDebouncedCallback<T extends any[]>(
+  callback: (...args: T) => void,
+  delay: number = 500
+): (...args: T) => void {
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
-  const debouncedCallback = (...args) => {
+  const debouncedCallback = (...args: T) => {
     // Clear existing timeout
     if (timeoutId) {
       clearTimeout(timeoutId);

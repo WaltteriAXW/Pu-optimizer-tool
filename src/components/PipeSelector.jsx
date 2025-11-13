@@ -25,7 +25,7 @@ import {
  * @param {boolean} props.isOpen - Whether selector is open/visible
  * @param {Function} props.onClose - Callback to close selector
  */
-export function PipeSelector({
+export const PipeSelector = React.memo(function PipeSelector({
   pipeDatabase,
   onSelectPipe,
   selectedPipe = null,
@@ -285,6 +285,6 @@ export function PipeSelector({
       </Card>
     </div>
   );
-}
+});
 
 export default PipeSelector;

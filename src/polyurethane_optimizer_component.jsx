@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from './button';
 import { Card, CardHeader, CardTitle, CardContent } from './card';
-import { Input } from './input';
 import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -20,159 +19,10 @@ import { QuickSetup } from './components/QuickSetup';
 import { ProductionPlanner } from './components/ProductionPlanner';
 import { logError, logInfo, logDebug } from './utils/errorTracking';
 import { measureAsync } from './utils/performance';
+import { InputField, SelectField, ResultCard } from './components/shared';
+import { MACHINE_SPECS } from './config/machineSpecs';
+import { MATERIAL_PRESETS } from './config/materialPresets';
 
-// Polyurethane Machine Specifications - Two-Category System
-// High-Pressure vs Low-Pressure Category System
-const MACHINE_SPECS = {
-  high_pressure: {
-    name: "High-Pressure (HP) System",
-    category: "High-Pressure",
-    output: "5-200+ kg/min",
-    outputRange: { min: 5, max: 200 }, // kg/min
-    maxPressure: 200.0, // bar (typical max ~197 bar / 2800 PSI)
-    pressureRange: { min: 100, max: 200 }, // bar
-    minOperatingPressure: 100, // bar - minimum pressure for proper operation
-    processLoss: {
-      mixingHead: 15, // bar - High-energy impingement mixing head loss
-      valves: 5, // bar - Check valves, shut-off valves
-      filters: 3, // bar - In-line filters
-      fittings: 2, // bar - Hose connections and fittings
-      total: 25 // bar - Total process losses
-    },
-    tankCapacity: "Variable",
-    feedLineDiameterA: "4-8 mm", // A component (tight lines, high shear)
-    feedLineDiameterB: "4-8 mm", // B component (symmetric for 1:1 ratio)
-    pumpType: "Axial piston / High-pressure gear / Variable displacement",
-    shearRateRange: { min: 2000, max: 10000 }, // s⁻¹
-    mixHeadType: "L-style / R-style / Dual-tilted injection (High-energy stream impingement)",
-    powerLawIndex: 0.65, // n (typical 0.60-0.70)
-    activationEnergy: 42500, // J/mol (typical 35-50 kJ/mol)
-    laminarFlowLimit: 175, // bar (up to 150-200 bar at max output)
-    application: "Rigid foam, integral skin, insulation, dense composites",
-    description: "Requires precise, fast mixing",
-    manufacturer: "Generic High-Pressure System"
-  },
-  low_pressure: {
-    name: "Low-Pressure (LP) System",
-    category: "Low-Pressure",
-    output: "2-300+ kg/min",
-    outputRange: { min: 2, max: 300 }, // kg/min
-    maxPressure: 20.0, // bar (gentle, controlled delivery)
-    pressureRange: { min: 8, max: 20 }, // bar
-    minOperatingPressure: 8, // bar - minimum pressure for proper operation
-    processLoss: {
-      mixingHead: 2, // bar - Mechanical mixer chamber loss
-      valves: 1, // bar - Check valves, shut-off valves
-      filters: 0.5, // bar - In-line filters
-      fittings: 0.5, // bar - Hose connections and fittings
-      total: 4 // bar - Total process losses
-    },
-    tankCapacity: "Variable (Modular)",
-    feedLineDiameterA: "10-16 mm", // A component (larger lines reduce shear)
-    feedLineDiameterB: "10-16 mm", // B component (generous sizing)
-    pumpType: "Gear pump (external, fixed/variable displacement, e.g., KCB83.3 ~160 kg/min)",
-    shearRateRange: { min: 100, max: 1500 }, // s⁻¹
-    mixHeadType: "Mechanical mixer / Dynamic mix chamber (moving paddles/rotor, slower speeds)",
-    powerLawIndex: 0.70, // n (typical 0.65-0.75)
-    activationEnergy: 42500, // J/mol (typical 35-50 kJ/mol)
-    laminarFlowLimit: 12.5, // bar (up to 10-15 bar at max output)
-    application: "Flexible foam, elastomers, CASE (coatings/adhesives/sealants), high-viscosity casting",
-    description: "Handles higher viscosities with less agitation",
-    manufacturer: "Generic Low-Pressure System"
-  }
-};
-
-// Material Presets
-const MATERIAL_PRESETS = {
-  ecofoam_standard: {
-    name: "Ecofoam Standard",
-    density: 1120,
-    viscosity: 350,
-    polyolSG: 1.12,
-    isoSG: 1.23,
-    weightRatio: [100, 110]
-  },
-  ecofoam_xhd: {
-    name: "Ecofoam XHD RC",
-    density: 1120,
-    viscosity: 850,
-    polyolSG: 1.12,
-    isoSG: 1.23,
-    weightRatio: [100, 110]
-  },
-  ecomate_spray_ec: {
-    name: "Ecomate Spray EC",
-    density: 1120,
-    viscosity: 350,
-    polyolSG: 1.12,
-    isoSG: 1.23,
-    weightRatio: [100, 110]
-  }
-};
-
-const InputField = React.memo(({ label, unit, icon: Icon, helpText, ...props }) => (
-  <div className="space-y-2 group">
-    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
-      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
-      {label}
-    </label>
-    {helpText && (
-      <p className="text-xs text-gray-600 dark:text-gray-300 -mt-1 mb-1">{helpText}</p>
-    )}
-    <div className="relative">
-      <Input {...props} className="pl-3 pr-12 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 transition-colors" />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-600 dark:text-gray-300">
-        {unit}
-      </span>
-    </div>
-  </div>
-));
-
-const SelectField = React.memo(({ label, icon: Icon, children, ...props }) => (
-  <div className="space-y-2 group">
-    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
-      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
-      {label}
-    </label>
-    <select
-      {...props}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500"
-    >
-      {children}
-    </select>
-  </div>
-));
-
-const ResultCard = React.memo(({ title, value, unit, icon: Icon, status, helpText }) => {
-  const statusColors = {
-    success: 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20',
-    warning: 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20',
-    error: 'border-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20',
-    default: 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
-  };
-
-  const iconColors = {
-    success: 'text-green-600 dark:text-green-400',
-    warning: 'text-yellow-600 dark:text-yellow-400',
-    error: 'text-red-600 dark:text-red-400',
-    default: 'text-blue-600 dark:text-blue-400'
-  };
-
-  return (
-    <div className={`p-4 rounded-lg shadow-md hover:shadow-lg border-l-4 ${statusColors[status] || statusColors.default} transition-all duration-200 transform hover:scale-105 animate-slideIn`}>
-      <h3 className="text-sm flex items-center font-medium text-gray-700 dark:text-gray-300">
-        {Icon && <Icon className={`w-4 h-4 mr-2 ${iconColors[status] || iconColors.default}`} />}
-        {title}
-      </h3>
-      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-        {value} <span className="text-sm font-normal text-gray-600 dark:text-gray-400">{unit}</span>
-      </p>
-      {helpText && (
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">{helpText}</p>
-      )}
-    </div>
-  );
-});
 
 const PolyurethaneOptimizer = () => {
   // State for view mode (simple vs advanced)

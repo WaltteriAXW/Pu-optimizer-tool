@@ -55,7 +55,9 @@ export class ValidationError extends Error {
 }
 
 // Singleton Pyodide instance
-let pyodide: any = null;
+import type { PyodideInterface } from 'pyodide';
+
+let pyodide: PyodideInterface | null = null;
 let isInitializing = false;
 let initializationPromise: Promise<void> | null = null;
 let calculatorCode: string | null = null;

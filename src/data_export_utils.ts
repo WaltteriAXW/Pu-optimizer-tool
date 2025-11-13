@@ -5,6 +5,27 @@
 import { CalculationResults } from './calculatorTypes';
 
 /**
+ * Environmental impact data structure
+ */
+export interface EnvironmentalImpact {
+  carbonFootprint?: number;
+  energyConsumption?: number;
+  wasteReduction?: number;
+  sustainabilityScore?: number;
+  [key: string]: any;
+}
+
+/**
+ * Production log entry structure
+ */
+export interface ProductionLog {
+  timestamp: Date | string | number;
+  output?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+/**
  * Export calculation results to a CSV file
  * 
  * @param results - Calculation results
@@ -109,7 +130,7 @@ Calculations are based on modified Hagen-Poiseuille equations for non-Newtonian 
  * @returns Formatted report text
  */
 export function generateEnvironmentalReport(
-  environmentalImpact: any, 
+  environmentalImpact: EnvironmentalImpact, 
   agentType: string, 
   consumption: number
 ): string {
@@ -160,7 +181,7 @@ Environmental Impact Calculator.`;
  * @param logs - Production log entries
  * @param filename - Output filename
  */
-export function exportProductionLogs(logs: any[], filename: string = 'production_logs.csv'): void {
+export function exportProductionLogs(logs: ProductionLog[], filename: string = 'production_logs.csv'): void {
   if (logs.length === 0) return;
   
   const headers = [
@@ -208,7 +229,7 @@ export function exportProductionLogs(logs: any[], filename: string = 'production
  * @param logs - Production log entries
  * @returns Formatted report text
  */
-export function generateProductionReport(logs: any[]): string {
+export function generateProductionReport(logs: ProductionLog[]): string {
   if (logs.length === 0) return 'No production data available.';
   
   const timestamp = new Date().toLocaleString();

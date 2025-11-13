@@ -93,7 +93,7 @@ describe('QuickSetup Component', () => {
   });
 
   describe('Rendering', () => {
-    it('should show loading state initially', () => {
+    it('should show loading state initially', async () => {
       render(
         <QuickSetup
           onApplyConfiguration={mockOnApplyConfiguration}
@@ -102,9 +102,14 @@ describe('QuickSetup Component', () => {
       );
 
       expect(screen.getByText(/loading databases/i)).toBeInTheDocument();
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(dimensionsDatabaseLoader.loadPipeDatabase).toHaveBeenCalled();
+      });
     });
 
-    it('should not render when isOpen is false', () => {
+    it('should not render when isOpen is false', async () => {
       const { container } = render(
         <QuickSetup
           onApplyConfiguration={mockOnApplyConfiguration}
@@ -113,6 +118,11 @@ describe('QuickSetup Component', () => {
       );
 
       expect(container).toBeEmptyDOMElement();
+
+      // Allow any pending state updates to complete
+      await waitFor(() => {
+        expect(container).toBeEmptyDOMElement();
+      });
     });
 
     it('should render Quick Setup card after loading', async () => {

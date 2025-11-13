@@ -4,48 +4,7 @@ import { Settings2, Thermometer, FileSpreadsheet, Leaf, Database, ChevronDown, C
 import { SliderInput } from '../slider_input';
 import { DatabaseViewer } from '../database_viewer';
 import { getAllMaterialPresets } from '../utils/database_loader';
-
-/**
- * Input field component with icon and unit display
- */
-const InputField = ({ label, unit, icon: Icon, helpText, ...props }) => (
-  <div className="space-y-2 group">
-    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
-      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
-      {label}
-    </label>
-    {helpText && (
-      <p className="text-xs text-gray-600 dark:text-gray-300 -mt-1 mb-1">{helpText}</p>
-    )}
-    <div className="relative">
-      <input
-        {...props}
-        className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all"
-      />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-600 dark:text-gray-300">
-        {unit}
-      </span>
-    </div>
-  </div>
-);
-
-/**
- * Select field component with icon
- */
-const SelectField = ({ label, icon: Icon, children, ...props }) => (
-  <div className="space-y-2 group">
-    <label className="flex items-center text-sm font-medium text-gray-800 dark:text-gray-200">
-      {Icon && <Icon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />}
-      {label}
-    </label>
-    <select
-      {...props}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all hover:border-blue-400 dark:hover:border-blue-500"
-    >
-      {children}
-    </select>
-  </div>
-);
+import { InputField, SelectField } from './shared';
 
 /**
  * FormInputsSection Component
@@ -66,7 +25,7 @@ const SelectField = ({ label, icon: Icon, children, ...props }) => (
  * @param {Function} props.setInputs - Handler to update form inputs
  * @param {string} props.viewMode - Current view mode ('simple' or 'advanced')
  */
-export function FormInputsSection({
+export const FormInputsSection = React.memo(function FormInputsSection({
   MACHINE_SPECS,
   MATERIAL_PRESETS,
   selectedMachine,
@@ -279,6 +238,6 @@ export function FormInputsSection({
       </Card>
     </>
   );
-}
+});
 
 export default FormInputsSection;

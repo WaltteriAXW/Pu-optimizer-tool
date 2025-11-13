@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Button } from '../button';
 import { Alert, AlertTitle, AlertDescription } from '../alert';
@@ -375,17 +374,5 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
     </>
   );
 }
-
-// PropTypes validation
-QuickSetup.propTypes = {
-  onApplyConfiguration: PropTypes.func.isRequired,
-  isOpen: PropTypes.bool,
-  onClose: PropTypes.func
-};
-
-QuickSetup.defaultProps = {
-  isOpen: true,
-  onClose: null
-};
 
 export default QuickSetup;

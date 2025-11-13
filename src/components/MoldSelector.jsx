@@ -24,7 +24,7 @@ import {
  * @param {boolean} props.isOpen - Whether selector is open/visible
  * @param {Function} props.onClose - Callback to close selector
  */
-export function MoldSelector({
+export const MoldSelector = React.memo(function MoldSelector({
   moldDatabase,
   onSelectMold,
   selectedMold = null,
@@ -329,6 +329,6 @@ export function MoldSelector({
       </Card>
     </div>
   );
-}
+});
 
 export default MoldSelector;

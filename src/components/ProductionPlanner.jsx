@@ -18,7 +18,7 @@ import { calculateMaterialRequirements } from '../utils/dimensionsDatabaseLoader
  * @param {Object} props.selectedMold - Currently selected mold configuration
  * @param {boolean} props.isVisible - Whether component is visible
  */
-export function ProductionPlanner({ selectedMold, isVisible = true }) {
+export const ProductionPlanner = React.memo(function ProductionPlanner({ selectedMold, isVisible = true }) {
   const [quantity, setQuantity] = useState(100);
   const [shiftsPerDay, setShiftsPerDay] = useState(1);
   const [hoursPerShift, setHoursPerShift] = useState(8);
@@ -286,6 +286,6 @@ export function ProductionPlanner({ selectedMold, isVisible = true }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 export default ProductionPlanner;
