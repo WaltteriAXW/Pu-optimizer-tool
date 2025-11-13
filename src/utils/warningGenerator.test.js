@@ -97,7 +97,13 @@ describe('warningGenerator', () => {
         moldVolume: 2.5,
         flowRateKgMin: 5,
         compatible: false,
-        machine: { maxPressure: 6.0, output: '10-50 kg/min' },
+        compatibilityResult: {
+          compatible: false,
+          reason: 'exceeds_maximum',
+          tooLow: false,
+          tooHigh: true
+        },
+        machine: { maxPressure: 6.0, pressureRange: { min: 2, max: 6 }, output: '10-50 kg/min' },
         correctedViscosity: 0.4,
         density: 1120,
         diameter: 12,
@@ -288,9 +294,9 @@ describe('warningGenerator', () => {
 
     it('should suggest suitable machines when incompatible', () => {
       const machineSpecs = {
-        weak: { name: 'Weak Machine', maxPressure: 4.0 },
-        medium: { name: 'Medium Machine', maxPressure: 6.0 },
-        strong: { name: 'Strong Machine', maxPressure: 10.0 }
+        weak: { name: 'Weak Machine', maxPressure: 4.0, pressureRange: { min: 1, max: 4 } },
+        medium: { name: 'Medium Machine', maxPressure: 6.0, pressureRange: { min: 2, max: 6 } },
+        strong: { name: 'Strong Machine', maxPressure: 10.0, pressureRange: { min: 3, max: 10 } }
       };
 
       const params = {
@@ -303,7 +309,13 @@ describe('warningGenerator', () => {
         moldVolume: 2.5,
         flowRateKgMin: 5,
         compatible: false,
-        machine: { maxPressure: 4.0, output: '10-50 kg/min' },
+        compatibilityResult: {
+          compatible: false,
+          reason: 'exceeds_maximum',
+          tooLow: false,
+          tooHigh: true
+        },
+        machine: { maxPressure: 4.0, pressureRange: { min: 1, max: 4 }, output: '10-50 kg/min' },
         correctedViscosity: 0.4,
         density: 1120,
         diameter: 12,
@@ -313,8 +325,8 @@ describe('warningGenerator', () => {
 
       const { recommendations } = generateWarnings(params);
 
-      const upgradeRec = recommendations.find(r => r.includes('upgrading'));
-      expect(upgradeRec).toBeDefined();
+      const switchRec = recommendations.find(r => r.includes('switching'));
+      expect(switchRec).toBeDefined();
     });
   });
 

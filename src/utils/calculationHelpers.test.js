@@ -184,7 +184,7 @@ describe('calculationHelpers', () => {
   });
 
   describe('calculatePressureDrop', () => {
-    it('should calculate pressure drop in Pa and bar', () => {
+    it('should calculate pressure drop in Pa and bar (without machine spec)', () => {
       const apparentViscosity = 0.38; // Pa·s
       const length = 0.5; // m
       const flowRate = 0.0000833; // m³/s
@@ -202,9 +202,73 @@ describe('calculationHelpers', () => {
       );
 
       expect(result.pressureDrop).toBeGreaterThan(0);
-      expect(result.pressureDropBar).toBeGreaterThan(0);
-      expect(result.totalPressureBar).toBeGreaterThan(result.pressureDropBar);
-      expect(result.totalPressureBar).toBeCloseTo(result.pressureDropBar * safetyFactor, 2);
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(0);
+      expect(result.minOperatingPressureBar).toBe(0);
+      expect(result.requiredPumpSettingBar).toBe(result.pipeLossBar);
+      // Backwards compatibility
+      expect(result.pressureDropBar).toBe(result.pipeLossBar);
+      expect(result.totalPressureBar).toBe(result.requiredPumpSettingBar);
+    });
+
+    it('should calculate required pump setting with HP machine spec', () => {
+      const apparentViscosity = 0.38;
+      const length = 0.5;
+      const flowRate = 0.0000833;
+      const radius = 0.006;
+      const powerLawIndex = 0.85;
+      const safetyFactor = 1.5;
+      const machineSpec = {
+        processLoss: { total: 25 },
+        minOperatingPressure: 100
+      };
+
+      const result = calculatePressureDrop(
+        apparentViscosity,
+        length,
+        flowRate,
+        radius,
+        powerLawIndex,
+        safetyFactor,
+        machineSpec
+      );
+
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(25);
+      expect(result.minOperatingPressureBar).toBe(100);
+      expect(result.requiredPumpSettingBar).toBe(
+        result.pipeLossBar + 25 + 100
+      );
+    });
+
+    it('should calculate required pump setting with LP machine spec', () => {
+      const apparentViscosity = 0.38;
+      const length = 0.5;
+      const flowRate = 0.0000833;
+      const radius = 0.006;
+      const powerLawIndex = 0.85;
+      const safetyFactor = 1.5;
+      const machineSpec = {
+        processLoss: { total: 4 },
+        minOperatingPressure: 8
+      };
+
+      const result = calculatePressureDrop(
+        apparentViscosity,
+        length,
+        flowRate,
+        radius,
+        powerLawIndex,
+        safetyFactor,
+        machineSpec
+      );
+
+      expect(result.pipeLossBar).toBeGreaterThan(0);
+      expect(result.processLossBar).toBe(4);
+      expect(result.minOperatingPressureBar).toBe(8);
+      expect(result.requiredPumpSettingBar).toBe(
+        result.pipeLossBar + 4 + 8
+      );
     });
 
     it('should increase pressure with length', () => {
@@ -317,22 +381,49 @@ describe('calculationHelpers', () => {
   });
 
   describe('checkMachineCompatibility', () => {
-    it('should return true when pressure is within machine capacity', () => {
-      const machineSpec = { maxPressure: 6.0 };
+    it('should return compatible=true when pressure is within machine capacity', () => {
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(4.5, machineSpec);
-      expect(result).toBe(true);
+      expect(result.compatible).toBe(true);
+      expect(result.tooLow).toBe(false);
+      expect(result.tooHigh).toBe(false);
+      expect(result.reason).toBe(null);
     });
 
-    it('should return false when pressure exceeds machine capacity', () => {
-      const machineSpec = { maxPressure: 6.0 };
+    it('should return compatible=false when pressure exceeds machine capacity', () => {
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(7.0, machineSpec);
-      expect(result).toBe(false);
+      expect(result.compatible).toBe(false);
+      expect(result.tooHigh).toBe(true);
+      expect(result.tooLow).toBe(false);
+      expect(result.reason).toBe('exceeds_maximum');
     });
 
     it('should handle exact capacity match', () => {
-      const machineSpec = { maxPressure: 6.0 };
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
       const result = checkMachineCompatibility(6.0, machineSpec);
-      expect(result).toBe(true);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return compatible=false when pressure is below minimum operating range', () => {
+      const machineSpec = { maxPressure: 200, pressureRange: { min: 100, max: 200 } };
+      const result = checkMachineCompatibility(50, machineSpec);
+      expect(result.compatible).toBe(false);
+      expect(result.tooLow).toBe(true);
+      expect(result.tooHigh).toBe(false);
+      expect(result.reason).toBe('below_minimum');
+    });
+
+    it('should work with HP system (100-200 bar)', () => {
+      const machineSpec = { maxPressure: 200, pressureRange: { min: 100, max: 200 } };
+      const result = checkMachineCompatibility(150, machineSpec);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should work with LP system (8-20 bar)', () => {
+      const machineSpec = { maxPressure: 20, pressureRange: { min: 8, max: 20 } };
+      const result = checkMachineCompatibility(15, machineSpec);
+      expect(result.compatible).toBe(true);
     });
   });
 
@@ -458,9 +549,12 @@ describe('calculationHelpers', () => {
       expect(totalPressureBar).toBeLessThan(10); // Reasonable for this scenario
 
       // Step 8: Check compatibility
-      const machineSpec = { maxPressure: 6.0 };
-      const compatible = checkMachineCompatibility(totalPressureBar, machineSpec);
-      expect(typeof compatible).toBe('boolean');
+      const machineSpec = { maxPressure: 6.0, pressureRange: { min: 2, max: 6 } };
+      const compatibilityResult = checkMachineCompatibility(totalPressureBar, machineSpec);
+      expect(compatibilityResult).toHaveProperty('compatible');
+      expect(compatibilityResult).toHaveProperty('tooLow');
+      expect(compatibilityResult).toHaveProperty('tooHigh');
+      expect(typeof compatibilityResult.compatible).toBe('boolean');
     });
   });
 });
