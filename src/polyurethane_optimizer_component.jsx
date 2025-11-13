@@ -537,7 +537,7 @@ const PolyurethaneOptimizer = () => {
         {/* Header Section with Title and Actions */}
         <div className="flex justify-between items-center gap-4 flex-wrap bg-white/10 backdrop-blur-md border border-white/20 text-white p-6 rounded-xl shadow-xl">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1">PU Injection Optimizer</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-white">PU Injection Optimizer</h1>
           <p className="text-blue-100 text-sm">Calculate optimal pressure & predict part quality</p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -557,7 +557,7 @@ const PolyurethaneOptimizer = () => {
           {/* View Mode Toggle */}
           <button
             onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm backdrop-blur-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white bg-opacity-20 hover:bg-opacity-30 text-gray-900 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold text-sm backdrop-blur-sm"
           >
             {viewMode === 'simple' ? (
               <>
@@ -576,9 +576,9 @@ const PolyurethaneOptimizer = () => {
 
       {/* Beta Disclaimer */}
       <Alert className="bg-yellow-400/15 backdrop-blur-md border border-yellow-400/40 shadow-lg">
-        <AlertTriangle className="h-4 w-4 text-yellow-300" />
-        <AlertTitle className="text-yellow-100 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
-        <AlertDescription className="text-yellow-200/90 text-sm">
+        <AlertTriangle className="h-4 w-4 text-yellow-700" />
+        <AlertTitle className="text-yellow-900 font-semibold">BETA VERSION - DISCLAIMER</AlertTitle>
+        <AlertDescription className="text-yellow-900 text-sm">
           This application is in beta testing and may provide incorrect results. We accept no responsibility for production losses or damages.
           Always conduct thorough testing before implementing in production environments.
         </AlertDescription>
@@ -608,7 +608,7 @@ const PolyurethaneOptimizer = () => {
             onClick={() => setShowHelpGuide(!showHelpGuide)}
             className="w-full flex items-center justify-between text-left group"
           >
-            <CardTitle className="flex items-center gap-3 text-xl text-white">
+            <CardTitle className="flex items-center gap-3 text-xl text-gray-900">
               <HelpCircle className="w-7 h-7 text-blue-400 group-hover:animate-pulse" />
               {viewMode === 'simple' ? 'What Does This Tool Do? (Click to expand)' : 'Technical Overview (Click to expand)'}
             </CardTitle>
@@ -622,17 +622,17 @@ const PolyurethaneOptimizer = () => {
         {showHelpGuide && viewMode === 'simple' && (
           <CardContent className="space-y-4 animate-slideIn">
             <div className="bg-white/15 backdrop-blur-sm p-5 rounded-xl border border-blue-400/40 shadow-md">
-              <h3 className="font-bold text-lg text-white mb-4">
+              <h3 className="font-bold text-lg text-gray-900 mb-4">
                 This tool answers 3 critical questions:
               </h3>
               <div className="space-y-3">
                 <div className="flex gap-3 p-4 bg-green-400/15 backdrop-blur-sm rounded-lg border border-green-400/40">
                   <CheckCircle2 className="w-7 h-7 text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-green-100 text-base">
+                    <p className="font-bold text-green-800 text-base">
                       1. Can my machine handle this job?
                     </p>
-                    <p className="text-sm text-green-200/90 mt-1">
+                    <p className="text-sm text-green-700/90 mt-1">
                       We check if your machine is powerful enough to push foam through your tubes and into the mold.
                       If your machine isn't strong enough, you'll get incomplete parts or the machine will struggle.
                     </p>
@@ -642,10 +642,10 @@ const PolyurethaneOptimizer = () => {
                 <div className="flex gap-3 p-4 bg-blue-400/15 backdrop-blur-sm rounded-lg border border-blue-400/40">
                   <Info className="w-7 h-7 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-blue-100 text-base">
+                    <p className="font-bold text-blue-800 text-base">
                       2. What pressure do I need?
                     </p>
-                    <p className="text-sm text-blue-200/90 mt-1">
+                    <p className="text-sm text-blue-700/90 mt-1">
                       We calculate exactly how much pressure (in bar) you need to push foam smoothly through your setup.
                       Too little pressure = incomplete parts. Too much = wasted energy and potential damage.
                     </p>
@@ -655,7 +655,7 @@ const PolyurethaneOptimizer = () => {
                 <div className="flex gap-3 p-4 bg-purple-400/15 backdrop-blur-sm rounded-lg border border-purple-400/40">
                   <AlertTriangle className="w-7 h-7 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-purple-100 text-base">
+                    <p className="font-bold text-purple-800 text-base">
                       3. Will I get good quality parts?
                     </p>
                     <p className="text-sm text-purple-200/90 mt-1">
@@ -668,14 +668,14 @@ const PolyurethaneOptimizer = () => {
             </div>
 
             <div className="bg-yellow-400/15 backdrop-blur-sm p-4 rounded-lg border-l-4 border-yellow-400">
-              <p className="text-sm text-yellow-100 font-semibold">
+              <p className="text-sm text-yellow-900 font-semibold">
                 ⚡ <strong>Quick Tip:</strong> Use the sliders to quickly try different settings, then fine-tune the exact numbers in the boxes.
                 The tool updates your results instantly as you change settings!
               </p>
             </div>
 
             <div className="bg-green-400/15 backdrop-blur-sm p-4 rounded-lg border-l-4 border-green-400">
-              <p className="text-sm text-green-100">
+              <p className="text-sm text-green-800">
                 <strong>New to foam injection?</strong> Don't worry! Every setting has a plain-English explanation.
                 Just look for the blue boxes under each slider. We'll explain what it does and how it affects your parts.
               </p>
@@ -683,11 +683,11 @@ const PolyurethaneOptimizer = () => {
           </CardContent>
         )}
         {showHelpGuide && viewMode === 'advanced' && (
-          <CardContent className="space-y-3 text-sm sm:text-base text-blue-100 animate-slideIn">
+          <CardContent className="space-y-3 text-sm sm:text-base text-blue-800 animate-slideIn">
             <p><strong>Advanced Fluid Dynamics Calculator</strong> for polyurethane injection molding optimization using Power Law and Arrhenius equations.</p>
             <div className="space-y-2">
-              <p className="font-semibold text-blue-50">Features:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2 text-blue-200">
+              <p className="font-semibold text-blue-900">Features:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2 text-blue-700">
                 <li>Modified Hagen-Poiseuille equation with Power Law correction for non-Newtonian fluids</li>
                 <li>Temperature-dependent viscosity using Arrhenius model</li>
                 <li>Reynolds number analysis for flow regime determination</li>
@@ -695,7 +695,7 @@ const PolyurethaneOptimizer = () => {
                 <li>ML-based quality prediction and defect risk assessment</li>
               </ul>
             </div>
-            <p className="text-xs sm:text-sm pt-2 border-t border-blue-400/30 text-blue-200">
+            <p className="text-xs sm:text-sm pt-2 border-t border-blue-400/30 text-blue-700">
               <strong>AI Learning:</strong> The system continuously learns from each calculation to improve predictions and recommendations.
             </p>
           </CardContent>
@@ -707,8 +707,8 @@ const PolyurethaneOptimizer = () => {
         <div className="space-y-4 sm:space-y-6">
           <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-blue-400/40 bg-gradient-to-br from-blue-400/10 to-white/15 backdrop-blur-sm">
             <CardHeader className="bg-white/10 backdrop-blur-md border-b border-blue-400/20">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold mr-1">1</div>
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-gray-900 text-sm font-bold mr-1">1</div>
                 <Settings2 className="w-5 h-5 text-blue-600" />
                 Machine Selection
               </CardTitle>
@@ -727,24 +727,24 @@ const PolyurethaneOptimizer = () => {
 
               {MACHINE_SPECS[selectedMachine] && (
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 p-4 rounded-lg text-sm border border-blue-200 dark:border-blue-700 transform transition-all duration-200 hover:scale-[1.02]">
-                  <p className="font-bold text-blue-50 text-base">
+                  <p className="font-bold text-blue-900 text-base">
                     {MACHINE_SPECS[selectedMachine].name}
                   </p>
-                  <p className="text-blue-100 mt-1">
+                  <p className="text-blue-800 mt-1">
                     {MACHINE_SPECS[selectedMachine].manufacturer}
                   </p>
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                      <p className="text-gray-300">Max Output</p>
-                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].output}</p>
+                      <p className="text-gray-700">Max Output</p>
+                      <p className="font-semibold text-blue-700">{MACHINE_SPECS[selectedMachine].output}</p>
                     </div>
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                      <p className="text-gray-300">Max Pressure</p>
-                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
+                      <p className="text-gray-700">Max Pressure</p>
+                      <p className="font-semibold text-blue-700">{MACHINE_SPECS[selectedMachine].maxPressure} bar</p>
                     </div>
                     <div className="bg-white/70 dark:bg-gray-800/70 p-2 rounded">
-                      <p className="text-gray-300">Tank</p>
-                      <p className="font-semibold text-blue-200">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
+                      <p className="text-gray-700">Tank</p>
+                      <p className="font-semibold text-blue-700">{MACHINE_SPECS[selectedMachine].tankCapacity}</p>
                     </div>
                   </div>
                 </div>
@@ -763,7 +763,7 @@ const PolyurethaneOptimizer = () => {
 
               {selectedMaterialName && (
                 <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-300 dark:border-green-700">
-                  <p className="text-sm font-semibold text-green-200">
+                  <p className="text-sm font-semibold text-green-700">
                     ✅ Using: {selectedMaterialName}
                   </p>
                 </div>
@@ -779,10 +779,10 @@ const PolyurethaneOptimizer = () => {
                 className="w-full flex items-center justify-between text-left group"
                 onClick={() => setShowDatabase(!showDatabase)}
               >
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Database className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Material Database Browser
-                  <span className="text-xs bg-green-400/20 px-2 py-1 rounded-full text-green-200 font-normal">
+                  <span className="text-xs bg-green-400/20 px-2 py-1 rounded-full text-green-700 font-normal">
                     {getAllMaterialPresets().length} Real Products
                   </span>
                 </CardTitle>
@@ -796,7 +796,7 @@ const PolyurethaneOptimizer = () => {
               <CardContent className="pt-4 animate-slideIn">
                 {viewMode === 'simple' && (
                   <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">
-                    <p className="text-sm text-blue-100">
+                    <p className="text-sm text-blue-800">
                       💡 <strong>What this is:</strong> This database contains real polyurethane products from manufacturers.
                       Select a material and we'll automatically fill in the correct density, viscosity, and mix ratios for you!
                     </p>
@@ -809,8 +809,8 @@ const PolyurethaneOptimizer = () => {
 
           <Card className="shadow-md hover:shadow-lg transition-all duration-200 border border-purple-400/40 bg-gradient-to-br from-purple-400/10 to-white/15 backdrop-blur-sm">
             <CardHeader className="bg-white/10 backdrop-blur-md border-b border-purple-400/20">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-white text-sm font-bold mr-1">2</div>
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-purple-600 text-gray-900 text-sm font-bold mr-1">2</div>
                 <Thermometer className="w-5 h-5 text-purple-600" />
                 Process Parameters
               </CardTitle>
@@ -910,8 +910,8 @@ const PolyurethaneOptimizer = () => {
                 className="w-full flex items-center justify-between text-left"
                 onClick={() => setMoldDimensionsExpanded(!moldDimensionsExpanded)}
               >
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold mr-1">3</div>
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-gray-900 text-sm font-bold mr-1">3</div>
                   <Scale className="w-5 h-5 text-indigo-400" />
                   Mold Dimensions (Optional)
                 </CardTitle>
@@ -920,7 +920,7 @@ const PolyurethaneOptimizer = () => {
             </CardHeader>
             {moldDimensionsExpanded && (
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-300">
+                <p className="text-sm text-gray-700">
                   Define your mold cavity dimensions to calculate accurate injection time and material requirements.
                 </p>
 
@@ -1054,8 +1054,8 @@ const PolyurethaneOptimizer = () => {
 
                 {moldVolume > 0 && (
                   <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg space-y-2 text-sm">
-                    <h4 className="font-semibold text-purple-100">Calculated Mold Volume:</h4>
-                    <p className="text-purple-100">
+                    <h4 className="font-semibold text-purple-800">Calculated Mold Volume:</h4>
+                    <p className="text-purple-800">
                       Cavity volume: <span className="font-semibold">{moldVolume.toFixed(3)} L</span>
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400 italic">
@@ -1066,7 +1066,7 @@ const PolyurethaneOptimizer = () => {
 
                 {/* 3D Visualization */}
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-white flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Eye className="w-4 h-4 text-indigo-600" />
                     3D Visualization
                   </h4>
@@ -1079,7 +1079,7 @@ const PolyurethaneOptimizer = () => {
                     showLabels={true}
                     height={500}
                   />
-                  <p className="text-xs text-gray-300 italic text-center">
+                  <p className="text-xs text-gray-700 italic text-center">
                     Interactive 3D preview - Use mouse to rotate, zoom, and pan
                   </p>
                 </div>
@@ -1095,7 +1095,7 @@ const PolyurethaneOptimizer = () => {
                 className="w-full flex items-center justify-between text-left group"
                 onClick={() => setMixRatioExpanded(!mixRatioExpanded)}
               >
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Leaf className="w-5 h-5 text-green-600 group-hover:animate-pulse" />
                   Advanced Mix Ratio Calculator
                 </CardTitle>
@@ -1147,14 +1147,14 @@ const PolyurethaneOptimizer = () => {
 
                 {mixResults && (
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg space-y-3 text-sm border border-green-200 dark:border-green-700 shadow-sm">
-                    <h4 className="font-bold text-green-50 text-base flex items-center gap-2">
+                    <h4 className="font-bold text-green-900 text-base flex items-center gap-2">
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                       Component Requirements:
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
-                        <p className="text-xs text-gray-300">Polyol</p>
-                        <p className="text-green-200 font-bold">
+                        <p className="text-xs text-gray-700">Polyol</p>
+                        <p className="text-green-700 font-bold">
                           {mixResults.polyolKg} kg
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300">
@@ -1162,8 +1162,8 @@ const PolyurethaneOptimizer = () => {
                         </p>
                       </div>
                       <div className="bg-white/70 dark:bg-gray-800/70 p-3 rounded">
-                        <p className="text-xs text-gray-300">Isocyanate</p>
-                        <p className="text-green-200 font-bold">
+                        <p className="text-xs text-gray-700">Isocyanate</p>
+                        <p className="text-green-700 font-bold">
                           {mixResults.isoKg} kg
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-300">
@@ -1173,16 +1173,16 @@ const PolyurethaneOptimizer = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-green-300 dark:border-green-600">
                       <div className="text-center">
-                        <p className="text-xs text-gray-300">Total Weight</p>
-                        <p className="text-green-200 font-semibold">{mixResults.totalWeight} kg</p>
+                        <p className="text-xs text-gray-700">Total Weight</p>
+                        <p className="text-green-700 font-semibold">{mixResults.totalWeight} kg</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-gray-300">Density</p>
-                        <p className="text-green-200 font-semibold">{mixResults.density} kg/m³</p>
+                        <p className="text-xs text-gray-700">Density</p>
+                        <p className="text-green-700 font-semibold">{mixResults.density} kg/m³</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-gray-300">Ratio</p>
-                        <p className="text-green-200 font-semibold">{mixResults.weightRatio}</p>
+                        <p className="text-xs text-gray-700">Ratio</p>
+                        <p className="text-green-700 font-semibold">{mixResults.weightRatio}</p>
                       </div>
                     </div>
                   </div>
@@ -1195,7 +1195,7 @@ const PolyurethaneOptimizer = () => {
         {/* Results Section */}
         <div className="space-y-6">
           {/* Results Header */}
-          <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-4 rounded-xl shadow-lg flex items-center gap-3">
+          <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-gray-900 p-4 rounded-xl shadow-lg flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white text-emerald-600 text-lg font-bold">
               ✓
             </div>
@@ -1226,19 +1226,19 @@ const PolyurethaneOptimizer = () => {
                         <XCircle className="w-8 h-8 text-red-600 animate-pulse" />
                       )}
                       <div>
-                        <p className={`font-bold text-lg ${results.compatible ? 'text-green-50' : 'text-red-50'}`}>
+                        <p className={`font-bold text-lg ${results.compatible ? 'text-green-900' : 'text-red-900'}`}>
                           {results.compatible ? '✓ Machine Compatible' : '✗ Not Compatible'}
                         </p>
-                        <p className={`text-sm ${results.compatible ? 'text-green-200' : 'text-red-200'}`}>
+                        <p className={`text-sm ${results.compatible ? 'text-green-700' : 'text-red-700'}`}>
                           {results.machine.name}
                         </p>
                       </div>
                     </div>
                     <div className="text-center sm:text-right">
-                      <p className="text-3xl font-bold text-white">
+                      <p className="text-3xl font-bold text-gray-900">
                         {results.optimalPressureBar} <span className="text-lg">bar</span>
                       </p>
-                      <p className="text-sm text-gray-200 mt-1">
+                      <p className="text-sm text-gray-800 mt-1">
                         Max: {results.machine.maxPressure} bar
                       </p>
                     </div>
@@ -1250,15 +1250,15 @@ const PolyurethaneOptimizer = () => {
               {viewMode === 'advanced' && (
                 <Card className="border-2 border-indigo-200 dark:border-indigo-800 shadow-lg animate-slideIn">
                   <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-                    <CardTitle className="flex items-center gap-2 text-indigo-900 dark:text-indigo-50">
+                    <CardTitle className="flex items-center gap-2 text-indigo-900 dark:text-indigo-900">
                       <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
                       Fluid Dynamics Model
-                      <span className="ml-2 px-2 py-0.5 text-xs bg-indigo-600 text-white rounded-full">Scientific</span>
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-indigo-600 text-gray-900 rounded-full">Scientific</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-4">
                     <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-400/40">
-                      <h4 className="font-semibold text-indigo-50 mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-indigo-900 mb-2 flex items-center gap-2">
                         <span className="text-lg">📐</span> Hagen-Poiseuille Equation (Power Law)
                       </h4>
                       <div className="text-sm text-indigo-900 dark:text-indigo-100 space-y-1 font-mono bg-white dark:bg-gray-800 p-3 rounded shadow-sm">
@@ -1270,23 +1270,23 @@ const PolyurethaneOptimizer = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
-                        <h4 className="font-semibold text-purple-50 mb-1 text-sm flex items-center gap-1">
+                        <h4 className="font-semibold text-purple-900 mb-1 text-sm flex items-center gap-1">
                           <span>🌡️</span> Arrhenius Equation
                         </h4>
-                        <p className="text-xs font-mono text-purple-100">
+                        <p className="text-xs font-mono text-purple-800">
                           μ(T) = μ₀ × exp[Ea/R × (1/T - 1/T₀)]
                         </p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <h4 className="font-semibold text-blue-50 mb-1 text-sm flex items-center gap-1">
+                        <h4 className="font-semibold text-blue-900 mb-1 text-sm flex items-center gap-1">
                           <span>💧</span> Power Law Model
                         </h4>
-                        <p className="text-xs font-mono text-blue-100">
+                        <p className="text-xs font-mono text-blue-800">
                           μ = K × γ̇⁽ⁿ⁻¹⁾
                         </p>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-200 italic pt-2 border-t border-indigo-400/40">
+                    <div className="text-xs text-gray-800 italic pt-2 border-t border-indigo-400/40">
                       <p>✓ Temperature-dependent viscosity correction</p>
                       <p>✓ Shear-thinning behavior for polyurethane systems</p>
                       <p>✓ Reynolds number analysis for flow regime determination</p>
@@ -1297,12 +1297,12 @@ const PolyurethaneOptimizer = () => {
 
               {/* Primary Results */}
               <Card className="shadow-lg border-l-4 border-l-blue-500 animate-slideIn">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-gray-900">
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <TrendingUp className="w-6 h-6" />
                     📊 Key Process Metrics
                   </CardTitle>
-                  <p className="text-blue-100 text-sm mt-1">These values determine if your setup will work</p>
+                  <p className="text-blue-800 text-sm mt-1">These values determine if your setup will work</p>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1357,26 +1357,26 @@ const PolyurethaneOptimizer = () => {
                   </div>
 
                   <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-5 rounded-lg text-sm space-y-3 border-2 border-blue-300 dark:border-blue-600 shadow-md">
-                    <h4 className="font-bold text-blue-50 mb-3 flex items-center gap-2 text-base">
+                    <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2 text-base">
                       <Activity className="w-5 h-5" />
                       Detailed Flow Analysis
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
-                        <p className="text-xs font-medium text-gray-300">Shear Rate</p>
-                        <p className="text-xl font-bold text-blue-200 mt-1">{results.shearRate} <span className="text-sm font-normal">s⁻¹</span></p>
+                        <p className="text-xs font-medium text-gray-700">Shear Rate</p>
+                        <p className="text-xl font-bold text-blue-700 mt-1">{results.shearRate} <span className="text-sm font-normal">s⁻¹</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
-                        <p className="text-xs font-medium text-gray-300">Apparent Viscosity</p>
-                        <p className="text-xl font-bold text-blue-200 mt-1">{results.apparentViscosity} <span className="text-sm font-normal">Pa·s</span></p>
+                        <p className="text-xs font-medium text-gray-700">Apparent Viscosity</p>
+                        <p className="text-xl font-bold text-blue-700 mt-1">{results.apparentViscosity} <span className="text-sm font-normal">Pa·s</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
-                        <p className="text-xs font-medium text-gray-300">Pipe Volume</p>
-                        <p className="text-xl font-bold text-blue-200 mt-1">{results.pipeVolume} <span className="text-sm font-normal">L</span></p>
+                        <p className="text-xs font-medium text-gray-700">Pipe Volume</p>
+                        <p className="text-xl font-bold text-blue-700 mt-1">{results.pipeVolume} <span className="text-sm font-normal">L</span></p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700">
-                        <p className="text-xs font-medium text-gray-300">Temperature</p>
-                        <p className="text-xl font-bold text-blue-200 mt-1">{inputs.temperature} <span className="text-sm font-normal">°C</span></p>
+                        <p className="text-xs font-medium text-gray-700">Temperature</p>
+                        <p className="text-xl font-bold text-blue-700 mt-1">{inputs.temperature} <span className="text-sm font-normal">°C</span></p>
                       </div>
                     </div>
                   </div>
@@ -1384,23 +1384,23 @@ const PolyurethaneOptimizer = () => {
                   {/* Mold Filling Information */}
                   {results.moldVolume > 0 && (
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg text-sm space-y-2 border border-purple-200 dark:border-purple-700">
-                      <h4 className="font-semibold text-purple-100 mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
                         <Scale className="w-4 h-4" />
                         Mold Filling Analysis
                       </h4>
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                          <p className="text-xs text-gray-300">Mold Volume</p>
+                          <p className="text-xs text-gray-700">Mold Volume</p>
                           <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.moldVolume.toFixed(3)} <span className="text-xs font-normal">L</span></p>
                           <p className="text-xs text-gray-400 italic capitalize">{results.moldShape} shape</p>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                          <p className="text-xs text-gray-300">Mold Fill Time</p>
+                          <p className="text-xs text-gray-700">Mold Fill Time</p>
                           <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.moldFillingTime.toFixed(2)} <span className="text-xs font-normal">s</span></p>
                           <p className="text-xs text-gray-400 italic">Cavity filling</p>
                         </div>
                         <div className="bg-white dark:bg-gray-800 p-2 rounded">
-                          <p className="text-xs text-gray-300">Pipe Fill Time</p>
+                          <p className="text-xs text-gray-700">Pipe Fill Time</p>
                           <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{results.pipeFillingTime.toFixed(2)} <span className="text-xs font-normal">s</span></p>
                           <p className="text-xs text-gray-400 italic">Pipe transit</p>
                         </div>
@@ -1417,7 +1417,7 @@ const PolyurethaneOptimizer = () => {
               {(results.warnings.length > 0 || results.recommendations.length > 0) && (
                 <Card className="shadow-lg border-l-4 border-l-yellow-500 animate-slideIn">
                   <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20">
-                    <CardTitle className="flex items-center gap-2 text-white">
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
                       <AlertTriangle className="w-5 h-5 text-yellow-600 animate-pulse" />
                       Warnings & Recommendations
                     </CardTitle>
@@ -1433,7 +1433,7 @@ const PolyurethaneOptimizer = () => {
                     {results.warnings.map((warning, idx) => (
                       <Alert key={idx} className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600 shadow-sm">
                         <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
-                        <AlertDescription className="text-yellow-900 dark:text-yellow-100 text-sm font-medium leading-relaxed">
+                        <AlertDescription className="text-yellow-900 dark:text-yellow-900 text-sm font-medium leading-relaxed">
                           {simplifyWarning(warning)}
                         </AlertDescription>
                       </Alert>
@@ -1442,7 +1442,7 @@ const PolyurethaneOptimizer = () => {
                       <>
                         {viewMode === 'simple' && (
                           <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 p-3 rounded-r-lg mt-4">
-                            <p className="text-sm text-green-200 font-semibold">
+                            <p className="text-sm text-green-700 font-semibold">
                               💡 <strong>How to Fix:</strong> Follow these solutions to fix the problems and get perfect parts.
                             </p>
                           </div>
@@ -1450,7 +1450,7 @@ const PolyurethaneOptimizer = () => {
                         {results.recommendations.map((rec, idx) => (
                           <div key={idx} className="flex items-start gap-3 text-sm bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 shadow-sm">
                             <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">→</span>
-                            <span className="text-blue-100 font-medium leading-relaxed">{simplifyRecommendation(rec)}</span>
+                            <span className="text-blue-800 font-medium leading-relaxed">{simplifyRecommendation(rec)}</span>
                           </div>
                         ))}
                       </>
@@ -1510,7 +1510,7 @@ const PolyurethaneOptimizer = () => {
                     <CardTitle className="flex items-center gap-2">
                       <Brain className="w-6 h-6 text-purple-600" />
                       AI Process Optimization Insights
-                      <span className="ml-2 px-2 py-0.5 text-xs bg-purple-600 text-white rounded-full">ML-Powered</span>
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-purple-600 text-gray-900 rounded-full">ML-Powered</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4">
@@ -1518,26 +1518,26 @@ const PolyurethaneOptimizer = () => {
                     {/* Optimal Parameters Prediction */}
                     {results.mlInsights.optimal_parameters && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                        <h3 className="flex items-center gap-2 font-semibold text-blue-100 mb-3">
+                        <h3 className="flex items-center gap-2 font-semibold text-blue-800 mb-3">
                           <Target className="w-5 h-5" />
                           Recommended Optimal Parameters
                         </h3>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-white dark:bg-gray-800 rounded p-3">
-                            <p className="text-sm text-gray-300">Optimal Temperature</p>
+                            <p className="text-sm text-gray-700">Optimal Temperature</p>
                             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                               {results.mlInsights.optimal_parameters.optimal_temperature}°C
                             </p>
-                            <p className="text-xs text-gray-300 mt-1">
+                            <p className="text-xs text-gray-700 mt-1">
                               Current: {inputs.temperature}°C
                             </p>
                           </div>
                           <div className="bg-white dark:bg-gray-800 rounded p-3">
-                            <p className="text-sm text-gray-300">Optimal Flow Rate</p>
+                            <p className="text-sm text-gray-700">Optimal Flow Rate</p>
                             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                               {results.mlInsights.optimal_parameters.optimal_flow_rate} L/min
                             </p>
-                            <p className="text-xs text-gray-300 mt-1">
+                            <p className="text-xs text-gray-700 mt-1">
                               Current: {inputs.flowRate} L/min
                             </p>
                           </div>
@@ -1560,7 +1560,7 @@ const PolyurethaneOptimizer = () => {
                           }`} />
                           <span className={
                             results.mlInsights.quality_prediction.is_good_part
-                              ? 'text-green-200'
+                              ? 'text-green-700'
                               : 'text-orange-900 dark:text-orange-100'
                           }>
                             Process Quality Prediction
@@ -1579,15 +1579,15 @@ const PolyurethaneOptimizer = () => {
                                 </span>
                               )}
                             </p>
-                            <p className="text-sm text-gray-300 mt-1">
+                            <p className="text-sm text-gray-700 mt-1">
                               Success Probability: {results.mlInsights.quality_prediction.good_probability}%
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-3xl font-bold text-white">
+                            <p className="text-3xl font-bold text-gray-900">
                               {results.mlInsights.quality_prediction.confidence}%
                             </p>
-                            <p className="text-xs text-gray-300">Confidence</p>
+                            <p className="text-xs text-gray-700">Confidence</p>
                           </div>
                         </div>
                       </div>
@@ -1596,7 +1596,7 @@ const PolyurethaneOptimizer = () => {
                     {/* Defect Risk Assessment */}
                     {results.mlInsights.defect_risks && (
                       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                        <h3 className="flex items-center gap-2 font-semibold text-white mb-3">
+                        <h3 className="flex items-center gap-2 font-semibold text-gray-900 mb-3">
                           <Shield className="w-5 h-5 text-gray-600" />
                           Defect Risk Assessment
                         </h3>
@@ -1652,13 +1652,13 @@ const PolyurethaneOptimizer = () => {
                                     {risk}%
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-300 italic ml-2">{description}</p>
+                                <p className="text-xs text-gray-700 italic ml-2">{description}</p>
                               </div>
                             );
                           })}
                           <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
                             <div className="flex justify-between items-center">
-                              <span className="font-semibold text-white">Overall Defect Risk</span>
+                              <span className="font-semibold text-gray-900">Overall Defect Risk</span>
                               <span className={`text-lg font-bold ${
                                 results.mlInsights.defect_risks.overall_risk < 20 ? 'text-green-600 dark:text-green-400' :
                                 results.mlInsights.defect_risks.overall_risk < 40 ? 'text-yellow-600 dark:text-yellow-400' :
@@ -1673,7 +1673,7 @@ const PolyurethaneOptimizer = () => {
                     )}
 
                     {/* ML Model Info */}
-                    <div className="text-xs text-gray-300 italic text-center pt-2 border-t border-gray-500">
+                    <div className="text-xs text-gray-700 italic text-center pt-2 border-t border-gray-500">
                       Predictions powered by Random Forest & Gradient Boosting models trained on 1000+ process scenarios
                     </div>
                   </CardContent>
@@ -1687,7 +1687,7 @@ const PolyurethaneOptimizer = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-6">
                   <LoadingSpinner size="md" />
-                  <p className="text-gray-200 font-medium">
+                  <p className="text-gray-800 font-medium">
                     Calculating optimal parameters...
                   </p>
                 </div>
@@ -1700,12 +1700,12 @@ const PolyurethaneOptimizer = () => {
             <Card className="shadow-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
               <CardContent className="pt-6">
                 <div className="text-center py-16 space-y-4">
-                  <Settings2 className="w-16 h-16 mx-auto text-gray-300 animate-pulse" />
+                  <Settings2 className="w-16 h-16 mx-auto text-gray-700 animate-pulse" />
                   <div>
-                    <p className="text-lg font-semibold text-gray-200">Ready to Calculate</p>
-                    <p className="text-sm text-gray-300 mt-2">Adjust parameters to see optimization results</p>
+                    <p className="text-lg font-semibold text-gray-800">Ready to Calculate</p>
+                    <p className="text-sm text-gray-700 mt-2">Adjust parameters to see optimization results</p>
                   </div>
-                  <div className="flex justify-center gap-2 text-xs text-gray-300">
+                  <div className="flex justify-center gap-2 text-xs text-gray-700">
                     <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">Real-time calculations</span>
                     <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">Auto-update</span>
                   </div>
