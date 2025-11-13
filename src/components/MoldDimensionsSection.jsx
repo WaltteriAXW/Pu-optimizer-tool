@@ -17,7 +17,7 @@ import { InputField, SelectField } from './shared';
  * @param {number} props.moldVolume - Calculated mold volume
  * @param {Function} props.setMoldVolume - Handler to set mold volume
  */
-export function MoldDimensionsSection({
+export const MoldDimensionsSection = React.memo(function MoldDimensionsSection({
   moldDimensionsExpanded,
   setMoldDimensionsExpanded,
   moldShape,
@@ -224,6 +224,6 @@ export function MoldDimensionsSection({
       )}
     </Card>
   );
-}
+});
 
 export default MoldDimensionsSection;
