@@ -45,11 +45,30 @@
   background-color: var(--color-neutral-dark);
 }
 
+/* Light theme styles */
+:root:not(.dark) {
+  /* Light mode color palette */
+  --color-neutral-dark: #f8f9fa;
+  --color-neutral-medium: #ffffff;
+  --color-neutral-light: #1a1f2e;
+  --color-neutral-secondary: #4a5568;
+  --color-neutral-tertiary: #718096;
+
+  color-scheme: light;
+  color: #1a1f2e;
+  background-color: #f8f9fa;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--color-neutral-dark) 0%, var(--color-neutral-medium) 100%);
+}
+
+/* Light mode body background override */
+:root:not(.dark) body {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 #root {
@@ -326,10 +345,27 @@ html {
   background-color: rgba(0, 217, 255, 0.05);
 }
 
+/* Light mode card adjustments */
+:root:not(.dark) .card-surface {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .card-surface:hover {
+  box-shadow: 0 4px 12px rgba(0, 217, 255, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 217, 255, 0.4);
+}
+
 /* Modal Overlay */
 .modal-overlay {
   background-color: rgba(15, 20, 25, 0.8);
   backdrop-filter: blur(2px);
+}
+
+/* Light mode modal overlay */
+:root:not(.dark) .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 /* Modal Container */
@@ -341,6 +377,15 @@ html {
     0 20px 60px rgba(0, 0, 0, 0.4),
     0 0 40px rgba(0, 217, 255, 0.1);
   animation: modalSlideIn 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light mode modal container */
+:root:not(.dark) .modal-container {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 217, 255, 0.3);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 0 40px rgba(0, 217, 255, 0.1);
 }
 
 @keyframes modalSlideIn {
@@ -426,6 +471,15 @@ html {
 .accent-orb-orange {
   background: radial-gradient(circle, rgba(255, 107, 53, 0.08) 0%, transparent 70%);
   animation: floatOrb2 25s ease-in-out infinite;
+}
+
+/* Light mode ambient effects - more subtle */
+:root:not(.dark) .accent-orb-cyan {
+  background: radial-gradient(circle, rgba(0, 217, 255, 0.05) 0%, transparent 70%);
+}
+
+:root:not(.dark) .accent-orb-orange {
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.04) 0%, transparent 70%);
 }
 
 @keyframes floatOrb1 {

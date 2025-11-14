@@ -3,6 +3,7 @@ import PythonCalculationErrorBoundary from './error_boundary';
 import { PythonRuntimeErrorBoundary } from './specialized_error_boundaries';
 import PolyurethaneOptimizer from './polyurethane_optimizer_component';
 import { LoadingScreen } from './components/LoadingScreen';
+import { ThemeToggle } from './components/ThemeToggle';
 
 const AppComponent = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +78,8 @@ const AppComponent = () => {
               </p>
             </div>
           </div>
-          <div className="animate-slideInRight">
+          <div className="flex items-center gap-3 animate-slideInRight">
+            <ThemeToggle />
             <a
               href="https://github.com/WaltteriAXW/Pu-optimizer-tool"
               target="_blank"
