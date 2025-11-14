@@ -55,11 +55,15 @@ class Particle {
     this.moldShape = moldShape;
 
     // Initialize velocity based on flow rate
+    // Flow direction: 22° angle pointing inward (negative X, negative Y)
     const baseVelocity = (flowData.flowRate || 0.1) * 0.01;
+    const angleRad = 22 * (Math.PI / 180);
+    const velocityVariation = 0.9 + Math.random() * 0.2;
+
     this.velocity.set(
-      -baseVelocity * (0.9 + Math.random() * 0.2), // Main flow direction
-      (Math.random() - 0.5) * baseVelocity * 0.1,  // Small vertical variation
-      (Math.random() - 0.5) * baseVelocity * 0.1   // Small lateral variation
+      -Math.cos(angleRad) * baseVelocity * velocityVariation,  // Inward X direction
+      -Math.sin(angleRad) * baseVelocity * velocityVariation,  // Downward Y direction
+      (Math.random() - 0.5) * baseVelocity * 0.1              // Small lateral variation
     );
 
     // Apply turbulence based on Reynolds number
