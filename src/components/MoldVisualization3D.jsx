@@ -270,21 +270,18 @@ const Scene = ({
 }) => {
   // Calculate injection point based on mold shape and pipe position
   const getInjectionPoint = () => {
-    const angleRad = 22 * (Math.PI / 180);
-    const len = pipeLength / 100;
-
     if (moldShape === 'rectangular') {
       const l = moldDimensions.length / 100;
       const h = moldDimensions.height / 100;
-      // Injection point at the end of the pipe (inside mold edge)
-      return [l / 2 - 0.1, h / 2, 0];
+      // Injection point at the mold edge where pipe enters
+      return [l / 2, h / 2, 0];
     } else if (moldShape === 'cylinder') {
       const r = (moldDimensions.diameter / 2) / 100;
       const h = moldDimensions.cylinderHeight / 100;
-      return [r - 0.1, h / 2, 0];
+      return [r, h / 2, 0];
     } else if (moldShape === 'sphere') {
       const r = (moldDimensions.sphereDiameter / 2) / 100;
-      return [r - 0.1, r, 0];
+      return [r, r, 0];
     }
     return [0, 0, 0];
   };
@@ -332,25 +329,24 @@ const Scene = ({
           const w = moldDimensions.width / 100;
           const h = moldDimensions.height / 100;
 
-          // Position pipe centered on LONG SIDE (length direction)
-          // The pipe should point toward the mold center at 22 degrees from the edge
+          // Position pipe on LONG SIDE (length direction)
+          // Injection point at the edge, pipe extends inward toward center at 22 degrees
 
-          // Calculate offset based on 22-degree angle
-          const horizontalOffset = len / 2 * Math.cos(angleRad); // Distance along X-axis
-          const verticalOffset = len / 2 * Math.sin(angleRad);   // Distance along Y-axis
+          // Tip should be exactly at the mold edge
+          const tipX = l / 2;
+          const tipY = h / 2;
 
-          // Position:
-          // X: length/2 + horizontal offset (at edge of LONG side + pipe extends outward)
-          // Y: height/2 + vertical offset (at mold center height, adjusted for angle)
-          // Z: 0 (centered along width)
-          pipePosition = [l / 2 + horizontalOffset, h / 2 + verticalOffset, 0];
+          // Calculate pipe center position:
+          // The pipe extends INWARD from the edge, so we offset in negative X direction
+          const horizontalOffset = (len / 2) * Math.cos(angleRad);
+          const verticalOffset = (len / 2) * Math.sin(angleRad);
 
-          // Rotation:
-          // Pipe points from outside toward mold center at 22 degrees
-          // X rotation: 0 (no front-back tilt)
-          // Y rotation: Math.PI - angleRad (180° - 22° = pointing along -X axis with 22° tilt)
-          // Z rotation: 0
-          pipeRotation = [0, Math.PI - angleRad, 0];
+          // Pipe center is offset inward and upward from the edge injection point
+          pipePosition = [tipX - horizontalOffset, tipY + verticalOffset, 0];
+
+          // Rotation: pipe points inward (negative X) at 22° angle
+          // Rotate around Y-axis: -angleRad makes it point inward with downward tilt
+          pipeRotation = [0, -angleRad, 0];
 
         } else if (moldShape === 'cylinder') {
           const r = (moldDimensions.diameter / 2) / 100;
