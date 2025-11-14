@@ -301,26 +301,25 @@ const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe =
           const w = moldDimensions.width / 100;
           const h = moldDimensions.height / 100;
 
-          // Position pipe centered on short side (width direction)
-          // The pipe should point toward the mold at 22 degrees
-          // Pipe center should be positioned so the tip touches near the mold surface
+          // Position pipe centered on LONG SIDE (length direction)
+          // The pipe should point toward the mold center at 22 degrees from the edge
 
           // Calculate offset based on 22-degree angle
-          const horizontalOffset = len / 2 * Math.cos(angleRad); // Distance along Z-axis
+          const horizontalOffset = len / 2 * Math.cos(angleRad); // Distance along X-axis
           const verticalOffset = len / 2 * Math.sin(angleRad);   // Distance along Y-axis
 
           // Position:
-          // X: 0 (centered along length - short side center)
+          // X: length/2 + horizontal offset (at edge of LONG side + pipe extends outward)
           // Y: height/2 + vertical offset (at mold center height, adjusted for angle)
-          // Z: width/2 + horizontal offset (at edge of mold + pipe extends outward)
-          pipePosition = [0, h / 2 + verticalOffset, w / 2 + horizontalOffset];
+          // Z: 0 (centered along width)
+          pipePosition = [l / 2 + horizontalOffset, h / 2 + verticalOffset, 0];
 
           // Rotation:
-          // Pipe points from outside toward mold at 22 degrees downward
-          // X rotation: -22 degrees (tilt down toward mold)
-          // Y rotation: 0
-          // Z rotation: Math.PI / 2 (90 degrees - makes cylinder horizontal, pointing along -Z)
-          pipeRotation = [-angleRad, 0, Math.PI / 2];
+          // Pipe points from outside toward mold center at 22 degrees
+          // X rotation: 0 (no front-back tilt)
+          // Y rotation: Math.PI - angleRad (180° - 22° = pointing along -X axis with 22° tilt)
+          // Z rotation: 0
+          pipeRotation = [0, Math.PI - angleRad, 0];
 
         } else if (moldShape === 'cylinder') {
           const r = (moldDimensions.diameter / 2) / 100;
