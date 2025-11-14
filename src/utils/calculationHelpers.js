@@ -7,7 +7,8 @@
  * All functions are pure - they don't mutate inputs and have no side effects.
  */
 
-import { PHYSICS, MATERIAL_DEFAULTS, _THRESHOLDS, CONVERSIONS } from '../constants';
+// eslint-disable-next-line no-unused-vars
+import { PHYSICS, MATERIAL_DEFAULTS, THRESHOLDS, CONVERSIONS } from '../constants';
 
 /**
  * Unit conversion results
