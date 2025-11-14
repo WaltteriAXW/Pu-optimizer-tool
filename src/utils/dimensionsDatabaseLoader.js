@@ -115,7 +115,7 @@ function parseCSV(csvText) {
   // Use parseCSVLine for headers too to handle quoted fields with commas
   const headers = parseCSVLine(lines[0], null).map(h => {
     // Remove quotes if present
-    let header = h.replace(/^"|"$/g, '');
+    const header = h.replace(/^"|"$/g, '');
     return header.trim();
   });
 
@@ -410,7 +410,7 @@ export function getRecommendedMolds(database, count = 6) {
   // Fill remaining with varied sizes
   const remaining = database
     .filter(m => !recommendations.includes(m))
-    .sort((a, b) => Math.random() - 0.5)
+    .sort((_a, _b) => Math.random() - 0.5)
     .slice(0, count - recommendations.length);
 
   return [...recommendations, ...remaining].slice(0, count);

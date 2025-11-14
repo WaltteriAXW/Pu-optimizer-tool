@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 
@@ -9,9 +10,9 @@ export const Tooltip = ({
   children,
   content,
   icon: Icon = Info,
-  iconClassName = "w-4 h-4 text-blue-600 dark:text-blue-400",
-  position = "top",
-  className = ""
+  iconClassName = 'w-4 h-4 text-blue-600 dark:text-blue-400',
+  position = 'top',
+  className = ''
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -100,7 +101,7 @@ export const IconTooltip = ({ content, icon: Icon = Info, iconClassName, positio
         onBlur={() => setIsVisible(false)}
         aria-label="More information"
       >
-        <Icon className={iconClassName || "w-4 h-4 text-blue-600 dark:text-blue-400"} />
+        <Icon className={iconClassName || 'w-4 h-4 text-blue-600 dark:text-blue-400'} />
       </button>
 
       {isVisible && (

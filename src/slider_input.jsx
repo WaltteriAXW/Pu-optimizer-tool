@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { IconTooltip } from './tooltip';
 import { Lightbulb } from 'lucide-react';

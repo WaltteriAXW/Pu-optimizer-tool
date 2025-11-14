@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Quick Setup Component
  *

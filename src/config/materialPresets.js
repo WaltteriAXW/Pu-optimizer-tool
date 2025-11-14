@@ -6,7 +6,7 @@
 
 export const MATERIAL_PRESETS = {
   ecofoam_standard: {
-    name: "Ecofoam Standard",
+    name: 'Ecofoam Standard',
     density: 1120,
     viscosity: 350,
     polyolSG: 1.12,
@@ -14,7 +14,7 @@ export const MATERIAL_PRESETS = {
     weightRatio: [100, 110]
   },
   ecofoam_xhd: {
-    name: "Ecofoam XHD RC",
+    name: 'Ecofoam XHD RC',
     density: 1120,
     viscosity: 850,
     polyolSG: 1.12,
@@ -22,7 +22,7 @@ export const MATERIAL_PRESETS = {
     weightRatio: [100, 110]
   },
   ecomate_spray_ec: {
-    name: "Ecomate Spray EC",
+    name: 'Ecomate Spray EC',
     density: 1120,
     viscosity: 350,
     polyolSG: 1.12,

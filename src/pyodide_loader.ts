@@ -223,7 +223,7 @@ def calculate_environmental_impact(agent_type, annual_consumption):
         "cost_savings": round(cost_savings, 2),
         "odp_reduction": current_agent["odp"] * annual_consumption
     }
-`
+`;
 }
 
 /**
@@ -309,7 +309,7 @@ export async function initializePyodide(): Promise<void> {
         pyodide = await retryWithBackoff(
           async () => {
             const instance = await loadPyodide({
-              indexURL: config.pyodideCDN,
+              indexURL: config.pyodideCDN
             });
             logger.info('Pyodide loaded successfully');
             return instance;
@@ -320,7 +320,7 @@ export async function initializePyodide(): Promise<void> {
 
         logger.info('Loading NumPy package...');
         await retryWithBackoff(
-          () => pyodide.loadPackage("numpy"),
+          () => pyodide.loadPackage('numpy'),
           config.maxRetries,
           config.retryDelay
         );
@@ -328,7 +328,7 @@ export async function initializePyodide(): Promise<void> {
         if (config.enableML) {
           logger.info('Loading scikit-learn for ML models...');
           await retryWithBackoff(
-            () => pyodide.loadPackage("scikit-learn"),
+            () => pyodide.loadPackage('scikit-learn'),
             config.maxRetries,
             config.retryDelay
           );
@@ -479,17 +479,17 @@ export function calculateParametersFallback(params: ProcessParameters): Calculat
   // Generate warnings
   const warnings = [];
   if (reynolds > 2300) {
-    warnings.push("Flow is turbulent (Re > 2300) - consider reducing flow rate");
+    warnings.push('Flow is turbulent (Re > 2300) - consider reducing flow rate');
   }
   if (shearRate > 1000) {
-    warnings.push("High shear rate may affect material properties");
+    warnings.push('High shear rate may affect material properties');
   }
   if (viscosityPas > 1.0) {
-    warnings.push("High viscosity may require increased pressure");
+    warnings.push('High viscosity may require increased pressure');
   }
   
   // Add a note about using JavaScript fallback
-  warnings.push("Using simplified JavaScript calculations (Pyodide not available)");
+  warnings.push('Using simplified JavaScript calculations (Pyodide not available)');
   
   return {
     required_pressure: parseFloat(pressureDropKpa.toFixed(2)),
@@ -655,16 +655,16 @@ function calculateEnvironmentalImpactFallback(
 ): EnvironmentalImpact {
   // Blowing agent data
   const blowingAgentData: Record<string, any> = {
-    "HFC": {"gwp": 1430, "odp": 0, "lambda": 0.022, "cost": 4.50},
-    "HCFC": {"gwp": 725, "odp": 0.07, "lambda": 0.023, "cost": 4.20},
-    "Pentane": {"gwp": 5, "odp": 0, "lambda": 0.024, "cost": 3.80},
-    "HFO": {"gwp": 1, "odp": 0, "lambda": 0.022, "cost": 5.20},
-    "Ecomate": {"gwp": 0, "odp": 0, "lambda": 0.019, "cost": 3.95}
+    'HFC': {'gwp': 1430, 'odp': 0, 'lambda': 0.022, 'cost': 4.50},
+    'HCFC': {'gwp': 725, 'odp': 0.07, 'lambda': 0.023, 'cost': 4.20},
+    'Pentane': {'gwp': 5, 'odp': 0, 'lambda': 0.024, 'cost': 3.80},
+    'HFO': {'gwp': 1, 'odp': 0, 'lambda': 0.022, 'cost': 5.20},
+    'Ecomate': {'gwp': 0, 'odp': 0, 'lambda': 0.019, 'cost': 3.95}
   };
   
   // Get properties
-  const currentAgent = blowingAgentData[agentType] || blowingAgentData["HFC"];
-  const ecomate = blowingAgentData["Ecomate"];
+  const currentAgent = blowingAgentData[agentType] || blowingAgentData['HFC'];
+  const ecomate = blowingAgentData['Ecomate'];
   
   // Calculate impact metrics
   const co2Reduction = (currentAgent.gwp * annualConsumption) / 1000; // tons

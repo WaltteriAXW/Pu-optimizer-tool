@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { AlertTriangle, RefreshCw, Database, Calculator } from 'lucide-react';
@@ -11,7 +12,7 @@ class BaseErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error) {
     return { hasError: true };
   }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { Button } from './button';

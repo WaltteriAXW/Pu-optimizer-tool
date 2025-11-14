@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Loading Screen Component
  *

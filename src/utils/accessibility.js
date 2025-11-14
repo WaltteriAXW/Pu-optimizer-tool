@@ -280,34 +280,34 @@ export const KeyboardNav = {
     let newIndex = currentIndex;
 
     switch (key) {
-      case this.KEYS.ARROW_DOWN:
-        event.preventDefault();
-        newIndex = Math.min(currentIndex + 1, items.length - 1);
-        break;
+    case this.KEYS.ARROW_DOWN:
+      event.preventDefault();
+      newIndex = Math.min(currentIndex + 1, items.length - 1);
+      break;
 
-      case this.KEYS.ARROW_UP:
-        event.preventDefault();
-        newIndex = Math.max(currentIndex - 1, 0);
-        break;
+    case this.KEYS.ARROW_UP:
+      event.preventDefault();
+      newIndex = Math.max(currentIndex - 1, 0);
+      break;
 
-      case this.KEYS.HOME:
-        event.preventDefault();
-        newIndex = 0;
-        break;
+    case this.KEYS.HOME:
+      event.preventDefault();
+      newIndex = 0;
+      break;
 
-      case this.KEYS.END:
-        event.preventDefault();
-        newIndex = items.length - 1;
-        break;
+    case this.KEYS.END:
+      event.preventDefault();
+      newIndex = items.length - 1;
+      break;
 
-      case this.KEYS.ENTER:
-      case this.KEYS.SPACE:
-        event.preventDefault();
-        if (onSelect) onSelect(items[currentIndex]);
-        break;
+    case this.KEYS.ENTER:
+    case this.KEYS.SPACE:
+      event.preventDefault();
+      if (onSelect) onSelect(items[currentIndex]);
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
 
     return newIndex;

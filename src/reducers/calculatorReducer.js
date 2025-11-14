@@ -179,164 +179,164 @@ export const initialState = {
  */
 export function calculatorReducer(state, action) {
   switch (action.type) {
-    // UI Actions
-    case ACTIONS.SET_VIEW_MODE:
-      return {
-        ...state,
-        viewMode: action.payload
-      };
+  // UI Actions
+  case ACTIONS.SET_VIEW_MODE:
+    return {
+      ...state,
+      viewMode: action.payload
+    };
 
-    case ACTIONS.TOGGLE_DATABASE:
-      return {
-        ...state,
-        showDatabase: !state.showDatabase
-      };
+  case ACTIONS.TOGGLE_DATABASE:
+    return {
+      ...state,
+      showDatabase: !state.showDatabase
+    };
 
-    case ACTIONS.TOGGLE_MIX_RATIO:
-      return {
-        ...state,
-        mixRatioExpanded: !state.mixRatioExpanded
-      };
+  case ACTIONS.TOGGLE_MIX_RATIO:
+    return {
+      ...state,
+      mixRatioExpanded: !state.mixRatioExpanded
+    };
 
-    case ACTIONS.TOGGLE_MOLD_DIMENSIONS:
-      return {
-        ...state,
-        moldDimensionsExpanded: !state.moldDimensionsExpanded
-      };
+  case ACTIONS.TOGGLE_MOLD_DIMENSIONS:
+    return {
+      ...state,
+      moldDimensionsExpanded: !state.moldDimensionsExpanded
+    };
 
     // Input Actions
-    case ACTIONS.SET_INPUT:
-      return {
-        ...state,
-        inputs: {
-          ...state.inputs,
-          [action.payload.name]: action.payload.value
-        }
-      };
+  case ACTIONS.SET_INPUT:
+    return {
+      ...state,
+      inputs: {
+        ...state.inputs,
+        [action.payload.name]: action.payload.value
+      }
+    };
 
-    case ACTIONS.SET_INPUTS:
-      return {
-        ...state,
-        inputs: {
-          ...state.inputs,
-          ...action.payload
-        }
-      };
+  case ACTIONS.SET_INPUTS:
+    return {
+      ...state,
+      inputs: {
+        ...state.inputs,
+        ...action.payload
+      }
+    };
 
-    case ACTIONS.SET_MACHINE:
-      return {
-        ...state,
-        selectedMachine: action.payload
-      };
+  case ACTIONS.SET_MACHINE:
+    return {
+      ...state,
+      selectedMachine: action.payload
+    };
 
-    case ACTIONS.SET_MATERIAL:
-      return {
-        ...state,
-        selectedMaterial: action.payload
-      };
+  case ACTIONS.SET_MATERIAL:
+    return {
+      ...state,
+      selectedMaterial: action.payload
+    };
 
     // Mold Actions
-    case ACTIONS.SET_MOLD_SHAPE:
-      return {
-        ...state,
-        moldShape: action.payload
-      };
+  case ACTIONS.SET_MOLD_SHAPE:
+    return {
+      ...state,
+      moldShape: action.payload
+    };
 
-    case ACTIONS.SET_MOLD_DIMENSION:
-      return {
-        ...state,
-        moldDimensions: {
-          ...state.moldDimensions,
-          [action.payload.name]: action.payload.value
-        }
-      };
+  case ACTIONS.SET_MOLD_DIMENSION:
+    return {
+      ...state,
+      moldDimensions: {
+        ...state.moldDimensions,
+        [action.payload.name]: action.payload.value
+      }
+    };
 
-    case ACTIONS.SET_MOLD_VOLUME:
-      return {
-        ...state,
-        moldVolume: action.payload
-      };
+  case ACTIONS.SET_MOLD_VOLUME:
+    return {
+      ...state,
+      moldVolume: action.payload
+    };
 
     // Mix Ratio Actions
-    case ACTIONS.SET_MIX_INPUT:
-      return {
-        ...state,
-        mixInputs: {
-          ...state.mixInputs,
-          [action.payload.name]: action.payload.value
-        }
-      };
+  case ACTIONS.SET_MIX_INPUT:
+    return {
+      ...state,
+      mixInputs: {
+        ...state.mixInputs,
+        [action.payload.name]: action.payload.value
+      }
+    };
 
-    case ACTIONS.SET_MIX_RESULTS:
-      return {
-        ...state,
-        mixResults: action.payload
-      };
+  case ACTIONS.SET_MIX_RESULTS:
+    return {
+      ...state,
+      mixResults: action.payload
+    };
 
     // Calculation Actions
-    case ACTIONS.START_CALCULATION:
-      return {
-        ...state,
-        loading: true,
-        error: null
-      };
+  case ACTIONS.START_CALCULATION:
+    return {
+      ...state,
+      loading: true,
+      error: null
+    };
 
-    case ACTIONS.CALCULATION_SUCCESS:
-      return {
-        ...state,
-        loading: false,
-        results: action.payload.results,
-        pressureVsLength: action.payload.pressureVsLength,
-        error: null
-      };
+  case ACTIONS.CALCULATION_SUCCESS:
+    return {
+      ...state,
+      loading: false,
+      results: action.payload.results,
+      pressureVsLength: action.payload.pressureVsLength,
+      error: null
+    };
 
-    case ACTIONS.CALCULATION_ERROR:
-      return {
-        ...state,
-        loading: false,
-        error: action.payload
-      };
+  case ACTIONS.CALCULATION_ERROR:
+    return {
+      ...state,
+      loading: false,
+      error: action.payload
+    };
 
-    case ACTIONS.CLEAR_ERROR:
-      return {
-        ...state,
-        error: null
-      };
+  case ACTIONS.CLEAR_ERROR:
+    return {
+      ...state,
+      error: null
+    };
 
     // Database Actions
-    case ACTIONS.SELECT_FROM_DATABASE:
-      return {
-        ...state,
-        inputs: {
-          ...state.inputs,
-          density: action.payload.density,
-          viscosity: action.payload.viscosity,
-          specificGravity: action.payload.density / 1000
-        },
-        mixInputs: {
-          ...state.mixInputs,
-          polyolSG: action.payload.polyolSG,
-          isoSG: action.payload.isoSG
-        },
-        selectedMaterialName: action.payload.name,
-        showDatabase: false
-      };
+  case ACTIONS.SELECT_FROM_DATABASE:
+    return {
+      ...state,
+      inputs: {
+        ...state.inputs,
+        density: action.payload.density,
+        viscosity: action.payload.viscosity,
+        specificGravity: action.payload.density / 1000
+      },
+      mixInputs: {
+        ...state.mixInputs,
+        polyolSG: action.payload.polyolSG,
+        isoSG: action.payload.isoSG
+      },
+      selectedMaterialName: action.payload.name,
+      showDatabase: false
+    };
 
     // Reset Actions
-    case ACTIONS.RESET_INPUTS:
-      return {
-        ...state,
-        inputs: initialState.inputs,
-        moldDimensions: initialState.moldDimensions,
-        mixInputs: initialState.mixInputs
-      };
+  case ACTIONS.RESET_INPUTS:
+    return {
+      ...state,
+      inputs: initialState.inputs,
+      moldDimensions: initialState.moldDimensions,
+      mixInputs: initialState.mixInputs
+    };
 
-    case ACTIONS.RESET_ALL:
-      return initialState;
+  case ACTIONS.RESET_ALL:
+    return initialState;
 
-    default:
-      console.warn(`Unknown action type: ${action.type}`);
-      return state;
+  default:
+    console.warn(`Unknown action type: ${action.type}`);
+    return state;
   }
 }
 

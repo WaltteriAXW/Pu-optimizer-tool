@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Mold Selector Component
  *
@@ -60,7 +61,7 @@ export const MoldSelector = React.memo(function MoldSelector({
   }, [moldDatabase, selectedShape, debouncedApplicationFilter, volumeRange]);
 
   // Get unique applications for quick filters
-  const commonApplications = useMemo(() => {
+  const _commonApplications = useMemo(() => {
     const apps = new Set();
     moldDatabase.forEach(mold => {
       const appList = mold.application.split(',');
@@ -82,14 +83,14 @@ export const MoldSelector = React.memo(function MoldSelector({
 
   const getShapeIcon = (shape) => {
     switch (shape) {
-      case 'Rectangular':
-        return <Square className="h-4 w-4" />;
-      case 'Cylindrical':
-        return <CircleDot className="h-4 w-4" />;
-      case 'Spherical':
-        return <Circle className="h-4 w-4" />;
-      default:
-        return null;
+    case 'Rectangular':
+      return <Square className="h-4 w-4" />;
+    case 'Cylindrical':
+      return <CircleDot className="h-4 w-4" />;
+    case 'Spherical':
+      return <Circle className="h-4 w-4" />;
+    default:
+      return null;
     }
   };
 

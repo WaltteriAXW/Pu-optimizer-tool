@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Scale, FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react';

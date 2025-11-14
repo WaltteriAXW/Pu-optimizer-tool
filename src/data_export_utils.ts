@@ -103,13 +103,13 @@ ${warnings}
 
 Flow Characteristics:
 ${results.flow_regime === 'laminar' 
-  ? 'Laminar Flow - Flow is stable and predictable.'
-  : 'Turbulent Flow - Flow may cause irregular cavity filling.'}
+    ? 'Laminar Flow - Flow is stable and predictable.'
+    : 'Turbulent Flow - Flow may cause irregular cavity filling.'}
 
 Pressure Profile:
 ${results.pressure_profile.map(point => 
-  `Distance: ${point.distance.toFixed(1)} mm -> Pressure: ${point.pressure.toFixed(2)} kPa`
-).join('\n')}
+    `Distance: ${point.distance.toFixed(1)} mm -> Pressure: ${point.pressure.toFixed(2)} kPa`
+  ).join('\n')}
 
 Notes:
 - The pressure profile shows the pressure distribution along the pipe length.
@@ -137,11 +137,11 @@ export function generateEnvironmentalReport(
   const timestamp = new Date().toLocaleString();
   
   const blowingAgentData = {
-    "HFC": { gwp: 1430, odp: 0, lambda: 0.022 },
-    "HCFC": { gwp: 725, odp: 0.07, lambda: 0.023 },
-    "Pentane": { gwp: 5, odp: 0, lambda: 0.024 },
-    "HFO": { gwp: 1, odp: 0, lambda: 0.022 },
-    "Ecomate": { gwp: 0, odp: 0, lambda: 0.019 }
+    'HFC': { gwp: 1430, odp: 0, lambda: 0.022 },
+    'HCFC': { gwp: 725, odp: 0.07, lambda: 0.023 },
+    'Pentane': { gwp: 5, odp: 0, lambda: 0.024 },
+    'HFO': { gwp: 1, odp: 0, lambda: 0.022 },
+    'Ecomate': { gwp: 0, odp: 0, lambda: 0.019 }
   };
   
   return `Environmental Impact Assessment Report
@@ -273,11 +273,11 @@ ${log.pipeThickness ? `- Pipe Thickness: ${log.pipeThickness} mm` : ''}
 
 Process Recommendations:
 ${avgReynolds > 2300 ? 
-  '- Consider reducing flow rate to achieve laminar flow for more consistent results' : 
-  '- Current flow parameters are within optimal range for laminar flow'}
+    '- Consider reducing flow rate to achieve laminar flow for more consistent results' : 
+    '- Current flow parameters are within optimal range for laminar flow'}
 ${avgViscosity > 1.0 ? 
-  '- High average viscosity detected - consider increasing temperature or pressure' : 
-  '- Material viscosity is within optimal processing range'}
+    '- High average viscosity detected - consider increasing temperature or pressure' : 
+    '- Material viscosity is within optimal processing range'}
 
 This report was generated using the Polyurethane Injection Optimizer's Production Log tool.`;
 }
