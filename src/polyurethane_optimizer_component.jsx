@@ -1045,10 +1045,26 @@ const PolyurethaneOptimizer = () => {
                       pipeDiameter={inputs.pipeDiameter}
                       showPipe={true}
                       showLabels={true}
+                      showFlow={results && results.compatible}
+                      flowData={results ? {
+                        flowRate: inputs.flowRate,
+                        viscosity: results.apparentViscosity || inputs.viscosity * 0.001,
+                        reynoldsNumber: results.reynoldsNumber || 1000,
+                        pressure: results.optimalPressureBar || 0,
+                        velocity: results.velocity || 0,
+                        shearRate: results.shearRate || 0,
+                        temperature: inputs.temperature,
+                        density: inputs.density
+                      } : {}}
                       height={500}
                     />
                     <p className="text-xs text-gray-700 italic text-center">
                     Interactive 3D preview - Use mouse to rotate, zoom, and pan
+                      {results && results.compatible && (
+                        <span className="block text-indigo-600 font-semibold mt-1">
+                        ✨ Flow simulation active - particles show real-time material flow
+                        </span>
+                      )}
                     </p>
                   </div>
                 </CardContent>
