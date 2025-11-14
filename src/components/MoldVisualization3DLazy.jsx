@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Lazy-loaded wrapper for 3D Mold Visualization
  * Only loads Three.js and MoldVisualization3D when component is visible

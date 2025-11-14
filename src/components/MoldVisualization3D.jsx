@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * 3D Mold and Pipe Visualization Component
  *
@@ -5,9 +6,10 @@
  * using React Three Fiber and Three.js
  */
 
-import React, { useRef, useState, Suspense } from 'react';
+/* eslint-disable react/no-unknown-property */
+import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, Text, PerspectiveCamera, Html } from '@react-three/drei';
+import { OrbitControls, Grid, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 /**

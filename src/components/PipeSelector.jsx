@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Pipe Selector Component
  *
@@ -35,7 +36,7 @@ export const PipeSelector = React.memo(function PipeSelector({
   const [sizeFilter, setSizeFilter] = useState('all');
   const [lengthFilter, setLengthFilter] = useState('all');
   const [minPressure, setMinPressure] = useState(0);
-  const [searchDiameter, setSearchDiameter] = useState('');
+  const [_searchDiameter, setSearchDiameter] = useState('');
   const [selectedDiameter, setSelectedDiameter] = useState(null);
 
   // Apply filters

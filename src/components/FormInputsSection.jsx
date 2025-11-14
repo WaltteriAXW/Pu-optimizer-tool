@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Settings2, Thermometer, FileSpreadsheet, Leaf, Database, ChevronDown, ChevronRight, Lightbulb } from 'lucide-react';
@@ -28,11 +29,11 @@ import { InputField, SelectField } from './shared';
  */
 export const FormInputsSection = React.memo(function FormInputsSection({
   MACHINE_SPECS,
-  MATERIAL_PRESETS,
+  _MATERIAL_PRESETS,
   selectedMachine,
   setSelectedMachine,
-  selectedMaterial,
-  setSelectedMaterial,
+  _selectedMaterial,
+  _setSelectedMaterial,
   selectedMaterialName,
   showDatabase,
   setShowDatabase,
@@ -148,8 +149,8 @@ export const FormInputsSection = React.memo(function FormInputsSection({
             onChange={(value) => setInputs(prev => ({ ...prev, pipeLength: value }))}
             icon={FileSpreadsheet}
             helpText={viewMode === 'simple' ?
-              "Distance the foam travels from machine to mold. Longer pipes = more pressure needed." :
-              "Total piping distance from mixing head to mold cavity entry point"}
+              'Distance the foam travels from machine to mold. Longer pipes = more pressure needed.' :
+              'Total piping distance from mixing head to mold cavity entry point'}
           />
 
           {/* Pipe Diameter */}
@@ -163,8 +164,8 @@ export const FormInputsSection = React.memo(function FormInputsSection({
             onChange={(value) => setInputs(prev => ({ ...prev, pipeDiameter: value }))}
             icon={FileSpreadsheet}
             helpText={viewMode === 'simple' ?
-              "Tube width. Wider tubes = easier flow = less pressure needed." :
-              "Internal diameter of delivery tubing (affects flow resistance)"}
+              'Tube width. Wider tubes = easier flow = less pressure needed.' :
+              'Internal diameter of delivery tubing (affects flow resistance)'}
           />
 
           {/* Temperature */}
@@ -178,8 +179,8 @@ export const FormInputsSection = React.memo(function FormInputsSection({
             onChange={(value) => setInputs(prev => ({ ...prev, temperature: value }))}
             icon={Thermometer}
             helpText={viewMode === 'simple' ?
-              "Foam temperature. Warmer = thinner and flows easier. Colder = thicker and needs more pressure." :
-              "Process temperature (affects viscosity via Arrhenius equation)"}
+              'Foam temperature. Warmer = thinner and flows easier. Colder = thicker and needs more pressure.' :
+              'Process temperature (affects viscosity via Arrhenius equation)'}
           />
 
           {/* Flow Rate */}
@@ -194,7 +195,7 @@ export const FormInputsSection = React.memo(function FormInputsSection({
             icon={FileSpreadsheet}
             helpText={viewMode === 'simple' ?
               "How fast you're pushing foam. Faster = more pressure needed, but quicker production." :
-              "Volumetric flow rate (affects shear rate and Reynolds number)"}
+              'Volumetric flow rate (affects shear rate and Reynolds number)'}
           />
 
           {/* Advanced parameters in advanced mode */}

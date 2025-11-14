@@ -61,7 +61,7 @@ export function saveProcessEntry(entry: Omit<ProcessEntry, 'id' | 'timestamp'>):
   const newEntry: ProcessEntry = {
     ...entry,
     id: generateId(),
-    timestamp: Date.now(),
+    timestamp: Date.now()
   };
 
   const existingData = getTrainingData();
@@ -94,7 +94,7 @@ export function updateEntryQuality(
     ...data[index],
     partQuality: quality,
     defectsObserved: defects,
-    notes,
+    notes
   };
 
   try {
@@ -118,7 +118,7 @@ export function getTrainingStats() {
     entriesWithQuality: withQuality.length,
     goodParts: withQuality.filter(e => e.partQuality === 'good').length,
     badParts: withQuality.filter(e => e.partQuality === 'bad').length,
-    acceptableParts: withQuality.filter(e => e.partQuality === 'acceptable').length,
+    acceptableParts: withQuality.filter(e => e.partQuality === 'acceptable').length
   };
 }
 

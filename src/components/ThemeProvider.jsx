@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /**
  * Theme Provider Component
  *

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
 import { Leaf, FileSpreadsheet, Scale, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
