@@ -34,6 +34,8 @@ export const MoldVisualization3DLazy = ({
   pipeDiameter,
   showPipe = true,
   showLabels = true,
+  showFlow = false,
+  flowData = {},
   height = 500
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -88,6 +90,8 @@ export const MoldVisualization3DLazy = ({
             pipeDiameter={pipeDiameter}
             showPipe={showPipe}
             showLabels={showLabels}
+            showFlow={showFlow}
+            flowData={flowData}
             height={height}
           />
         </Suspense>

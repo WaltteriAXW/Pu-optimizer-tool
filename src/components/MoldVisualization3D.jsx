@@ -11,6 +11,7 @@ import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { FlowParticleSystem } from './FlowParticleSystem';
 
 /**
  * Loading fallback for 3D scene
@@ -257,7 +258,37 @@ const DimensionLabels = ({ moldShape, dimensions }) => {
 /**
  * Scene Component - Contains all 3D objects
  */
-const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe = true, showLabels = true }) => {
+const Scene = ({
+  moldShape,
+  moldDimensions,
+  pipeLength,
+  pipeDiameter,
+  showPipe = true,
+  showLabels = true,
+  showFlow = false,
+  flowData = {}
+}) => {
+  // Calculate injection point based on mold shape and pipe position
+  const getInjectionPoint = () => {
+    const angleRad = 22 * (Math.PI / 180);
+    const len = pipeLength / 100;
+
+    if (moldShape === 'rectangular') {
+      const l = moldDimensions.length / 100;
+      const h = moldDimensions.height / 100;
+      // Injection point at the end of the pipe (inside mold edge)
+      return [l / 2 - 0.1, h / 2, 0];
+    } else if (moldShape === 'cylinder') {
+      const r = (moldDimensions.diameter / 2) / 100;
+      const h = moldDimensions.cylinderHeight / 100;
+      return [r - 0.1, h / 2, 0];
+    } else if (moldShape === 'sphere') {
+      const r = (moldDimensions.sphereDiameter / 2) / 100;
+      return [r - 0.1, r, 0];
+    }
+    return [0, 0, 0];
+  };
+
   return (
     <>
       {/* Lighting */}
@@ -375,6 +406,18 @@ const Scene = ({ moldShape, moldDimensions, pipeLength, pipeDiameter, showPipe =
         infiniteGrid={true}
       />
 
+      {/* Flow Particle System */}
+      {showFlow && (
+        <FlowParticleSystem
+          flowData={flowData}
+          moldDimensions={moldDimensions}
+          moldShape={moldShape}
+          injectionPoint={getInjectionPoint()}
+          enabled={showFlow}
+          particleCount={2000}
+        />
+      )}
+
       {/* Orbit Controls for interaction */}
       <OrbitControls
         enablePan={true}
@@ -407,6 +450,8 @@ export const MoldVisualization3D = ({
   pipeDiameter = 12,
   showPipe = true,
   showLabels = true,
+  showFlow = false,
+  flowData = {},
   height = 400
 }) => {
   const [autoRotate, setAutoRotate] = useState(false);
@@ -427,6 +472,8 @@ export const MoldVisualization3D = ({
             pipeDiameter={pipeDiameter}
             showPipe={showPipe}
             showLabels={showLabels}
+            showFlow={showFlow}
+            flowData={flowData}
           />
         </Suspense>
       </Canvas>
