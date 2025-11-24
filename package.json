@@ -1,9 +1,26 @@
 {
   "name": "polyurethane-injection-optimizer",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Professional industrial HMI tool for optimizing polyurethane injection molding with real-time 3D visualization, machine compatibility checking, recipe management, and ISO-compliant PDF reporting",
   "type": "module",
   "homepage": "https://waltteriaxw.github.io/Pu-optimizer-tool/",
+  "keywords": [
+    "polyurethane",
+    "injection-molding",
+    "fluid-dynamics",
+    "hmi",
+    "industrial-automation",
+    "3d-visualization",
+    "manufacturing",
+    "optimization",
+    "mission-control"
+  ],
+  "author": "WaltteriAXW",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WaltteriAXW/Pu-optimizer-tool.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
