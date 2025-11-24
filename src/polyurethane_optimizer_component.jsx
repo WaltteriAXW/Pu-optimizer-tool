@@ -6,6 +6,9 @@ import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb } from 'lucide-react';
+import { RecipeManager } from './components/RecipeManager';
+import { generateReport } from './utils/generateReport';
+import { TelemetryCard } from './components/TelemetryCard';
 import { IconTooltip } from './tooltip';
 import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
@@ -515,39 +518,77 @@ const PolyurethaneOptimizer = () => {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fadeIn">
         {/* Header Section with Title and Actions */}
-        <div className="flex justify-between items-center gap-4 flex-wrap bg-gray-800 border border-gray-700 text-white p-6 rounded-md shadow-lg">
+        <div className="flex justify-between items-center gap-4 flex-wrap bg-slate-900 border border-slate-800 text-slate-50 p-6 rounded-md shadow-lg">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-white">PU Injection Optimizer</h1>
-            <p className="text-gray-300 text-sm">Calculate optimal pressure & predict part quality</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-slate-50 font-sans">Mission Control</h1>
+            <p className="text-slate-400 text-sm font-mono">Calculate optimal pressure & predict part quality</p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            {/* Recipe Manager */}
+            <RecipeManager
+              currentInputs={{
+                ...inputs,
+                selectedMachine,
+                selectedMaterial,
+                moldShape,
+                moldDimensions,
+                moldVolume
+              }}
+              onLoad={(savedData) => {
+                setInputs({
+                  pipeLength: savedData.pipeLength,
+                  pipeDiameter: savedData.pipeDiameter,
+                  temperature: savedData.temperature,
+                  flowRate: savedData.flowRate,
+                  viscosity: savedData.viscosity,
+                  density: savedData.density,
+                  specificGravity: savedData.specificGravity
+                });
+                if (savedData.selectedMachine) setSelectedMachine(savedData.selectedMachine);
+                if (savedData.selectedMaterial) setSelectedMaterial(savedData.selectedMaterial);
+                if (savedData.moldShape) setMoldShape(savedData.moldShape);
+                if (savedData.moldDimensions) setMoldDimensions(savedData.moldDimensions);
+                if (savedData.moldVolume) setMoldVolume(savedData.moldVolume);
+              }}
+            />
+
+            {/* PDF Export Button */}
+            <button
+              onClick={() => generateReport({...inputs, selectedMachine, selectedMaterial}, results)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-400 text-xs font-mono transition-colors"
+              disabled={!results}
+            >
+              <Download size={14} />
+              EXPORT PDF
+            </button>
+
             {/* Quick Setup Button */}
             <button
               onClick={() => setShowQuickSetup(!showQuickSetup)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-semibold text-sm transition-colors duration-150 ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono transition-colors ${
                 showQuickSetup
-                  ? 'bg-green-600 hover:bg-green-700 text-white border border-green-700'
-                  : 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
+                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700'
               }`}
             >
               <Zap className="w-4 h-4" />
-              <span>{showQuickSetup ? 'Hide' : 'Quick Setup'}</span>
+              <span>{showQuickSetup ? 'HIDE' : 'QUICK SETUP'}</span>
             </button>
 
             {/* View Mode Toggle */}
             <button
               onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md font-semibold text-sm transition-colors duration-150 border border-gray-600"
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-xs font-mono transition-colors border border-slate-700"
             >
               {viewMode === 'simple' ? (
                 <>
                   <Eye className="w-4 h-4" />
-                  <span>Advanced</span>
+                  <span>ADVANCED</span>
                 </>
               ) : (
                 <>
                   <EyeOff className="w-4 h-4" />
-                  <span>Simple</span>
+                  <span>SIMPLE</span>
                 </>
               )}
             </button>

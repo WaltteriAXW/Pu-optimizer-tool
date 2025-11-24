@@ -35,21 +35,22 @@ const RectangularMold = ({ length, width, height }) => {
 
   return (
     <group>
-      {/* Main solid block with gradient-like color */}
+      {/* Main solid block with industrial metallic finish */}
       <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[l, h, w]} />
         <meshStandardMaterial
-          color="#60a5fa"
+          color="#06b6d4"
           transparent
-          opacity={0.75}
+          opacity={0.7}
           roughness={0.2}
-          metalness={0.3}
+          metalness={0.8}
+          envMapIntensity={1}
         />
       </mesh>
-      {/* Wireframe outline */}
+      {/* Wireframe outline with cyan glow */}
       <mesh position={[0, h / 2, 0]}>
         <boxGeometry args={[l, h, w]} />
-        <meshBasicMaterial color="#3b82f6" wireframe linewidth={2} />
+        <meshBasicMaterial color="#22d3ee" wireframe linewidth={2} />
       </mesh>
     </group>
   );
@@ -65,15 +66,16 @@ const CylindricalMold = ({ diameter, height, wallThickness }) => {
 
   return (
     <group>
-      {/* Outer cylinder */}
+      {/* Outer cylinder with industrial metallic finish */}
       <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[outerRadius, outerRadius, h, 32]} />
         <meshStandardMaterial
-          color="#c084fc"
+          color="#06b6d4"
           transparent
-          opacity={0.75}
+          opacity={0.7}
           roughness={0.2}
-          metalness={0.3}
+          metalness={0.8}
+          envMapIntensity={1}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -81,16 +83,16 @@ const CylindricalMold = ({ diameter, height, wallThickness }) => {
       <mesh position={[0, h / 2, 0]}>
         <cylinderGeometry args={[innerRadius, innerRadius, h + 0.1, 32]} />
         <meshStandardMaterial
-          color="#fbbf24"
+          color="#34d399"
           transparent
           opacity={0.2}
           side={THREE.BackSide}
         />
       </mesh>
-      {/* Wireframe */}
+      {/* Wireframe with cyan */}
       <mesh position={[0, h / 2, 0]}>
         <cylinderGeometry args={[outerRadius, outerRadius, h, 32]} />
-        <meshBasicMaterial color="#a855f7" wireframe linewidth={2} />
+        <meshBasicMaterial color="#22d3ee" wireframe linewidth={2} />
       </mesh>
     </group>
   );
@@ -105,15 +107,16 @@ const SphericalMold = ({ diameter, wallThickness }) => {
 
   return (
     <group>
-      {/* Outer sphere */}
+      {/* Outer sphere with industrial metallic finish */}
       <mesh position={[0, outerRadius, 0]} castShadow receiveShadow>
         <sphereGeometry args={[outerRadius, 32, 32]} />
         <meshStandardMaterial
-          color="#f472b6"
+          color="#06b6d4"
           transparent
-          opacity={0.75}
+          opacity={0.7}
           roughness={0.2}
-          metalness={0.3}
+          metalness={0.8}
+          envMapIntensity={1}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -121,16 +124,16 @@ const SphericalMold = ({ diameter, wallThickness }) => {
       <mesh position={[0, outerRadius, 0]}>
         <sphereGeometry args={[innerRadius, 32, 32]} />
         <meshStandardMaterial
-          color="#60a5fa"
+          color="#34d399"
           transparent
           opacity={0.2}
           side={THREE.BackSide}
         />
       </mesh>
-      {/* Wireframe */}
+      {/* Wireframe with cyan */}
       <mesh position={[0, outerRadius, 0]}>
         <sphereGeometry args={[outerRadius, 16, 16]} />
-        <meshBasicMaterial color="#ec4899" wireframe linewidth={2} />
+        <meshBasicMaterial color="#22d3ee" wireframe linewidth={2} />
       </mesh>
     </group>
   );
@@ -145,27 +148,27 @@ const InjectionPipe = ({ diameter, length, position = [0, 0, 0], rotation = [0, 
 
   return (
     <group position={position} rotation={rotation}>
-      {/* Pipe cylinder */}
+      {/* Pipe cylinder with industrial steel finish */}
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[radius, radius, len, 16]} />
         <meshStandardMaterial
-          color="#6366f1"
-          roughness={0.2}
-          metalness={0.7}
+          color="#64748b"
+          roughness={0.3}
+          metalness={0.8}
         />
       </mesh>
       {/* Pipe wireframe */}
       <mesh>
         <cylinderGeometry args={[radius, radius, len, 16]} />
-        <meshBasicMaterial color="#4f46e5" wireframe linewidth={2} />
+        <meshBasicMaterial color="#94a3b8" wireframe linewidth={2} />
       </mesh>
       {/* Injection point indicator - at the end pointing toward mold */}
       <mesh position={[0, -len / 2, 0]}>
         <sphereGeometry args={[radius * 2, 16, 16]} />
         <meshStandardMaterial
-          color="#f472b6"
-          emissive="#f472b6"
-          emissiveIntensity={0.6}
+          color="#22d3ee"
+          emissive="#22d3ee"
+          emissiveIntensity={0.8}
         />
       </mesh>
     </group>
@@ -288,11 +291,11 @@ const Scene = ({
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[10, 10, 5]} intensity={0.8} castShadow />
-      <directionalLight position={[-10, -10, -5]} intensity={0.3} />
-      <pointLight position={[0, 10, 0]} intensity={0.5} />
+      {/* Industrial studio lighting */}
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[10, 10, 5]} intensity={1.0} color="#ffffff" castShadow />
+      <directionalLight position={[-10, -10, -5]} intensity={0.5} color="#22d3ee" />
+      <pointLight position={[0, 15, 0]} intensity={0.6} color="#06b6d4" />
 
       {/* Mold based on shape */}
       {moldShape === 'rectangular' && (
@@ -453,13 +456,16 @@ export const MoldVisualization3D = ({
   const [autoRotate, setAutoRotate] = useState(false);
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-indigo-400/20 rounded-lg overflow-hidden border border-blue-400/40 shadow-xl backdrop-blur-sm">
+    <div className="relative w-full bg-black rounded overflow-hidden border border-slate-800 shadow-xl">
       <Canvas
         shadows
-        style={{ height: `${height}px` }}
+        style={{ height: `${height}px`, background: '#020617' }}
         camera={{ position: [15, 10, 15], fov: 50 }}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ alpha: false, antialias: true }}
       >
+        {/* Industrial slate background */}
+        <color attach="background" args={['#020617']} />
+
         <Suspense fallback={<CanvasLoader />}>
           <Scene
             moldShape={moldShape}
@@ -474,22 +480,22 @@ export const MoldVisualization3D = ({
         </Suspense>
       </Canvas>
 
-      {/* Controls overlay with glassmorphism */}
-      <div className="absolute top-2 right-2 backdrop-blur-md rounded-lg p-2 shadow-lg" style={{ backgroundColor: 'rgba(26, 31, 46, 0.8)', border: '1px solid rgba(0, 217, 255, 0.3)' }}>
-        <div className="text-xs space-y-1">
-          <div className="font-semibold border-b pb-1 mb-1" style={{ color: '#00D9FF', borderColor: 'rgba(0, 217, 255, 0.3)' }}>3D Controls</div>
-          <div style={{ color: '#E0E2E9' }}>🖱️ Rotate: Click + Drag</div>
-          <div style={{ color: '#E0E2E9' }}>🔍 Zoom: Scroll</div>
-          <div style={{ color: '#E0E2E9' }}>✋ Pan: Right Click + Drag</div>
+      {/* Controls overlay with industrial style */}
+      <div className="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-md rounded-lg p-2 shadow-lg border border-slate-700">
+        <div className="text-xs space-y-1 font-mono">
+          <div className="font-semibold border-b border-slate-700 pb-1 mb-1 text-cyan-400">3D CONTROLS</div>
+          <div className="text-slate-300">🖱️ Rotate: Click + Drag</div>
+          <div className="text-slate-300">🔍 Zoom: Scroll</div>
+          <div className="text-slate-300">✋ Pan: Right Click + Drag</div>
         </div>
       </div>
 
-      {/* Shape info overlay with glassmorphism */}
-      <div className="absolute top-2 left-2 backdrop-blur-md rounded-lg px-3 py-2 shadow-lg" style={{ backgroundColor: 'rgba(26, 31, 46, 0.8)', border: '1px solid rgba(0, 217, 255, 0.3)' }}>
-        <div className="text-sm font-semibold" style={{ color: '#00D9FF' }}>
-          {moldShape === 'rectangular' && '📦 Rectangular Mold'}
-          {moldShape === 'cylinder' && '🥫 Cylindrical Mold'}
-          {moldShape === 'sphere' && '🔵 Spherical Mold'}
+      {/* Shape info overlay with industrial style */}
+      <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md rounded-lg px-3 py-2 shadow-lg border border-slate-700">
+        <div className="text-sm font-semibold font-mono text-cyan-400">
+          {moldShape === 'rectangular' && '📦 RECTANGULAR'}
+          {moldShape === 'cylinder' && '🥫 CYLINDRICAL'}
+          {moldShape === 'sphere' && '🔵 SPHERICAL'}
         </div>
       </div>
     </div>

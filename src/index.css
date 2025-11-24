@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -674,4 +676,236 @@ html {
 .border-l-green-600,
 .dark .border-l-green-600 {
   border-left-color: var(--color-accent-green) !important;
+}
+
+/* ===== INDUSTRIAL DESIGN SYSTEM ADDITIONS ===== */
+
+/* Font Utilities */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
+}
+
+.font-sans {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Custom Scrollbar for Industrial Theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.4);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.6);
+}
+
+/* Industrial Slate Color Extensions */
+.bg-slate-950 {
+  background-color: #020617;
+}
+
+.bg-slate-900 {
+  background-color: #0f172a;
+}
+
+.bg-slate-800 {
+  background-color: #1e293b;
+}
+
+.border-slate-800 {
+  border-color: #1e293b;
+}
+
+.border-slate-700 {
+  border-color: #334155;
+}
+
+.text-slate-50 {
+  color: #f8fafc;
+}
+
+.text-slate-400 {
+  color: #94a3b8;
+}
+
+.text-slate-500 {
+  color: #64748b;
+}
+
+.text-slate-600 {
+  color: #475569;
+}
+
+.text-slate-300 {
+  color: #cbd5e1;
+}
+
+.text-cyan-400 {
+  color: #22d3ee;
+}
+
+.text-cyan-500 {
+  color: #06b6d4;
+}
+
+.bg-cyan-500 {
+  background-color: #06b6d4;
+}
+
+.border-cyan-500 {
+  border-color: #06b6d4;
+}
+
+.text-emerald-400 {
+  color: #34d399;
+}
+
+.border-emerald-500 {
+  border-color: #10b981;
+}
+
+.text-amber-400 {
+  color: #fbbf24;
+}
+
+.border-amber-500 {
+  border-color: #f59e0b;
+}
+
+.text-rose-500 {
+  color: #f43f5e;
+}
+
+.border-rose-500 {
+  border-color: #f43f5e;
+}
+
+/* Industrial Glow Effects */
+.shadow-glow-cyan {
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+.shadow-glow-emerald {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Backdrop Blur Enhancement */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Industrial Focus Ring */
+.focus-ring-cyan:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #22d3ee;
+  ring-offset: 2px;
+}
+
+/* Slide In Animation for Modals */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Hover Lift Effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover Scale Effect */
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Grid Background Pattern */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Slide animations for side panels */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out;
+}
+
+/* Staggered animation delays */
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
 }
