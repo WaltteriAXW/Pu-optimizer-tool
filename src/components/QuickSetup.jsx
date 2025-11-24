@@ -43,7 +43,10 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
 
   // Load databases on mount
   useEffect(() => {
+    let isMounted = true;
+
     async function loadDatabases() {
+      if (!isMounted) return;
       setLoading(true);
       setLoadError(null);
 
@@ -52,6 +55,10 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
           loadPipeDatabase(),
           loadMoldDatabase()
         ]);
+
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+
         setPipeDatabase(pipes);
         setMoldDatabase(molds);
         setRecommendedMolds(getRecommendedMolds(molds, 6));
@@ -62,6 +69,8 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
           moldsCount: molds.length
         });
       } catch (error) {
+        if (!isMounted) return;
+
         const errorMessage = 'Failed to load database. Please refresh the page or contact support.';
         setLoadError(errorMessage);
 
@@ -71,10 +80,18 @@ export function QuickSetup({ onApplyConfiguration, isOpen = true, onClose }) {
           context: 'Critical: Quick Setup cannot function without databases'
         });
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
+
     loadDatabases();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Auto-suggest pipe when mold is selected
