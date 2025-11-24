@@ -1,9 +1,26 @@
 {
   "name": "polyurethane-injection-optimizer",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Professional industrial HMI tool for optimizing polyurethane injection molding with real-time 3D visualization, machine compatibility checking, recipe management, and ISO-compliant PDF reporting",
   "type": "module",
   "homepage": "https://waltteriaxw.github.io/Pu-optimizer-tool/",
+  "keywords": [
+    "polyurethane",
+    "injection-molding",
+    "fluid-dynamics",
+    "hmi",
+    "industrial-automation",
+    "3d-visualization",
+    "manufacturing",
+    "optimization",
+    "mission-control"
+  ],
+  "author": "WaltteriAXW",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WaltteriAXW/Pu-optimizer-tool.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -22,13 +39,15 @@
   "dependencies": {
     "@react-three/drei": "^9.92.7",
     "@react-three/fiber": "^8.15.12",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.263.1",
     "prop-types": "^15.8.1",
     "pyodide": "0.24.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.9.0",
-    "three": "^0.160.0"
+    "three": "^0.160.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.5",

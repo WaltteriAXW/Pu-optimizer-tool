@@ -1,14 +1,40 @@
 # Polyurethane Injection Optimizer
 
-A browser-based tool for optimizing polyurethane injection processes using advanced fluid dynamics models.
+A professional browser-based tool for optimizing polyurethane injection processes using advanced fluid dynamics models. Built with an industrial-grade "Mission Control" user interface designed for factory floor operations.
 
-## Features
+## ✨ Key Features
 
-- Real-time injection pressure calculation based on pipe geometry and material properties
-- Temperature and shear-dependent viscosity modeling using Arrhenius and Power Law equations
-- Environmental impact assessment for switching to eco-friendly blowing agents
-- Production data logging and analysis
-- Export capabilities for data, reports, and visualizations
+### Core Functionality
+- **Real-time injection pressure calculation** based on pipe geometry and material properties
+- **Temperature and shear-dependent viscosity modeling** using Arrhenius and Power Law equations
+- **Machine compatibility checking** against Italian injection molding machine specifications
+- **3D mold visualization** with real-time flow simulation and particle systems
+- **Environmental impact assessment** for switching to eco-friendly blowing agents
+
+### Industrial Design System
+- **Mission Control HMI Interface**: Fixed-screen Bento Box layout optimized for no-scroll operation
+- **Dark Slate + Neon Cyan** industrial color palette for reduced eye strain
+- **Monospace data displays** (JetBrains Mono) for precision readability
+- **Responsive design**: Seamless experience from factory terminals to mobile devices
+- **Real-time telemetry cards** with status-based color coding (emerald/amber/rose)
+
+### Recipe Management System
+- **Save parameter configurations** with custom names for different molds
+- **Quick-load recipes** for Standard Operating Procedures (SOPs)
+- **Persistent storage** using localStorage - recipes survive browser restarts
+- **Export/Import** capabilities for sharing configurations across teams
+
+### PDF Report Generation
+- **Professional setup sheets** for ISO 9001 compliance
+- **Complete documentation**: machine settings, process parameters, optimization results
+- **Signature lines** for operator/QA approval
+- **Unique report IDs** and timestamps for traceability
+
+### Production Management
+- **Production data logging** and analysis
+- **Database viewer** for historical data
+- **ML-powered predictions** using Random Forest and Gradient Boosting models
+- **Export capabilities** for data, reports, and visualizations
 
 ## Physics & Mathematical Models
 
@@ -42,25 +68,63 @@ npm run dev
 npm run build
 ```
 
+## 🎨 User Interface: "Mission Control" Design
+
+The interface follows industrial HMI (Human-Machine Interface) principles:
+
+### Bento Box Layout
+- **Fixed-screen**: 100vh height, no scrolling of main view
+- **3-column grid**:
+  - **Left (25%)**: Parameter controls with custom scrollbar
+  - **Center (50%)**: 3D mold visualization (fixed, no scroll)
+  - **Right (25%)**: Live telemetry and results
+- **Responsive**: Stacks vertically on mobile devices
+
+### Color System
+- **Background**: Slate-950 (#020617) - Deep industrial void
+- **Surfaces**: Slate-900 (#0f172a) - Control panels
+- **Primary**: Cyan-400 (#22d3ee) - Active elements and data
+- **Status Colors**:
+  - Emerald-400: Normal/safe values
+  - Amber-400: Warnings/caution
+  - Rose-500: Errors/critical states
+
+### Typography
+- **UI Labels**: Inter (sans-serif) - Clean, professional
+- **Data Values**: JetBrains Mono (monospace) - Aligned precision numbers
+
 ## Usage
+
+### Quick Start
+
+1. **Select Machine**: Choose your injection molding machine from the dropdown
+2. **Select Material**: Pick material preset (Ecofoam, Isocyanate, etc.)
+3. **Adjust Parameters**: Use sliders for pipe dimensions, temperature, flow rate
+4. **View Results**: Live telemetry appears in right panel
+5. **Save Recipe**: Click "RECIPES" button to save configuration
+6. **Export Report**: Click "EXPORT PDF" for ISO-compliant documentation
 
 ### Input Parameters
 
-- **Pipe Length**: Length of the injection pipe in millimeters (minimum 50mm)
-- **Pipe Thickness**: Thickness/diameter of the pipe in millimeters
-- **Temperature**: Process temperature in Celsius (range: 5-40°C)
-- **Flow Rate**: Volumetric flow rate in liters per second
-- **Initial Viscosity**: Material viscosity in centipoise (cP) at 25°C
-- **Density**: Material density in g/cm³
+- **Machine**: Italian injection molding machine specifications
+- **Material**: Pre-configured material presets with viscosity/density
+- **Pipe Length**: Distance from machine to mold (50-2000mm)
+- **Pipe Diameter**: Internal diameter of injection pipe (4-50mm)
+- **Temperature**: Process temperature (5-50°C)
+- **Flow Rate**: Volumetric flow rate (0.1-50 L/min)
+- **Density**: Material density (500-2000 kg/m³)
+- **Viscosity**: Material viscosity at 25°C (100-2000 cP)
 
 ### Output Results
 
-- **Required Injection Pressure**: Calculated optimal pressure in kPa
-- **Optimal Injection Time**: Time required for injection in seconds
-- **Apparent Viscosity**: Calculated viscosity considering temperature and shear effects
-- **Reynolds Number**: Indicates flow regime (laminar: <2300, turbulent: >2300)
-- **Pressure Profile**: Graph showing pressure distribution along the pipe length
-- **Environmental Impact**: CO₂ reduction, thermal efficiency improvement, and cost savings
+- **Machine Compatibility**: ✓ Compatible / ✗ Not Compatible status
+- **Required Pressure**: Calculated optimal injection pressure (bar)
+- **Pressure Drop**: Pressure loss through pipe system (bar)
+- **Flow Regime**: Laminar or Turbulent classification
+- **Reynolds Number**: Flow regime indicator (<2300 = laminar)
+- **Flow Velocity**: Material velocity through pipe (m/s)
+- **Injection Time**: Total time for mold filling (seconds)
+- **Warnings & Recommendations**: Real-time process guidance
 
 ### Environmental Impact Calculator
 
@@ -88,9 +152,20 @@ The application uses a hybrid architecture:
 
 ### Key Components
 
+#### Core Components
 - **PolyurethaneCalculator**: Core Python class implementing fluid dynamics equations
-- **PyodideLoader**: TypeScript utility for running Python in the browser
-- **PolyurethaneOptimizer**: Main React component for the user interface
+- **PyodideLoader**: TypeScript utility for running Python in the browser via WebAssembly
+- **PolyurethaneOptimizer**: Main React component with Bento Box layout
+
+#### Industrial UI Components
+- **IndustrialInput**: Dark slate input fields with monospace cyan text and unit badges
+- **TelemetryCard**: Digital gauge-style displays with status-based color coding
+- **RecipeManager**: Recipe save/load/delete interface with localStorage persistence
+- **MoldVisualization3D**: Real-time 3D mold and flow visualization using React Three Fiber
+
+#### Utilities
+- **generateReport**: PDF generation for ISO 9001 compliant setup sheets
+- **useRecipeStore**: Zustand store with persistence middleware for recipe management
 - **Data Export Utilities**: Functions for exporting data and generating reports
 
 ### Python Calculation Engine
@@ -152,9 +227,41 @@ This application requires a modern browser with WebAssembly support:
 
 MIT License - See LICENSE file for details
 
-## Acknowledgments
+## 🛠️ Technology Stack
 
-- Built with React, Tailwind CSS, and shadcn/ui components
-- Python calculations powered by Pyodide
-- Visualizations created with Recharts
+### Frontend
+- **React 18** - Component-based UI framework
+- **Tailwind CSS** - Utility-first styling with industrial design system
+- **Vite** - Fast build tool and dev server
+- **TypeScript** - Type-safe JavaScript
+
+### State Management & Storage
+- **Zustand** - Lightweight state management with persistence
+- **LocalStorage** - Recipe and settings persistence
+
+### Visualization
+- **React Three Fiber** - 3D graphics using Three.js
+- **@react-three/drei** - Useful helpers for R3F
+- **Recharts** - Data visualization charts
+
+### Computation
+- **Pyodide** - Python runtime in WebAssembly
+- **NumPy** - Scientific computing in Python
+
+### PDF Generation
+- **jsPDF** - Client-side PDF generation for reports
+
+### UI Components
+- **Lucide React** - Icon library
+- **shadcn/ui** - Accessible component primitives
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- Industrial design system inspired by aerospace HMI interfaces
 - Fluid dynamics equations based on established research in non-Newtonian fluid mechanics
+- Italian injection molding machine specifications provided by industry partners
+- Ecomate® and Ecofoam® are registered trademarks of their respective manufacturers
