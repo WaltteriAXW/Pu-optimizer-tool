@@ -551,16 +551,6 @@ const PolyurethaneOptimizer = () => {
               }}
             />
 
-            {/* PDF Export Button */}
-            <button
-              onClick={() => generateReport({...inputs, selectedMachine, selectedMaterial}, results)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-400 text-xs font-mono transition-colors"
-              disabled={!results}
-            >
-              <Download size={14} />
-              EXPORT PDF
-            </button>
-
           {/* PDF Export Button */}
           <button
             onClick={() => generateReport({...inputs, selectedMachine, selectedMaterial}, results)}
@@ -593,36 +583,6 @@ const PolyurethaneOptimizer = () => {
             Parameters
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-
-            {/* Recipe Manager - Full width in left panel */}
-            <div className="mb-4">
-              <RecipeManager
-                currentInputs={{
-                  ...inputs,
-                  selectedMachine,
-                  selectedMaterial,
-                  moldShape,
-                  moldDimensions,
-                  moldVolume
-                }}
-                onLoad={(savedData) => {
-                  setInputs({
-                    pipeLength: savedData.pipeLength,
-                    pipeDiameter: savedData.pipeDiameter,
-                    temperature: savedData.temperature,
-                    flowRate: savedData.flowRate,
-                    viscosity: savedData.viscosity,
-                    density: savedData.density,
-                    specificGravity: savedData.specificGravity
-                  });
-                  if (savedData.selectedMachine) setSelectedMachine(savedData.selectedMachine);
-                  if (savedData.selectedMaterial) setSelectedMaterial(savedData.selectedMaterial);
-                  if (savedData.moldShape) setMoldShape(savedData.moldShape);
-                  if (savedData.moldDimensions) setMoldDimensions(savedData.moldDimensions);
-                  if (savedData.moldVolume) setMoldVolume(savedData.moldVolume);
-                }}
-              />
-            </div>
 
             {/* Machine Selection */}
             <div className="space-y-2">
