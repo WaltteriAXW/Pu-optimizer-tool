@@ -91,7 +91,7 @@ describe('InputField Component', () => {
     it('should handle number input type', async () => {
       const onChange = vi.fn();
       const user = userEvent.setup();
-      render(<InputField {...defaultProps} type="number" />);
+      render(<InputField {...defaultProps} type="number" onChange={onChange} />);
 
       const input = screen.getByDisplayValue('100');
       await user.clear(input);
