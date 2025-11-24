@@ -151,34 +151,32 @@ describe('useTheme Hook', () => {
   });
 
   describe('DOM Updates', () => {
-    it('should add dark class to documentElement when dark', () => {
-      const { result } = renderHook(() => useTheme());
+    it('should add dark class to documentElement when dark', async () => {
+      const { result, waitForNextUpdate } = renderHook(() => useTheme());
 
       act(() => {
         result.current.setTheme('dark');
       });
 
-      // Wait for effect
-      act(() => {
-        vi.runAllTimers();
-      });
+      // Wait for mounted state and effects to run
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-      // Check that dark class exists or will be set
-      // (actual DOM manipulation happens in useEffect)
+      // Check that dark class was added
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
 
-    it('should set data-theme attribute', () => {
+    it('should set data-theme attribute', async () => {
       const { result } = renderHook(() => useTheme());
 
       act(() => {
         result.current.setTheme('light');
       });
 
-      act(() => {
-        vi.runAllTimers();
-      });
+      // Wait for mounted state and effects to run
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       // Check data-theme attribute (set in useEffect)
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     });
   });
 
@@ -231,19 +229,31 @@ describe('useTheme Hook', () => {
       expect(localStorage.getItem('pu-optimizer-theme')).toBe('light');
     });
 
-    it('should handle multiple toggles', () => {
+    it('should handle multiple toggles', async () => {
       const { result } = renderHook(() => useTheme());
 
       act(() => {
         result.current.setTheme('light');
       });
 
+      // Wait for state to settle
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       const initial = result.current.isDark;
 
       act(() => {
         result.current.toggleTheme();
+      });
+
+      // Wait for first toggle
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      act(() => {
         result.current.toggleTheme();
       });
+
+      // Wait for second toggle
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(result.current.isDark).toBe(initial);
     });
