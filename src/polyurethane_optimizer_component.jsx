@@ -514,10 +514,10 @@ const PolyurethaneOptimizer = () => {
   }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
 
   return (
-    <div className="h-screen w-screen bg-slate-950 text-slate-50 overflow-hidden flex flex-col font-sans">
+    <div className="min-h-screen w-full bg-slate-950 text-slate-50 lg:h-screen lg:overflow-hidden flex flex-col font-sans">
 
       {/* Header with Actions */}
-      <header className="h-14 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center px-4 justify-between shrink-0">
+      <header className="h-14 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center px-2 sm:px-4 justify-between shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-cyan-500 rounded-full shadow-glow-cyan animate-pulse"></div>
           <h1 className="font-bold tracking-widest text-sm">MISSION CONTROL <span className="text-slate-500 hidden sm:inline">v2.0</span></h1>
@@ -574,11 +574,11 @@ const PolyurethaneOptimizer = () => {
         </div>
       </header>
 
-      {/* Main Bento Box Grid - Fixed Layout */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-1 p-1 overflow-hidden">
+      {/* Main Bento Box Grid - Responsive Layout */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-1 p-1 overflow-y-auto lg:overflow-hidden">
 
         {/* LEFT COLUMN: Controls (3/12 on desktop, full on mobile) */}
-        <aside className="lg:col-span-3 bg-slate-900 rounded-l border border-slate-800 flex flex-col overflow-hidden h-[calc(100vh-3.5rem-0.5rem)] lg:h-auto">
+        <aside className="lg:col-span-3 bg-slate-900 rounded border border-slate-800 flex flex-col overflow-hidden lg:h-auto max-h-screen lg:max-h-none">
           <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
             Parameters
           </div>
@@ -705,7 +705,7 @@ const PolyurethaneOptimizer = () => {
         </aside>
 
         {/* CENTER COLUMN: 3D Visualizer (6/12 on desktop, full on mobile) */}
-        <section className="lg:col-span-6 bg-black rounded border border-slate-800 relative overflow-hidden group flex flex-col h-[calc(100vh-3.5rem-0.5rem)] lg:h-auto">
+        <section className="lg:col-span-6 bg-black rounded border border-slate-800 relative overflow-hidden group flex flex-col min-h-[400px] lg:h-auto">
           <div className="flex-1 relative">
             <MoldVisualization3DLazy
               moldShape={moldShape}
@@ -733,7 +733,7 @@ const PolyurethaneOptimizer = () => {
         </section>
 
         {/* RIGHT COLUMN: Live Telemetry (3/12 on desktop, full on mobile) */}
-        <aside className="lg:col-span-3 bg-slate-900 rounded-r border border-slate-800 flex flex-col overflow-hidden h-[calc(100vh-3.5rem-0.5rem)] lg:h-auto">
+        <aside className="lg:col-span-3 bg-slate-900 rounded border border-slate-800 flex flex-col overflow-hidden lg:h-auto max-h-screen lg:max-h-none">
           <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
             Live Telemetry
           </div>

@@ -141,16 +141,34 @@ const SphericalMold = ({ diameter, wallThickness }) => {
 
 /**
  * Injection Pipe Component
+ *
+ * INDUSTRY STANDARD: Parametric Design with Pivot Point Fix
+ * The geometry is translated so the pivot point (origin) is at the BOTTOM TIP (nozzle).
+ * This ensures proper rotation behavior - the pipe rotates around the injection point.
  */
 const InjectionPipe = ({ diameter, length, position = [0, 0, 0], rotation = [0, 0, 0] }) => {
   const radius = (diameter / 2) / 100;
   const len = length / 100;
 
+  // PARAMETRIC DESIGN FIX: Translate geometry to fix pivot point
+  // By default, cylinder pivots from center. We need it to pivot from BOTTOM (nozzle tip).
+  // We translate the geometry UP by half its height so mesh origin is at the bottom.
+  const pipeGeometry = React.useMemo(() => {
+    const geo = new THREE.CylinderGeometry(radius, radius, len, 16);
+    geo.translate(0, len / 2, 0); // Move geometry UP so origin is at BOTTOM tip
+    return geo;
+  }, [radius, len]);
+
+  const wireframeGeometry = React.useMemo(() => {
+    const geo = new THREE.CylinderGeometry(radius, radius, len, 16);
+    geo.translate(0, len / 2, 0);
+    return geo;
+  }, [radius, len]);
+
   return (
     <group position={position} rotation={rotation}>
       {/* Pipe cylinder with industrial steel finish */}
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[radius, radius, len, 16]} />
+      <mesh geometry={pipeGeometry} castShadow receiveShadow>
         <meshStandardMaterial
           color="#64748b"
           roughness={0.3}
@@ -158,12 +176,11 @@ const InjectionPipe = ({ diameter, length, position = [0, 0, 0], rotation = [0, 
         />
       </mesh>
       {/* Pipe wireframe */}
-      <mesh>
-        <cylinderGeometry args={[radius, radius, len, 16]} />
+      <mesh geometry={wireframeGeometry}>
         <meshBasicMaterial color="#94a3b8" wireframe linewidth={2} />
       </mesh>
-      {/* Injection point indicator - at the end pointing toward mold */}
-      <mesh position={[0, -len / 2, 0]}>
+      {/* Injection point indicator - at origin (now at bottom tip) */}
+      <mesh position={[0, 0, 0]}>
         <sphereGeometry args={[radius * 2, 16, 16]} />
         <meshStandardMaterial
           color="#22d3ee"
@@ -321,58 +338,70 @@ const Scene = ({
         />
       )}
 
-      {/* Injection Pipe */}
+      {/* Injection Pipe - PARAMETRIC DESIGN APPROACH */}
       {showPipe && pipeLength > 0 && pipeDiameter > 0 && (() => {
+        /**
+         * INDUSTRY STANDARD: Parametric Positioning
+         *
+         * Logic: Position = Mold Center + (Mold Dimension / 2)
+         * This ensures the pipe automatically adjusts when mold dimensions change.
+         *
+         * Rotation uses Z-axis (industry standard for 2D plane tilt):
+         * - Positive Z rotation: tilts left (counterclockwise)
+         * - Negative Z rotation: tilts right (clockwise)
+         */
+
         let pipePosition, pipeRotation;
-        const len = pipeLength / 100;
-        const angleRad = 22 * (Math.PI / 180); // 22 degrees to radians
+        const pipeLen = pipeLength / 100; // Scene units
+        const angleDegrees = 15; // Industry standard injection angle
+        const angleRadians = angleDegrees * (Math.PI / 180); // Convert to radians
 
         if (moldShape === 'rectangular') {
-          const l = moldDimensions.length / 100;
-          const w = moldDimensions.width / 100;
-          const h = moldDimensions.height / 100;
+          // PARAMETRIC DIMENSIONS
+          const moldWidth = moldDimensions.length / 100;
+          const moldHeight = moldDimensions.height / 100;
 
-          // Position pipe on LONG SIDE (length direction)
-          // Injection point at the edge, pipe extends inward toward center at 22 degrees
+          // POSITIONING LOGIC:
+          // A. Move to Right Edge: Center (0) + Half of Mold Width
+          const edgePositionX = moldWidth / 2;
 
-          // Tip should be exactly at the mold edge
-          const tipX = l / 2;
-          const tipY = h / 2;
+          // B. Move to Top of Mold: Center (0) + Half of Mold Height
+          const topPositionY = moldHeight / 2;
 
-          // Calculate pipe center position:
-          // The pipe extends INWARD from the edge, so we offset in negative X direction
-          const horizontalOffset = (len / 2) * Math.cos(angleRad);
-          const verticalOffset = (len / 2) * Math.sin(angleRad);
+          // Pipe tip positioned exactly at mold edge
+          pipePosition = [edgePositionX, topPositionY, 0];
 
-          // Pipe center is offset inward and upward from the edge injection point
-          pipePosition = [tipX - horizontalOffset, tipY + verticalOffset, 0];
-
-          // Rotation: pipe points inward (negative X) at 22° angle
-          // Rotate around Y-axis: -angleRad makes it point inward with downward tilt
-          pipeRotation = [0, -angleRad, 0];
+          // ROTATION LOGIC:
+          // On Right Edge: Pipe tilts inward (top goes right, bottom points left into mold)
+          // This requires NEGATIVE Z-axis rotation
+          pipeRotation = [0, 0, -angleRadians];
 
         } else if (moldShape === 'cylinder') {
-          const r = (moldDimensions.diameter / 2) / 100;
-          const h = moldDimensions.cylinderHeight / 100;
+          // PARAMETRIC DIMENSIONS
+          const moldRadius = (moldDimensions.diameter / 2) / 100;
+          const moldHeight = moldDimensions.cylinderHeight / 100;
 
-          const offsetX = len / 2 * Math.cos(angleRad);
-          const offsetY = len / 2 * Math.sin(angleRad);
+          // Position at edge of cylinder (right side)
+          const edgePositionX = moldRadius;
+          const midPositionY = moldHeight / 2;
 
-          // Position on side edge of cylinder
-          pipePosition = [r + offsetX, h / 2 + offsetY, 0];
-          // 22 degree angle toward center
-          pipeRotation = [0, -angleRad, 0];
+          pipePosition = [edgePositionX, midPositionY, 0];
+
+          // Tilt inward toward cylinder center
+          pipeRotation = [0, 0, -angleRadians];
 
         } else if (moldShape === 'sphere') {
-          const r = (moldDimensions.sphereDiameter / 2) / 100;
+          // PARAMETRIC DIMENSIONS
+          const moldRadius = (moldDimensions.sphereDiameter / 2) / 100;
 
-          const offsetX = len / 2 * Math.cos(angleRad);
-          const offsetY = len / 2 * Math.sin(angleRad);
+          // Position at edge of sphere (right side, at equator height)
+          const edgePositionX = moldRadius;
+          const equatorY = moldRadius;
 
-          // Position on side edge of sphere
-          pipePosition = [r + offsetX, r + offsetY, 0];
-          // 22 degree angle toward center
-          pipeRotation = [0, -angleRad, 0];
+          pipePosition = [edgePositionX, equatorY, 0];
+
+          // Tilt inward toward sphere center
+          pipeRotation = [0, 0, -angleRadians];
         }
 
         return (
