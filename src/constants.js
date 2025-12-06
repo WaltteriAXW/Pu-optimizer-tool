@@ -119,13 +119,13 @@ export const VALIDATION_RANGES = {
     name: 'Pipe Length'
   },
   pipeDiameter: {
-    min: 6,
+    min: 4,
     max: 25,
     unit: 'mm',
     name: 'Pipe Diameter'
   },
   temperature: {
-    min: 15,
+    min: 18,
     max: 35,
     unit: '°C',
     name: 'Temperature'
@@ -138,13 +138,13 @@ export const VALIDATION_RANGES = {
   },
   viscosity: {
     min: 200,
-    max: 1500,
+    max: 1200,
     unit: 'cP',
     name: 'Viscosity'
   },
   density: {
-    min: 1000,
-    max: 1300,
+    min: 1050,
+    max: 1250,
     unit: 'kg/m³',
     name: 'Density'
   }

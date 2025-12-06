@@ -65,6 +65,9 @@ export function generateWarnings(params) {
   // Machine output rate warnings
   addMachineOutputWarnings(params, warnings, recommendations);
 
+  // Reaction timing warnings (CRITICAL for foam quality)
+  addReactionTimingWarnings(params, warnings, recommendations);
+
   return { warnings, recommendations };
 }
 
@@ -330,6 +333,57 @@ export function simplifyRecommendation(recommendation) {
     .replace(/to \d+-\d+°C/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Add reaction timing warnings (CRITICAL for foam quality)
+ *
+ * Checks if injection time exceeds cream time - if so, foam will start rising
+ * before mold is completely filled, causing voids and defects.
+ *
+ * @param {Object} params - Process parameters
+ * @param {string[]} warnings - Warnings array to modify
+ * @param {string[]} recommendations - Recommendations array to modify
+ * @private
+ */
+function addReactionTimingWarnings(params, warnings, recommendations) {
+  const { material, injectionTime } = params;
+
+  // Skip if no material or injection time data
+  if (!material || !material.reaction || !injectionTime) {
+    return;
+  }
+
+  const creamTime = material.reaction.creamTime;
+  const gelTime = material.reaction.gelTime;
+
+  // CRITICAL: Check if injection time exceeds cream time
+  if (creamTime && injectionTime > creamTime.max) {
+    warnings.push(
+      `⚠️ CRITICAL: Injection time (${injectionTime.toFixed(1)}s) exceeds cream time (${creamTime.max}s). ` +
+      `Foam will start rising before mold is completely filled, causing voids and defects.`
+    );
+    recommendations.push(
+      `URGENT: Increase flow rate or reduce mold volume to complete injection within ${creamTime.max} seconds. ` +
+      `Current timing will result in incomplete parts.`
+    );
+  } else if (creamTime && injectionTime > creamTime.min) {
+    // Warning if close to cream time (between min and max)
+    const margin = creamTime.max - injectionTime;
+    warnings.push(
+      `Injection time (${injectionTime.toFixed(1)}s) is approaching cream time (${creamTime.min}-${creamTime.max}s). ` +
+      `Only ${margin.toFixed(1)}s margin for delays.`
+    );
+    recommendations.push(
+      `Consider increasing flow rate for better safety margin. Target injection time below ${creamTime.min}s.`
+    );
+  } else if (creamTime && injectionTime <= creamTime.min) {
+    // Good timing - no warning needed, but could add info
+    // Optional: Could add a positive feedback message here
+  }
+
+  // Info about gel time (demold time) - not a warning, just informational
+  // This could be shown in the timing analysis section instead
 }
 
 export default {
