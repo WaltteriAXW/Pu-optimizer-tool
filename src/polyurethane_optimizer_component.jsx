@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb, Calculator } from 'lucide-react';
 import { RecipeManager } from './components/RecipeManager';
 import { generateReport } from './utils/generateReport';
 import { TelemetryCard } from './components/TelemetryCard';
@@ -507,20 +507,15 @@ const PolyurethaneOptimizer = () => {
     }
   }, [inputs, selectedMachine, selectedMaterial, moldVolume]);
 
-  // Auto-calculate on debounced input change
-  // This prevents excessive re-calculations while user is typing
-  useEffect(() => {
-    calculateResults();
-  }, [debouncedInputs, selectedMachine, selectedMaterial, calculateResults]);
+  // Auto-calculate removed - user now clicks Calculate button manually
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-50 lg:h-screen lg:overflow-hidden flex flex-col font-sans">
+    <div className="min-h-screen w-full bg-gray-50 text-gray-900 flex flex-col">
 
       {/* Header with Actions */}
-      <header className="h-14 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center px-2 sm:px-4 justify-between shrink-0">
+      <header className="h-14 border-b border-gray-200 bg-white flex items-center px-2 sm:px-4 justify-between shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-cyan-500 rounded-full shadow-glow-cyan animate-pulse"></div>
-          <h1 className="font-bold tracking-widest text-sm">MISSION CONTROL <span className="text-slate-500 hidden sm:inline">v2.0</span></h1>
+          <h1 className="font-semibold text-sm text-gray-900">Parameters & Controls</h1>
         </div>
         <div className="flex gap-2">
             {/* Recipe Manager */}
@@ -554,43 +549,44 @@ const PolyurethaneOptimizer = () => {
           {/* PDF Export Button */}
           <button
             onClick={() => generateReport({...inputs, selectedMachine, selectedMaterial}, results)}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-400 text-xs font-mono transition-colors disabled:opacity-30"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!results}
             title="Export PDF Report"
           >
             <Download size={14} />
-            <span className="hidden md:inline">EXPORT</span>
+            <span className="hidden md:inline">Export</span>
           </button>
 
           {/* View Mode Toggle */}
           <button
             onClick={() => setViewMode(viewMode === 'simple' ? 'advanced' : 'simple')}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-xs font-mono transition-colors border border-slate-700"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors border border-gray-300"
             title={viewMode === 'simple' ? 'Switch to Advanced Mode' : 'Switch to Simple Mode'}
           >
             {viewMode === 'simple' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            <span className="hidden md:inline">{viewMode === 'simple' ? 'ADVANCED' : 'SIMPLE'}</span>
+            <span className="hidden md:inline">{viewMode === 'simple' ? 'Advanced' : 'Simple'}</span>
           </button>
         </div>
       </header>
 
-      {/* Main Bento Box Grid - Responsive Layout */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-1 p-1 overflow-y-auto lg:overflow-hidden">
+      {/* Main Responsive Layout */}
+      <main className="flex-1 p-4 overflow-y-auto">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-        {/* LEFT COLUMN: Controls (3/12 on desktop, full on mobile) */}
-        <aside className="lg:col-span-3 bg-slate-900 rounded border border-slate-800 flex flex-col overflow-hidden lg:h-auto max-h-screen lg:max-h-none">
-          <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
+        {/* LEFT COLUMN: Parameters (3/12 on desktop, order-1 on mobile) */}
+        <aside className="lg:col-span-3 order-1 lg:order-1 bg-white rounded border border-gray-200 shadow-sm flex flex-col">
+          <div className="p-3 border-b border-gray-200 text-sm font-semibold text-gray-700 shrink-0">
             Parameters
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
             {/* Machine Selection */}
             <div className="space-y-2">
-              <label className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Machine</label>
+              <label className="text-sm font-semibold text-gray-900">Machine</label>
               <select
                 value={selectedMachine}
                 onChange={(e) => setSelectedMachine(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded h-10 px-3 font-mono text-cyan-400 focus:outline-none focus:border-cyan-500 transition-colors text-sm"
+                className="w-full bg-white border border-gray-300 rounded h-10 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
               >
                 {Object.entries(MACHINE_SPECS).map(([key, spec]) => (
                   <option key={key} value={key}>{spec.name}</option>
@@ -600,11 +596,11 @@ const PolyurethaneOptimizer = () => {
 
             {/* Material Selection */}
             <div className="space-y-2">
-              <label className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Material</label>
+              <label className="text-sm font-semibold text-gray-900">Material</label>
               <select
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded h-10 px-3 font-mono text-cyan-400 focus:outline-none focus:border-cyan-500 transition-colors text-sm"
+                className="w-full bg-white border border-gray-300 rounded h-10 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
               >
                 {Object.entries(MATERIAL_PRESETS).map(([key, preset]) => (
                   <option key={key} value={key}>{preset.name}</option>
@@ -613,8 +609,8 @@ const PolyurethaneOptimizer = () => {
             </div>
 
             {/* Process Parameters */}
-            <div className="space-y-4 pt-4 border-t border-slate-800">
-              <h3 className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Process Settings</h3>
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900">Process Settings</h3>
 
               <SliderInput
                 label="Pipe Length"
@@ -634,37 +630,37 @@ const PolyurethaneOptimizer = () => {
                 label="Pipe Diameter"
                 value={inputs.pipeDiameter}
                 onChange={(val) => setInputs(prev => ({ ...prev, pipeDiameter: val }))}
-                min={4}
-                max={50}
+                min={6}
+                max={25}
                 step={0.5}
                 unit="mm"
                 icon={Settings2}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Width of the injection tube"
-                helpText="Internal diameter of injection pipe"
+                helpText="Internal diameter (LP: 10-16mm, HP: 4-8mm)"
               />
 
               <SliderInput
                 label="Temperature"
                 value={inputs.temperature}
                 onChange={(val) => setInputs(prev => ({ ...prev, temperature: val }))}
-                min={5}
-                max={50}
+                min={15}
+                max={35}
                 step={1}
                 unit="°C"
                 icon={Thermometer}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material temperature"
-                helpText="Process temperature (5-50°C)"
+                helpText="Material temperature (optimal: 18-25°C)"
               />
 
               <SliderInput
                 label="Flow Rate"
                 value={inputs.flowRate}
                 onChange={(val) => setInputs(prev => ({ ...prev, flowRate: val }))}
-                min={0.1}
-                max={50}
-                step={0.1}
+                min={0.5}
+                max={100}
+                step={0.5}
                 unit="L/min"
                 icon={Activity}
                 showSimpleMode={viewMode === 'simple'}
@@ -676,37 +672,63 @@ const PolyurethaneOptimizer = () => {
                 label="Density"
                 value={inputs.density}
                 onChange={(val) => setInputs(prev => ({ ...prev, density: val }))}
-                min={500}
-                max={2000}
+                min={1000}
+                max={1300}
                 step={10}
                 unit="kg/m³"
                 icon={Scale}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material weight"
-                helpText="Material density"
+                helpText="Liquid component density (typically 1050-1200)"
               />
 
               <SliderInput
                 label="Viscosity"
                 value={inputs.viscosity}
                 onChange={(val) => setInputs(prev => ({ ...prev, viscosity: val }))}
-                min={100}
-                max={2000}
+                min={200}
+                max={1500}
                 step={10}
                 unit="cP"
                 icon={FileSpreadsheet}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material thickness"
-                helpText="Viscosity at 25°C"
+                helpText="Viscosity at 25°C (Ecomate: 280-850 cP)"
               />
+            </div>
+
+            {/* Calculate Button */}
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                onClick={calculateResults}
+                disabled={loading}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400
+                           text-white font-semibold rounded-lg transition-colors
+                           flex items-center justify-center gap-2 shadow-sm"
+              >
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span>Calculating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="w-5 h-5" />
+                    <span>Calculate</span>
+                  </>
+                )}
+              </button>
             </div>
 
           </div>
         </aside>
 
-        {/* CENTER COLUMN: 3D Visualizer (6/12 on desktop, full on mobile) */}
-        <section className="lg:col-span-6 bg-black rounded border border-slate-800 relative overflow-hidden group flex flex-col min-h-[400px] lg:h-auto">
-          <div className="flex-1 relative">
+        {/* CENTER COLUMN: 3D Visualizer (6/12 on desktop, order-3 on mobile) */}
+        <section className="lg:col-span-6 order-3 lg:order-2 bg-white rounded border border-gray-200 shadow-sm relative overflow-hidden flex flex-col">
+          <div className="p-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
+            3D Visualization
+          </div>
+          <div className="flex-1 relative w-full h-[300px] sm:h-[400px] lg:h-[500px]">
             <MoldVisualization3DLazy
               moldShape={moldShape}
               moldDimensions={moldDimensions}
@@ -725,50 +747,48 @@ const PolyurethaneOptimizer = () => {
                 temperature: inputs.temperature,
                 density: inputs.density
               } : {}}
-              height={800}
+              height={500}
             />
-            {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none"></div>
           </div>
         </section>
 
-        {/* RIGHT COLUMN: Live Telemetry (3/12 on desktop, full on mobile) */}
-        <aside className="lg:col-span-3 bg-slate-900 rounded border border-slate-800 flex flex-col overflow-hidden lg:h-auto max-h-screen lg:max-h-none">
-          <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
-            Live Telemetry
+        {/* RIGHT COLUMN: Results (3/12 on desktop, order-2 on mobile) */}
+        <aside className="lg:col-span-3 order-2 lg:order-3 bg-white rounded border border-gray-200 shadow-sm flex flex-col">
+          <div className="p-3 border-b border-gray-200 text-sm font-semibold text-gray-700 shrink-0">
+            Results
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
             {loading && (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <LoadingSpinner size="lg" />
-                <p className="text-slate-400 text-sm font-mono">Calculating...</p>
+                <p className="text-gray-600 text-sm">Calculating...</p>
               </div>
             )}
 
             {error && (
-              <Alert variant="destructive" className="bg-rose-500/10 border-rose-500">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="text-rose-400">Error</AlertTitle>
-                <AlertDescription className="text-rose-300">{error}</AlertDescription>
+              <Alert variant="destructive" className="bg-red-50 border-red-200">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertTitle className="text-red-800">Error</AlertTitle>
+                <AlertDescription className="text-red-700">{error}</AlertDescription>
               </Alert>
             )}
 
             {results && (
               <>
                 {/* Machine Compatibility Status */}
-                <div className={`p-4 rounded-lg border-2 ${results.compatible ? 'bg-emerald-500/10 border-emerald-500' : 'bg-rose-500/10 border-rose-500'}`}>
+                <div className={`p-4 rounded-lg border-2 ${results.compatible ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     {results.compatible ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-rose-400" />
+                      <XCircle className="w-5 h-5 text-red-600" />
                     )}
-                    <span className={`text-xs font-bold uppercase tracking-wider ${results.compatible ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className={`text-xs font-semibold ${results.compatible ? 'text-green-700' : 'text-red-700'}`}>
                       {results.compatible ? 'Compatible' : 'Not Compatible'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 font-mono">{results.machine.name}</p>
+                  <p className="text-xs text-gray-600">{results.machine.name}</p>
                 </div>
 
                 {/* Key Telemetry Cards */}
@@ -817,14 +837,14 @@ const PolyurethaneOptimizer = () => {
 
                 {/* Warnings */}
                 {results.warnings && results.warnings.length > 0 && (
-                  <div className="space-y-2 pt-4 border-t border-slate-800">
-                    <h4 className="text-xs text-amber-400 uppercase font-semibold tracking-wider flex items-center gap-2">
+                  <div className="space-y-2 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm text-yellow-700 font-semibold flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
                       Warnings
                     </h4>
                     {results.warnings.map((warning, idx) => (
-                      <div key={idx} className="bg-amber-500/10 border border-amber-500/30 rounded p-2">
-                        <p className="text-xs text-amber-300 font-mono">{simplifyWarning(warning)}</p>
+                      <div key={idx} className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                        <p className="text-sm text-yellow-800">{simplifyWarning(warning)}</p>
                       </div>
                     ))}
                   </div>
@@ -832,14 +852,14 @@ const PolyurethaneOptimizer = () => {
 
                 {/* Recommendations */}
                 {results.recommendations && results.recommendations.length > 0 && (
-                  <div className="space-y-2 pt-4 border-t border-slate-800">
-                    <h4 className="text-xs text-cyan-400 uppercase font-semibold tracking-wider flex items-center gap-2">
+                  <div className="space-y-2 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm text-blue-700 font-semibold flex items-center gap-2">
                       <Lightbulb className="w-4 h-4" />
                       Recommendations
                     </h4>
                     {results.recommendations.map((rec, idx) => (
-                      <div key={idx} className="bg-cyan-500/10 border border-cyan-500/30 rounded p-2">
-                        <p className="text-xs text-cyan-300 font-mono">{simplifyRecommendation(rec)}</p>
+                      <div key={idx} className="bg-blue-50 border border-blue-200 rounded p-3">
+                        <p className="text-sm text-blue-800">{simplifyRecommendation(rec)}</p>
                       </div>
                     ))}
                   </div>
@@ -849,15 +869,16 @@ const PolyurethaneOptimizer = () => {
 
             {!results && !loading && !error && (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
-                <Settings2 className="w-12 h-12 text-slate-700 animate-pulse" />
-                <p className="text-sm text-slate-500 font-mono">Awaiting calculation...</p>
-                <p className="text-xs text-slate-600">Adjust parameters to see results</p>
+                <Settings2 className="w-12 h-12 text-gray-300" />
+                <p className="text-gray-600 font-medium">Ready to Calculate</p>
+                <p className="text-sm text-gray-400">Adjust parameters and click Calculate to see results</p>
               </div>
             )}
 
           </div>
         </aside>
 
+        </div>
       </main>
 
       {/* Modals and Overlays */}
