@@ -9,6 +9,7 @@ import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf,
 import { RecipeManager } from './components/RecipeManager';
 import { generateReport } from './utils/generateReport';
 import { TelemetryCard } from './components/TelemetryCard';
+import { MaterialInfoCard } from './components/MaterialInfoCard';
 import { IconTooltip } from './tooltip';
 import { DatabaseViewer } from './database_viewer';
 import { getAllMaterialPresets } from './utils/database_loader';
@@ -47,7 +48,7 @@ const PolyurethaneOptimizer = () => {
 
   // State for machine and material selection
   const [selectedMachine, setSelectedMachine] = useState('cannon_std_legacy');
-  const [selectedMaterial, setSelectedMaterial] = useState('ecofoam_standard');
+  const [selectedMaterial, setSelectedMaterial] = useState('ecofoam_xhd_rc');
 
   // State for form inputs
   const [inputs, setInputs] = useState({
@@ -133,16 +134,24 @@ const PolyurethaneOptimizer = () => {
   useEffect(() => {
     if (selectedMaterial && MATERIAL_PRESETS[selectedMaterial]) {
       const preset = MATERIAL_PRESETS[selectedMaterial];
+
       setInputs(prev => ({
         ...prev,
-        density: preset.density,
-        viscosity: preset.viscosity,
-        specificGravity: preset.density / 1000
+        // Use liquid density for flow calculations
+        density: preset.liquidDensity,
+        // Use polyol viscosity as primary viscosity input
+        viscosity: preset.polyol.viscosity,
+        // Set temperature to middle of recommended range
+        temperature: Math.round(
+          (preset.processing.chemicalTemp.min + preset.processing.chemicalTemp.max) / 2
+        )
       }));
+
+      // Update mix ratio inputs
       setMixInputs(prev => ({
         ...prev,
-        polyolSG: preset.polyolSG,
-        isoSG: preset.isoSG
+        polyolSG: preset.polyol.specificGravity,
+        isoSG: preset.isocyanate.specificGravity
       }));
     }
   }, [selectedMaterial]);
@@ -382,7 +391,10 @@ const PolyurethaneOptimizer = () => {
         density: inputs.density,
         diameter: inputs.pipeDiameter,
         area,
-        machineSpecs: MACHINE_SPECS
+        machineSpecs: MACHINE_SPECS,
+        // Add material and timing for reaction timing validation
+        material: MATERIAL_PRESETS[selectedMaterial],
+        injectionTime
       });
 
       // === STEP 11: Generate Pressure Profile ===
@@ -602,11 +614,24 @@ const PolyurethaneOptimizer = () => {
                 onChange={(e) => setSelectedMaterial(e.target.value)}
                 className="w-full bg-white border border-gray-300 rounded h-10 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
               >
-                {Object.entries(MATERIAL_PRESETS).map(([key, preset]) => (
-                  <option key={key} value={key}>{preset.name}</option>
-                ))}
+                <optgroup label="ecomate® Systems (Zero GWP)">
+                  <option value="ecofoam_xhd_rc">Ecofoam XHD RC — Panels & Cavity Fill</option>
+                  <option value="ecomate_spray_ec">Ecomate Spray EC — Spray Foam</option>
+                </optgroup>
+                <optgroup label="Water-Blown Systems">
+                  <option value="genfoam_hd12">Genfoam HD12 — High Density (350-550 kg/m³)</option>
+                  <option value="genfoam_hd20">Genfoam HD20 — Very High Density (400-600 kg/m³)</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="custom">Custom Material</option>
+                </optgroup>
               </select>
             </div>
+
+            {/* Show Material Info Card */}
+            {selectedMaterial && MATERIAL_PRESETS[selectedMaterial] && (
+              <MaterialInfoCard material={MATERIAL_PRESETS[selectedMaterial]} />
+            )}
 
             {/* Process Parameters */}
             <div className="space-y-4 pt-4 border-t border-gray-200">
@@ -630,28 +655,28 @@ const PolyurethaneOptimizer = () => {
                 label="Pipe Diameter"
                 value={inputs.pipeDiameter}
                 onChange={(val) => setInputs(prev => ({ ...prev, pipeDiameter: val }))}
-                min={6}
+                min={4}
                 max={25}
-                step={0.5}
+                step={1}
                 unit="mm"
                 icon={Settings2}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Width of the injection tube"
-                helpText="Internal diameter (LP: 10-16mm, HP: 4-8mm)"
+                helpText="Internal diameter (HP: 4-8mm, LP: 10-16mm)"
               />
 
               <SliderInput
                 label="Temperature"
                 value={inputs.temperature}
                 onChange={(val) => setInputs(prev => ({ ...prev, temperature: val }))}
-                min={15}
+                min={18}
                 max={35}
                 step={1}
                 unit="°C"
                 icon={Thermometer}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material temperature"
-                helpText="Material temperature (optimal: 18-25°C)"
+                helpText="Chemical temperature (Ecofoam: 22-25°C, Ecomate Spray: 25-30°C)"
               />
 
               <SliderInput
@@ -665,21 +690,21 @@ const PolyurethaneOptimizer = () => {
                 icon={Activity}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Injection speed"
-                helpText="Volumetric flow rate"
+                helpText="Volumetric flow rate (LP: 2-50, HP: 5-200 L/min)"
               />
 
               <SliderInput
-                label="Density"
+                label="Liquid Density"
                 value={inputs.density}
                 onChange={(val) => setInputs(prev => ({ ...prev, density: val }))}
-                min={1000}
-                max={1300}
+                min={1050}
+                max={1250}
                 step={10}
                 unit="kg/m³"
                 icon={Scale}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material weight"
-                helpText="Liquid component density (typically 1050-1200)"
+                helpText="Mixed liquid density (auto-set from material selection)"
               />
 
               <SliderInput
@@ -687,13 +712,13 @@ const PolyurethaneOptimizer = () => {
                 value={inputs.viscosity}
                 onChange={(val) => setInputs(prev => ({ ...prev, viscosity: val }))}
                 min={200}
-                max={1500}
+                max={1200}
                 step={10}
                 unit="cP"
                 icon={FileSpreadsheet}
                 showSimpleMode={viewMode === 'simple'}
                 simpleExplanation="Material thickness"
-                helpText="Viscosity at 25°C (Ecomate: 280-850 cP)"
+                helpText="Polyol viscosity at 25°C (Ecomate Spray: 300, Ecofoam XHD: 850, Genfoam: 900-1050)"
               />
             </div>
 
@@ -834,6 +859,64 @@ const PolyurethaneOptimizer = () => {
                   unit="s"
                   status="normal"
                 />
+
+                {/* Timing Analysis */}
+                {selectedMaterial && MATERIAL_PRESETS[selectedMaterial] && MATERIAL_PRESETS[selectedMaterial].reaction && (
+                  <div className="p-4 bg-white border border-gray-200 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      Timing Analysis
+                    </h4>
+
+                    <div className="space-y-2 text-sm">
+                      {/* Injection Time vs Cream Time */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Injection Time:</span>
+                        <span className="font-mono font-medium">{results.injectionTime.toFixed(1)}s</span>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Cream Time (max fill time):</span>
+                        <span className="font-mono font-medium">
+                          {MATERIAL_PRESETS[selectedMaterial].reaction.creamTime.max}s
+                        </span>
+                      </div>
+
+                      {/* Visual indicator */}
+                      <div className="mt-2">
+                        {results.injectionTime <= MATERIAL_PRESETS[selectedMaterial].reaction.creamTime.min ? (
+                          <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Good margin — injection completes well before foam rises</span>
+                          </div>
+                        ) : results.injectionTime <= MATERIAL_PRESETS[selectedMaterial].reaction.creamTime.max ? (
+                          <div className="flex items-center gap-2 text-yellow-600">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span>Tight timing — minimal margin for delays</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-red-600">
+                            <XCircle className="w-4 h-4" />
+                            <span>Too slow — foam will rise before mold is filled</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Gel Time Info */}
+                      {MATERIAL_PRESETS[selectedMaterial].reaction.gelTime && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex justify-between items-center text-gray-500">
+                            <span>Gel Time (earliest demold):</span>
+                            <span className="font-mono">
+                              {MATERIAL_PRESETS[selectedMaterial].reaction.gelTime.min}-
+                              {MATERIAL_PRESETS[selectedMaterial].reaction.gelTime.max}s
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Warnings */}
                 {results.warnings && results.warnings.length > 0 && (
