@@ -12,24 +12,27 @@ import PropTypes from 'prop-types';
 export const TelemetryCard = ({ title, value, unit, status = 'normal', description }) => {
   const statusStyles = {
     normal: {
-      textColor: 'text-emerald-400',
-      borderColor: 'border-emerald-500/30',
+      textColor: 'text-green-600',
+      borderColor: 'border-green-500',
+      bgColor: 'bg-white',
     },
     warning: {
-      textColor: 'text-amber-400',
-      borderColor: 'border-amber-500/30',
+      textColor: 'text-yellow-600',
+      borderColor: 'border-yellow-500',
+      bgColor: 'bg-white',
     },
     danger: {
-      textColor: 'text-rose-500',
-      borderColor: 'border-rose-500/30',
+      textColor: 'text-red-600',
+      borderColor: 'border-red-500',
+      bgColor: 'bg-white',
     },
   };
 
   const style = statusStyles[status] || statusStyles.normal;
 
   return (
-    <div className={`bg-slate-950/50 border-l-4 p-4 rounded-r ${style.borderColor}`}>
-      <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest font-sans">
+    <div className={`${style.bgColor} border-l-4 ${style.borderColor} p-4 rounded-r shadow-sm`}>
+      <span className="text-gray-600 text-xs uppercase font-semibold">
         {title}
       </span>
       <div className={`text-3xl font-mono font-bold mt-1 ${style.textColor}`}>
@@ -39,7 +42,7 @@ export const TelemetryCard = ({ title, value, unit, status = 'normal', descripti
         )}
       </div>
       {description && (
-        <p className="text-xs text-slate-600 mt-2 font-sans">{description}</p>
+        <p className="text-xs text-gray-500 mt-2">{description}</p>
       )}
     </div>
   );
