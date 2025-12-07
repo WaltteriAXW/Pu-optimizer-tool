@@ -15,11 +15,11 @@ export const MaterialInfoCard = ({ material }) => {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h4 className="font-semibold text-gray-900">{material.name}</h4>
-          <p className="text-sm text-gray-500">{material.description}</p>
+          <h4 className="font-bold text-gray-900">{material.name}</h4>
+          <p className="text-sm text-gray-600">{material.description}</p>
         </div>
         {isEcomate && (
-          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
+          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">
             Zero GWP
           </span>
         )}
@@ -31,8 +31,8 @@ export const MaterialInfoCard = ({ material }) => {
         <div className="flex items-center gap-2">
           <Droplets className="w-4 h-4 text-blue-500" />
           <div>
-            <div className="text-gray-500 text-xs">Polyol Viscosity</div>
-            <div className="font-medium">{material.polyol.viscosity} cP</div>
+            <div className="text-gray-600 text-xs font-medium">Polyol Viscosity</div>
+            <div className="font-semibold text-gray-900">{material.polyol.viscosity} cP</div>
           </div>
         </div>
 
@@ -40,8 +40,8 @@ export const MaterialInfoCard = ({ material }) => {
         <div className="flex items-center gap-2">
           <Thermometer className="w-4 h-4 text-red-500" />
           <div>
-            <div className="text-gray-500 text-xs">Process Temp</div>
-            <div className="font-medium">
+            <div className="text-gray-600 text-xs font-medium">Process Temp</div>
+            <div className="font-semibold text-gray-900">
               {material.processing.chemicalTemp.min}-{material.processing.chemicalTemp.max}°C
             </div>
           </div>
@@ -51,8 +51,8 @@ export const MaterialInfoCard = ({ material }) => {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-orange-500" />
           <div>
-            <div className="text-gray-500 text-xs">Cream Time</div>
-            <div className="font-medium">
+            <div className="text-gray-600 text-xs font-medium">Cream Time</div>
+            <div className="font-semibold text-gray-900">
               {material.reaction.creamTime.min}-{material.reaction.creamTime.max}s
             </div>
           </div>
@@ -63,8 +63,8 @@ export const MaterialInfoCard = ({ material }) => {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-purple-500" />
             <div>
-              <div className="text-gray-500 text-xs">Gel Time</div>
-              <div className="font-medium">
+              <div className="text-gray-600 text-xs font-medium">Gel Time</div>
+              <div className="font-semibold text-gray-900">
                 {material.reaction.gelTime.min}-{material.reaction.gelTime.max}s
               </div>
             </div>
@@ -75,8 +75,8 @@ export const MaterialInfoCard = ({ material }) => {
         <div className="flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-cyan-500" />
           <div>
-            <div className="text-gray-500 text-xs">Foam Density</div>
-            <div className="font-medium">
+            <div className="text-gray-600 text-xs font-medium">Foam Density</div>
+            <div className="font-semibold text-gray-900">
               {material.foam.freeRiseDensity.min}-{material.foam.freeRiseDensity.max} kg/m³
             </div>
           </div>
@@ -84,12 +84,12 @@ export const MaterialInfoCard = ({ material }) => {
 
         {/* Mix Ratio */}
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 flex items-center justify-center text-gray-500 text-xs font-bold">
+          <div className="w-4 h-4 flex items-center justify-center text-gray-600 text-xs font-bold">
             ⚖
           </div>
           <div>
-            <div className="text-gray-500 text-xs">Mix Ratio (wt)</div>
-            <div className="font-medium">
+            <div className="text-gray-600 text-xs font-medium">Mix Ratio (wt)</div>
+            <div className="font-semibold text-gray-900">
               {material.mixRatio.polyol}:{material.mixRatio.isocyanate}
             </div>
           </div>

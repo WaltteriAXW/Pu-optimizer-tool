@@ -558,9 +558,10 @@ else:
 `;
     
     await pyodide.runPython(pythonCode);
-    
-    // Check for errors
-    const error = pyodide.globals.get('error').toJs();
+
+    // Check for errors - safely handle Python None
+    const errorProxy = pyodide.globals.get('error');
+    const error = errorProxy && !errorProxy.isNone() ? errorProxy.toJs() : null;
     if (error) {
       logger.warning('Python calculation error', { pythonError: error });
       if (error.type === 'ValidationError') {
@@ -570,8 +571,12 @@ else:
       }
     }
 
-    // Get results and convert to JavaScript object
-    const results = pyodide.globals.get('results').toJs();
+    // Get results and convert to JavaScript object - safely handle Python None
+    const resultsProxy = pyodide.globals.get('results');
+    if (!resultsProxy || resultsProxy.isNone()) {
+      throw new Error('Python calculation returned no results');
+    }
+    const results = resultsProxy.toJs();
     return results as CalculationResults;
 
   } catch (err) {
