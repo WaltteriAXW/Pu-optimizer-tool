@@ -43,13 +43,13 @@ describe('validateField', () => {
 
   it('should validate temperature in range', () => {
     expect(validateField('temperature', 25).valid).toBe(true);
-    expect(validateField('temperature', 5).valid).toBe(true);
-    expect(validateField('temperature', 50).valid).toBe(true);
+    expect(validateField('temperature', 18).valid).toBe(true);
+    expect(validateField('temperature', 35).valid).toBe(true);
   });
 
   it('should reject temperature out of range', () => {
-    expect(validateField('temperature', 0).valid).toBe(false);
-    expect(validateField('temperature', 60).valid).toBe(false);
+    expect(validateField('temperature', 10).valid).toBe(false);
+    expect(validateField('temperature', 40).valid).toBe(false);
   });
 
   it('should handle string numbers', () => {
@@ -96,7 +96,7 @@ describe('validateInputs', () => {
   });
 
   it('should reject invalid temperature', () => {
-    const result = validateInputs({...validInputs, temperature: 60});
+    const result = validateInputs({...validInputs, temperature: 40});
     expect(result.valid).toBe(false);
     expect(result.error).toContain('Temperature');
   });
@@ -105,7 +105,7 @@ describe('validateInputs', () => {
     const result = validateInputs({
       ...validInputs,
       pipeLength: 30,
-      temperature: 60
+      temperature: 40
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(2);
@@ -125,7 +125,7 @@ describe('validateInputs', () => {
     const result = validateInputs({
       pipeLength: 10,
       pipeDiameter: -5,
-      temperature: 100,
+      temperature: 50,
       flowRate: -1,
       viscosity: 0,
       density: 500
@@ -300,8 +300,8 @@ describe('getFieldConstraints', () => {
 
   it('should return constraints for temperature', () => {
     const constraints = getFieldConstraints('temperature');
-    expect(constraints.min).toBe(5);
-    expect(constraints.max).toBe(50);
+    expect(constraints.min).toBe(18);
+    expect(constraints.max).toBe(35);
   });
 
   it('should calculate appropriate step for large ranges', () => {

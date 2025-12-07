@@ -27,7 +27,8 @@ describe('PolyurethaneOptimizer Component', () => {
   describe('Rendering', () => {
     it('should render the main component title', () => {
       render(<PolyurethaneOptimizer />);
-      expect(screen.getByText(/MISSION CONTROL/i)).toBeInTheDocument();
+      // Check for the Parameters & Controls heading (main h1 in component)
+      expect(screen.getByText(/Parameters & Controls/i)).toBeInTheDocument();
     });
 
 
@@ -96,10 +97,14 @@ describe('PolyurethaneOptimizer Component', () => {
       const user = userEvent.setup();
       render(<PolyurethaneOptimizer />);
 
-      // Find number input (not range slider)
-      const tempInputs = screen.getAllByDisplayValue('25').filter(el => el.type === 'number');
-      const tempInput = tempInputs[0];
+      // Find temperature input by looking for inputs with temperature-related values
+      const allInputs = screen.getAllByRole('spinbutton');
+      const tempInput = allInputs.find(input => {
+        const value = parseInt(input.value);
+        return value >= 18 && value <= 35; // Temperature range
+      });
 
+      expect(tempInput).toBeDefined();
       await user.clear(tempInput);
       await user.type(tempInput, '30');
 
@@ -140,8 +145,8 @@ describe('PolyurethaneOptimizer Component', () => {
       const materialSelects = screen.getAllByRole('combobox');
       const materialSelect = materialSelects[1];
 
-      await user.selectOptions(materialSelect, 'ecofoam_xhd');
-      expect(materialSelect.value).toBe('ecofoam_xhd');
+      await user.selectOptions(materialSelect, 'ecofoam_xhd_rc');
+      expect(materialSelect.value).toBe('ecofoam_xhd_rc');
     });
   });
 
