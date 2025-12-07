@@ -54,8 +54,8 @@ describe('Constants - Validation Ranges', () => {
 
   it('should have temperature range', () => {
     expect(VALIDATION_RANGES.temperature).toEqual({
-      min: 5,
-      max: 50,
+      min: 18,
+      max: 35,
       unit: '°C',
       name: 'Temperature'
     });
@@ -140,12 +140,12 @@ describe('Helper Functions - validateInput', () => {
   });
 
   it('should reject temperature too low', () => {
-    const result = validateInput('temperature', 0);
+    const result = validateInput('temperature', 10);
     expect(result.valid).toBe(false);
   });
 
   it('should reject temperature too high', () => {
-    const result = validateInput('temperature', 60);
+    const result = validateInput('temperature', 40);
     expect(result.valid).toBe(false);
   });
 
