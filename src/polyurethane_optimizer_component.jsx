@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './card';
 import { SliderInput } from './slider_input';
 import { Alert, AlertTitle, AlertDescription } from './alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb, Calculator } from 'lucide-react';
+import { Settings2, Thermometer, FileSpreadsheet, AlertTriangle, Download, Leaf, Scale, ChevronDown, ChevronRight, CheckCircle2, XCircle, Brain, TrendingUp, Target, Shield, Eye, EyeOff, Activity, Database, Save, HelpCircle, Info, Zap, Lightbulb, Calculator, Clock } from 'lucide-react';
 import { RecipeManager } from './components/RecipeManager';
 import { generateReport } from './utils/generateReport';
 import { TelemetryCard } from './components/TelemetryCard';
