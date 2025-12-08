@@ -4,7 +4,7 @@ Handles both laminar and turbulent flow regimes.
 """
 
 import math
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 # Darcy friction factor constants (Swamee-Jain approximation)
 A_COEFFICIENT = 0.25
@@ -139,7 +139,7 @@ def calculate_pressure_with_fittings(
 def calculate_machine_compatibility(
     total_pressure_bar: float,
     machine_specs: Dict,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Check if calculated pressure is compatible with machine capabilities.
 

@@ -279,8 +279,7 @@ class ProcessOptimizerML:
                 reg_alpha=0.1,
                 reg_lambda=1.0,
                 random_state=42,
-                eval_metric='logloss',
-                use_label_encoder=False
+                eval_metric='logloss'
             )
 
             # RandomForest for diversity
@@ -765,7 +764,7 @@ class ProcessOptimizerML:
         return {
             "success": True,
             "production_samples": len(production_data),
-            "synthetic_samples": len(synthetic_data) if combine_with_synthetic else 0,
+            "synthetic_samples": len(physics_data) if combine_with_synthetic else 0,
             "total_samples": len(training_data),
             "metrics": metrics,
             "retrained_at": datetime.now().isoformat()

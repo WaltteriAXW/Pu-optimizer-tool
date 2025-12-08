@@ -369,7 +369,7 @@ class PressureOptimizer:
             # Call the calculation engine with this pressure
             results = self.calculate(parameters, pressure_override_bar=pressure_bar)
             return results
-        except:
+        except Exception:
             return {
                 'shear_rate': 0,
                 'viscosity_cp': 0,
