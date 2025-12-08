@@ -2,19 +2,15 @@
   "name": "polyurethane-injection-optimizer",
   "private": true,
   "version": "2.0.0",
-  "description": "Professional industrial HMI tool for optimizing polyurethane injection molding with real-time 3D visualization, machine compatibility checking, recipe management, and ISO-compliant PDF reporting",
+  "description": "Polyurethane injection molding optimizer - Logic and ML core",
   "type": "module",
-  "homepage": "https://waltteriaxw.github.io/Pu-optimizer-tool/",
   "keywords": [
     "polyurethane",
     "injection-molding",
     "fluid-dynamics",
-    "hmi",
-    "industrial-automation",
-    "3d-visualization",
     "manufacturing",
     "optimization",
-    "mission-control"
+    "machine-learning"
   ],
   "author": "WaltteriAXW",
   "repository": {
@@ -22,58 +18,19 @@
     "url": "https://github.com/WaltteriAXW/Pu-optimizer-tool.git"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d docs",
     "test": "vitest",
-    "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:a11y": "vitest --grep a11y --ui",
-    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "lint": "eslint src --ext .js,.ts",
+    "lint:fix": "eslint src --ext .js,.ts --fix"
   },
   "dependencies": {
-    "@react-three/drei": "^9.92.7",
-    "@react-three/fiber": "^8.15.12",
-    "jspdf": "^3.0.4",
-    "lucide-react": "^0.263.1",
-    "prop-types": "^15.8.1",
-    "pyodide": "0.24.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "recharts": "^2.9.0",
-    "three": "^0.160.0",
-    "zustand": "^5.0.8"
+    "pyodide": "0.24.1"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.28.5",
-    "@babel/preset-react": "^7.28.5",
-    "@testing-library/jest-dom": "^6.1.5",
-    "@testing-library/react": "^14.1.2",
-    "@testing-library/user-event": "^14.5.1",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",
-    "@vitejs/plugin-react": "^4.0.3",
-    "@vitest/ui": "^4.0.4",
-    "autoprefixer": "^10.4.14",
-    "axe-core": "^4.8.0",
     "eslint": "^8.54.0",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "gh-pages": "^6.0.0",
-    "jest-axe": "^8.0.0",
-    "jsdom": "^23.0.1",
-    "postcss": "^8.4.31",
-    "prettier": "^3.1.0",
-    "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
-    "vite": "^7.1.12",
     "vitest": "^4.0.4"
   }
 }
