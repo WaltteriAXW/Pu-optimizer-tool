@@ -209,7 +209,7 @@ class TestMachineCompatibility:
             'max_pressure': 200,
             'min_operating_pressure': 100,
             'process_loss': {'total': 25},
-        )
+        }
 
         result = calculate_machine_compatibility(
             total_pressure_bar=50,

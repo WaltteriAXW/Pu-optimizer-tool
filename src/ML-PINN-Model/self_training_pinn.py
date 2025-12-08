@@ -141,20 +141,24 @@ class SelfTrainingPINN:
     
     def denormalize_outputs(self, outputs):
         """Denormalize outputs from [0, 1] range to physical units"""
+        # Must match ranges in normalize_output()
         return {
-            'pressure': float(outputs[0] * (7.99 - 1.01) + 1.01),
-            'reynolds': float(outputs[1] * (547 - 1) + 1),
-            'velocity': float(outputs[2] * (16.98 - 0.01) + 0.01)
+            'pressure': float(outputs[0] * (50.0 - 0.1) + 0.1),      # bar
+            'reynolds': float(outputs[1] * (100000 - 1) + 1),         # dimensionless
+            'velocity': float(outputs[2] * (25.0 - 0.001) + 0.001)    # m/s
         }
     
     def normalize_output(self, value, target_type):
         """Normalize a single output value"""
+        # Realistic ranges for polyurethane injection molding
         ranges = {
-            'pressure': (1.01, 7.99),
-            'reynolds': (1, 547),
-            'velocity': (0.01, 16.98)
+            'pressure': (0.1, 50.0),      # bar - covers low to high pressure machines
+            'reynolds': (1, 100000),       # Covers laminar through highly turbulent
+            'velocity': (0.001, 25.0)      # m/s - practical injection velocities
         }
         min_val, max_val = ranges[target_type]
+        # Clamp value to range before normalizing
+        value = max(min_val, min(max_val, value))
         return (value - min_val) / (max_val - min_val)
     
     def predict(self, pipe_length, pipe_diameter, temperature, flow_rate, viscosity, density):

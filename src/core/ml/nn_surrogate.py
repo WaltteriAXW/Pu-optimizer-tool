@@ -378,12 +378,107 @@ class NNSurrogateCalculator:
 
     Provides 100x speedup (<1 ms) vs physics-based models (100+ ms).
     Maintains high accuracy (±5-8%) with uncertainty quantification.
+
+    WARNING: Model must be trained before use. If not trained, predictions
+    will fall back to physics-based calculations.
     """
 
-    def __init__(self):
-        """Initialize surrogate model"""
+    def __init__(self, use_physics_fallback: bool = True):
+        """
+        Initialize surrogate model.
+
+        Args:
+            use_physics_fallback: If True, use physics calculations when model
+                                  is not trained. If False, raise error.
+        """
         self.model = SimpleNeuralNetwork()
         self.prediction_cache = {}
+        self.use_physics_fallback = use_physics_fallback
+        self._warned_untrained = False
+
+    def _physics_fallback(
+        self,
+        pipe_length_mm: float,
+        pipe_diameter_mm: float,
+        flow_rate_lpm: float,
+        inlet_temp_c: float,
+        material_viscosity_cps: float,
+        material_density_kg_m3: float,
+    ) -> Dict[str, Any]:
+        """
+        Physics-based fallback calculation when NN is not trained.
+
+        Uses simplified Hagen-Poiseuille and heat transfer equations.
+        """
+        import time
+        start_time = time.time()
+
+        # Convert units
+        L = pipe_length_mm / 1000  # m
+        D = pipe_diameter_mm / 1000  # m
+        Q = flow_rate_lpm / 60000  # m³/s
+        mu = material_viscosity_cps / 1000  # Pa·s
+        rho = material_density_kg_m3  # kg/m³
+
+        # Calculate velocity and Reynolds
+        A = math.pi * (D / 2) ** 2
+        v = Q / A if A > 0 else 0
+        Re = (rho * v * D) / mu if mu > 0 else 0
+
+        # Friction factor
+        if Re < 2300:
+            f = 64 / Re if Re > 0 else 0.02
+            flow_regime = "laminar"
+        elif Re < 4000:
+            f = 64 / Re if Re > 0 else 0.02
+            flow_regime = "transitional"
+        else:
+            f = 0.316 / (Re ** 0.25) if Re > 0 else 0.02
+            flow_regime = "turbulent"
+
+        # Pressure drop (Darcy-Weisbach)
+        pressure_drop_pa = f * (L / D) * (rho * v ** 2 / 2) if D > 0 else 0
+        pressure_drop_bar = pressure_drop_pa / 100000
+
+        # Simplified heat transfer (estimate)
+        temp_drop = 0.5 * (L / 0.5)  # ~0.5°C per 0.5m
+        outlet_temp = inlet_temp_c - temp_drop
+
+        prediction_time_ms = (time.time() - start_time) * 1000
+
+        return {
+            'success': True,
+            'method': 'Physics Fallback (NN not trained)',
+            'warning': 'Neural network model is not trained. Using physics-based fallback.',
+            'input': {
+                'pipe_length_mm': pipe_length_mm,
+                'pipe_diameter_mm': pipe_diameter_mm,
+                'flow_rate_lpm': flow_rate_lpm,
+                'inlet_temperature_c': inlet_temp_c,
+                'material_viscosity_cps': material_viscosity_cps,
+            },
+            'output': {
+                'outlet_temperature_c': outlet_temp,
+                'temperature_drop_c': temp_drop,
+                'pressure_drop_bar': pressure_drop_bar,
+                'reynolds_number': Re,
+                'nusselt_number': 3.66 if Re < 2300 else 0.023 * (Re ** 0.8),  # Simplified
+                'friction_factor': f,
+                'flow_regime': flow_regime,
+                'heat_loss_w': temp_drop * 4.18 * rho * Q,  # Simplified
+            },
+            'confidence': {
+                'level': 'physics_fallback',
+                'score': 0.7,  # Physics is reliable but simplified
+                'uncertainty_temperature_celsius': 2.0,
+                'uncertainty_pressure_bar': 0.2,
+            },
+            'performance': {
+                'prediction_time_ms': prediction_time_ms,
+                'speedup_vs_physics': '1x (this IS physics)',
+                'note': 'Train the NN model for 100x speedup'
+            }
+        }
 
     def predict_quick(
         self,
@@ -399,7 +494,33 @@ class NNSurrogateCalculator:
         Quick prediction using NN surrogate.
 
         Returns dict matching CalculationProcessor output format.
+
+        If the model is not trained, will either:
+        - Fall back to physics calculations (if use_physics_fallback=True)
+        - Raise RuntimeError (if use_physics_fallback=False)
         """
+        # Check if model is trained
+        if not self.model.is_trained:
+            if not self._warned_untrained:
+                print("WARNING: NNSurrogateCalculator model is not trained. "
+                      "Predictions will use physics fallback.")
+                self._warned_untrained = True
+
+            if self.use_physics_fallback:
+                return self._physics_fallback(
+                    pipe_length_mm=pipe_length_mm,
+                    pipe_diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    inlet_temp_c=inlet_temp_c,
+                    material_viscosity_cps=material_viscosity_cps,
+                    material_density_kg_m3=material_density_kg_m3,
+                )
+            else:
+                raise RuntimeError(
+                    "NNSurrogateCalculator model is not trained. "
+                    "Either train the model or set use_physics_fallback=True."
+                )
+
         prediction = self.model.predict(
             pipe_length_mm=pipe_length_mm,
             pipe_diameter_mm=pipe_diameter_mm,
