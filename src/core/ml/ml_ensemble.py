@@ -8,11 +8,40 @@ ensemble voting.
 This solves the integration gap where models were previously isolated.
 """
 
-import sys
-from typing import Dict, Any, Optional, List
+import logging
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import math
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# CONSTANTS
+# ============================================================================
+
+# Physics validation thresholds
+PHYSICS_DEVIATION_THRESHOLD_PCT = 30.0  # Maximum acceptable deviation from physics
+
+# Quality estimation thresholds (used when ML model not available)
+QUALITY_TEMP_MIN_C = 20.0
+QUALITY_TEMP_MAX_C = 35.0
+QUALITY_PRESSURE_MAX_BAR = 5.0
+
+# Flow regime thresholds (Reynolds number)
+REYNOLDS_LAMINAR_MAX = 2300
+REYNOLDS_TRANSITIONAL_MAX = 4000
+REYNOLDS_TURBULENT_WARNING = 4000
+
+# Confidence thresholds for model selection
+PINN_CONFIDENCE_THRESHOLD = 0.7
+SURROGATE_CONFIDENCE_THRESHOLD = 0.6
+
+# Heuristic quality confidence when no ML model available
+HEURISTIC_QUALITY_CONFIDENCE = 0.5
 
 
 class ModelType(Enum):
@@ -69,34 +98,51 @@ class MLEnsemble:
             enable_sklearn: Enable scikit-learn ProcessOptimizerML
             enable_surrogate: Enable fast NNSurrogate
         """
-        self.models = {}
-        self._load_errors = []
+        self.models: Dict[ModelType, Any] = {}
+        self._load_errors: List[str] = []
+
+        # Get the project root directory dynamically
+        current_file = Path(__file__).resolve()
+        project_root = current_file.parent.parent.parent.parent  # src/core/ml -> src/core -> src -> project_root
+        src_dir = project_root / 'src'
+        ml_pinn_dir = src_dir / 'ML-PINN-Model'
 
         # Try to load PINN
         if enable_pinn:
             try:
-                sys.path.insert(0, str(__file__).replace('/src/core/ml/ml_ensemble.py', '/src/ML-PINN-Model'))
+                # Use dynamic path resolution
+                import sys
+                if str(ml_pinn_dir) not in sys.path:
+                    sys.path.insert(0, str(ml_pinn_dir))
                 from self_training_pinn import SelfTrainingPINN
                 self.models[ModelType.PINN] = SelfTrainingPINN()
+                logger.info("PINN model loaded successfully")
             except ImportError as e:
                 self._load_errors.append(f"PINN not available: {e}")
+                logger.warning(f"PINN not available: {e}")
 
         # Try to load ProcessOptimizerML
         if enable_sklearn:
             try:
-                sys.path.insert(0, str(__file__).replace('/src/core/ml/ml_ensemble.py', '/src'))
+                import sys
+                if str(src_dir) not in sys.path:
+                    sys.path.insert(0, str(src_dir))
                 from process_optimizer_ml import ProcessOptimizerML
                 self.models[ModelType.PROCESS_OPTIMIZER] = ProcessOptimizerML()
+                logger.info("ProcessOptimizerML loaded successfully")
             except ImportError as e:
                 self._load_errors.append(f"ProcessOptimizerML not available: {e}")
+                logger.warning(f"ProcessOptimizerML not available: {e}")
 
         # Try to load NNSurrogate
         if enable_surrogate:
             try:
                 from .nn_surrogate import NNSurrogateCalculator
                 self.models[ModelType.NN_SURROGATE] = NNSurrogateCalculator(use_physics_fallback=True)
+                logger.info("NNSurrogate loaded successfully")
             except ImportError as e:
                 self._load_errors.append(f"NNSurrogate not available: {e}")
+                logger.warning(f"NNSurrogate not available: {e}")
 
     def get_available_models(self) -> List[ModelType]:
         """Return list of successfully loaded models"""
@@ -221,25 +267,25 @@ class MLEnsemble:
         physics_deviation = abs(final_result['pressure'] - physics_result['pressure_bar'])
         physics_deviation_pct = (physics_deviation / physics_result['pressure_bar'] * 100
                                   if physics_result['pressure_bar'] > 0 else 0)
-        physics_validated = physics_deviation_pct < 30  # Within 30% of physics
+        physics_validated = physics_deviation_pct < PHYSICS_DEVIATION_THRESHOLD_PCT
 
         # Quality prediction (from ProcessOptimizer or heuristic)
         if ModelType.PROCESS_OPTIMIZER in predictions:
             is_good_quality = predictions[ModelType.PROCESS_OPTIMIZER]['is_good']
             quality_confidence = predictions[ModelType.PROCESS_OPTIMIZER]['confidence']
         else:
-            # Heuristic quality estimation
-            is_good_quality = (20 <= temperature_c <= 35 and
-                               final_result['pressure'] < 5 and
-                               final_result['reynolds'] < 2300)
-            quality_confidence = 0.5  # Low confidence for heuristic
+            # Heuristic quality estimation using defined thresholds
+            is_good_quality = (QUALITY_TEMP_MIN_C <= temperature_c <= QUALITY_TEMP_MAX_C and
+                               final_result['pressure'] < QUALITY_PRESSURE_MAX_BAR and
+                               final_result['reynolds'] < REYNOLDS_LAMINAR_MAX)
+            quality_confidence = HEURISTIC_QUALITY_CONFIDENCE
 
         # Add physics-based recommendations
         if not physics_validated:
             warnings.append(f"ML prediction deviates {physics_deviation_pct:.1f}% from physics")
-        if final_result['reynolds'] > 4000:
+        if final_result['reynolds'] > REYNOLDS_TURBULENT_WARNING:
             recommendations.append("Turbulent flow detected - consider reducing flow rate")
-        if final_result['pressure'] > 5:
+        if final_result['pressure'] > QUALITY_PRESSURE_MAX_BAR:
             recommendations.append("High pressure - verify machine capacity")
 
         return EnsemblePrediction(
@@ -313,7 +359,7 @@ class MLEnsemble:
         # Priority: PINN (if physics consistent) > ProcessOptimizer > NNSurrogate > Physics
         if ModelType.PINN in predictions:
             pinn_pred = predictions[ModelType.PINN]
-            if pinn_pred.get('physics_consistent', False) or pinn_pred.get('confidence', 0) > 0.7:
+            if pinn_pred.get('physics_consistent', False) or pinn_pred.get('confidence', 0) > PINN_CONFIDENCE_THRESHOLD:
                 return ModelType.PINN, {
                     'pressure': pinn_pred['pressure'],
                     'reynolds': pinn_pred['reynolds'],
@@ -322,7 +368,7 @@ class MLEnsemble:
 
         if ModelType.NN_SURROGATE in predictions:
             surrogate_pred = predictions[ModelType.NN_SURROGATE]
-            if surrogate_pred.get('confidence', 0) > 0.6:
+            if surrogate_pred.get('confidence', 0) > SURROGATE_CONFIDENCE_THRESHOLD:
                 return ModelType.NN_SURROGATE, {
                     'pressure': surrogate_pred['pressure'],
                     'reynolds': surrogate_pred['reynolds'],
@@ -338,9 +384,9 @@ class MLEnsemble:
 
     def _determine_flow_regime(self, reynolds: float) -> str:
         """Determine flow regime from Reynolds number"""
-        if reynolds < 2300:
+        if reynolds < REYNOLDS_LAMINAR_MAX:
             return "laminar"
-        elif reynolds < 4000:
+        elif reynolds < REYNOLDS_TRANSITIONAL_MAX:
             return "transitional"
         else:
             return "turbulent"

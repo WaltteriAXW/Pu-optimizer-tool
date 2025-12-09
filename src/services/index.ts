@@ -5,7 +5,7 @@
 
 // Calculation Service
 export { CalculationService, createCalculationService } from './CalculationService'
-export type { default as ICalculationService } from './CalculationService'
+export type { PyodideManager } from './CalculationService'
 
 // Validation Service
 export { ValidationService, createValidationService } from './ValidationService'

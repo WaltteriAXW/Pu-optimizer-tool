@@ -9,11 +9,42 @@
 
 import type { ProcessParameters, CalculationResults, CalculationError } from '@/models/types'
 
-export class CalculationService {
-  private pyodideManager: any // PyodideManager instance
-  private calculationCache: Map<string, CalculationResults> = new Map()
+/**
+ * Interface for PyodideManager to provide proper typing
+ */
+export interface PyodideManager {
+  callPython<T = unknown>(functionPath: string, args: unknown[]): Promise<T>
+  isReady(): boolean
+  loadPackage?(packageName: string): Promise<void>
+}
 
-  constructor(pyodideManager: any) {
+/**
+ * Result from Python calculation
+ */
+interface PythonCalculationResult {
+  success: boolean
+  errors?: string[]
+  warnings?: string[]
+  data?: CalculationResults
+}
+
+/**
+ * Result from machine compatibility check
+ */
+interface MachineCompatibilityResult {
+  is_compatible: boolean
+  warning?: string
+}
+
+/** Maximum number of cached calculations to prevent memory leaks */
+const MAX_CACHE_SIZE = 100
+
+export class CalculationService {
+  private pyodideManager: PyodideManager
+  private calculationCache: Map<string, CalculationResults> = new Map()
+  private cacheOrder: string[] = [] // Track insertion order for LRU eviction
+
+  constructor(pyodideManager: PyodideManager) {
     this.pyodideManager = pyodideManager
   }
 
@@ -40,9 +71,10 @@ export class CalculationService {
       }
 
       // Call Python backend
-      const result = await this.pyodideManager.callPython('calculation_processor.calculate_all', [
-        parameters
-      ])
+      const result = await this.pyodideManager.callPython<PythonCalculationResult>(
+        'calculation_processor.calculate_all',
+        [parameters]
+      )
 
       // Check for errors from Python
       if (!result.success) {
@@ -56,8 +88,8 @@ export class CalculationService {
 
       const calculationResult = result.data as CalculationResults
 
-      // Cache result
-      this.calculationCache.set(cacheKey, calculationResult)
+      // Cache result with LRU eviction
+      this.addToCache(cacheKey, calculationResult)
 
       return calculationResult
     } catch (error) {
@@ -107,7 +139,7 @@ export class CalculationService {
   ): Promise<{ compatible: boolean; message: string }> {
     try {
       // Call Python to check compatibility
-      const result = await this.pyodideManager.callPython(
+      const result = await this.pyodideManager.callPython<MachineCompatibilityResult>(
         'pressure.calculate_machine_compatibility',
         [pressureBar, { type: machineType }]
       )
@@ -130,20 +162,46 @@ export class CalculationService {
    */
   clearCache(): void {
     this.calculationCache.clear()
+    this.cacheOrder = []
+  }
+
+  /**
+   * Add item to cache with LRU eviction when cache exceeds MAX_CACHE_SIZE.
+   */
+  private addToCache(key: string, value: CalculationResults): void {
+    // Remove oldest entries if cache is full
+    while (this.cacheOrder.length >= MAX_CACHE_SIZE) {
+      const oldestKey = this.cacheOrder.shift()
+      if (oldestKey) {
+        this.calculationCache.delete(oldestKey)
+      }
+    }
+
+    // Add new entry
+    this.calculationCache.set(key, value)
+    this.cacheOrder.push(key)
   }
 
   /**
    * Create a unique cache key from parameters.
    * Used to avoid recalculating identical requests.
+   * Handles undefined values safely to prevent cache key collisions.
    */
   private createCacheKey(parameters: ProcessParameters): string {
+    const safeValue = (val: unknown): string => {
+      if (val === undefined || val === null) {
+        return '__null__'
+      }
+      return String(val)
+    }
+
     const key = [
-      parameters.pipe_length_mm,
-      parameters.pipe_diameter_mm,
-      parameters.material_key,
-      parameters.temperature_c,
-      parameters.flow_rate_lpm,
-      parameters.machine_type || 'high_pressure'
+      safeValue(parameters.pipe_length_mm),
+      safeValue(parameters.pipe_diameter_mm),
+      safeValue(parameters.material_key),
+      safeValue(parameters.temperature_c),
+      safeValue(parameters.flow_rate_lpm),
+      safeValue(parameters.machine_type) || 'high_pressure'
     ].join('|')
 
     return key
@@ -153,8 +211,18 @@ export class CalculationService {
    * Get last successful calculation (for referencing in UI).
    */
   getLastCalculation(): CalculationResults | null {
-    const cached = Array.from(this.calculationCache.values()).pop() || null
-    return cached
+    if (this.cacheOrder.length === 0) {
+      return null
+    }
+    const lastKey = this.cacheOrder[this.cacheOrder.length - 1]
+    return this.calculationCache.get(lastKey) || null
+  }
+
+  /**
+   * Get current cache size (useful for debugging/monitoring).
+   */
+  getCacheSize(): number {
+    return this.calculationCache.size
   }
 }
 
@@ -162,6 +230,6 @@ export class CalculationService {
  * Export a singleton instance factory.
  * The reducer/hooks will create an instance via this.
  */
-export function createCalculationService(pyodideManager: any): CalculationService {
+export function createCalculationService(pyodideManager: PyodideManager): CalculationService {
   return new CalculationService(pyodideManager)
 }
