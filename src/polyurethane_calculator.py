@@ -1,8 +1,12 @@
+import logging
 import numpy as np
 import json
 import os
 from datetime import datetime
 from pathlib import Path
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Try to import ML module (optional dependency)
 try:
@@ -10,7 +14,7 @@ try:
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
-    print("ML module not available - running without ML predictions")
+    logger.info("ML module not available - running without ML predictions")
 
 class ValidationError(Exception):
     """Custom exception for input validation errors"""
@@ -326,7 +330,7 @@ class PolyurethaneCalculator:
                     if ml_insights and ml_insights.get('trained'):
                         recommendations.extend(ml_insights.get('recommendations', []))
                 except Exception as e:
-                    print(f"ML prediction error: {e}")
+                    logger.warning(f"ML prediction error: {e}")
                     ml_insights = {'trained': False, 'error': str(e)}
 
             # Prepare comprehensive results
@@ -490,7 +494,7 @@ class PolyurethaneCalculator:
                 with open(log_path, 'r') as f:
                     logs = json.load(f)
             except json.JSONDecodeError:
-                print(f"Warning: Could not parse {log_path}, creating new log file")
+                logger.warning(f"Could not parse {log_path}, creating new log file")
                 logs = []
 
         # Append new entry
@@ -500,7 +504,7 @@ class PolyurethaneCalculator:
         with open(log_path, 'w') as f:
             json.dump(logs, f, indent=2)
 
-        print(f"✓ Production run logged to {log_path} (Total entries: {len(logs)})")
+        logger.info(f"Production run logged to {log_path} (Total entries: {len(logs)})")
 
         return {
             "logged": True,
@@ -545,7 +549,7 @@ class PolyurethaneCalculator:
                 with open(log_path, 'r') as f:
                     logs = json.load(f)
             except json.JSONDecodeError:
-                print(f"Warning: Could not parse {log_path}, creating new log file")
+                logger.warning(f"Could not parse {log_path}, creating new log file")
                 logs = []
 
         # Append new entry
@@ -555,7 +559,7 @@ class PolyurethaneCalculator:
         with open(log_path, 'w') as f:
             json.dump(logs, f, indent=2)
 
-        print(f"⚠ Quality issue logged to {log_path} (Total issues: {len(logs)})")
+        logger.warning(f"Quality issue logged to {log_path} (Total issues: {len(logs)})")
 
         return {
             "logged": True,

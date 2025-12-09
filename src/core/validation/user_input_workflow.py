@@ -294,8 +294,12 @@ class UserInputValidator:
                 ))
             else:
                 # Check if material exists in database
-                from src.core.data.materials_database import MaterialDatabase
-                material = MaterialDatabase.get_material(value)
+                try:
+                    from ..data.materials_database import MaterialDatabase
+                    material = MaterialDatabase.get_material(value)
+                except ImportError:
+                    # Fallback for different execution contexts
+                    material = None
                 if material is None:
                     if allow_custom_material:
                         warnings.append(InputError(

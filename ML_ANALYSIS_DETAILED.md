@@ -43,7 +43,7 @@ Both systems are well-architected but have significant opportunities for improve
 
 ---
 
-### 1.2 SelfTrainingPINN (ML-PINN-Model/self_training_pinn.py)
+### 1.2 SelfTrainingPINN (src/ML-PINN-Model/self_training_pinn.py)
 
 **Architecture:**
 - Custom neural networks (not using TensorFlow/PyTorch)
@@ -250,7 +250,7 @@ error = abs(pred[0, 0] - y_true_norm) * 100
 
 **Files:** 
 - `src/polyurethane_calculator.py` - Imports ML but mostly unused
-- `ML-PINN-Model/pinn_cli.py` - CLI interface with full PINN integration
+- `src/ML-PINN-Model/pinn_cli.py` - CLI interface with full PINN integration
 - `src/logging_example.py` - Demonstrates logging and retraining
 
 **Integration Status:**

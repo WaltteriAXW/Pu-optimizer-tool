@@ -4,11 +4,10 @@ Handles both laminar and turbulent flow regimes.
 """
 
 import math
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
-# Darcy friction factor constants (Swamee-Jain approximation)
-A_COEFFICIENT = 0.25
-B_COEFFICIENT = 5.74
+# Darcy friction factor constant (Swamee-Jain approximation)
+SWAMEE_JAIN_COEFFICIENT = 0.25
 
 
 def calculate_pressure_drop(
@@ -110,7 +109,7 @@ def swamee_jain_friction_factor(reynolds: float, relative_roughness: float) -> f
     if log_term == 0:
         return 0.032
 
-    friction_factor = A_COEFFICIENT / (log_term ** 2)
+    friction_factor = SWAMEE_JAIN_COEFFICIENT / (log_term ** 2)
 
     # Clamp to reasonable values
     return max(0.008, min(0.1, friction_factor))
