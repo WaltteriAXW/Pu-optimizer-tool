@@ -48,6 +48,96 @@ class ReactionCharacteristics:
 
 
 @dataclass
+class CureKineticsData:
+    """
+    Cure kinetics parameters for Avrami and Kamal-Sourour models.
+
+    These parameters are typically determined from DSC (Differential Scanning
+    Calorimetry) experiments and rheological measurements during cure.
+    """
+    # Kamal-Sourour model parameters (preferred for PU)
+    k1_ref: float = 0.0001       # Uncatalyzed rate constant at ref temp (s^-1)
+    k2_ref: float = 0.001        # Autocatalyzed rate constant at ref temp (s^-1)
+    m: float = 1.0               # Autocatalytic exponent (0.5-1.5 typical)
+    n: float = 1.5               # Reaction order (1-2 typical)
+
+    # Avrami model parameters (alternative)
+    avrami_k: float = 0.001      # Rate constant at reference temp (s^-n)
+    avrami_n: float = 2.0        # Avrami exponent (1.5-3 for PU)
+
+    # Temperature dependence (Arrhenius)
+    activation_energy_k1: float = 50000   # Ea for k1 (J/mol)
+    activation_energy_k2: float = 45000   # Ea for k2 (J/mol)
+
+    # Gel point
+    gel_conversion: float = 0.65  # Conversion at gel point (0.6-0.7 typical)
+
+
+@dataclass
+class ViscosityConversionData:
+    """
+    Castro-Macosko viscosity-conversion coupling parameters.
+
+    η(α, T) = η₀(T) × (αg / (αg - α))^(A + B×α)
+
+    Determines how viscosity rises during cure reaction.
+    Critical for processing window prediction.
+    """
+    # Castro-Macosko exponents
+    A: float = 2.0               # Primary exponent (1-3 typical)
+    B: float = 2.5               # Conversion-dependent exponent (1-4 typical)
+
+    # Processing limits
+    max_processable_viscosity_pa_s: float = 100.0  # Beyond this, no flow
+    critical_conversion: float = 0.50              # Practical limit for processing
+
+
+@dataclass
+class ThermalReactionData:
+    """
+    Thermal reaction parameters for exotherm modeling.
+
+    ΔT_max = (ΔH_r × ρ) / C_p × α_max
+
+    Determines heat generation during cure and scorch risk.
+    """
+    # Heat of reaction
+    heat_of_reaction_j_kg: float = 100000  # ΔH_r (80-120 kJ/kg typical for PU)
+
+    # Material thermal properties
+    specific_heat_j_kg_k: float = 1800     # C_p (1500-2000 for PU)
+    thermal_conductivity_w_m_k: float = 0.2  # k (0.15-0.25 for PU)
+
+    # Degradation thresholds
+    scorch_temp_c: float = 180.0           # Temperature causing visible degradation
+    degradation_temp_c: float = 220.0      # Temperature causing severe degradation
+
+
+@dataclass
+class FoamKineticsData:
+    """
+    Foam-specific kinetics parameters.
+
+    For foam rise, density distribution, and cell structure prediction.
+    """
+    # Foam rise parameters
+    rise_time_constant_s: float = 30.0     # τ - characteristic rise time
+
+    # Density distribution
+    skin_density_kg_m3: float = 800.0      # Density at surface
+    core_density_kg_m3: float = 35.0       # Density in core
+    skin_thickness_mm: float = 2.0         # Characteristic skin depth
+
+    # Cell nucleation parameters
+    surface_tension_n_m: float = 0.025     # γ (0.02-0.03 for PU)
+    supersaturation_pa: float = 500000     # ΔP (0.5-2 MPa typical)
+    target_cell_diameter_um: float = 200   # Target cell size (100-500 μm)
+
+    # Gas thermal properties
+    gas_thermal_conductivity_w_m_k: float = 0.012  # Blowing gas k
+
+
+@dataclass
 class PolymerProperties:
     """Properties of cured foam at index 100"""
     molded_density_min_kg_m3: float
@@ -129,6 +219,12 @@ class PolyurethaneMaterial:
     activation_energy_j_mol: float = 25000  # Typical: 15,000-40,000
     reference_temp_k: float = 298.15  # 25°C in Kelvin
 
+    # Kinetics parameters (Phase 4 - Kinetics Extension)
+    cure_kinetics: Optional[CureKineticsData] = None
+    viscosity_conversion: Optional[ViscosityConversionData] = None
+    thermal_reaction: Optional[ThermalReactionData] = None
+    foam_kinetics: Optional[FoamKineticsData] = None
+
     # Quality & performance
     fire_rating: str = "UNI EN 13501-1:2019 Class E"
     notes: str = ""
@@ -205,6 +301,40 @@ GENFOAM_HD12 = PolyurethaneMaterial(
     yield_stress_pa=2.0,  # Estimated for water-blown
     activation_energy_j_mol=24000,
 
+    # Kinetics parameters calibrated to cream/gel times
+    cure_kinetics=CureKineticsData(
+        k1_ref=0.00015,       # Calibrated for 55s cream time
+        k2_ref=0.0008,        # Calibrated for 135s gel time
+        m=1.0,
+        n=1.5,
+        activation_energy_k1=50000,
+        activation_energy_k2=45000,
+        gel_conversion=0.65,
+    ),
+    viscosity_conversion=ViscosityConversionData(
+        A=2.0,
+        B=2.5,
+        max_processable_viscosity_pa_s=100.0,
+        critical_conversion=0.50,
+    ),
+    thermal_reaction=ThermalReactionData(
+        heat_of_reaction_j_kg=95000,   # Water-blown, moderate exotherm
+        specific_heat_j_kg_k=1800,
+        thermal_conductivity_w_m_k=0.20,
+        scorch_temp_c=180.0,
+        degradation_temp_c=220.0,
+    ),
+    foam_kinetics=FoamKineticsData(
+        rise_time_constant_s=40.0,     # Slower rise for water-blown
+        skin_density_kg_m3=800.0,
+        core_density_kg_m3=205.0,      # Higher core density
+        skin_thickness_mm=2.5,
+        surface_tension_n_m=0.028,
+        supersaturation_pa=400000,
+        target_cell_diameter_um=250,
+        gas_thermal_conductivity_w_m_k=0.026,  # Water/CO2 higher k
+    ),
+
     notes="Water-blown polyurethane. Standard density range suitable for molding."
 )
 
@@ -275,6 +405,40 @@ GENFOAM_HD20 = PolyurethaneMaterial(
     consistency_coefficient_pa_s=0.85,
     yield_stress_pa=2.0,
     activation_energy_j_mol=24000,
+
+    # Kinetics parameters calibrated to cream/gel times
+    cure_kinetics=CureKineticsData(
+        k1_ref=0.00015,       # Same as HD12
+        k2_ref=0.0008,
+        m=1.0,
+        n=1.5,
+        activation_energy_k1=50000,
+        activation_energy_k2=45000,
+        gel_conversion=0.65,
+    ),
+    viscosity_conversion=ViscosityConversionData(
+        A=2.0,
+        B=2.5,
+        max_processable_viscosity_pa_s=100.0,
+        critical_conversion=0.50,
+    ),
+    thermal_reaction=ThermalReactionData(
+        heat_of_reaction_j_kg=95000,
+        specific_heat_j_kg_k=1800,
+        thermal_conductivity_w_m_k=0.20,
+        scorch_temp_c=180.0,
+        degradation_temp_c=220.0,
+    ),
+    foam_kinetics=FoamKineticsData(
+        rise_time_constant_s=40.0,
+        skin_density_kg_m3=850.0,
+        core_density_kg_m3=302.5,      # Higher core density than HD12
+        skin_thickness_mm=2.5,
+        surface_tension_n_m=0.028,
+        supersaturation_pa=400000,
+        target_cell_diameter_um=220,   # Slightly smaller cells
+        gas_thermal_conductivity_w_m_k=0.026,
+    ),
 
     notes="Water-blown polyurethane. Higher density than HD12. Suitable for molding."
 )
@@ -354,6 +518,40 @@ ECOMATE_SPRAY = PolyurethaneMaterial(
     yield_stress_pa=0.5,  # Very low yield stress
     activation_energy_j_mol=24000,  # Similar to other systems
 
+    # Kinetics parameters - VERY FAST system
+    cure_kinetics=CureKineticsData(
+        k1_ref=0.003,         # Very high for 3s cream time
+        k2_ref=0.015,         # Very high for 10s gel time
+        m=1.2,                # Higher autocatalytic effect
+        n=1.3,
+        activation_energy_k1=45000,   # Lower Ea for faster kinetics
+        activation_energy_k2=40000,
+        gel_conversion=0.60,  # Earlier gel for spray
+    ),
+    viscosity_conversion=ViscosityConversionData(
+        A=1.8,                # Lower exponents for faster buildup
+        B=3.0,
+        max_processable_viscosity_pa_s=50.0,  # Lower limit for spray
+        critical_conversion=0.40,
+    ),
+    thermal_reaction=ThermalReactionData(
+        heat_of_reaction_j_kg=110000,  # Higher for ecomate system
+        specific_heat_j_kg_k=1700,
+        thermal_conductivity_w_m_k=0.18,
+        scorch_temp_c=170.0,           # Lower threshold for spray
+        degradation_temp_c=210.0,
+    ),
+    foam_kinetics=FoamKineticsData(
+        rise_time_constant_s=5.0,      # Very fast rise
+        skin_density_kg_m3=600.0,
+        core_density_kg_m3=30.4,       # Low density spray foam
+        skin_thickness_mm=1.5,
+        surface_tension_n_m=0.022,
+        supersaturation_pa=600000,     # Higher supersaturation
+        target_cell_diameter_um=180,   # Smaller cells
+        gas_thermal_conductivity_w_m_k=0.011,  # Ecomate low k
+    ),
+
     fire_rating="UNI EN 13501-1:2019 Class E",
     notes="Spray foam with zero GWP. Ultra-low viscosity for spray application. Very fast reaction (3s cream time)."
 )
@@ -427,6 +625,40 @@ ECOFOAM_XHD_RC = PolyurethaneMaterial(
     yield_stress_pa=5.0,  # Higher yield stress
     activation_energy_j_mol=28000,  # Slightly higher for rigid foam
 
+    # Kinetics parameters - Moderate speed, rigid cell
+    cure_kinetics=CureKineticsData(
+        k1_ref=0.0008,        # Calibrated for 10s cream time
+        k2_ref=0.004,         # Calibrated for 30s gel time
+        m=1.0,
+        n=1.5,
+        activation_energy_k1=52000,   # Higher Ea for rigid foam
+        activation_energy_k2=48000,
+        gel_conversion=0.68,  # Higher gel conversion for rigid
+    ),
+    viscosity_conversion=ViscosityConversionData(
+        A=2.2,                # Higher exponents for rigid foam
+        B=2.8,
+        max_processable_viscosity_pa_s=150.0,  # Higher limit for molding
+        critical_conversion=0.55,
+    ),
+    thermal_reaction=ThermalReactionData(
+        heat_of_reaction_j_kg=105000,  # High exotherm
+        specific_heat_j_kg_k=1750,
+        thermal_conductivity_w_m_k=0.19,
+        scorch_temp_c=175.0,
+        degradation_temp_c=215.0,
+    ),
+    foam_kinetics=FoamKineticsData(
+        rise_time_constant_s=15.0,     # Moderate rise
+        skin_density_kg_m3=900.0,      # High skin density for structural
+        core_density_kg_m3=42.5,
+        skin_thickness_mm=3.0,         # Thicker skin
+        surface_tension_n_m=0.024,
+        supersaturation_pa=550000,
+        target_cell_diameter_um=150,   # Small cells for good properties
+        gas_thermal_conductivity_w_m_k=0.011,
+    ),
+
     fire_rating="UNI EN 13501-1:2019 Class E",
     notes="High-density closed-cell foam with excellent insulation (RC = Rigid Cell). Zero GWP. Requires hot mold (35-45°C). High compressive strength for structural applications."
 )
@@ -495,6 +727,79 @@ class MaterialDatabase:
                     'consistency_coeff': mat.consistency_coefficient_pa_s,
                 }
         return comparison
+
+    @classmethod
+    def get_kinetics_parameters(cls, material_key: str) -> Optional[Dict[str, Any]]:
+        """
+        Get all kinetics parameters for a material.
+
+        Returns dict with cure_kinetics, viscosity_conversion,
+        thermal_reaction, and foam_kinetics data.
+        """
+        mat = cls.get_material(material_key)
+        if not mat:
+            return None
+
+        result = {
+            'material_key': material_key,
+            'name': mat.name,
+            'cream_time_s': mat.reaction_characteristics.cream_time_s,
+            'gel_time_s': mat.reaction_characteristics.gel_time_s,
+            'free_rise_density_kg_m3': mat.reaction_characteristics.free_rise_density_kg_m3,
+            'reference_temp_c': mat.reaction_characteristics.reference_temp_c,
+        }
+
+        if mat.cure_kinetics:
+            result['cure_kinetics'] = {
+                'k1_ref': mat.cure_kinetics.k1_ref,
+                'k2_ref': mat.cure_kinetics.k2_ref,
+                'm': mat.cure_kinetics.m,
+                'n': mat.cure_kinetics.n,
+                'avrami_k': mat.cure_kinetics.avrami_k,
+                'avrami_n': mat.cure_kinetics.avrami_n,
+                'activation_energy_k1': mat.cure_kinetics.activation_energy_k1,
+                'activation_energy_k2': mat.cure_kinetics.activation_energy_k2,
+                'gel_conversion': mat.cure_kinetics.gel_conversion,
+            }
+
+        if mat.viscosity_conversion:
+            result['viscosity_conversion'] = {
+                'A': mat.viscosity_conversion.A,
+                'B': mat.viscosity_conversion.B,
+                'max_processable_viscosity_pa_s': mat.viscosity_conversion.max_processable_viscosity_pa_s,
+                'critical_conversion': mat.viscosity_conversion.critical_conversion,
+            }
+
+        if mat.thermal_reaction:
+            result['thermal_reaction'] = {
+                'heat_of_reaction_j_kg': mat.thermal_reaction.heat_of_reaction_j_kg,
+                'specific_heat_j_kg_k': mat.thermal_reaction.specific_heat_j_kg_k,
+                'thermal_conductivity_w_m_k': mat.thermal_reaction.thermal_conductivity_w_m_k,
+                'scorch_temp_c': mat.thermal_reaction.scorch_temp_c,
+                'degradation_temp_c': mat.thermal_reaction.degradation_temp_c,
+            }
+
+        if mat.foam_kinetics:
+            result['foam_kinetics'] = {
+                'rise_time_constant_s': mat.foam_kinetics.rise_time_constant_s,
+                'skin_density_kg_m3': mat.foam_kinetics.skin_density_kg_m3,
+                'core_density_kg_m3': mat.foam_kinetics.core_density_kg_m3,
+                'skin_thickness_mm': mat.foam_kinetics.skin_thickness_mm,
+                'surface_tension_n_m': mat.foam_kinetics.surface_tension_n_m,
+                'supersaturation_pa': mat.foam_kinetics.supersaturation_pa,
+                'target_cell_diameter_um': mat.foam_kinetics.target_cell_diameter_um,
+                'gas_thermal_conductivity_w_m_k': mat.foam_kinetics.gas_thermal_conductivity_w_m_k,
+            }
+
+        return result
+
+    @classmethod
+    def get_materials_with_kinetics(cls) -> Dict[str, str]:
+        """Get all materials that have kinetics data defined"""
+        return {
+            key: mat.name for key, mat in cls.MATERIALS.items()
+            if mat.cure_kinetics is not None
+        }
 
 
 # Convenience access
