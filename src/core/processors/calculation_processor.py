@@ -16,32 +16,14 @@ import sys
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-# Import calculation modules
+# Import core calculation modules (required)
 try:
     from ..modules import pressure, thermal, flow, environmental
     from ..constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
     from ..validation import validate_parameters
-    from ..kinetics import (
-        CureKinetics,
-        CureKineticsParameters,
-        CastroMacoskoModel,
-        ViscosityConversionParameters,
-        LumpedThermalModel,
-        ThermalReactionParameters,
-        FoamRiseModel,
-        FoamKineticsParameters,
-        calculate_processing_window,
-        calculate_reactive_viscosity,
-        calculate_exotherm_rise,
-        predict_scorch_risk,
-        calculate_foam_rise,
-    )
-    KINETICS_AVAILABLE = True
+    CORE_IMPORTS_OK = True
 except ImportError:
-    KINETICS_AVAILABLE = False
-
-# Fallback imports for different paths
-if not KINETICS_AVAILABLE:
+    # Fallback for different import paths (e.g., direct execution)
     try:
         import pressure
         import thermal
@@ -49,9 +31,33 @@ if not KINETICS_AVAILABLE:
         import environmental
         from constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
         from validation import validate_parameters
-        KINETICS_AVAILABLE = False
+        CORE_IMPORTS_OK = True
     except ImportError:
-        pass
+        CORE_IMPORTS_OK = False
+
+# Import kinetics modules (optional extension)
+KINETICS_AVAILABLE = False
+if CORE_IMPORTS_OK:
+    try:
+        from ..kinetics import (
+            CureKinetics,
+            CureKineticsParameters,
+            CastroMacoskoModel,
+            ViscosityConversionParameters,
+            LumpedThermalModel,
+            ThermalReactionParameters,
+            FoamRiseModel,
+            FoamKineticsParameters,
+            calculate_processing_window,
+            calculate_reactive_viscosity,
+            calculate_exotherm_rise,
+            predict_scorch_risk,
+            calculate_foam_rise,
+        )
+        KINETICS_AVAILABLE = True
+    except ImportError:
+        # Kinetics not available - core functionality still works
+        KINETICS_AVAILABLE = False
 
 
 class CalculationProcessor:
