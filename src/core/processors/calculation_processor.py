@@ -4,6 +4,12 @@ This is the PRIMARY interface for all calculations.
 Called from JavaScript via Pyodide.
 
 Single Source of Truth for polyurethane process calculations.
+
+Phase 4 Extension: Includes reaction kinetics calculations:
+- Cure kinetics (Avrami, Kamal-Sourour)
+- Viscosity-conversion coupling (Castro-Macosko)
+- Thermal reaction (exotherm, scorch risk)
+- Foam kinetics (rise, density, cell size)
 """
 
 import sys
@@ -15,14 +21,37 @@ try:
     from ..modules import pressure, thermal, flow, environmental
     from ..constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
     from ..validation import validate_parameters
-except ImportError as e:
-    # Fallback for different import paths
-    import pressure
-    import thermal
-    import flow
-    import environmental
-    from constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
-    from validation import validate_parameters
+    from ..kinetics import (
+        CureKinetics,
+        CureKineticsParameters,
+        CastroMacoskoModel,
+        ViscosityConversionParameters,
+        LumpedThermalModel,
+        ThermalReactionParameters,
+        FoamRiseModel,
+        FoamKineticsParameters,
+        calculate_processing_window,
+        calculate_reactive_viscosity,
+        calculate_exotherm_rise,
+        predict_scorch_risk,
+        calculate_foam_rise,
+    )
+    KINETICS_AVAILABLE = True
+except ImportError:
+    KINETICS_AVAILABLE = False
+
+# Fallback imports for different paths
+if not KINETICS_AVAILABLE:
+    try:
+        import pressure
+        import thermal
+        import flow
+        import environmental
+        from constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
+        from validation import validate_parameters
+        KINETICS_AVAILABLE = False
+    except ImportError:
+        pass
 
 
 class CalculationProcessor:
@@ -244,6 +273,183 @@ class CalculationProcessor:
         """Get material properties from presets."""
         return self.material_presets.get(material_key)
 
+    def calculate_kinetics(
+        self,
+        material_key: str,
+        temperature_c: float,
+        time_s: float = 0.0,
+        part_thickness_mm: float = 20.0,
+        mold_temp_c: Optional[float] = None,
+        initial_viscosity_pa_s: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Calculate reaction kinetics for polyurethane processing.
+
+        This is the KINETICS entry point for reactive calculations.
+
+        Args:
+            material_key: Material identifier
+            temperature_c: Process temperature (°C)
+            time_s: Time since mixing (seconds), 0 for initial state
+            part_thickness_mm: Part thickness for exotherm calculations
+            mold_temp_c: Mold temperature (uses material default if None)
+            initial_viscosity_pa_s: Override initial viscosity
+
+        Returns:
+            Dict with kinetics results including:
+            - cure_state: Current cure state
+            - processing_window: Available processing time
+            - reactive_viscosity: Viscosity accounting for cure
+            - exotherm: Temperature rise prediction
+            - foam_rise: Foam expansion state (for foam materials)
+        """
+        if not KINETICS_AVAILABLE:
+            return {
+                'success': False,
+                'error': 'Kinetics module not available',
+                'data': None,
+            }
+
+        try:
+            # Get material properties
+            material = self._get_material_properties(material_key)
+            if material is None:
+                return {
+                    'success': False,
+                    'error': f'Material "{material_key}" not found',
+                    'data': None,
+                }
+
+            # Get kinetics parameters from material or use defaults
+            kinetics_data = material.get('kinetics', {})
+
+            # Build cure kinetics parameters
+            cure_params = CureKineticsParameters(
+                k1_ref=kinetics_data.get('k1_ref', 0.0001),
+                k2_ref=kinetics_data.get('k2_ref', 0.001),
+                m=kinetics_data.get('m', 1.0),
+                n=kinetics_data.get('n', 1.5),
+                activation_energy_k1=kinetics_data.get('activation_energy_k1', 50000),
+                activation_energy_k2=kinetics_data.get('activation_energy_k2', 45000),
+                gel_conversion=kinetics_data.get('gel_conversion', 0.65),
+                cream_time_ref_s=material.get('cream_time', 50),
+                gel_time_ref_s=material.get('gel_time', 150),
+            )
+
+            # Initialize cure kinetics model
+            cure_model = CureKinetics(cure_params)
+
+            # Get cure state at current time
+            cure_state = cure_model.get_cure_state(time_s, temperature_c)
+
+            # Calculate processing window
+            proc_window = cure_model.processing_window(temperature_c)
+
+            # Build viscosity-conversion parameters
+            visc_params = ViscosityConversionParameters(
+                A=kinetics_data.get('castro_macosko_A', 2.0),
+                B=kinetics_data.get('castro_macosko_B', 2.5),
+                gel_conversion=kinetics_data.get('gel_conversion', 0.65),
+                initial_viscosity_pa_s=initial_viscosity_pa_s or material.get('viscosity', 500) / 1000,
+            )
+
+            # Initialize Castro-Macosko model
+            viscosity_model = CastroMacoskoModel(visc_params, cure_params)
+
+            # Calculate reactive viscosity
+            reactive_visc = viscosity_model.viscosity_from_time(time_s, temperature_c)
+            visc_ratio = viscosity_model.viscosity_ratio(cure_state.conversion, temperature_c)
+
+            # Build thermal reaction parameters
+            effective_mold_temp = mold_temp_c or material.get('mold_temp_min', 40)
+            thermal_params = ThermalReactionParameters(
+                heat_of_reaction_j_kg=kinetics_data.get('heat_of_reaction', 100000),
+                density_kg_m3=material.get('density', 1100),
+                specific_heat_j_kg_k=kinetics_data.get('specific_heat', 1800),
+                thermal_conductivity_w_m_k=kinetics_data.get('thermal_conductivity', 0.2),
+                heat_transfer_coeff_w_m2_k=kinetics_data.get('heat_transfer_coeff', 100),
+                mold_temperature_c=effective_mold_temp,
+                part_thickness_mm=part_thickness_mm,
+                scorch_temp_c=kinetics_data.get('scorch_temp', 180),
+                initial_temp_c=temperature_c,
+            )
+
+            # Calculate exotherm
+            adiabatic_rise = calculate_exotherm_rise(
+                heat_of_reaction_j_kg=thermal_params.heat_of_reaction_j_kg,
+                specific_heat_j_kg_k=thermal_params.specific_heat_j_kg_k,
+                conversion=cure_state.conversion,
+            )
+
+            # Scorch risk prediction
+            scorch_analysis = predict_scorch_risk(
+                part_thickness_mm=part_thickness_mm,
+                mold_temp_c=effective_mold_temp,
+                heat_of_reaction_j_kg=thermal_params.heat_of_reaction_j_kg,
+                cure_params=cure_params,
+            )
+
+            # Foam rise calculation (if foam material)
+            foam_data = None
+            free_rise_density = material.get('free_rise_density')
+            if free_rise_density and free_rise_density < 500:  # Foam material
+                foam_params = FoamKineticsParameters(
+                    cream_time_s=material.get('cream_time', 10),
+                    rise_time_constant_s=kinetics_data.get('rise_time_constant', 30),
+                    free_rise_density_kg_m3=free_rise_density,
+                    initial_density_kg_m3=material.get('density', 1100),
+                )
+                foam_model = FoamRiseModel(foam_params, cure_params)
+                foam_state = foam_model.get_rise_state(time_s, temperature_c)
+                foam_data = {
+                    'height_fraction': foam_state.height_fraction,
+                    'density_kg_m3': foam_state.density_kg_m3,
+                    'rise_rate_mm_s': foam_state.rise_rate_mm_s,
+                    'is_cream_started': foam_state.is_cream_started,
+                    'is_rise_complete': foam_state.is_rise_complete,
+                }
+
+            # Compile results
+            result = {
+                'success': True,
+                'data': {
+                    'cure_state': {
+                        'time_s': cure_state.time_s,
+                        'conversion': cure_state.conversion,
+                        'conversion_rate': cure_state.conversion_rate,
+                        'is_gelled': cure_state.is_gelled,
+                        'is_cream_started': cure_state.is_cream_started,
+                        'time_to_gel_s': cure_state.time_to_gel_s,
+                        'viscosity_factor': cure_state.viscosity_factor,
+                    },
+                    'processing_window': proc_window,
+                    'reactive_viscosity': {
+                        'viscosity_pa_s': reactive_visc,
+                        'viscosity_cp': reactive_visc * 1000,
+                        'viscosity_ratio': visc_ratio,
+                        'initial_viscosity_pa_s': visc_params.initial_viscosity_pa_s,
+                    },
+                    'exotherm': {
+                        'adiabatic_rise_c': adiabatic_rise,
+                        'peak_temperature_c': scorch_analysis.get('peak_temperature_c'),
+                        'scorch_risk': scorch_analysis.get('scorch_risk'),
+                        'scorch_margin_c': scorch_analysis.get('scorch_margin_c'),
+                    },
+                    'foam_rise': foam_data,
+                    'temperature_c': temperature_c,
+                    'material_key': material_key,
+                },
+            }
+
+            return result
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Kinetics calculation error: {str(e)}',
+                'data': None,
+            }
+
     def _generate_warnings(
         self,
         flow_result: Dict,
@@ -312,8 +518,43 @@ class CalculationProcessor:
             return False
 
 
-# Convenience function for direct Python use
+# Convenience functions for direct Python use
 def calculate_all(parameters: Dict[str, Any]) -> Dict[str, Any]:
     """Convenience function for direct Python imports."""
     processor = CalculationProcessor()
     return processor.calculate_all(parameters)
+
+
+def calculate_kinetics(
+    material_key: str,
+    temperature_c: float,
+    time_s: float = 0.0,
+    part_thickness_mm: float = 20.0,
+    mold_temp_c: Optional[float] = None,
+) -> Dict[str, Any]:
+    """
+    Convenience function for kinetics calculations.
+
+    Args:
+        material_key: Material identifier
+        temperature_c: Process temperature (°C)
+        time_s: Time since mixing (seconds)
+        part_thickness_mm: Part thickness for exotherm
+        mold_temp_c: Mold temperature (optional)
+
+    Returns:
+        Dict with kinetics results
+    """
+    processor = CalculationProcessor()
+    return processor.calculate_kinetics(
+        material_key=material_key,
+        temperature_c=temperature_c,
+        time_s=time_s,
+        part_thickness_mm=part_thickness_mm,
+        mold_temp_c=mold_temp_c,
+    )
+
+
+def is_kinetics_available() -> bool:
+    """Check if kinetics module is available."""
+    return KINETICS_AVAILABLE
