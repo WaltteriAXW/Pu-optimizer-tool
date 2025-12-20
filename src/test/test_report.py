@@ -9,7 +9,7 @@ import csv
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from report import ReportGenerator, SummaryReportBuilder, generate_report
+from ..report import ReportGenerator, SummaryReportBuilder, generate_report
 
 
 # Sample data fixtures

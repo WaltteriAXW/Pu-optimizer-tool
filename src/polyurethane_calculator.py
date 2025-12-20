@@ -1,3 +1,33 @@
+"""
+Main Polyurethane Injection Calculator Interface
+
+Provides the primary user-facing calculation interface that combines
+all core modules and optional ML optimization:
+
+- Material property lookup and selection
+- Flow calculations (Reynolds, shear rate, velocity)
+- Pressure analysis (required, optimal, constraints)
+- Thermal modeling (temperature rise, heat generation)
+- ML-based predictions (quality, defects, optimal parameters)
+- Process optimization and parameter recommendation
+- Machine compatibility verification
+
+This module serves as the main entry point for the complete optimization system,
+coordinating between core physics calculations and machine learning models.
+
+Example:
+    >>> from polyurethane_calculator import calculate_all_parameters
+    >>> result = calculate_all_parameters(
+    ...     pipe_length_mm=500,
+    ...     pipe_diameter_mm=12,
+    ...     material_key='ecofoam_standard',
+    ...     temperature_c=25,
+    ...     flow_rate_lpm=1.5
+    ... )
+    >>> if result['success']:
+    ...     print(f"Pressure: {result['data']['pressure']['required_pressure_bar']} bar")
+"""
+
 import logging
 import numpy as np
 import json

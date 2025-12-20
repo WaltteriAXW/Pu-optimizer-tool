@@ -5,7 +5,8 @@ Tests shear rate, viscosity, and Reynolds number calculations.
 
 import pytest
 import math
-from flow import (
+from . import flow
+from .flow import (
     calculate_shear_rate,
     calculate_apparent_viscosity_power_law,
     calculate_reynolds_number,
