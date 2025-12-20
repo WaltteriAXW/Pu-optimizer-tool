@@ -4,7 +4,8 @@ Tests environmental impact calculations and material comparisons.
 """
 
 import pytest
-from environmental import (
+from . import environmental
+from .environmental import (
     calculate_environmental_impact,
     compare_materials,
     estimate_co2_offset_equivalent,

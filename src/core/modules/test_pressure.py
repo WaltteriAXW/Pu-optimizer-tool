@@ -5,7 +5,8 @@ Tests Darcy-Weisbach equation, friction factor, and machine compatibility.
 
 import pytest
 import math
-from pressure import (
+from . import pressure
+from .pressure import (
     calculate_pressure_drop,
     swamee_jain_friction_factor,
     calculate_pressure_with_fittings,

@@ -5,7 +5,8 @@ Validates all material specifications and database functionality.
 """
 
 import pytest
-from materials_database import (
+from . import materials_database
+from .materials_database import (
     MaterialDatabase,
     get_material,
     list_materials,

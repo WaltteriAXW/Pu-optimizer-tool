@@ -4,7 +4,8 @@ Tests for Advanced Non-Newtonian Fluid Models
 
 import math
 import pytest
-from advanced_fluid_models import (
+from . import advanced_fluid_models
+from .advanced_fluid_models import (
     NonNewtonianFluidModel,
     RheologicalProperties
 )

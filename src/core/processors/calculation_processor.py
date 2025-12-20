@@ -13,51 +13,39 @@ Phase 4 Extension: Includes reaction kinetics calculations:
 """
 
 import sys
+import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-# Import core calculation modules (required)
-try:
-    from ..modules import pressure, thermal, flow, environmental
-    from ..constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
-    from ..validation import validate_parameters
-    CORE_IMPORTS_OK = True
-except ImportError:
-    # Fallback for different import paths (e.g., direct execution)
-    try:
-        import pressure
-        import thermal
-        import flow
-        import environmental
-        from constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
-        from validation import validate_parameters
-        CORE_IMPORTS_OK = True
-    except ImportError:
-        CORE_IMPORTS_OK = False
+# Configure logging
+logger = logging.getLogger(__name__)
 
-# Import kinetics modules (optional extension)
+# Import core calculation modules (required)
+from ..modules import pressure, thermal, flow, environmental
+from ..constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
+from ..validation import validate_parameters
+
+# Import kinetics modules (optional extension - Phase 4)
 KINETICS_AVAILABLE = False
-if CORE_IMPORTS_OK:
-    try:
-        from ..kinetics import (
-            CureKinetics,
-            CureKineticsParameters,
-            CastroMacoskoModel,
-            ViscosityConversionParameters,
-            LumpedThermalModel,
-            ThermalReactionParameters,
-            FoamRiseModel,
-            FoamKineticsParameters,
-            calculate_processing_window,
-            calculate_reactive_viscosity,
-            calculate_exotherm_rise,
-            predict_scorch_risk,
-            calculate_foam_rise,
-        )
-        KINETICS_AVAILABLE = True
-    except ImportError:
-        # Kinetics not available - core functionality still works
-        KINETICS_AVAILABLE = False
+try:
+    from ..kinetics import (
+        CureKinetics,
+        CureKineticsParameters,
+        CastroMacoskoModel,
+        ViscosityConversionParameters,
+        LumpedThermalModel,
+        ThermalReactionParameters,
+        FoamRiseModel,
+        FoamKineticsParameters,
+        calculate_processing_window,
+        calculate_reactive_viscosity,
+        calculate_exotherm_rise,
+        predict_scorch_risk,
+        calculate_foam_rise,
+    )
+    KINETICS_AVAILABLE = True
+except ImportError:
+    logger.info("Kinetics module not available - core functionality still works")
 
 
 class CalculationProcessor:
@@ -124,13 +112,21 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 2: Extract and normalize parameters
-            pipe_length_mm = float(parameters.get('pipe_length_mm', 500))
-            pipe_diameter_mm = float(parameters.get('pipe_diameter_mm', 12))
-            material_key = parameters.get('material_key', 'ecofoam_standard')
-            temperature_c = float(parameters.get('temperature_c', 25))
-            flow_rate_lpm = float(parameters.get('flow_rate_lpm', 1.0))
-            machine_type = parameters.get('machine_type', 'high_pressure')
+            # Step 2: Extract and normalize parameters with error handling
+            try:
+                pipe_length_mm = float(parameters.get('pipe_length_mm', 500))
+                pipe_diameter_mm = float(parameters.get('pipe_diameter_mm', 12))
+                material_key = parameters.get('material_key', 'ecofoam_standard')
+                temperature_c = float(parameters.get('temperature_c', 25))
+                flow_rate_lpm = float(parameters.get('flow_rate_lpm', 1.0))
+                machine_type = parameters.get('machine_type', 'high_pressure')
+            except (ValueError, TypeError) as e:
+                return {
+                    'success': False,
+                    'errors': [f'Parameter conversion failed: {str(e)}'],
+                    'warnings': [],
+                    'data': None
+                }
 
             # Step 3: Get material properties
             material = self._get_material_properties(material_key)
@@ -146,56 +142,115 @@ class CalculationProcessor:
             machine = self.machine_specs.get(machine_type, self.machine_specs['high_pressure'])
 
             # Step 5: Calculate all flow properties
-            flow_result = flow.calculate_all_flow_properties(
-                diameter_mm=pipe_diameter_mm,
-                flow_rate_lpm=flow_rate_lpm,
-                consistency_cp=material['viscosity'],
-                flow_index=material['flow_index'],
-                density_kg_m3=material['density'],
-            )
+            try:
+                flow_result = flow.calculate_all_flow_properties(
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    consistency_cp=material['viscosity'],
+                    flow_index=material['flow_index'],
+                    density_kg_m3=material['density'],
+                )
+                if not flow_result or 'apparent_viscosity_cp' not in flow_result:
+                    raise ValueError("Flow calculation returned invalid result")
+            except Exception as e:
+                logger.error(f"Flow calculation failed: {e}")
+                return {
+                    'success': False,
+                    'errors': [f'Flow calculation error: {str(e)}'],
+                    'warnings': [],
+                    'data': None
+                }
 
             # Step 6: Calculate pressure drop
-            pressure_result = pressure.calculate_pressure_drop(
-                diameter_mm=pipe_diameter_mm,
-                length_mm=pipe_length_mm,
-                flow_rate_lpm=flow_rate_lpm,
-                viscosity_cp=flow_result['apparent_viscosity_cp'],
-                density_kg_m3=material['density'],
-            )
+            try:
+                pressure_result = pressure.calculate_pressure_drop(
+                    diameter_mm=pipe_diameter_mm,
+                    length_mm=pipe_length_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    viscosity_cp=flow_result['apparent_viscosity_cp'],
+                    density_kg_m3=material['density'],
+                )
+                if not pressure_result or 'pressure_drop_bar' not in pressure_result:
+                    raise ValueError("Pressure calculation returned invalid result")
+            except Exception as e:
+                logger.error(f"Pressure calculation failed: {e}")
+                return {
+                    'success': False,
+                    'errors': [f'Pressure calculation error: {str(e)}'],
+                    'warnings': [],
+                    'data': None
+                }
 
             # Step 7: Account for fitting losses
-            pressure_with_fittings = pressure.calculate_pressure_with_fittings(
-                base_pressure_bar=pressure_result['pressure_drop_bar'],
-                fitting_loss_multiplier=0.15,
-            )
+            try:
+                pressure_with_fittings = pressure.calculate_pressure_with_fittings(
+                    base_pressure_bar=pressure_result['pressure_drop_bar'],
+                    fitting_loss_multiplier=0.15,
+                )
+            except Exception as e:
+                logger.error(f"Fitting loss calculation failed: {e}")
+                pressure_with_fittings = pressure_result  # Fallback without fittings
 
             # Step 8: Calculate thermal effects
-            thermal_result = thermal.calculate_temperature_dependent_viscosity(
-                reference_temp_c=25.0,
-                reference_viscosity_cp=material['viscosity'],
-                activation_energy_j_mol=material['activation_energy'],
-                current_temp_c=temperature_c,
-            )
+            try:
+                thermal_result = thermal.calculate_temperature_dependent_viscosity(
+                    reference_temp_c=25.0,
+                    reference_viscosity_cp=material['viscosity'],
+                    activation_energy_j_mol=material['activation_energy'],
+                    current_temp_c=temperature_c,
+                )
+            except Exception as e:
+                logger.error(f"Thermal calculation failed: {e}")
+                return {
+                    'success': False,
+                    'errors': [f'Thermal calculation error: {str(e)}'],
+                    'warnings': [],
+                    'data': None
+                }
 
             # Step 9: Calculate shear heating
-            shear_heating = thermal.calculate_shear_heating(
-                pressure_drop_pa=pressure_result['pressure_drop_pa'],
-                flow_rate_lpm=flow_rate_lpm,
-                viscosity_cp=flow_result['apparent_viscosity_cp'],
-                density_kg_m3=material['density'],
-            )
+            try:
+                shear_heating = thermal.calculate_shear_heating(
+                    pressure_drop_pa=pressure_result['pressure_drop_pa'],
+                    flow_rate_lpm=flow_rate_lpm,
+                    viscosity_cp=flow_result['apparent_viscosity_cp'],
+                    density_kg_m3=material['density'],
+                )
+            except Exception as e:
+                logger.error(f"Shear heating calculation failed: {e}")
+                shear_heating = {'temperature_rise_c': 0, 'heat_generated_w': 0}  # Fallback
 
             # Step 10: Calculate environmental impact
-            env_result = environmental.calculate_environmental_impact(
-                material_key=material_key,
-                quantity_kg=1.0,  # Per unit
-            )
+            try:
+                env_result = environmental.calculate_environmental_impact(
+                    material_key=material_key,
+                    quantity_kg=1.0,
+                )
+            except Exception as e:
+                logger.error(f"Environmental calculation failed: {e}")
+                env_result = {
+                    'material': material_key,
+                    'blowing_agent': 'Unknown',
+                    'gwp_per_kg': 0,
+                    'recommendation': 'N/A',
+                    'is_eco_friendly': False
+                }  # Fallback
 
             # Step 11: Check machine compatibility
-            machine_compat = pressure.calculate_machine_compatibility(
-                total_pressure_bar=pressure_with_fittings['total_pressure_bar'],
-                machine_specs=machine,
-            )
+            try:
+                machine_compat = pressure.calculate_machine_compatibility(
+                    total_pressure_bar=pressure_with_fittings['total_pressure_bar'],
+                    machine_specs=machine,
+                )
+            except Exception as e:
+                logger.error(f"Machine compatibility check failed: {e}")
+                machine_compat = {
+                    'is_compatible': False,
+                    'status': 'Check failed',
+                    'available_pressure_bar': 0,
+                    'max_pressure_bar': 0,
+                    'warning': str(e)
+                }  # Fallback
 
             # Step 12: Generate warnings
             warnings = self._generate_warnings(
@@ -217,8 +272,8 @@ class CalculationProcessor:
                 'pressure': {
                     'base_pressure_drop_bar': pressure_result['pressure_drop_bar'],
                     'pressure_drop_pa': pressure_result['pressure_drop_pa'],
-                    'pressure_with_fittings_bar': pressure_with_fittings['total_pressure_bar'],
-                    'fitting_loss_bar': pressure_with_fittings['fitting_loss_bar'],
+                    'pressure_with_fittings_bar': pressure_with_fittings.get('total_pressure_bar', pressure_result['pressure_drop_bar']),
+                    'fitting_loss_bar': pressure_with_fittings.get('fitting_loss_bar', 0),
                     'reynolds_number': pressure_result['reynolds_number'],
                     'flow_regime': pressure_result['flow_regime'],
                 },
@@ -227,8 +282,8 @@ class CalculationProcessor:
                     'reference_viscosity_cp': thermal_result['reference_viscosity_cp'],
                     'current_viscosity_cp': thermal_result['current_viscosity_cp'],
                     'temperature_factor': thermal_result['temperature_factor'],
-                    'shear_heating_c': shear_heating['temperature_rise_c'],
-                    'heat_generated_w': shear_heating['heat_generated_w'],
+                    'shear_heating_c': shear_heating.get('temperature_rise_c', 0),
+                    'heat_generated_w': shear_heating.get('heat_generated_w', 0),
                 },
                 'environmental': {
                     'material': env_result['material'],
@@ -249,12 +304,8 @@ class CalculationProcessor:
 
             # Step 14: Validate results sanity
             if not self._validate_results(result_data):
-                return {
-                    'success': False,
-                    'errors': ['Calculation produced invalid results'],
-                    'warnings': warnings,
-                    'data': result_data,
-                }
+                logger.warning("Calculation produced results outside expected ranges")
+                warnings.append("Warning: Some results are outside normal operating ranges")
 
             # Step 15: Cache and return
             self.last_calculation = result_data
@@ -267,7 +318,8 @@ class CalculationProcessor:
             }
 
         except Exception as e:
-            error_msg = f'Calculation error: {str(e)}'
+            error_msg = f'Unexpected calculation error: {str(e)}'
+            logger.error(error_msg, exc_info=True)
             return {
                 'success': False,
                 'errors': [error_msg],

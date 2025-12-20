@@ -5,7 +5,8 @@ Tests Arrhenius equation, shear heating, and temperature effects.
 
 import pytest
 import math
-from thermal import (
+from . import thermal
+from .thermal import (
     calculate_temperature_dependent_viscosity,
     calculate_shear_heating,
     calculate_viscosity_change_factor,

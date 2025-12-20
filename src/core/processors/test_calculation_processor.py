@@ -4,7 +4,8 @@ Tests the main orchestrator that coordinates all calculation modules.
 """
 
 import pytest
-from calculation_processor import CalculationProcessor
+from . import calculation_processor
+from .calculation_processor import CalculationProcessor
 
 
 class TestCalculationProcessorBasic:
