@@ -4,15 +4,43 @@ import { fileURLToPath, URL } from 'node:url'
 import fs from 'fs'
 import path from 'path'
 
-// Custom plugin to sync Python files to public/python
+// Custom plugin to sync Python files to the build folder and dev server
 const pythonSyncPlugin = () => {
   return {
     name: 'python-sync',
-    buildStart() {
+    // Copy Python files to dist/python after build completes
+    closeBundle() {
+      const srcDir = path.resolve(__dirname, 'src')
+      const destDir = path.resolve(__dirname, 'dist/python/src')
+
+      const copyRecursive = (src: string, dest: string) => {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
+        const entries = fs.readdirSync(src, { withFileTypes: true })
+        for (const entry of entries) {
+          const srcPath = path.join(src, entry.name)
+          const destPath = path.join(dest, entry.name)
+          if (entry.isDirectory()) {
+            copyRecursive(srcPath, destPath)
+          } else if (entry.name.endsWith('.py')) {
+            fs.copyFileSync(srcPath, destPath)
+          }
+        }
+      }
+
+      if (fs.existsSync(srcDir)) {
+        copyRecursive(srcDir, destDir)
+        console.log('[python-sync] Synced Python files to dist/python/src')
+      }
+
+      // Create .nojekyll file to prevent GitHub from ignoring files with underscores
+      fs.writeFileSync(path.resolve(__dirname, 'dist/.nojekyll'), '')
+      console.log('[python-sync] Created .nojekyll for GitHub Pages')
+    },
+    // Copy Python files to public/python during dev server startup
+    configureServer() {
       const srcDir = path.resolve(__dirname, 'src')
       const publicDir = path.resolve(__dirname, 'public/python/src')
 
-      // Helper to copy directory recursively
       const copyRecursive = (src: string, dest: string) => {
         if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
         const entries = fs.readdirSync(src, { withFileTypes: true })
@@ -29,9 +57,7 @@ const pythonSyncPlugin = () => {
         }
       }
 
-      // Run copy
       if (fs.existsSync(srcDir)) {
-        // Clear destination first to avoid stale files
         if (fs.existsSync(publicDir)) fs.rmSync(publicDir, { recursive: true, force: true })
         copyRecursive(srcDir, publicDir)
         console.log('[python-sync] Synced Python files to public/python/src')
@@ -56,6 +82,10 @@ const pythonSyncPlugin = () => {
 }
 
 export default defineConfig({
+  // Set base URL for GitHub Pages deployment
+  // Change '/Pu-optimizer-tool/' if your repository has a different name
+  base: '/Pu-optimizer-tool/',
+
   plugins: [react(), pythonSyncPlugin()],
   resolve: {
     alias: {
