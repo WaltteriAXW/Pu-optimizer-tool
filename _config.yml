@@ -1,0 +1,15 @@
+# Jekyll configuration - DISABLED
+# This project uses a pre-built Vite React app deployed to gh-pages
+# GitHub Pages should NOT build anything from the main branch
+
+# Skip Jekyll build entirely
+skip: true
+safe: false
+
+# Exclude everything from Jekyll processing
+exclude:
+  - '*'
+  - '.*'
+
+# Don't install any dependencies
+plugins: []
