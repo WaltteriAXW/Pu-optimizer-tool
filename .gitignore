@@ -6,6 +6,7 @@ node_modules/
 dist/
 .vite/
 # Note: docs/ is NOT ignored - it's used for GitHub Pages deployment
+# Note: .nojekyll is tracked to disable Jekyll processing
 
 # IDE
 .vscode/
