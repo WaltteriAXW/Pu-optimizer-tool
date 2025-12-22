@@ -33,6 +33,8 @@ __pycache__/
 logs/
 models/
 
-# Exception: Allow TypeScript type definitions in src/models/
+# Exceptions: Allow TypeScript type definitions and Python source files
 !src/models/
 !src/models/*.ts
+!public/python/
+!public/python/**/*.py

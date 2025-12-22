@@ -41,8 +41,8 @@ export class PyodideBridge implements PyodideManager {
   }
 
   /**
-   * Mount Python source files from public/python/ into the virtual filesystem
-   * Dynamically fetches and loads Python modules for production use
+   * Mount Python source files from src/core/ into the virtual filesystem
+   * For production, these files should be in public/python/ or imported as raw
    */
   private async mountPythonFiles(): Promise<void> {
     if (!pyodideInstance) throw new Error('Pyodide not initialized')
@@ -61,19 +61,14 @@ export class PyodideBridge implements PyodideManager {
       }
     }
 
-    // Create basic directory structure
-    ;['src', 'src/core', 'src/core/modules', 'src/core/processors', 'src/core/kinetics', 'src/core/data'].forEach(
+    // Create directory structure
+    ;['core', 'core/modules', 'core/processors', 'core/kinetics', 'core/data'].forEach(
       ensureDir
     )
 
-    // Try to load Python files from public/python/ directory
-    try {
-      await this.loadPythonFilesFromPublic(fs)
-    } catch (e) {
-      console.warn('Failed to load Python files from public directory, creating placeholders:', e)
-      // Fallback to placeholder modules if public/python/ is not available
-      this.createPlaceholderModules(fs)
-    }
+    // For now, create minimal placeholder modules that will be lazy-loaded
+    // In production, you would fetch these from your server or bundle them
+    this.createPlaceholderModules(fs)
 
     // Initialize Python path
     await pyodideInstance.runPythonAsync(`
@@ -81,61 +76,6 @@ export class PyodideBridge implements PyodideManager {
       sys.path.insert(0, '/')
       print('Python path configured')
     `)
-  }
-
-  /**
-   * Dynamically load Python files from public/python/ directory
-   * Recursively fetches all .py files and writes them to virtual filesystem
-   */
-  private async loadPythonFilesFromPublic(fs: any): Promise<void> {
-    try {
-      console.log('Loading Python files from public/python/...')
-
-      // List of key Python files to load - these are the core modules
-      const pythonModules = [
-        'src/__init__.py',
-        'src/constants.py',
-        'src/app/__init__.py',
-        'src/app/calculator.py',
-        'src/core/__init__.py',
-        'src/core/data/__init__.py',
-        'src/core/modules/__init__.py',
-        'src/core/modules/pressure.py',
-        'src/core/modules/flow.py',
-        'src/core/modules/thermal.py',
-        'src/core/modules/environmental.py',
-        'src/core/processors/__init__.py',
-        'src/core/processors/calculation_processor.py',
-        'src/core/kinetics/__init__.py',
-        'src/core/kinetics/viscosity_conversion.py',
-        'src/core/kinetics/reaction_kinetics.py',
-      ]
-
-      // Fetch and load each module
-      for (const modulePath of pythonModules) {
-        try {
-          const response = await fetch(`/python/${modulePath}`)
-          if (response.ok) {
-            const content = await response.text()
-            // Ensure directory exists
-            const dirPath = modulePath.substring(0, modulePath.lastIndexOf('/'))
-            if (dirPath && !fs.analyzePath(dirPath).exists) {
-              fs.mkdir(dirPath, { recursive: true })
-            }
-            // Write file to virtual filesystem
-            fs.writeFile(modulePath, content)
-            console.log(`Loaded: ${modulePath}`)
-          }
-        } catch (e) {
-          console.warn(`Could not load ${modulePath}:`, e)
-        }
-      }
-
-      console.log('Python files loaded from public directory')
-    } catch (e) {
-      console.warn('Error loading Python files from public:', e)
-      throw e
-    }
   }
 
   /**
