@@ -85,57 +85,72 @@ export class PyodideBridge implements PyodideManager {
 
   /**
    * Dynamically load Python files from public/python/ directory
-   * Recursively fetches all .py files and writes them to virtual filesystem
+   * Fetches all .py files and writes them to virtual filesystem
+   * Fails loudly if critical files are missing
    */
   private async loadPythonFilesFromPublic(fs: any): Promise<void> {
-    try {
-      console.log('Loading Python files from public/python/...')
+    console.log('Loading Python files from public/python/...')
 
-      // List of key Python files to load - these are the core modules
-      const pythonModules = [
-        'src/__init__.py',
-        'src/constants.py',
-        'src/app/__init__.py',
-        'src/app/calculator.py',
-        'src/core/__init__.py',
-        'src/core/data/__init__.py',
-        'src/core/modules/__init__.py',
-        'src/core/modules/pressure.py',
-        'src/core/modules/flow.py',
-        'src/core/modules/thermal.py',
-        'src/core/modules/environmental.py',
-        'src/core/processors/__init__.py',
-        'src/core/processors/calculation_processor.py',
-        'src/core/kinetics/__init__.py',
-        'src/core/kinetics/viscosity_conversion.py',
-        'src/core/kinetics/reaction_kinetics.py',
-      ]
+    // List of key Python files to load - these are the core modules
+    const pythonModules = [
+      'src/__init__.py',
+      'src/constants.py',
+      'src/app/__init__.py',
+      'src/app/calculator.py',
+      'src/core/__init__.py',
+      'src/core/data/__init__.py',
+      'src/core/modules/__init__.py',
+      'src/core/modules/pressure.py',
+      'src/core/modules/flow.py',
+      'src/core/modules/thermal.py',
+      'src/core/modules/environmental.py',
+      'src/core/processors/__init__.py',
+      'src/core/processors/calculation_processor.py',
+      'src/core/kinetics/__init__.py',
+      'src/core/kinetics/viscosity_conversion.py',
+      'src/core/kinetics/reaction_kinetics.py',
+    ]
 
-      // Fetch and load each module
-      for (const modulePath of pythonModules) {
-        try {
-          const response = await fetch(`/python/${modulePath}`)
-          if (response.ok) {
-            const content = await response.text()
-            // Ensure directory exists
-            const dirPath = modulePath.substring(0, modulePath.lastIndexOf('/'))
-            if (dirPath && !fs.analyzePath(dirPath).exists) {
-              fs.mkdir(dirPath, { recursive: true })
-            }
-            // Write file to virtual filesystem
-            fs.writeFile(modulePath, content)
-            console.log(`Loaded: ${modulePath}`)
-          }
-        } catch (e) {
-          console.warn(`Could not load ${modulePath}:`, e)
+    const missingFiles: string[] = []
+    const loadedFiles: string[] = []
+
+    // Fetch and load each module
+    for (const modulePath of pythonModules) {
+      try {
+        const response = await fetch(`/python/${modulePath}`)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
         }
-      }
+        const content = await response.text()
 
-      console.log('Python files loaded from public directory')
-    } catch (e) {
-      console.warn('Error loading Python files from public:', e)
-      throw e
+        // Ensure directory exists in Virtual FS
+        const dirPath = modulePath.substring(0, modulePath.lastIndexOf('/'))
+        if (dirPath && !fs.analyzePath(dirPath).exists) {
+          fs.mkdir(dirPath, { recursive: true })
+        }
+
+        // Write file to virtual filesystem
+        fs.writeFile(modulePath, content)
+        loadedFiles.push(modulePath)
+      } catch (e) {
+        console.error(`❌ FAILED to load: ${modulePath}`, e)
+        missingFiles.push(modulePath)
+      }
     }
+
+    // Report results
+    console.log(`✓ Loaded ${loadedFiles.length}/${pythonModules.length} Python modules`)
+    if (loadedFiles.length > 0) {
+      console.log('Loaded files:', loadedFiles.slice(0, 5).join(', '), loadedFiles.length > 5 ? `... and ${loadedFiles.length - 5} more` : '')
+    }
+
+    if (missingFiles.length > 0) {
+      const errorMsg = `Failed to load ${missingFiles.length} critical Python modules:\n${missingFiles.join('\n')}\n\nMake sure Python files are synced to public/python/`
+      console.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+
+    console.log('✓ All Python files loaded successfully')
   }
 
   /**
