@@ -35,6 +35,28 @@ const pythonSyncPlugin = () => {
       // Create .nojekyll file to prevent GitHub from ignoring files with underscores
       fs.writeFileSync(path.resolve(__dirname, 'dist/.nojekyll'), '')
       console.log('[python-sync] Created .nojekyll for GitHub Pages')
+
+      // Create _config.yml to disable Jekyll processing entirely
+      const configContent = `# GitHub Pages Jekyll configuration
+# This disables Jekyll processing since we're using a pre-built Vite app
+
+# Skip Jekyll build
+skip_jekyll: true
+
+# Exclude all files from processing
+exclude:
+  - '*'
+  - '.*'
+
+# Theme (use default minimal theme, but don't process anything)
+theme: jekyll-theme-minimal
+
+# Override any settings
+collections:
+  - name: null
+`
+      fs.writeFileSync(path.resolve(__dirname, 'dist/_config.yml'), configContent)
+      console.log('[python-sync] Created _config.yml to disable Jekyll')
     },
     // Copy Python files to public/python during dev server startup
     configureServer() {
