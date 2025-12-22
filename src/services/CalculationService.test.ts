@@ -99,7 +99,7 @@ describe('CalculationService', () => {
       expect(result.pressure.base_pressure_drop_bar).toBe(3.45)
       expect(result.flow.reynolds_number).toBe(45.2)
       expect(mockPyodideManager.callPython).toHaveBeenCalledWith(
-        'calculation_processor.calculate_all',
+        'src.core.processors.calculation_processor.calculate_all',
         [mockParameters]
       )
     })
@@ -379,7 +379,7 @@ describe('CalculationService', () => {
       await service.checkMachineCompatibility(150, 'high_pressure')
 
       expect(mockPyodideManager.callPython).toHaveBeenCalledWith(
-        'pressure.calculate_machine_compatibility',
+        'src.core.modules.pressure.calculate_machine_compatibility',
         [150, { type: 'high_pressure' }]
       )
     })
@@ -414,11 +414,11 @@ describe('CalculationService', () => {
       await service.checkMachineCompatibility(100, 'high_pressure')
 
       expect(mockPyodideManager.callPython).toHaveBeenNthCalledWith(1,
-        'pressure.calculate_machine_compatibility',
+        'src.core.modules.pressure.calculate_machine_compatibility',
         [100, { type: 'low_pressure' }]
       )
       expect(mockPyodideManager.callPython).toHaveBeenNthCalledWith(2,
-        'pressure.calculate_machine_compatibility',
+        'src.core.modules.pressure.calculate_machine_compatibility',
         [100, { type: 'high_pressure' }]
       )
     })
