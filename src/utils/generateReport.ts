@@ -46,7 +46,7 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
   doc.setTextColor(6, 182, 212); // Cyan-400 (Accent)
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text("PU-OPTIMIZER REPORT", 20, 20);
+  doc.text('PU-OPTIMIZER REPORT', 20, 20);
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
@@ -61,7 +61,7 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text("MACHINE SETTINGS", 20, 50);
+  doc.text('MACHINE SETTINGS', 20, 50);
   doc.setLineWidth(0.5);
   doc.line(20, 52, pageWidth - 20, 52);
 
@@ -70,13 +70,13 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
 
   // Machine and Material Info
   if (inputs.selectedMachine) {
-    doc.text(`MACHINE:`, 20, yPos);
+    doc.text('MACHINE:', 20, yPos);
     doc.text(`${inputs.selectedMachine}`, 100, yPos);
     yPos += 8;
   }
 
   if (inputs.selectedMaterial) {
-    doc.text(`MATERIAL:`, 20, yPos);
+    doc.text('MATERIAL:', 20, yPos);
     doc.text(`${inputs.selectedMaterial}`, 100, yPos);
     yPos += 8;
   }
@@ -84,27 +84,27 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
   yPos += 5;
 
   // Process Parameters
-  doc.text(`PIPE LENGTH:`, 20, yPos);
+  doc.text('PIPE LENGTH:', 20, yPos);
   doc.text(`${inputs.pipeLength} mm`, 100, yPos);
   yPos += 8;
 
-  doc.text(`PIPE DIAMETER:`, 20, yPos);
+  doc.text('PIPE DIAMETER:', 20, yPos);
   doc.text(`${inputs.pipeDiameter} mm`, 100, yPos);
   yPos += 8;
 
-  doc.text(`TEMPERATURE:`, 20, yPos);
+  doc.text('TEMPERATURE:', 20, yPos);
   doc.text(`${inputs.temperature} °C`, 100, yPos);
   yPos += 8;
 
-  doc.text(`FLOW RATE:`, 20, yPos);
+  doc.text('FLOW RATE:', 20, yPos);
   doc.text(`${inputs.flowRate} L/min`, 100, yPos);
   yPos += 8;
 
-  doc.text(`VISCOSITY:`, 20, yPos);
+  doc.text('VISCOSITY:', 20, yPos);
   doc.text(`${inputs.viscosity} cP`, 100, yPos);
   yPos += 8;
 
-  doc.text(`DENSITY:`, 20, yPos);
+  doc.text('DENSITY:', 20, yPos);
   doc.text(`${inputs.density} kg/m³`, 100, yPos);
   yPos += 8;
 
@@ -112,7 +112,7 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
   yPos += 20;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text("OPTIMIZATION OUTPUT", 20, yPos);
+  doc.text('OPTIMIZATION OUTPUT', 20, yPos);
   doc.line(20, yPos + 2, pageWidth - 20, yPos + 2);
 
   yPos += 10;
@@ -143,43 +143,43 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
   doc.setTextColor(0, 0, 0);
 
   if (results && results.optimalPressureBar !== undefined) {
-    doc.text(`REQUIRED PRESSURE:`, 30, yPos);
+    doc.text('REQUIRED PRESSURE:', 30, yPos);
     doc.setTextColor(6, 182, 212);
     doc.text(`${results.optimalPressureBar.toFixed(2)} bar`, 110, yPos);
     doc.setTextColor(0, 0, 0);
     yPos += 10;
 
     if (results.pressureDropBar !== undefined) {
-      doc.text(`PRESSURE DROP:`, 30, yPos);
+      doc.text('PRESSURE DROP:', 30, yPos);
       doc.text(`${results.pressureDropBar.toFixed(2)} bar`, 110, yPos);
       yPos += 10;
     }
 
     if (results.flowRegime) {
-      doc.text(`FLOW REGIME:`, 30, yPos);
+      doc.text('FLOW REGIME:', 30, yPos);
       doc.text(`${results.flowRegime}`, 110, yPos);
       yPos += 10;
     }
 
     if (results.reynoldsNumber !== undefined) {
-      doc.text(`REYNOLDS NUMBER:`, 30, yPos);
+      doc.text('REYNOLDS NUMBER:', 30, yPos);
       doc.text(`${results.reynoldsNumber.toFixed(1)}`, 110, yPos);
       yPos += 10;
     }
 
     if (results.velocity !== undefined) {
-      doc.text(`FLOW VELOCITY:`, 30, yPos);
+      doc.text('FLOW VELOCITY:', 30, yPos);
       doc.text(`${results.velocity.toFixed(3)} m/s`, 110, yPos);
       yPos += 10;
     }
 
     if (results.injectionTime !== undefined) {
-      doc.text(`INJECTION TIME:`, 30, yPos);
+      doc.text('INJECTION TIME:', 30, yPos);
       doc.text(`${results.injectionTime.toFixed(2)} s`, 110, yPos);
       yPos += 10;
     }
   } else {
-    doc.text("NO OPTIMIZATION DATA AVAILABLE", 30, yPos);
+    doc.text('NO OPTIMIZATION DATA AVAILABLE', 30, yPos);
     yPos += 10;
   }
 
@@ -188,7 +188,7 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
     yPos += 15;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text("MACHINE SPECIFICATIONS", 20, yPos);
+    doc.text('MACHINE SPECIFICATIONS', 20, yPos);
     yPos += 8;
 
     doc.setFont('courier', 'normal');
@@ -215,7 +215,7 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
     yPos += 10;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text("MOLD INFORMATION", 20, yPos);
+    doc.text('MOLD INFORMATION', 20, yPos);
     yPos += 8;
 
     doc.setFont('courier', 'normal');
@@ -238,14 +238,14 @@ export const generateReport = (inputs: InputData, results: ResultData): void => 
 
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text("OPERATOR SIGNATURE", 20, bottomY + 5);
-  doc.text("QA APPROVAL / DATE", 120, bottomY + 5);
+  doc.text('OPERATOR SIGNATURE', 20, bottomY + 5);
+  doc.text('QA APPROVAL / DATE', 120, bottomY + 5);
 
   // Disclaimer
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
-  doc.text("This report is computer-generated and provided for reference only.", 20, 280);
-  doc.text("PU-Optimizer Tool - Professional Edition", 20, 285);
+  doc.text('This report is computer-generated and provided for reference only.', 20, 280);
+  doc.text('PU-Optimizer Tool - Professional Edition', 20, 285);
 
   // Save File
   const fileName = `PU_Report_${new Date().toISOString().split('T')[0]}_${reportId}.pdf`;
