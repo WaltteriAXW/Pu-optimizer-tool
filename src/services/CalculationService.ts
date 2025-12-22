@@ -71,9 +71,9 @@ export class CalculationService {
         return cached
       }
 
-      // Call Python backend
+      // Call Python backend with full module path
       const result = await this.pyodideManager.callPython<PythonCalculationResult>(
-        'calculation_processor.calculate_all',
+        'src.core.processors.calculation_processor.calculate_all',
         [parameters]
       )
 
@@ -154,9 +154,9 @@ export class CalculationService {
     machineType: string
   ): Promise<{ compatible: boolean; message: string; maxPressure?: number }> {
     try {
-      // Call Python to check compatibility
+      // Call Python to check compatibility with full module path
       const result = await this.pyodideManager.callPython<MachineCompatibilityResult>(
-        'pressure.calculate_machine_compatibility',
+        'src.core.modules.pressure.calculate_machine_compatibility',
         [pressureBar, { type: machineType }]
       )
 
