@@ -1,0 +1,17 @@
+# GitHub Pages Jekyll configuration
+# This disables Jekyll processing since we're using a pre-built Vite app
+
+# Skip Jekyll build
+skip_jekyll: true
+
+# Exclude all files from processing
+exclude:
+  - '*'
+  - '.*'
+
+# Theme (use default minimal theme, but don't process anything)
+theme: jekyll-theme-minimal
+
+# Override any settings
+collections:
+  - name: null
