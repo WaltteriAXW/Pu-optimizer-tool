@@ -7,7 +7,7 @@
  * Single responsibility: coordinate all calculations and return results
  */
 
-import type { ProcessParameters, CalculationResults, CalculationError } from '@/models/types'
+import type { ProcessParameters, CalculationResults } from '@/models/types'
 
 /**
  * Interface for PyodideManager to provide proper typing
@@ -19,7 +19,7 @@ export interface PyodideManager {
 }
 
 /**
- * Result from Python calculation
+ * Result from Python calculation with type safety
  */
 interface PythonCalculationResult {
   success: boolean
@@ -34,6 +34,7 @@ interface PythonCalculationResult {
 interface MachineCompatibilityResult {
   is_compatible: boolean
   warning?: string
+  max_pressure?: number
 }
 
 /** Maximum number of cached calculations to prevent memory leaks */
@@ -76,6 +77,11 @@ export class CalculationService {
         [parameters]
       )
 
+      // Validate result is properly typed
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid response from Python backend')
+      }
+
       // Check for errors from Python
       if (!result.success) {
         throw new Error(`Calculation failed: ${result.errors?.join(', ') || 'Unknown error'}`)
@@ -86,7 +92,17 @@ export class CalculationService {
         throw new Error('Python calculation returned empty data')
       }
 
-      const calculationResult = result.data as CalculationResults
+      // Type-safe cast - ensure all required fields are present
+      const calculationResult: CalculationResults = {
+        input: result.data.input || { pipe_length_mm: 0, pipe_diameter_mm: 0, material_key: '', temperature_c: 0, flow_rate_lpm: 0 },
+        flow: result.data.flow || { shear_rate_s_inv: 0, apparent_viscosity_cp: 0, reynolds_number: 0, flow_regime: 'laminar', velocity_m_s: 0 },
+        pressure: result.data.pressure || { base_pressure_drop_bar: 0, pressure_drop_pa: 0, pressure_with_fittings_bar: 0, fitting_loss_bar: 0, reynolds_number: 0, flow_regime: 'laminar' },
+        thermal: result.data.thermal,
+        environmental: result.data.environmental,
+        machine_compatibility: result.data.machine_compatibility,
+        timestamp: result.data.timestamp,
+        warnings: result.data.warnings || []
+      }
 
       // Cache result with LRU eviction
       this.addToCache(cacheKey, calculationResult)
@@ -136,7 +152,7 @@ export class CalculationService {
   async checkMachineCompatibility(
     pressureBar: number,
     machineType: string
-  ): Promise<{ compatible: boolean; message: string }> {
+  ): Promise<{ compatible: boolean; message: string; maxPressure?: number }> {
     try {
       // Call Python to check compatibility
       const result = await this.pyodideManager.callPython<MachineCompatibilityResult>(
@@ -144,9 +160,15 @@ export class CalculationService {
         [pressureBar, { type: machineType }]
       )
 
+      // Ensure result is properly typed
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid response from machine compatibility check')
+      }
+
       return {
-        compatible: result.is_compatible,
-        message: result.warning || 'Compatible'
+        compatible: result.is_compatible ?? false,
+        message: result.warning || 'Compatible',
+        maxPressure: result.max_pressure
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Check failed'

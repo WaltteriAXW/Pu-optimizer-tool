@@ -23,7 +23,7 @@
  * const clean = sanitizeNumber('123.45', 0); // 123.45
  */
 
-import { VALIDATION_RANGES, PHYSICS } from './constants';
+import { VALIDATION_RANGES, PHYSICS, THRESHOLDS } from './constants';
 
 /**
  * Custom validation error class
@@ -281,19 +281,19 @@ export function validateProcessParameters(params) {
   }
 
   // Shear rate check
-  if (shearRate > 1000) {
+  if (shearRate > THRESHOLDS.SHEAR_RATE_HIGH) {
     warnings.push(`High shear rate (${shearRate.toFixed(0)} s⁻¹) may degrade material`);
     recommendations.push('Consider increasing pipe diameter or reducing flow rate');
   }
 
   // Viscosity check
-  if (apparentViscosity > 1.0) {
+  if (apparentViscosity > THRESHOLDS.VISCOSITY_HIGH) {
     warnings.push(`High apparent viscosity (${apparentViscosity.toFixed(3)} Pa·s)`);
     recommendations.push('Consider increasing temperature or reducing flow rate');
   }
 
   // Velocity check
-  if (velocity > 5.0) {
+  if (velocity > THRESHOLDS.VELOCITY_HIGH) {
     warnings.push(`Very high flow velocity (${velocity.toFixed(2)} m/s)`);
     recommendations.push('Reduce flow rate or increase pipe diameter to prevent turbulence');
   }
@@ -309,19 +309,19 @@ export function validateProcessParameters(params) {
 
   // Fill time checks
   if (fillTime !== undefined) {
-    if (fillTime < 2) {
+    if (fillTime < THRESHOLDS.FILL_TIME_TOO_FAST) {
       warnings.push(`Very fast fill time (${fillTime.toFixed(1)}s) may cause air entrapment`);
-      recommendations.push('Increase fill time above 2 seconds to prevent voids');
-    } else if (fillTime > 30) {
+      recommendations.push(`Increase fill time above ${THRESHOLDS.FILL_TIME_TOO_FAST} seconds to prevent voids`);
+    } else if (fillTime > THRESHOLDS.FILL_TIME_TOO_SLOW) {
       warnings.push(`Slow fill time (${fillTime.toFixed(1)}s) may cause premature gelation`);
       recommendations.push('Increase flow rate or check for flow restrictions');
     }
   }
 
   // Temperature recommendations
-  if (temperature < 20) {
-    recommendations.push('Consider increasing temperature to 20-25°C for better flow properties');
-  } else if (temperature > 35) {
+  if (temperature < THRESHOLDS.TEMPERATURE_LOW) {
+    recommendations.push(`Consider increasing temperature to ${THRESHOLDS.TEMPERATURE_LOW}-${THRESHOLDS.TEMPERATURE_HIGH}°C for better flow properties`);
+  } else if (temperature > THRESHOLDS.TEMPERATURE_HIGH) {
     warnings.push(`High temperature (${temperature}°C) may accelerate reaction`);
     recommendations.push('Monitor reaction time closely; consider reducing temperature');
   }

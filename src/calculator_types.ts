@@ -4,14 +4,17 @@
 
 /**
  * Process parameters for polyurethane injection
+ * Note: Uses snake_case naming convention for API compatibility with Python backend
  */
 export interface ProcessParameters {
-  pipeLength: number;      // mm
-  pipeThickness: number;   // mm
-  temperature: number;     // °C
-  flowRate: number;        // m³/s
-  viscosity?: number;      // cP (centipoise)
-  density?: number;        // g/cm³
+  pipe_length_mm: number;       // mm
+  pipe_diameter_mm: number;     // mm
+  temperature_c: number;        // °C
+  flow_rate_lpm: number;        // L/min
+  material_key: string;         // Material identifier
+  machine_type?: string;        // Machine type (optional)
+  viscosity_cp?: number;        // cP (centipoise)
+  density_kg_m3?: number;       // kg/m³
 }
 
 /**
@@ -23,17 +26,59 @@ export interface PressurePoint {
 }
 
 /**
- * Calculation results
+ * Calculation results from Python backend
+ * Comprehensive structure with input parameters and calculated metrics
  */
 export interface CalculationResults {
-  required_pressure: number;        // kPa
-  shear_rate: number;               // s⁻¹
-  apparent_viscosity: number;       // Pa·s
-  reynolds_number: number;          // dimensionless
-  optimal_injection_time: number;   // s
-  pressure_profile: PressurePoint[];
-  flow_regime: 'laminar' | 'turbulent';
-  warnings: string[];
+  input: {
+    pipe_length_mm: number;
+    pipe_diameter_mm: number;
+    material_key: string;
+    material_name?: string;
+    temperature_c: number;
+    flow_rate_lpm: number;
+    machine_type?: string;
+  };
+  flow: {
+    shear_rate_s_inv: number;        // s⁻¹
+    apparent_viscosity_cp: number;   // cP
+    reynolds_number: number;         // dimensionless
+    flow_regime: 'laminar' | 'turbulent';
+    velocity_m_s: number;            // m/s
+    is_shear_thinning?: boolean;
+  };
+  pressure: {
+    base_pressure_drop_bar: number;  // bar
+    pressure_drop_pa: number;        // Pa
+    pressure_with_fittings_bar: number; // bar
+    fitting_loss_bar: number;        // bar
+    reynolds_number: number;         // dimensionless
+    flow_regime: 'laminar' | 'turbulent';
+  };
+  thermal?: {
+    temperature_c: number;
+    reference_viscosity_cp: number;
+    current_viscosity_cp: number;
+    temperature_factor: number;
+    shear_heating_c?: number;
+    heat_generated_w?: number;
+  };
+  environmental?: {
+    material: string;
+    blowing_agent?: string;
+    gwp_per_kg?: number;
+    recommendation?: string;
+    is_eco_friendly?: boolean;
+  };
+  machine_compatibility?: {
+    is_compatible: boolean;
+    status: string;
+    available_pressure_bar?: number;
+    max_pressure_bar?: number;
+    warning?: string;
+  };
+  timestamp?: string;
+  warnings?: string[];
 }
 
 /**
