@@ -98,6 +98,7 @@ export class PyodideBridge implements PyodideManager {
       'src/app/__init__.py',
       'src/app/calculator.py',
       'src/core/__init__.py',
+      'src/core/validation/__init__.py',
       'src/core/data/__init__.py',
       'src/core/modules/__init__.py',
       'src/core/modules/pressure.py',
