@@ -81,20 +81,41 @@ export class PyodideBridge implements PyodideManager {
       import os
 
       sys.path.insert(0, '/')
-      print('Python path configured:', sys.path)
+      print('Python path configured:', sys.path[:3], '...')
 
-      # List files in VFS to verify they loaded
-      if os.path.exists('/src'):
-          print('VFS /src directory contents:')
-          for root, dirs, files in os.walk('/src'):
-              level = root.replace('/src', '').count('/')
-              indent = ' ' * 2 * level
-              print(f'{indent}{os.path.basename(root)}/')
-              subindent = ' ' * 2 * (level + 1)
-              for file in files:
-                  print(f'{subindent}{file}')
+      # Verify critical files exist
+      critical_files = [
+          '/src/__init__.py',
+          '/src/constants.py',
+          '/src/core/__init__.py',
+          '/src/core/processors/__init__.py',
+          '/src/core/processors/calculation_processor.py',
+      ]
+
+      missing = []
+      for f in critical_files:
+          if not os.path.exists(f):
+              missing.append(f)
+
+      if missing:
+          print('❌ CRITICAL: Missing files in VFS:', missing)
+          raise RuntimeError(f'Missing {len(missing)} critical files in VFS')
       else:
-          print('WARNING: /src directory not found in VFS!')
+          print('✓ All critical files verified in VFS')
+
+      # Quick test import
+      try:
+          import src
+          print(f'✓ src module: {src}')
+          import src.core
+          print(f'✓ src.core module: {src.core}')
+          import src.core.processors
+          print(f'✓ src.core.processors module: {src.core.processors}')
+      except Exception as e:
+          print(f'❌ Import test failed: {e}')
+          import traceback
+          traceback.print_exc()
+          raise
     `)
   }
 
@@ -229,13 +250,17 @@ export class PyodideBridge implements PyodideManager {
     // Report results
     console.log(`✓ Loaded ${loadedFiles.length}/${pythonModules.length} Python modules`)
     if (loadedFiles.length > 0) {
-      console.log('Loaded files:', loadedFiles.slice(0, 5).join(', '), loadedFiles.length > 5 ? `... and ${loadedFiles.length - 5} more` : '')
+      console.log('Sample loaded files:', loadedFiles.slice(0, 3).join(', '), '...')
     }
 
     if (missingFiles.length > 0) {
-      const errorMsg = `Failed to load ${missingFiles.length} critical Python modules:\n${missingFiles.join('\n')}\n\nMake sure Python files are synced to public/python/`
-      console.error(errorMsg)
+      const errorMsg = `Failed to load ${missingFiles.length} critical Python modules:\n${missingFiles.join('\n')}`
+      console.error('❌ MISSING FILES:', errorMsg)
       throw new Error(errorMsg)
+    }
+
+    if (loadedFiles.length === 0) {
+      throw new Error('No Python files were loaded! Check that files exist at: ' + pythonBasePath)
     }
 
     console.log('✓ All Python files loaded successfully')
