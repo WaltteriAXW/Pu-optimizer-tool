@@ -279,13 +279,125 @@ def exceeds_threshold(value: float, threshold_name: str) -> bool:
 
 
 # ============================================================================
+# MACHINE SPECIFICATIONS
+# ============================================================================
+
+MACHINE_SPECS = {
+    "high_pressure": {
+        "name": "High-Pressure (HP) System",
+        "category": "High-Pressure",
+        "output": "5-200+ kg/min",
+        "output_range": {"min": 5, "max": 200},
+        "max_pressure": 200.0,
+        "pressure_range": {"min": 100, "max": 200},
+        "min_operating_pressure": 100,
+        "process_loss": {
+            "mixing_head": 15,
+            "valves": 5,
+            "filters": 3,
+            "fittings": 2,
+            "total": 25
+        },
+        "tank_capacity": "Variable",
+        "feed_line_diameter_a": "4-8 mm",
+        "feed_line_diameter_b": "4-8 mm",
+        "pump_type": "Axial piston / High-pressure gear / Variable displacement",
+        "shear_rate_range": {"min": 2000, "max": 10000},
+        "mix_head_type": "L-style / R-style / Dual-tilted injection (High-energy stream impingement)",
+        "power_law_index": 0.65,
+        "activation_energy": 42500,
+        "laminar_flow_limit": 175,
+        "application": "Rigid foam, integral skin, insulation, dense composites",
+        "description": "Requires precise, fast mixing",
+        "manufacturer": "Generic High-Pressure System"
+    },
+    "low_pressure": {
+        "name": "Low-Pressure (LP) System",
+        "category": "Low-Pressure",
+        "output": "2-300+ kg/min",
+        "output_range": {"min": 2, "max": 300},
+        "max_pressure": 20.0,
+        "pressure_range": {"min": 8, "max": 20},
+        "min_operating_pressure": 8,
+        "process_loss": {
+            "mixing_head": 2,
+            "valves": 1,
+            "filters": 0.5,
+            "fittings": 0.5,
+            "total": 4
+        },
+        "tank_capacity": "Variable (Modular)",
+        "feed_line_diameter_a": "10-16 mm",
+        "feed_line_diameter_b": "10-16 mm",
+        "pump_type": "Gear pump (external, fixed/variable displacement, e.g., KCB83.3 ~160 kg/min)",
+        "shear_rate_range": {"min": 100, "max": 1500},
+        "mix_head_type": "Mechanical mixer / Dynamic mix chamber (moving paddles/rotor, slower speeds)",
+        "power_law_index": 0.70,
+        "activation_energy": 42500,
+        "laminar_flow_limit": 12.5,
+        "application": "Flexible foam, elastomers, CASE (coatings/adhesives/sealants), high-viscosity casting",
+        "description": "Handles higher viscosities with less agitation",
+        "manufacturer": "Generic Low-Pressure System"
+    }
+}
+
+# ============================================================================
+# MATERIAL PRESETS
+# ============================================================================
+
+MATERIAL_PRESETS = {
+    "ecofoam_standard": {
+        "name": "Ecofoam Standard",
+        "density": 1120,
+        "specific_gravity": 1.12,
+        "viscosity": 350,
+        "flow_index": 0.85,
+        "activation_energy": 25000,
+        "polyol_sg": 1.12,
+        "iso_sg": 1.23,
+        "weight_ratio": [100, 110],
+        "final_density": 32
+    },
+    "ecofoam_xhd": {
+        "name": "Ecofoam XHD RC",
+        "density": 1120,
+        "specific_gravity": 1.12,
+        "viscosity": 850,
+        "flow_index": 0.82,
+        "activation_energy": 28000,
+        "polyol_sg": 1.12,
+        "iso_sg": 1.23,
+        "weight_ratio": [100, 110],
+        "final_density": 40
+    },
+    "ecomate_spray_ec": {
+        "name": "Ecomate Spray EC",
+        "density": 1120,
+        "specific_gravity": 1.12,
+        "viscosity": 350,
+        "flow_index": 0.88,
+        "activation_energy": 24000,
+        "polyol_sg": 1.12,
+        "iso_sg": 1.23,
+        "weight_ratio": [100, 110],
+        "final_density": 32
+    }
+}
+
+# Create PHYSICS as an instance for backward compatibility
+PHYSICS = Physics
+
+# ============================================================================
 # EXPORT ALL
 # ============================================================================
 
 __all__ = [
     'Physics',
+    'PHYSICS',
     'MaterialDefaults',
     'VALIDATION_RANGES',
+    'MATERIAL_PRESETS',
+    'MACHINE_SPECS',
     'Thresholds',
     'Conversions',
     'UIConfig',
