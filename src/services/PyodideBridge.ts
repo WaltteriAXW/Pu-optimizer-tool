@@ -75,11 +75,26 @@ export class PyodideBridge implements PyodideManager {
       this.createPlaceholderModules(fs)
     }
 
-    // Initialize Python path
+    // Initialize Python path and verify files
     await pyodideInstance.runPythonAsync(`
       import sys
+      import os
+
       sys.path.insert(0, '/')
-      print('Python path configured')
+      print('Python path configured:', sys.path)
+
+      # List files in VFS to verify they loaded
+      if os.path.exists('/src'):
+          print('VFS /src directory contents:')
+          for root, dirs, files in os.walk('/src'):
+              level = root.replace('/src', '').count('/')
+              indent = ' ' * 2 * level
+              print(f'{indent}{os.path.basename(root)}/')
+              subindent = ' ' * 2 * (level + 1)
+              for file in files:
+                  print(f'{subindent}{file}')
+      else:
+          print('WARNING: /src directory not found in VFS!')
     `)
   }
 
@@ -90,6 +105,11 @@ export class PyodideBridge implements PyodideManager {
    */
   private async loadPythonFilesFromPublic(fs: any): Promise<void> {
     console.log('Loading Python files from public/python/...')
+
+    // Determine base path - handle both dev and production
+    const base = import.meta.env.BASE_URL || '/'
+    const pythonBasePath = `${base}python/`.replace(/\/+/g, '/')
+    console.log(`Base path: ${base}, Python files path: ${pythonBasePath}`)
 
     // List of key Python files to load - these are the core modules
     const pythonModules = [
@@ -118,7 +138,9 @@ export class PyodideBridge implements PyodideManager {
     // Fetch and load each module
     for (const modulePath of pythonModules) {
       try {
-        const response = await fetch(`/python/${modulePath}`)
+        const fetchUrl = `${pythonBasePath}${modulePath}`
+        console.log(`Fetching: ${fetchUrl}`)
+        const response = await fetch(fetchUrl)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
         }
@@ -130,8 +152,10 @@ export class PyodideBridge implements PyodideManager {
           fs.mkdir(dirPath, { recursive: true })
         }
 
-        // Write file to virtual filesystem
-        fs.writeFile(modulePath, content)
+        // Write file to virtual filesystem at root
+        const vfsPath = `/${modulePath}`
+        fs.writeFile(vfsPath, content)
+        console.log(`✓ Loaded ${modulePath} -> VFS:${vfsPath}`)
         loadedFiles.push(modulePath)
       } catch (e) {
         console.error(`❌ FAILED to load: ${modulePath}`, e)
@@ -198,17 +222,35 @@ import json
 import traceback
 import sys
 import importlib
+import os
 
 _result = None
 try:
+    # Debug: print sys.path and check if module path exists
+    print(f"[DEBUG] sys.path: {sys.path}", file=sys.stderr)
+
     # Import the module dynamically using importlib
     module_path, func_name = '${functionPath}'.rsplit('.', 1)
+    print(f"[DEBUG] Attempting to import: {module_path}.{func_name}", file=sys.stderr)
+
+    # Check if the file exists
+    expected_file = '/' + module_path.replace('.', '/') + '.py'
+    print(f"[DEBUG] Expected file path: {expected_file}", file=sys.stderr)
+    print(f"[DEBUG] File exists: {os.path.exists(expected_file)}", file=sys.stderr)
+
+    # List /src directory
+    if os.path.exists('/src'):
+        print(f"[DEBUG] /src exists, listing contents...", file=sys.stderr)
+    else:
+        print(f"[DEBUG] /src does NOT exist!", file=sys.stderr)
 
     # Use importlib for proper module imports
     mod = importlib.import_module(module_path)
+    print(f"[DEBUG] Successfully imported module: {mod}", file=sys.stderr)
 
     # Get the function
     func = getattr(mod, func_name)
+    print(f"[DEBUG] Successfully got function: {func}", file=sys.stderr)
 
     # Call it with arguments
     args = ${argName}
@@ -222,6 +264,7 @@ try:
 except ImportError as e:
     # Return error info if imports fail
     print(f"Import error: {e}", file=sys.stderr)
+    print(f"sys.path was: {sys.path}", file=sys.stderr)
     traceback.print_exc()
     _result = {
         'success': False,
