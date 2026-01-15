@@ -18,17 +18,15 @@ Make sure Python files are synced to public/python/`;throw console.error(n),new 
 import json
 import traceback
 import sys
+import importlib
 
 _result = None
 try:
-    # Import the module dynamically
+    # Import the module dynamically using importlib
     module_path, func_name = '${s}'.rsplit('.', 1)
-    parts = module_path.split('.')
 
-    # Dynamic import
-    mod = __import__(parts[0])
-    for part in parts[1:]:
-        mod = getattr(mod, part)
+    # Use importlib for proper module imports
+    mod = importlib.import_module(module_path)
 
     # Get the function
     func = getattr(mod, func_name)
