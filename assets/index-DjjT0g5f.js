@@ -17,7 +17,9 @@ ${t.join(`
 Make sure Python files are synced to public/python/`;throw console.error(n),new Error(n)}console.log("✓ All Python files loaded successfully")}createPlaceholderModules(s){Object.entries({"core/__init__.py":"","core/modules/__init__.py":"","core/processors/__init__.py":"","core/kinetics/__init__.py":"","core/data/__init__.py":""}).forEach(([t,i])=>{try{s.writeFile(t,i)}catch(n){console.warn(`Could not write file ${t}:`,n)}})}async callPython(s,a){if(!this.pyodideReady||!_)throw new Error("Pyodide not ready. Call initialize() first.");try{const t=`_args_${Date.now()}`;_.globals.set(t,a);const i=`
 import json
 import traceback
+import sys
 
+_result = None
 try:
     # Import the module dynamically
     module_path, func_name = '${s}'.rsplit('.', 1)
@@ -39,23 +41,27 @@ try:
     if hasattr(result, '__dict__'):
         result = result.__dict__
 
-    result
+    _result = result
 except ImportError as e:
-    # For now, return mock data if imports fail (for testing)
-    # In production, ensure all modules are properly loaded
-    print(f"Import error: {e}")
-    {
+    # Return error info if imports fail
+    print(f"Import error: {e}", file=sys.stderr)
+    traceback.print_exc()
+    _result = {
         'success': False,
-        'errors': [str(e)],
+        'errors': [f"ImportError: {str(e)}"],
         'data': None
     }
 except Exception as e:
+    # Return error info for any other exception
+    print(f"Exception: {e}", file=sys.stderr)
     traceback.print_exc()
-    {
+    _result = {
         'success': False,
         'errors': [f"{type(e).__name__}: {str(e)}"],
         'data': None
     }
+
+_result
 `,o=(await _.runPythonAsync(i)).toJs({dict_converter:Object.fromEntries});return _.globals.delete(t),o}catch(t){throw console.error(`Python execution error for ${s}:`,t),new Error(`Python error: ${t instanceof Error?t.message:String(t)}`)}}isReady(){return this.pyodideReady}async loadPackage(s){if(!_)throw new Error("Pyodide not initialized");await _.loadPackage(s)}}const re=100;class ae{constructor(s){C(this,"pyodideManager");C(this,"calculationCache",new Map);C(this,"cacheOrder",[]);this.pyodideManager=s}async calculate(s){var a;try{if(!s||Object.keys(s).length===0)throw new Error("No parameters provided");const t=this.createCacheKey(s),i=this.calculationCache.get(t);if(i)return i;const n=await this.pyodideManager.callPython("src.core.processors.calculation_processor.calculate_all",[s]);if(!n||typeof n!="object")throw new Error("Invalid response from Python backend");if(!n.success)throw new Error(`Calculation failed: ${((a=n.errors)==null?void 0:a.join(", "))||"Unknown error"}`);if(!n.data)throw new Error("Python calculation returned empty data");const o={input:n.data.input||{pipe_length_mm:0,pipe_diameter_mm:0,material_key:"",temperature_c:0,flow_rate_lpm:0},flow:n.data.flow||{shear_rate_s_inv:0,apparent_viscosity_cp:0,reynolds_number:0,flow_regime:"laminar",velocity_m_s:0},pressure:n.data.pressure||{base_pressure_drop_bar:0,pressure_drop_pa:0,pressure_with_fittings_bar:0,fitting_loss_bar:0,reynolds_number:0,flow_regime:"laminar"},thermal:n.data.thermal,environmental:n.data.environmental,machine_compatibility:n.data.machine_compatibility,timestamp:n.data.timestamp,warnings:n.data.warnings||[]};return this.addToCache(t,o),o}catch(t){const i=t instanceof Error?t.message:String(t);throw new Error(`Calculation service error: ${i}`)}}async validateParameters(s){const a=[];return(typeof s.pipe_length_mm!="number"||s.pipe_length_mm<=0)&&a.push("Pipe length must be a positive number"),(typeof s.pipe_diameter_mm!="number"||s.pipe_diameter_mm<=0)&&a.push("Pipe diameter must be a positive number"),typeof s.temperature_c!="number"&&a.push("Temperature must be a number"),(typeof s.flow_rate_lpm!="number"||s.flow_rate_lpm<=0)&&a.push("Flow rate must be a positive number"),(!s.material_key||typeof s.material_key!="string")&&a.push("Material must be selected"),a}async checkMachineCompatibility(s,a){try{const t=await this.pyodideManager.callPython("src.core.modules.pressure.calculate_machine_compatibility",[s,{type:a}]);if(!t||typeof t!="object")throw new Error("Invalid response from machine compatibility check");return{compatible:t.is_compatible??!1,message:t.warning||"Compatible",maxPressure:t.max_pressure}}catch(t){return{compatible:!1,message:t instanceof Error?t.message:"Check failed"}}}clearCache(){this.calculationCache.clear(),this.cacheOrder=[]}addToCache(s,a){for(;this.cacheOrder.length>=re;){const t=this.cacheOrder.shift();t&&this.calculationCache.delete(t)}this.calculationCache.set(s,a),this.cacheOrder.push(s)}createCacheKey(s){const a=i=>i==null?"__null__":String(i);return[a(s.pipe_length_mm),a(s.pipe_diameter_mm),a(s.material_key),a(s.temperature_c),a(s.flow_rate_lpm),a(s.machine_type)||"high_pressure"].join("|")}getLastCalculation(){if(this.cacheOrder.length===0)return null;const s=this.cacheOrder[this.cacheOrder.length-1];return this.calculationCache.get(s)||null}getCacheSize(){return this.calculationCache.size}}const V=p.createContext(void 0);function ie({children:r}){const[s,a]=p.useState(null),[t,i]=p.useState(!1),[n,o]=p.useState(!1),[h,l]=p.useState(null),[x,j]=p.useState([]),[w,y]=p.useState(null),[u]=p.useState(()=>{const m=new se;return m.initialize().then(()=>o(!0)).catch(f=>{console.error("Failed to initialize Pyodide:",f),l("Failed to initialize calculation engine")}),new ae(m)}),N=p.useCallback(async m=>{i(!0),l(null),y(m);try{const f=await u.calculate(m);a(f);const $={id:`${Date.now()}-${Math.random()}`,timestamp:new Date,parameters:m,results:f};j(L=>[...L,$])}catch(f){const $=f instanceof Error?f.message:"Calculation failed";l($),console.error("Calculation error:",f)}finally{i(!1)}},[u]),b=p.useCallback(()=>{a(null),l(null)},[]),k=p.useCallback(m=>{j(f=>f.filter($=>$.id!==m))},[]),d=p.useCallback(()=>{j([])},[]),c=p.useCallback(m=>{a(m.results),y(m.parameters)},[]);return e.jsx(V.Provider,{value:{results:s,isLoading:t,isReady:n,error:h,history:x,lastParams:w,calculate:N,reset:b,deleteHistory:k,clearHistory:d,loadFromHistory:c},children:r})}function S(){const r=p.useContext(V);if(r===void 0)throw new Error("useCalculator must be used within CalculatorProvider");return r}const P={pipeLength:{min:50,max:1e4,unit:"mm",name:"Pipe Length"},pipeDiameter:{min:4,max:25,unit:"mm",name:"Pipe Diameter"},temperature:{min:18,max:35,unit:"°C",name:"Temperature"},flowRate:{min:.5,max:100,unit:"L/min",name:"Flow Rate"},viscosity:{min:200,max:1200,unit:"cP",name:"Viscosity"},density:{min:1050,max:1250,unit:"kg/m³",name:"Density"}},F={pipeLength:500,pipeDiameter:12,temperature:25,flowRate:5,material:"ecofoam_standard"};function ne(r,s){const a=P[r];if(!a)return{valid:!0};const t=typeof s=="string"?parseFloat(s):s;return isNaN(t)?{valid:!1,error:`${a.name} must be a valid number`}:t<a.min?{valid:!1,error:`${a.name} must be at least ${a.min} ${a.unit}`}:t>a.max?{valid:!1,error:`${a.name} must not exceed ${a.max} ${a.unit}`}:{valid:!0}}/**
  * @license lucide-react v0.294.0 - ISC
  *
