@@ -193,23 +193,32 @@ export class PyodideBridge implements PyodideManager {
     for (const modulePath of pythonModules) {
       try {
         const fetchUrl = `${pythonBasePath}${modulePath}`
-        console.log(`Fetching: ${fetchUrl}`)
         const response = await fetch(fetchUrl)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
         }
         const content = await response.text()
 
-        // Ensure directory exists in Virtual FS
+        // Ensure directory exists in Virtual FS (create all parent dirs)
         const dirPath = modulePath.substring(0, modulePath.lastIndexOf('/'))
-        if (dirPath && !fs.analyzePath(dirPath).exists) {
-          fs.mkdir(dirPath, { recursive: true })
+        if (dirPath) {
+          const parts = dirPath.split('/')
+          let currentPath = ''
+          for (const part of parts) {
+            currentPath += (currentPath ? '/' : '') + part
+            if (currentPath && !fs.analyzePath(currentPath).exists) {
+              try {
+                fs.mkdir(currentPath)
+              } catch (e) {
+                // Directory might already exist
+              }
+            }
+          }
         }
 
         // Write file to virtual filesystem at root
         const vfsPath = `/${modulePath}`
         fs.writeFile(vfsPath, content)
-        console.log(`✓ Loaded ${modulePath} -> VFS:${vfsPath}`)
         loadedFiles.push(modulePath)
       } catch (e) {
         console.error(`❌ FAILED to load: ${modulePath}`, e)
@@ -276,35 +285,17 @@ import json
 import traceback
 import sys
 import importlib
-import os
 
 _result = None
 try:
-    # Debug: print sys.path and check if module path exists
-    print(f"[DEBUG] sys.path: {sys.path}", file=sys.stderr)
-
     # Import the module dynamically using importlib
     module_path, func_name = '${functionPath}'.rsplit('.', 1)
-    print(f"[DEBUG] Attempting to import: {module_path}.{func_name}", file=sys.stderr)
-
-    # Check if the file exists
-    expected_file = '/' + module_path.replace('.', '/') + '.py'
-    print(f"[DEBUG] Expected file path: {expected_file}", file=sys.stderr)
-    print(f"[DEBUG] File exists: {os.path.exists(expected_file)}", file=sys.stderr)
-
-    # List /src directory
-    if os.path.exists('/src'):
-        print(f"[DEBUG] /src exists, listing contents...", file=sys.stderr)
-    else:
-        print(f"[DEBUG] /src does NOT exist!", file=sys.stderr)
 
     # Use importlib for proper module imports
     mod = importlib.import_module(module_path)
-    print(f"[DEBUG] Successfully imported module: {mod}", file=sys.stderr)
 
     # Get the function
     func = getattr(mod, func_name)
-    print(f"[DEBUG] Successfully got function: {func}", file=sys.stderr)
 
     # Call it with arguments
     args = ${argName}
@@ -317,8 +308,7 @@ try:
     _result = result
 except ImportError as e:
     # Return error info if imports fail
-    print(f"Import error: {e}", file=sys.stderr)
-    print(f"sys.path was: {sys.path}", file=sys.stderr)
+    print(f"[PYODIDE ERROR] ImportError: {e}", file=sys.stderr)
     traceback.print_exc()
     _result = {
         'success': False,
@@ -327,7 +317,7 @@ except ImportError as e:
     }
 except Exception as e:
     # Return error info for any other exception
-    print(f"Exception: {e}", file=sys.stderr)
+    print(f"[PYODIDE ERROR] {type(e).__name__}: {e}", file=sys.stderr)
     traceback.print_exc()
     _result = {
         'success': False,
