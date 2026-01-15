@@ -111,25 +111,79 @@ export class PyodideBridge implements PyodideManager {
     const pythonBasePath = `${base}python/`.replace(/\/+/g, '/')
     console.log(`Base path: ${base}, Python files path: ${pythonBasePath}`)
 
-    // List of key Python files to load - these are the core modules
+    // List of ALL Python files to load - comprehensive list for all imports to work
+    // Excludes test files to reduce load time
     const pythonModules = [
+      // Root level
       'src/__init__.py',
       'src/constants.py',
+      'src/conftest.py',
+      'src/model_evaluator.py',
+
+      // App modules
       'src/app/__init__.py',
       'src/app/calculator.py',
+      'src/app/optimizer.py',
+      'src/app/reporter.py',
+
+      // Core package
       'src/core/__init__.py',
-      'src/core/validation/__init__.py',
+
+      // Core data
       'src/core/data/__init__.py',
+      'src/core/data/materials_database.py',
+      'src/core/data/extended_materials_database.py',
+
+      // Core kinetics
+      'src/core/kinetics/__init__.py',
+      'src/core/kinetics/viscosity_conversion.py',
+      'src/core/kinetics/reaction_kinetics.py',
+      'src/core/kinetics/thermal_reaction.py',
+      'src/core/kinetics/foam_kinetics.py',
+
+      // Core machines
+      'src/core/machines/__init__.py',
+      'src/core/machines/machine_definitions.py',
+
+      // Core ML
+      'src/core/ml/__init__.py',
+      'src/core/ml/nn_surrogate.py',
+      'src/core/ml/ml_ensemble.py',
+
+      // Core modules
       'src/core/modules/__init__.py',
       'src/core/modules/pressure.py',
       'src/core/modules/flow.py',
       'src/core/modules/thermal.py',
       'src/core/modules/environmental.py',
+
+      // Core optimizers
+      'src/core/optimizers/__init__.py',
+      'src/core/optimizers/pressure_optimizer.py',
+      'src/core/optimizers/inverse_optimization.py',
+
+      // Core processors
       'src/core/processors/__init__.py',
       'src/core/processors/calculation_processor.py',
-      'src/core/kinetics/__init__.py',
-      'src/core/kinetics/viscosity_conversion.py',
-      'src/core/kinetics/reaction_kinetics.py',
+
+      // Core rheology
+      'src/core/rheology/__init__.py',
+      'src/core/rheology/advanced_fluid_models.py',
+
+      // Core thermodynamics
+      'src/core/thermodynamics/__init__.py',
+      'src/core/thermodynamics/advanced_heat_transfer.py',
+      'src/core/thermodynamics/thermal_integration.py',
+
+      // Core validation
+      'src/core/validation/__init__.py',
+      'src/core/validation/user_input_workflow.py',
+
+      // Other packages
+      'src/data/__init__.py',
+      'src/services/__init__.py',
+      'src/test/__init__.py',
+      'src/utils/__init__.py',
     ]
 
     const missingFiles: string[] = []
