@@ -196,7 +196,9 @@ export class PyodideBridge implements PyodideManager {
       const pythonCode = `
 import json
 import traceback
+import sys
 
+_result = None
 try:
     # Import the module dynamically
     module_path, func_name = '${functionPath}'.rsplit('.', 1)
@@ -218,23 +220,27 @@ try:
     if hasattr(result, '__dict__'):
         result = result.__dict__
 
-    result
+    _result = result
 except ImportError as e:
-    # For now, return mock data if imports fail (for testing)
-    # In production, ensure all modules are properly loaded
-    print(f"Import error: {e}")
-    {
+    # Return error info if imports fail
+    print(f"Import error: {e}", file=sys.stderr)
+    traceback.print_exc()
+    _result = {
         'success': False,
-        'errors': [str(e)],
+        'errors': [f"ImportError: {str(e)}"],
         'data': None
     }
 except Exception as e:
+    # Return error info for any other exception
+    print(f"Exception: {e}", file=sys.stderr)
     traceback.print_exc()
-    {
+    _result = {
         'success': False,
         'errors': [f"{type(e).__name__}: {str(e)}"],
         'data': None
     }
+
+_result
 `
 
       const result = await pyodideInstance.runPythonAsync(pythonCode)

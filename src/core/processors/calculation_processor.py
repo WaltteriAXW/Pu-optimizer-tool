@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Import core calculation modules (required)
 from ..modules import pressure, thermal, flow, environmental
-from ..constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
+from ...constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
 from ..validation import validate_parameters
 
 # Import kinetics modules (optional extension - Phase 4)
