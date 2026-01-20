@@ -330,9 +330,18 @@ export class PyodideBridge implements PyodideManager {
     }
 
     try {
+      // Convert JavaScript objects to Python-compatible format
+      const pythonArgs = args.map(arg => {
+        if (typeof arg === 'object' && arg !== null) {
+          // Convert JS object to Python dict via JSON
+          return pyodideInstance.toPy(arg)
+        }
+        return arg
+      })
+
       // Set up arguments in Python
       const argName = `_args_${Date.now()}`
-      pyodideInstance.globals.set(argName, args)
+      pyodideInstance.globals.set(argName, pythonArgs)
 
       // Execute Python code
       const pythonCode = `
