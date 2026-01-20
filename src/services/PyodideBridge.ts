@@ -21,17 +21,21 @@ export class PyodideBridge implements PyodideManager {
 
   private async _doInitialize(): Promise<void> {
     try {
+      // eslint-disable-next-line no-console
       console.log('Initializing Pyodide...')
       pyodideInstance = await loadPyodide({
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
       })
 
+      // eslint-disable-next-line no-console
       console.log('Loading Python packages...')
       await pyodideInstance.loadPackage(['numpy'])
 
+      // eslint-disable-next-line no-console
       console.log('Mounting Python files...')
       await this.mountPythonFiles()
 
+      // eslint-disable-next-line no-console
       console.log('Python backend initialized successfully')
       this.pyodideReady = true
     } catch (error) {
@@ -125,11 +129,13 @@ export class PyodideBridge implements PyodideManager {
    * Fails loudly if critical files are missing
    */
   private async loadPythonFilesFromPublic(fs: any): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log('Loading Python files from public/python/...')
 
     // Determine base path - handle both dev and production
     const base = import.meta.env.BASE_URL || '/'
     const pythonBasePath = `${base}python/`.replace(/\/+/g, '/')
+    // eslint-disable-next-line no-console
     console.log(`Base path: ${base}, Python files path: ${pythonBasePath}`)
 
     // List of ALL Python files to load - comprehensive list for all imports to work
@@ -211,7 +217,7 @@ export class PyodideBridge implements PyodideManager {
     const loadedFiles: string[] = []
 
     // Fetch and load each module
-    let fetchErrors: Array<{file: string, url: string, error: string}> = []
+    const fetchErrors: Array<{file: string, url: string, error: string}> = []
 
     for (const modulePath of pythonModules) {
       try {
@@ -260,19 +266,24 @@ export class PyodideBridge implements PyodideManager {
 
     // Report detailed fetch errors
     if (fetchErrors.length > 0 && fetchErrors.length <= 5) {
+      // eslint-disable-next-line no-console
       console.error('Fetch errors:', fetchErrors)
     } else if (fetchErrors.length > 0) {
+      // eslint-disable-next-line no-console
       console.error(`First 3 fetch errors (${fetchErrors.length} total):`, fetchErrors.slice(0, 3))
     }
 
     // Report results
+    // eslint-disable-next-line no-console
     console.log(`✓ Loaded ${loadedFiles.length}/${pythonModules.length} Python modules`)
     if (loadedFiles.length > 0) {
+      // eslint-disable-next-line no-console
       console.log('Sample loaded files:', loadedFiles.slice(0, 3).join(', '), '...')
     }
 
     if (missingFiles.length > 0) {
       const errorMsg = `Failed to load ${missingFiles.length} critical Python modules:\n${missingFiles.join('\n')}`
+      // eslint-disable-next-line no-console
       console.error('❌ MISSING FILES:', errorMsg)
       throw new Error(errorMsg)
     }
@@ -281,6 +292,7 @@ export class PyodideBridge implements PyodideManager {
       throw new Error('No Python files were loaded! Check that files exist at: ' + pythonBasePath)
     }
 
+    // eslint-disable-next-line no-console
     console.log('✓ All Python files loaded successfully')
   }
 
