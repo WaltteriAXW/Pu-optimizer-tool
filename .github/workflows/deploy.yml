@@ -39,3 +39,38 @@ jobs:
         with:
           folder: dist
           branch: gh-pages
+
+      - name: Generate version tag
+        id: version
+        run: |
+          VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d ' ')
+          TIMESTAMP=$(date +%s)
+          TAG="v${VERSION}-${TIMESTAMP}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: "Release v${{ steps.version.outputs.version }}"
+          body: |
+            ## PU-Optimizer Release
+
+            Version: ${{ steps.version.outputs.version }}
+            Build Date: ${{ github.event.head_commit.timestamp }}
+            Commit: ${{ github.sha }}
+
+            ### What's New
+            - See commit history for details
+
+            ### Installation
+            This release is automatically deployed to GitHub Pages at:
+            https://waltteraxw.github.io/Pu-optimizer-tool/
+
+            ### Rollback Instructions
+            If you need to use a previous version, check the [releases page](https://github.com/WaltteriAXW/Pu-optimizer-tool/releases)
+          draft: false
+          prerelease: false
