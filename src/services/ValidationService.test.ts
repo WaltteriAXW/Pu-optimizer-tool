@@ -11,7 +11,7 @@ import type { ProcessParameters } from '@/models/types'
 const validParameters: ProcessParameters = {
   pipe_length_mm: 1000,
   pipe_diameter_mm: 20,
-  material_key: 'ecofoam_standard',
+  material_key: 'genfoam_hd12',
   temperature_c: 25,
   flow_rate_lpm: 10
 }
@@ -159,10 +159,10 @@ describe('ValidationService', () => {
 
     it('should accept valid materials', () => {
       const validMaterials = [
-        'ecofoam_standard',
-        'ecofoam_hc',
-        'ecofoam_water',
-        'ecofoam_hfo'
+        'genfoam_hd12',
+        'genfoam_hd20',
+        'ecomate_spray',
+        'ecofoam_xhd_rc'
       ]
 
       validMaterials.forEach(material => {
@@ -254,7 +254,7 @@ describe('ValidationService', () => {
       const params: ProcessParameters = {
         pipe_length_mm: 1000,
         pipe_diameter_mm: 3, // Very small diameter (3mm)
-        material_key: 'ecofoam_standard',
+        material_key: 'genfoam_hd12',
         temperature_c: 25,
         flow_rate_lpm: 50 // High flow in very small pipe
       }
@@ -274,7 +274,7 @@ describe('ValidationService', () => {
       const params: ProcessParameters = {
         pipe_length_mm: 1000,
         pipe_diameter_mm: 50, // Large diameter
-        material_key: 'ecofoam_standard',
+        material_key: 'genfoam_hd12',
         temperature_c: 25,
         flow_rate_lpm: 0.05 // Very low flow
       }
@@ -357,7 +357,7 @@ describe('ValidationService', () => {
       const params: ProcessParameters = {
         pipe_length_mm: 100,
         pipe_diameter_mm: 20,
-        material_key: 'ecofoam_standard',
+        material_key: 'genfoam_hd12',
         temperature_c: 25,
         flow_rate_lpm: 5
       }
@@ -390,7 +390,7 @@ describe('ValidationService', () => {
       const params = {
         pipe_length_mm: 999999,
         pipe_diameter_mm: 999,
-        material_key: 'ecofoam_standard',
+        material_key: 'genfoam_hd12',
         temperature_c: 1000,
         flow_rate_lpm: 999999
       }
@@ -403,7 +403,7 @@ describe('ValidationService', () => {
       const params = {
         pipe_length_mm: 0.0001,
         pipe_diameter_mm: 0.0001,
-        material_key: 'ecofoam_standard',
+        material_key: 'genfoam_hd12',
         temperature_c: 0.0001,
         flow_rate_lpm: 0.0001
       }
