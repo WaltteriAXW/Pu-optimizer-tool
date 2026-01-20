@@ -8,7 +8,7 @@ interface ExportButtonsProps {
   params: ProcessParameters
 }
 
-export function ExportButtons({ results, params }: ExportButtonsProps) {
+export function ExportButtons({ results, params: _params }: ExportButtonsProps) {
   const exportService = new ExportService()
 
   const handleExport = (format: 'json' | 'csv' | 'report') => {

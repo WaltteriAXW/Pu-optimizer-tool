@@ -2,7 +2,6 @@ import React from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
-import type { CalculationResults } from '@/calculator_types'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -10,7 +9,6 @@ import {
   Wind,
   Gauge,
   Timer,
-  Activity,
 } from 'lucide-react'
 
 export function ResultsDisplay() {
@@ -298,7 +296,7 @@ function KpiCard({
   unit,
   icon,
   status = 'neutral',
-  trend,
+  trend: _trend,
 }: {
   title: string
   value: string | number
