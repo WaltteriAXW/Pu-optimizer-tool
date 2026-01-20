@@ -66,7 +66,7 @@ export function PressureChart({ results }: PressureChartProps) {
   const fillPath = `${basePressurePath} L ${xScale(pipeLength)} ${yScale(0)} Z`
 
   return (
-    <div className="w-full bg-white rounded-lg border border-slate-200 p-6">
+    <div className="w-full bg-white rounded-lg border border-slate-200 p-6" data-chart="pressure-profile">
       <h3 className="text-lg font-bold text-slate-800 mb-4">
         Pressure Profile Analysis
       </h3>
