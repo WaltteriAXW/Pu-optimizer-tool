@@ -189,10 +189,10 @@ export class ValidationService {
     }
 
     const validMaterials = [
-      'ecofoam_standard',
-      'ecofoam_hc',
-      'ecofoam_water',
-      'ecofoam_hfo'
+      'genfoam_hd12',
+      'genfoam_hd20',
+      'ecomate_spray',
+      'ecofoam_xhd_rc'
     ]
 
     if (!validMaterials.includes(material)) {
