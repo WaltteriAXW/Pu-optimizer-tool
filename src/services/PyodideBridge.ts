@@ -211,12 +211,16 @@ export class PyodideBridge implements PyodideManager {
     const loadedFiles: string[] = []
 
     // Fetch and load each module
+    let fetchErrors: Array<{file: string, url: string, error: string}> = []
+
     for (const modulePath of pythonModules) {
       try {
         const fetchUrl = `${pythonBasePath}${modulePath}`
         const response = await fetch(fetchUrl)
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
+          const errorMsg = `HTTP ${response.status} ${response.statusText}`
+          fetchErrors.push({file: modulePath, url: fetchUrl, error: errorMsg})
+          throw new Error(errorMsg)
         }
         const content = await response.text()
 
@@ -242,9 +246,23 @@ export class PyodideBridge implements PyodideManager {
         fs.writeFile(vfsPath, content)
         loadedFiles.push(modulePath)
       } catch (e) {
-        console.error(`❌ FAILED to load: ${modulePath}`, e)
+        const errorDetail = e instanceof Error ? e.message : String(e)
+        if (!fetchErrors.find(err => err.file === modulePath)) {
+          fetchErrors.push({
+            file: modulePath,
+            url: `${pythonBasePath}${modulePath}`,
+            error: errorDetail
+          })
+        }
         missingFiles.push(modulePath)
       }
+    }
+
+    // Report detailed fetch errors
+    if (fetchErrors.length > 0 && fetchErrors.length <= 5) {
+      console.error('Fetch errors:', fetchErrors)
+    } else if (fetchErrors.length > 0) {
+      console.error(`First 3 fetch errors (${fetchErrors.length} total):`, fetchErrors.slice(0, 3))
     }
 
     // Report results
