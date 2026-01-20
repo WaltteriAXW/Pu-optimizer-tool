@@ -230,8 +230,8 @@ export class PyodideBridge implements PyodideManager {
           const parts = dirPath.split('/')
           let currentPath = ''
           for (const part of parts) {
-            currentPath += (currentPath ? '/' : '') + part
-            if (currentPath && !fs.analyzePath(currentPath).exists) {
+            currentPath += '/' + part  // Always add leading slash
+            if (!fs.analyzePath(currentPath).exists) {
               try {
                 fs.mkdir(currentPath)
               } catch (e) {
