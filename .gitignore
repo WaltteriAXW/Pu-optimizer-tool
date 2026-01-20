@@ -39,3 +39,9 @@ models/
 !src/models/*.ts
 !public/python/
 !public/python/**/*.py
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

@@ -1,15 +1,17 @@
-import React from 'react'
+import { useState } from 'react'
 import { ExportService } from '../services/ExportService'
+import { generateReport } from '../utils/generateReport'
 import type { CalculationResults, ProcessParameters } from '@/calculator_types'
-import { Download, FileJson, FileText } from 'lucide-react'
+import { Download, FileJson, FileText, Loader } from 'lucide-react'
 
 interface ExportButtonsProps {
   results: CalculationResults
   params: ProcessParameters
 }
 
-export function ExportButtons({ results, params: _params }: ExportButtonsProps) {
+export function ExportButtons({ results, params }: ExportButtonsProps) {
   const exportService = new ExportService()
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
   const handleExport = (format: 'json' | 'csv' | 'report') => {
     try {
@@ -35,6 +37,47 @@ export function ExportButtons({ results, params: _params }: ExportButtonsProps) 
     } catch (error) {
       console.error('Export failed:', error)
       alert('Failed to export results')
+    }
+  }
+
+  const handleGeneratePDF = async () => {
+    setIsGeneratingPDF(true)
+    try {
+      // Find the chart element in the DOM
+      const chartElement = document.querySelector('[data-chart="pressure-profile"]') as HTMLElement | null
+
+      // Map parameters to input data format
+      const inputData = {
+        pipeLength: params.pipe_length_mm || 0,
+        pipeDiameter: params.pipe_diameter_mm || 0,
+        temperature: params.temperature_c || 0,
+        flowRate: params.flow_rate_lpm || 0,
+        viscosity: results.flow?.apparent_viscosity_cp || 0,
+        density: 1000, // kg/m³
+        selectedMaterial: params.material_key || 'Unknown',
+        selectedMachine: params.machine_type || 'Unknown',
+      }
+
+      // Map calculation results to output format
+      const resultData = {
+        optimalPressureBar: results.pressure?.base_pressure_drop_bar,
+        pressureDropBar: results.pressure?.pressure_drop_pa,
+        reynoldsNumber: results.flow?.reynolds_number,
+        flowRegime: results.flow?.flow_regime,
+        velocity: results.flow?.velocity_m_s,
+        shearRate: results.flow?.shear_rate_s_inv,
+        injectionTime: undefined, // Not available in current structure
+        compatible: results.machine_compatibility?.is_compatible || false,
+        machine: undefined,
+      }
+
+      // Generate the PDF with chart if available
+      await generateReport(inputData, resultData, chartElement || undefined)
+    } catch (error) {
+      console.error('PDF generation failed:', error)
+      alert('Failed to generate PDF report')
+    } finally {
+      setIsGeneratingPDF(false)
     }
   }
 
@@ -65,6 +108,20 @@ export function ExportButtons({ results, params: _params }: ExportButtonsProps) 
       >
         <Download className="w-4 h-4" />
         Report
+      </button>
+
+      <button
+        onClick={handleGeneratePDF}
+        disabled={isGeneratingPDF}
+        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="Generate professional PDF report with charts"
+      >
+        {isGeneratingPDF ? (
+          <Loader className="w-4 h-4 animate-spin" />
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
+        {isGeneratingPDF ? 'Generating...' : 'PDF'}
       </button>
     </div>
   )

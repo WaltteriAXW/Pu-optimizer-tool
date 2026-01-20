@@ -25,6 +25,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "eslint src --ext .js,.ts,.jsx,.tsx",
     "lint:fix": "eslint src --ext .js,.ts,.jsx,.tsx --fix",
     "type-check": "tsc --noEmit"
@@ -33,9 +35,13 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "lucide-react": "^0.294.0",
-    "pyodide": "0.24.1"
+    "pyodide": "0.24.1",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.36",
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.1",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
