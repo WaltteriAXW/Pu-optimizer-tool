@@ -8,6 +8,7 @@
  */
 
 import type { ProcessParameters, CalculationResults } from '@/models/types'
+import { getDefaultMaterialProvider } from './MaterialProvider'
 
 /**
  * Interface for PyodideManager to provide proper typing
@@ -71,10 +72,13 @@ export class CalculationService {
         return cached
       }
 
+      // Enhance parameters with material properties (Phase Beta feature)
+      const enhancedParameters = await this.injectMaterialProperties(parameters)
+
       // Call Python backend with full module path
       const result = await this.pyodideManager.callPython<PythonCalculationResult>(
         'src.core.processors.calculation_processor.calculate_all',
-        [parameters]
+        [enhancedParameters]
       )
 
       // Validate result is properly typed
@@ -245,6 +249,51 @@ export class CalculationService {
    */
   getCacheSize(): number {
     return this.calculationCache.size
+  }
+
+  /**
+   * Inject material properties into parameters (Phase Beta feature).
+   * Loads material data from provider and enriches parameters with properties.
+   * Maintains backward compatibility: if material properties already present, uses them.
+   */
+  private async injectMaterialProperties(parameters: ProcessParameters): Promise<Record<string, unknown>> {
+    const enhancedParams = { ...parameters }
+
+    // If material properties already injected, skip
+    if ('viscosity_cp' in enhancedParams && 'density_kg_m3' in enhancedParams) {
+      return enhancedParams
+    }
+
+    // Get material_key from parameters
+    const materialKey = parameters.material_key
+    if (!materialKey) {
+      return enhancedParams // No material key, return as-is
+    }
+
+    try {
+      // Load material properties using MaterialProvider
+      const provider = getDefaultMaterialProvider()
+      const material = await provider.getById(materialKey)
+
+      if (material) {
+        // Inject material properties into parameters
+        Object.assign(enhancedParams, {
+          viscosity_cp: material.viscosity_cp,
+          density_kg_m3: material.density_kg_m3,
+          flow_index: material.flow_index,
+          activation_energy_j_mol: material.activation_energy_j_mol,
+          polyol_sg: material.polyol_sg,
+          iso_sg: material.iso_sg,
+          weight_ratio: material.weight_ratio,
+          final_density_kg_m3: material.final_density_kg_m3,
+        })
+      }
+    } catch (error) {
+      console.warn('Failed to inject material properties, falling back to material_key:', error)
+      // Silently fail - Python will fall back to material_key lookup
+    }
+
+    return enhancedParams
   }
 }
 
