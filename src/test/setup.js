@@ -1,5 +1,3 @@
-import { expect, afterEach } from 'vitest';
-
 // Mock window.matchMedia if window exists (browser environment)
 if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'matchMedia', {

@@ -240,7 +240,7 @@ export class PyodideBridge implements PyodideManager {
             if (!fs.analyzePath(currentPath).exists) {
               try {
                 fs.mkdir(currentPath)
-              } catch (e) {
+              } catch {
                 // Directory might already exist
               }
             }
