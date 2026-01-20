@@ -127,10 +127,10 @@ export function CalculatorForm() {
             onChange={handleChange}
             className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
           >
-            <option value="ecofoam_standard">EcoFoam Standard</option>
-            <option value="ecofoam_hc">EcoFoam HC</option>
-            <option value="ecofoam_water">EcoFoam Water-Blown</option>
-            <option value="ecofoam_hfo">EcoFoam HFO</option>
+            <option value="genfoam_hd12">Genfoam HD12 (Water-Blown)</option>
+            <option value="genfoam_hd20">Genfoam HD20 (Water-Blown)</option>
+            <option value="ecomate_spray">Ecomate Spray (eco-mate®, Zero GWP)</option>
+            <option value="ecofoam_xhd_rc">Ecofoam XHD RC (eco-mate®, Zero GWP)</option>
           </select>
         </div>
 
