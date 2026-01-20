@@ -6,43 +6,43 @@ Evaluates blowing agents and sustainability aspects.
 from typing import Dict
 
 
-# Material environmental data
+# Material environmental data - Based on real products
 MATERIAL_ENVIRONMENTAL_DATA = {
-    'ecofoam_standard': {
-        'name': 'Standard Polyurethane Foam',
-        'blowing_agent': 'CFC/HCFC',
-        'gwp': 5000,  # Global Warming Potential (kg CO2-eq per kg material)
-        'ozone_depletion_potential': 0.5,
-        'toxicity': 'Low',
-        'recyclability': 'Low',
-        'recommendation': 'Avoid - high environmental impact'
-    },
-    'ecofoam_hc': {
-        'name': 'Ecofoam HC - HFC-245fa Blowing',
-        'blowing_agent': 'HFC-245fa',
-        'gwp': 1000,
+    'genfoam_hd12': {
+        'name': 'Genfoam HD12 (Water-Blown)',
+        'blowing_agent': 'Water (H2O)',
+        'gwp': 0,  # Global Warming Potential (kg CO2-eq per kg material)
         'ozone_depletion_potential': 0,
         'toxicity': 'Low',
-        'recyclability': 'Medium',
-        'recommendation': 'Good alternative - moderate impact'
+        'recyclability': 'High',
+        'recommendation': 'Preferred - zero environmental impact'
     },
-    'ecofoam_water': {
-        'name': 'Ecofoam Water-Blown',
+    'genfoam_hd20': {
+        'name': 'Genfoam HD20 (Water-Blown)',
         'blowing_agent': 'Water (H2O)',
         'gwp': 0,
         'ozone_depletion_potential': 0,
         'toxicity': 'Low',
         'recyclability': 'High',
-        'recommendation': 'Preferred - lowest environmental impact'
+        'recommendation': 'Preferred - zero environmental impact'
     },
-    'ecofoam_hfo': {
-        'name': 'Ecofoam HFO - Next-gen',
-        'blowing_agent': 'HFO-1234ze',
-        'gwp': 1,
+    'ecomate_spray': {
+        'name': 'Ecomate Spray (eco-mate®)',
+        'blowing_agent': 'eco-mate® (Zero GWP)',
+        'gwp': 0,
         'ozone_depletion_potential': 0,
         'toxicity': 'Low',
         'recyclability': 'High',
-        'recommendation': 'Best in class - ultra-low impact'
+        'recommendation': 'Best in class - zero GWP, eco-friendly'
+    },
+    'ecofoam_xhd_rc': {
+        'name': 'Ecofoam XHD RC (eco-mate®)',
+        'blowing_agent': 'eco-mate® (Zero GWP)',
+        'gwp': 0,
+        'ozone_depletion_potential': 0,
+        'toxicity': 'Low',
+        'recyclability': 'High',
+        'recommendation': 'Best in class - zero GWP, eco-friendly'
     }
 }
 
@@ -62,10 +62,10 @@ def calculate_environmental_impact(
         Dict with environmental impact metrics
     """
 
-    # Get material data (default to standard if not found)
+    # Get material data (default to genfoam_hd12 if not found)
     material = MATERIAL_ENVIRONMENTAL_DATA.get(
         material_key,
-        MATERIAL_ENVIRONMENTAL_DATA['ecofoam_standard']
+        MATERIAL_ENVIRONMENTAL_DATA['genfoam_hd12']
     )
 
     gwp = material.get('gwp', 0)

@@ -342,12 +342,12 @@ MACHINE_SPECS = {
 }
 
 # ============================================================================
-# MATERIAL PRESETS
+# MATERIAL PRESETS - Based on real products from materials database
 # ============================================================================
 
 MATERIAL_PRESETS = {
-    "ecofoam_standard": {
-        "name": "Ecofoam Standard",
+    "genfoam_hd12": {
+        "name": "Genfoam HD12 (Water-Blown)",
         "density": 1120,
         "specific_gravity": 1.12,
         "viscosity": 350,
@@ -358,20 +358,20 @@ MATERIAL_PRESETS = {
         "weight_ratio": [100, 110],
         "final_density": 32
     },
-    "ecofoam_xhd": {
-        "name": "Ecofoam XHD RC",
+    "genfoam_hd20": {
+        "name": "Genfoam HD20 (Water-Blown)",
         "density": 1120,
         "specific_gravity": 1.12,
-        "viscosity": 850,
-        "flow_index": 0.82,
-        "activation_energy": 28000,
+        "viscosity": 450,
+        "flow_index": 0.83,
+        "activation_energy": 26000,
         "polyol_sg": 1.12,
         "iso_sg": 1.23,
         "weight_ratio": [100, 110],
         "final_density": 40
     },
-    "ecomate_spray_ec": {
-        "name": "Ecomate Spray EC",
+    "ecomate_spray": {
+        "name": "Ecomate Spray (eco-mate®, Zero GWP)",
         "density": 1120,
         "specific_gravity": 1.12,
         "viscosity": 350,
@@ -381,6 +381,18 @@ MATERIAL_PRESETS = {
         "iso_sg": 1.23,
         "weight_ratio": [100, 110],
         "final_density": 32
+    },
+    "ecofoam_xhd_rc": {
+        "name": "Ecofoam XHD RC (eco-mate®, Zero GWP)",
+        "density": 1120,
+        "specific_gravity": 1.12,
+        "viscosity": 850,
+        "flow_index": 0.82,
+        "activation_energy": 28000,
+        "polyol_sg": 1.12,
+        "iso_sg": 1.23,
+        "weight_ratio": [100, 110],
+        "final_density": 40
     }
 }
 
