@@ -70,6 +70,9 @@ class CalculationProcessor:
 
         Main entry point. This is the ONLY function JavaScript calls.
 
+        PHASE BETA FEATURE: Accepts injected material properties from TypeScript layer.
+        This enables decoupling from hardcoded materials and CSV-based data sources.
+
         Input: Raw user parameters
         Output: All calculated values with complete detail
 
@@ -77,11 +80,21 @@ class CalculationProcessor:
             parameters: Dict with keys:
                 - pipe_length_mm
                 - pipe_diameter_mm
-                - material_key
+                - material_key (string identifier) OR injected properties (see below)
                 - temperature_c
                 - flow_rate_lpm
                 - machine_type (optional)
                 - pressure_override (optional)
+
+                INJECTED PROPERTIES (Phase Beta - TypeScript provides these):
+                - viscosity_cp (number) - overrides material lookup
+                - density_kg_m3 (number)
+                - flow_index (number)
+                - activation_energy_j_mol (number)
+                - polyol_sg (number)
+                - iso_sg (number)
+                - weight_ratio (list)
+                - final_density_kg_m3 (number)
 
         Returns:
             Dict with structure:
@@ -99,6 +112,11 @@ class CalculationProcessor:
                     'timestamp': str
                 }
             }
+
+        BACKWARD COMPATIBILITY:
+        - If injected properties present, uses them (no material_key lookup)
+        - If only material_key present, falls back to hardcoded lookup
+        - If both present, injected properties take precedence
         """
 
         try:
@@ -128,12 +146,12 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 3: Get material properties
-            material = self._get_material_properties(material_key)
+            # Step 3: Resolve material properties (Phase Beta: prefers injected)
+            material, material_source = self._resolve_material_properties(parameters)
             if material is None:
                 return {
                     'success': False,
-                    'errors': [f'Material "{material_key}" not found'],
+                    'errors': [f'No material properties available (tried: {material_source})'],
                     'warnings': [],
                     'data': None
                 }
@@ -328,8 +346,52 @@ class CalculationProcessor:
             }
 
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
-        """Get material properties from presets."""
+        """Get material properties from presets (fallback for backward compatibility)."""
         return self.material_presets.get(material_key)
+
+    def _resolve_material_properties(self, parameters: Dict[str, Any]) -> tuple:
+        """
+        Resolve material properties with Phase Beta injection support.
+
+        PRIORITY (highest to lowest):
+        1. Injected properties from TypeScript (Phase Beta feature)
+        2. Hardcoded material_key lookup (backward compatibility)
+
+        Returns:
+            Tuple of (material_dict, source_description)
+            - material_dict: Dict with material properties, or None if not found
+            - source_description: String describing where properties came from
+        """
+
+        # CHECK 1: Look for injected properties (Phase Beta)
+        injected_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        has_injected = all(key in parameters for key in injected_keys)
+
+        if has_injected:
+            # Construct material dict from injected properties
+            material = {
+                'viscosity': parameters.get('viscosity_cp'),
+                'density': parameters.get('density_kg_m3'),
+                'flow_index': parameters.get('flow_index'),
+                'activation_energy': parameters.get('activation_energy_j_mol'),
+                'polyol_sg': parameters.get('polyol_sg', 1.12),
+                'iso_sg': parameters.get('iso_sg', 1.23),
+                'weight_ratio': parameters.get('weight_ratio', [100, 110]),
+                'final_density': parameters.get('final_density_kg_m3', 32),
+            }
+            logger.info(f"Using INJECTED material properties (viscosity={material['viscosity']}cP)")
+            return material, 'injected_properties'
+
+        # CHECK 2: Fall back to material_key lookup (backward compatibility)
+        material_key = parameters.get('material_key', 'ecofoam_standard')
+        material = self._get_material_properties(material_key)
+
+        if material is not None:
+            logger.info(f"Using HARDCODED material properties for key: {material_key}")
+            return material, f'material_key:{material_key}'
+
+        # Neither available
+        return None, f'no_injected_properties, material_key_not_found:{material_key}'
 
     def calculate_kinetics(
         self,
