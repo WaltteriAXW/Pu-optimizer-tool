@@ -239,20 +239,32 @@ class CalculationProcessor:
                 shear_heating = {'temperature_rise_c': 0, 'heat_generated_w': 0}  # Fallback
 
             # Step 10: Calculate environmental impact
-            try:
-                env_result = environmental.calculate_environmental_impact(
-                    material_key=material_key,
-                    quantity_kg=1.0,
-                )
-            except Exception as e:
-                logger.error(f"Environmental calculation failed: {e}")
+            # Skip lookup for custom materials — the environmental database only
+            # covers the four preset formulations; defaulting to a preset would be
+            # misleading, so return a clear "no data" result instead.
+            if material_key == 'custom':
                 env_result = {
-                    'material': material_key,
-                    'blowing_agent': 'Unknown',
+                    'material': 'Custom Material',
+                    'blowing_agent': 'N/A',
                     'gwp_per_kg': 0,
-                    'recommendation': 'N/A',
-                    'is_eco_friendly': False
-                }  # Fallback
+                    'recommendation': 'No environmental data available for custom materials',
+                    'is_eco_friendly': False,
+                }
+            else:
+                try:
+                    env_result = environmental.calculate_environmental_impact(
+                        material_key=material_key,
+                        quantity_kg=1.0,
+                    )
+                except Exception as e:
+                    logger.error(f"Environmental calculation failed: {e}")
+                    env_result = {
+                        'material': material_key,
+                        'blowing_agent': 'Unknown',
+                        'gwp_per_kg': 0,
+                        'recommendation': 'N/A',
+                        'is_eco_friendly': False
+                    }
 
             # Step 11: Check machine compatibility
             try:
