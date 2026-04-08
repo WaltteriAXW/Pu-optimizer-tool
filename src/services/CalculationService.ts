@@ -210,27 +210,32 @@ export class CalculationService {
 
   /**
    * Create a unique cache key from parameters.
-   * Used to avoid recalculating identical requests.
-   * Handles undefined values safely to prevent cache key collisions.
+   * For custom materials, the key includes the user-entered property values so
+   * changing any property produces a cache miss (correct behaviour).
    */
   private createCacheKey(parameters: ProcessParameters): string {
-    const safeValue = (val: unknown): string => {
-      if (val === undefined || val === null) {
-        return '__null__'
-      }
-      return String(val)
-    }
+    const safeValue = (val: unknown): string =>
+      val === undefined || val === null ? '__null__' : String(val)
 
-    const key = [
+    const parts = [
       safeValue(parameters.pipe_length_mm),
       safeValue(parameters.pipe_diameter_mm),
       safeValue(parameters.material_key),
       safeValue(parameters.temperature_c),
       safeValue(parameters.flow_rate_lpm),
-      safeValue(parameters.machine_type) || 'high_pressure'
-    ].join('|')
+      safeValue(parameters.machine_type) || 'high_pressure',
+    ]
 
-    return key
+    if (parameters.material_key === 'custom') {
+      parts.push(
+        safeValue(parameters.viscosity_cp),
+        safeValue(parameters.density_kg_m3),
+        safeValue(parameters.flow_index),
+        safeValue(parameters.activation_energy_j_mol),
+      )
+    }
+
+    return parts.join('|')
   }
 
   /**
@@ -253,30 +258,30 @@ export class CalculationService {
 
   /**
    * Inject material properties into parameters (Phase Beta feature).
-   * Loads material data from provider and enriches parameters with properties.
-   * Maintains backward compatibility: if material properties already present, uses them.
+   *
+   * For preset materials: loads properties from MaterialProvider and adds them
+   * to the parameter object so Python receives full material data.
+   *
+   * For custom materials: properties were entered directly by the user and are
+   * already present on the parameters object — no lookup needed.
    */
   private async injectMaterialProperties(parameters: ProcessParameters): Promise<Record<string, unknown>> {
-    const enhancedParams = { ...parameters }
+    const enhancedParams: Record<string, unknown> = { ...parameters }
 
-    // If material properties already injected, skip
-    if ('viscosity_cp' in enhancedParams && 'density_kg_m3' in enhancedParams) {
+    const materialKey = parameters.material_key
+
+    // Custom material — user supplied the properties directly; pass them through as-is
+    if (materialKey === 'custom') {
       return enhancedParams
     }
 
-    // Get material_key from parameters
-    const materialKey = parameters.material_key
-    if (!materialKey) {
-      return enhancedParams // No material key, return as-is
-    }
-
+    // Preset material — always inject from provider so preset values are authoritative
+    // (this also overwrites any stale custom values left in state after switching away)
     try {
-      // Load material properties using MaterialProvider
       const provider = getDefaultMaterialProvider()
       const material = await provider.getById(materialKey)
 
       if (material) {
-        // Inject material properties into parameters
         Object.assign(enhancedParams, {
           viscosity_cp: material.viscosity_cp,
           density_kg_m3: material.density_kg_m3,
@@ -290,7 +295,7 @@ export class CalculationService {
       }
     } catch (error) {
       console.warn('Failed to inject material properties, falling back to material_key:', error)
-      // Silently fail - Python will fall back to material_key lookup
+      // Python will fall back to its own MATERIAL_PRESETS lookup
     }
 
     return enhancedParams

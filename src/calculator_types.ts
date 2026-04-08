@@ -7,14 +7,21 @@
  * Note: Uses snake_case naming convention for API compatibility with Python backend
  */
 export interface ProcessParameters {
-  pipe_length_mm: number;       // mm
-  pipe_diameter_mm: number;     // mm
-  temperature_c: number;        // °C
-  flow_rate_lpm: number;        // L/min
-  material_key: string;         // Material identifier
-  machine_type?: string;        // Machine type (optional)
-  viscosity_cp?: number;        // cP (centipoise)
-  density_kg_m3?: number;       // kg/m³
+  pipe_length_mm: number;               // mm
+  pipe_diameter_mm: number;             // mm
+  temperature_c: number;                // °C
+  flow_rate_lpm: number;                // L/min
+  material_key: string;                 // Material identifier ('custom' for user-defined)
+  machine_type?: string;                // Machine type (optional)
+  // Injected material properties — set by MaterialProvider for presets,
+  // or entered directly by the user when material_key === 'custom'
+  viscosity_cp?: number;                // cP
+  density_kg_m3?: number;               // kg/m³
+  flow_index?: number;                  // Power-law flow index (0–1)
+  activation_energy_j_mol?: number;     // J/mol
+  polyol_sg?: number;                   // Polyol specific gravity
+  iso_sg?: number;                      // Isocyanate specific gravity
+  final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
 }
 
 /**

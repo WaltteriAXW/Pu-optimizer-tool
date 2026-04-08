@@ -67,6 +67,11 @@ export class ValidationService {
     const materialError = this.validateMaterial(parameters.material_key)
     if (materialError) errors.push(materialError)
 
+    // Custom material property validation
+    if (parameters.material_key === 'custom') {
+      errors.push(...this.validateCustomMaterialProperties(parameters))
+    }
+
     // Temperature validation
     const tempWarning = this.validateTemperature(parameters.temperature_c)
     if (tempWarning) {
@@ -192,7 +197,8 @@ export class ValidationService {
       'genfoam_hd12',
       'genfoam_hd20',
       'ecomate_spray',
-      'ecofoam_xhd_rc'
+      'ecofoam_xhd_rc',
+      'custom',
     ]
 
     if (!validMaterials.includes(material)) {
@@ -205,6 +211,47 @@ export class ValidationService {
     }
 
     return null
+  }
+
+  /**
+   * Validate custom material property values when material_key === 'custom'.
+   */
+  private validateCustomMaterialProperties(parameters: ProcessParameters): ValidationError[] {
+    const errors: ValidationError[] = []
+
+    const required: Array<{
+      key: keyof ProcessParameters
+      label: string
+      min: number
+      max: number
+      unit: string
+    }> = [
+      { key: 'viscosity_cp',            label: 'Viscosity',         min: 50,   max: 10000,  unit: 'cP'    },
+      { key: 'density_kg_m3',           label: 'Density',           min: 900,  max: 1500,   unit: 'kg/m³' },
+      { key: 'flow_index',              label: 'Flow Index',        min: 0.01, max: 1.0,    unit: ''      },
+      { key: 'activation_energy_j_mol', label: 'Activation Energy', min: 1000, max: 100000, unit: 'J/mol' },
+    ]
+
+    for (const { key, label, min, max, unit } of required) {
+      const val = parameters[key]
+      if (typeof val !== 'number' || isNaN(val as number)) {
+        errors.push({
+          field: key,
+          message: `${label} is required for custom materials`,
+          severity: 'error',
+          value: val,
+        })
+      } else if ((val as number) < min || (val as number) > max) {
+        errors.push({
+          field: key,
+          message: `${label} must be between ${min} and ${max}${unit ? ' ' + unit : ''}`,
+          severity: 'error',
+          value: val,
+        })
+      }
+    }
+
+    return errors
   }
 
   /**
