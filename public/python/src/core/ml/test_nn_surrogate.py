@@ -14,7 +14,7 @@ Total: 45+ test cases
 
 import pytest
 import time
-from src.core.ml.nn_surrogate import (
+from .nn_surrogate import (
     SimpleNeuralNetwork,
     NNSurrogateCalculator,
     NNPrediction,

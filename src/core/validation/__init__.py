@@ -5,14 +5,9 @@ Provides parameter validation for calculations
 """
 
 from typing import Dict, Any, List
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 try:
-    from constants import VALIDATION_RANGES
+    from ...constants import VALIDATION_RANGES
 except ImportError:
     # Fallback if constants not available
     VALIDATION_RANGES = {
