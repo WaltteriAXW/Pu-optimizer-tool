@@ -27,9 +27,11 @@ export class PyodideBridge implements PyodideManager {
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
       })
 
-      // eslint-disable-next-line no-console
-      console.log('Loading Python packages...')
-      await pyodideInstance.loadPackage(['numpy'])
+      // No packages are loaded here on purpose. The calculation path — src.core.processors
+      // through to the modules and the material database — is pure standard library, so
+      // fetching numpy on every boot cost several megabytes and added a failure point: a
+      // rejected loadPackage takes the whole initialisation down and the app never becomes
+      // ready. Anything that genuinely needs a package should call loadPackage() for it.
 
       // eslint-disable-next-line no-console
       console.log('Mounting Python files...')
