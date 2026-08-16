@@ -162,12 +162,17 @@ class TestReynoldsNumber:
         assert result['flow_regime'] == 'laminar'
 
     def test_turbulent_flow_identification(self):
-        """Re > 4000 should be identified as turbulent."""
+        """Re > 4000 should be identified as turbulent.
+
+        Reaching turbulence needs a thin fluid: at a polyurethane's few-hundred cP the
+        flow in these line sizes is laminar by a wide margin, so a low viscosity is used
+        here to exercise the turbulent branch of the classifier.
+        """
         result = calculate_reynolds_number(
             flow_rate_lpm=5.0,
             diameter_mm=12,
             density_kg_m3=1120,
-            viscosity_cp=350,
+            viscosity_cp=1.0,
         )
 
         assert result['reynolds_number'] > 4000
@@ -300,13 +305,30 @@ class TestCompleteFlowProperties:
 
         assert result['flow_regime'] == 'laminar'
 
-    def test_turbulent_regime_for_high_flow(self):
-        """High flow rates should result in turbulent regime."""
+    def test_laminar_regime_for_realistic_polyurethane(self):
+        """A polyurethane system in a typical line stays laminar.
+
+        This is worth pinning down: shear-thinning brings the apparent viscosity well
+        below the reference value, and it is still nowhere near turbulent. Any change that
+        reports turbulence at these settings is wrong.
+        """
         result = calculate_all_flow_properties(
             diameter_mm=12,
             flow_rate_lpm=10.0,
             consistency_cp=350,
             flow_index=0.85,
+        )
+
+        assert result['flow_regime'] == 'laminar'
+        assert result['reynolds_number'] < 2300
+
+    def test_turbulent_regime_for_thin_fluid(self):
+        """A low-viscosity fluid at high flow reaches the turbulent regime."""
+        result = calculate_all_flow_properties(
+            diameter_mm=12,
+            flow_rate_lpm=10.0,
+            consistency_cp=1.0,
+            flow_index=1.0,
         )
 
         assert result['flow_regime'] == 'turbulent'

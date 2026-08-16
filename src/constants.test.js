@@ -52,10 +52,13 @@ describe('Constants - Validation Ranges', () => {
     });
   });
 
-  it('should have temperature range', () => {
+  it('should have temperature range matching the Python backend', () => {
+    // These mirror src/constants.py, which is authoritative. The two tables used to
+    // disagree (18-35 here vs 5-50 there), so the form rejected values the engine
+    // would have accepted.
     expect(VALIDATION_RANGES.temperature).toEqual({
-      min: 18,
-      max: 35,
+      min: 5,
+      max: 50,
       unit: '°C',
       name: 'Temperature'
     });
@@ -139,14 +142,20 @@ describe('Helper Functions - validateInput', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('should reject temperature too low', () => {
-    const result = validateInput('temperature', 10);
+  it('should reject temperature below the supported range', () => {
+    const result = validateInput('temperature', VALIDATION_RANGES.temperature.min - 1);
     expect(result.valid).toBe(false);
   });
 
-  it('should reject temperature too high', () => {
-    const result = validateInput('temperature', 40);
+  it('should reject temperature above the supported range', () => {
+    const result = validateInput('temperature', VALIDATION_RANGES.temperature.max + 1);
     expect(result.valid).toBe(false);
+  });
+
+  it('should accept a temperature inside the supported range', () => {
+    // 35 C is above methyl formate's 31.5 C boiling point, so the blowing-agent
+    // warning has to be reachable rather than blocked by validation
+    expect(validateInput('temperature', 35).valid).toBe(true);
   });
 
   it('should handle invalid numbers', () => {

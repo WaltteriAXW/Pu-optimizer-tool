@@ -49,6 +49,46 @@ from .reaction_kinetics import (
 )
 
 
+# Heat of reaction used when a material's data sheet states none.
+#
+# ESTIMATED, NOT MEASURED. Anchored to published measurements of rigid polyurethane, which
+# report peak internal temperatures of 160-164 °C during foaming. From a ~25 °C start that
+# is a rise of about 135 °C, and with c_p ≈ 1800 J/kg·K implies ΔH ≈ 240 kJ/kg. Anything
+# derived from this default should be presented to the user as an estimate; a material that
+# states Heat_Of_Reaction_kJ_kg or Peak_Exotherm_C in the CSV overrides it.
+#
+# Source: measured internal temperatures of rigid PU bodies, AIP Advances 12, 125122 (2022);
+# corroborated by Welte, "Calculation and Measurement of Reaction Temperatures in Rigid
+# Polyurethane and Polyisocyanurate Foams", J. Cellular Plastics 20(5), 1984.
+DEFAULT_HEAT_OF_REACTION_J_KG = 240_000.0
+
+# Typical specific heat of a reacting polyurethane mix (J/kg·K)
+DEFAULT_SPECIFIC_HEAT_J_KG_K = 1800.0
+
+
+def heat_of_reaction_from_peak_exotherm(
+    peak_exotherm_c: float,
+    initial_temp_c: float = 25.0,
+    specific_heat_j_kg_k: float = DEFAULT_SPECIFIC_HEAT_J_KG_K,
+) -> float:
+    """
+    Derive the heat of reaction from a measured peak exotherm.
+
+    ΔH = c_p · (T_peak − T_initial), treating the measured peak as approaching adiabatic,
+    which is reasonable for the thick sections where peak exotherms are recorded.
+
+    Preferring this over a default is the same principle as calibrating rate constants to
+    measured gel times: where a real measurement exists, fit to it.
+    """
+    rise = peak_exotherm_c - initial_temp_c
+    if rise <= 0:
+        raise ValueError(
+            f'Peak exotherm {peak_exotherm_c} °C is not above the initial temperature '
+            f'{initial_temp_c} °C'
+        )
+    return specific_heat_j_kg_k * rise
+
+
 class ScorchRisk(Enum):
     """Scorch risk classification"""
     LOW = "low"           # Peak temp < 120°C
@@ -65,11 +105,11 @@ class ThermalReactionParameters:
     Heat of reaction values are typically determined by DSC.
     """
     # Heat of reaction
-    heat_of_reaction_j_kg: float = 100000  # ΔH_r (80-120 kJ/kg typical for PU)
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG  # ΔH_r
 
     # Material thermal properties
     density_kg_m3: float = 1100            # ρ
-    specific_heat_j_kg_k: float = 1800     # C_p (1500-2000 for PU)
+    specific_heat_j_kg_k: float = DEFAULT_SPECIFIC_HEAT_J_KG_K  # C_p (1500-2000 for PU)
     thermal_conductivity_w_m_k: float = 0.2  # k (0.15-0.25 for PU)
 
     # Heat transfer properties
@@ -274,10 +314,27 @@ class LumpedThermalModel:
 
         return dt_dt
 
+    def _default_timestep(self) -> float:
+        """
+        Integration step sized to the reaction, not to the clock.
+
+        The exotherm peak is sharp: a step that is comfortable for a 135 s gel time steps
+        clean over the peak of a 5 s one. A fixed 0.5 s step understated the peak of a
+        fast system by more than 30 °C and, worse, did so unevenly — making a hotter mould
+        appear to give a *lower* peak temperature, which is not physical.
+
+        Scaling the step to the gel time keeps the resolution constant in reaction terms.
+        """
+        gel_time = getattr(self.cure_params, 'gel_time_ref_s', None) if self.cure_params else None
+        if not gel_time or gel_time <= 0:
+            return 0.05
+
+        return max(1e-4, min(0.1, gel_time / 2000.0))
+
     def simulate_cure(
         self,
         total_time_s: float,
-        dt: float = 0.5
+        dt: Optional[float] = None
     ) -> List[Dict[str, float]]:
         """
         Simulate temperature evolution during cure.
@@ -286,11 +343,15 @@ class LumpedThermalModel:
 
         Args:
             total_time_s: Total simulation time
-            dt: Time step (seconds)
+            dt: Time step (seconds). Defaults to a step scaled to the reaction speed —
+                see _default_timestep.
 
         Returns:
             List of state dicts at each time step
         """
+        if dt is None:
+            dt = self._default_timestep()
+
         # Initial conditions
         t = 0.0
         temperature = self.thermal_params.initial_temp_c
@@ -344,6 +405,18 @@ class LumpedThermalModel:
             conversion = min(1.0, max(0.0, conversion))
 
             t += dt
+
+        # Record the final state. The loop appends before stepping, so without this the
+        # last step — which for a fast reaction is where the peak sits — is discarded.
+        history.append({
+            'time_s': t,
+            'temperature_c': temperature,
+            'conversion': conversion,
+            'conversion_rate': self.cure_model._model.conversion_rate(conversion, temperature),
+            'heat_generation_w_m3': self.heat_generation_rate(
+                self.cure_model._model.conversion_rate(conversion, temperature), temperature
+            ),
+        })
 
         return history
 
@@ -431,8 +504,8 @@ class LumpedThermalModel:
 # =============================================================================
 
 def calculate_exotherm_rise(
-    heat_of_reaction_j_kg: float = 100000,
-    specific_heat_j_kg_k: float = 1800,
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG,
+    specific_heat_j_kg_k: float = DEFAULT_SPECIFIC_HEAT_J_KG_K,
     conversion: float = 1.0
 ) -> float:
     """
@@ -455,7 +528,7 @@ def calculate_core_temperature(
     part_thickness_mm: float,
     mold_temp_c: float = 40.0,
     initial_temp_c: float = 25.0,
-    heat_of_reaction_j_kg: float = 100000,
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG,
     heat_transfer_coeff: float = 100.0,
     cure_time_s: float = 120.0,
     cure_params: Optional[CureKineticsParameters] = None
@@ -504,7 +577,7 @@ def calculate_core_temperature(
 def predict_scorch_risk(
     part_thickness_mm: float,
     mold_temp_c: float = 40.0,
-    heat_of_reaction_j_kg: float = 100000,
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG,
     cure_params: Optional[CureKineticsParameters] = None
 ) -> Dict[str, any]:
     """
@@ -547,7 +620,7 @@ def predict_scorch_risk(
 def calculate_optimal_mold_temp(
     part_thickness_mm: float,
     target_peak_temp_c: float = 140.0,
-    heat_of_reaction_j_kg: float = 100000,
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG,
     cure_params: Optional[CureKineticsParameters] = None,
     min_mold_temp_c: float = 25.0,
     max_mold_temp_c: float = 80.0
@@ -619,7 +692,7 @@ def calculate_optimal_mold_temp(
 def calculate_minimum_safe_thickness(
     mold_temp_c: float,
     max_peak_temp_c: float = 160.0,
-    heat_of_reaction_j_kg: float = 100000,
+    heat_of_reaction_j_kg: float = DEFAULT_HEAT_OF_REACTION_J_KG,
     cure_params: Optional[CureKineticsParameters] = None,
     max_thickness_mm: float = 100.0
 ) -> Dict[str, float]:

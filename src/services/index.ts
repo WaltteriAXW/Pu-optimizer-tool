@@ -7,23 +7,21 @@
 export { CalculationService, createCalculationService } from './CalculationService'
 export type { PyodideManager } from './CalculationService'
 
-// Validation Service
-export { ValidationService, createValidationService } from './ValidationService'
-export type { ValidationError, ValidationResult } from './ValidationService'
-
 // Export Service
 export { ExportService, createExportService } from './ExportService'
 export type { ExportOptions } from './ExportService'
 
+// Material Provider
+export { getDefaultMaterialProvider, setDefaultMaterialProvider, createMaterialProvider } from './MaterialProvider'
+export type { MaterialProperties, IMaterialProvider } from './MaterialProvider'
+
 /**
  * Services implemented:
  * ✅ CalculationService (calculation orchestration)
- * ✅ ValidationService (input validation)
  * ✅ ExportService (results export)
+ * ✅ MaterialProvider (material database access)
  *
- * Services to implement:
- * - WarningService (warning generation & management)
- * - MLService (ML predictions & insights)
- * - DatabaseService (database access & caching)
- * - ReportService (advanced reporting)
+ * Input validation lives in two places by design: CalculationService.validateParameters
+ * for quick client-side feedback, and src/core/validation on the Python side, which is
+ * authoritative.
  */

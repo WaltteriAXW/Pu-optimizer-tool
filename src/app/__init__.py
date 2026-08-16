@@ -2,17 +2,12 @@
 Application Layer - Main interfaces for Polyurethane Injection Optimizer
 
 Provides user-facing interfaces for:
-- calculator: Main calculation engine interface
 - optimizer: ML-based optimization module
 - reporter: Report generation and export functionality
-"""
 
-from .calculator import (
-    calculate_all_parameters,
-    get_material_list,
-    get_machine_types,
-    CalculationError,
-)
+Calculations themselves live in src/core/processors/calculation_processor.py, which is
+what the application calls.
+"""
 
 from .optimizer import (
     ProcessOptimizerML,
@@ -26,12 +21,6 @@ from .reporter import (
 )
 
 __all__ = [
-    # Calculator
-    'calculate_all_parameters',
-    'get_material_list',
-    'get_machine_types',
-    'CalculationError',
-
     # Optimizer
     'ProcessOptimizerML',
     'get_ml_predictions',

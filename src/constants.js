@@ -112,6 +112,9 @@ export const MATERIAL_DEFAULTS = {
  * // Output: "Pipe Length: 50-10000 mm"
  */
 export const VALIDATION_RANGES = {
+  // MIRRORS src/constants.py VALIDATION_RANGES, which is authoritative. These two tables
+  // previously disagreed — the form allowed 18-35 °C where the backend allowed 5-50 — so
+  // the form silently rejected values the engine would have accepted. Keep them in step.
   pipeLength: {
     min: 50,
     max: 10000,
@@ -119,32 +122,32 @@ export const VALIDATION_RANGES = {
     name: 'Pipe Length'
   },
   pipeDiameter: {
-    min: 4,
-    max: 25,
+    min: 1,
+    max: 200,
     unit: 'mm',
     name: 'Pipe Diameter'
   },
   temperature: {
-    min: 18,
-    max: 35,
+    min: 5,
+    max: 50,
     unit: '°C',
     name: 'Temperature'
   },
   flowRate: {
-    min: 0.5,
-    max: 100,
+    min: 0.1,
+    max: 200,
     unit: 'L/min',
     name: 'Flow Rate'
   },
   viscosity: {
-    min: 200,
-    max: 1200,
+    min: 50,
+    max: 10000,
     unit: 'cP',
     name: 'Viscosity'
   },
   density: {
-    min: 1050,
-    max: 1250,
+    min: 900,
+    max: 1500,
     unit: 'kg/m³',
     name: 'Density'
   }

@@ -4,6 +4,10 @@ import { fileURLToPath, URL } from 'node:url'
 import fs from 'fs'
 import path from 'path'
 
+// Files the Python runtime needs at runtime: the modules themselves, plus the
+// material database CSV, which Pyodide reads from its virtual filesystem.
+const isSyncedAsset = (name: string) => name.endsWith('.py') || name.endsWith('.csv')
+
 // Custom plugin to sync Python files to the build folder and dev server
 const pythonSyncPlugin = () => {
   return {
@@ -21,7 +25,7 @@ const pythonSyncPlugin = () => {
           const destPath = path.join(dest, entry.name)
           if (entry.isDirectory()) {
             copyRecursive(srcPath, destPath)
-          } else if (entry.name.endsWith('.py')) {
+          } else if (isSyncedAsset(entry.name)) {
             fs.copyFileSync(srcPath, destPath)
           }
         }
@@ -73,7 +77,7 @@ collections:
 
           if (entry.isDirectory()) {
             copyRecursive(srcPath, destPath)
-          } else if (entry.name.endsWith('.py')) {
+          } else if (isSyncedAsset(entry.name)) {
             fs.copyFileSync(srcPath, destPath)
           }
         }
@@ -87,7 +91,7 @@ collections:
     },
     // Watch for changes in .py files during dev
     handleHotUpdate({ file }: { file: string }) {
-      if (file.endsWith('.py')) {
+      if (isSyncedAsset(file)) {
         const srcDir = path.resolve(__dirname, 'src')
         if (file.startsWith(srcDir)) {
           const relativePath = path.relative(srcDir, file)

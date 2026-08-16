@@ -94,6 +94,9 @@ export class PyodideBridge implements PyodideManager {
           '/src/core/__init__.py',
           '/src/core/processors/__init__.py',
           '/src/core/processors/calculation_processor.py',
+          # The material database. Without it there are no materials to calculate
+          # with, and failing here is far better than falling back to stale numbers.
+          '/src/data/polyurethane_foam_database.csv',
       ]
 
       missing = []
@@ -138,8 +141,9 @@ export class PyodideBridge implements PyodideManager {
     // eslint-disable-next-line no-console
     console.log(`Base path: ${base}, Python files path: ${pythonBasePath}`)
 
-    // List of ALL Python files to load - comprehensive list for all imports to work
-    // Excludes test files to reduce load time
+    // Every file the Python runtime needs in its virtual filesystem: the modules
+    // themselves plus the material database CSV. Test files are excluded to reduce
+    // load time.
     const pythonModules = [
       // Root level
       'src/__init__.py',
@@ -149,17 +153,16 @@ export class PyodideBridge implements PyodideManager {
 
       // App modules
       'src/app/__init__.py',
-      'src/app/calculator.py',
       'src/app/optimizer.py',
       'src/app/reporter.py',
 
       // Core package
       'src/core/__init__.py',
 
-      // Core data
+      // Core data — the material database reader and blowing agent constants
       'src/core/data/__init__.py',
-      'src/core/data/materials_database.py',
-      'src/core/data/extended_materials_database.py',
+      'src/core/data/material_database.py',
+      'src/core/data/blowing_agents.py',
 
       // Core kinetics
       'src/core/kinetics/__init__.py',
@@ -183,6 +186,8 @@ export class PyodideBridge implements PyodideManager {
       'src/core/modules/flow.py',
       'src/core/modules/thermal.py',
       'src/core/modules/environmental.py',
+      'src/core/modules/line_thermal.py',
+      'src/core/modules/volatility.py',
 
       // Core optimizers
       'src/core/optimizers/__init__.py',
@@ -204,10 +209,11 @@ export class PyodideBridge implements PyodideManager {
 
       // Core validation
       'src/core/validation/__init__.py',
-      'src/core/validation/user_input_workflow.py',
 
       // Other packages
       'src/data/__init__.py',
+      // The material database itself — read by src/core/data/material_database.py
+      'src/data/polyurethane_foam_database.csv',
       'src/services/__init__.py',
       'src/test/__init__.py',
       'src/utils/__init__.py',

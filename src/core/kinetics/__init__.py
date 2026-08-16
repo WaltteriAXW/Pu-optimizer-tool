@@ -45,7 +45,10 @@ from .thermal_reaction import (
     LumpedThermalModel,
     ThermalReactionParameters,
     ExothermResult,
+    DEFAULT_HEAT_OF_REACTION_J_KG,
+    DEFAULT_SPECIFIC_HEAT_J_KG_K,
     calculate_exotherm_rise,
+    heat_of_reaction_from_peak_exotherm,
     calculate_core_temperature,
     predict_scorch_risk,
 )
@@ -83,7 +86,10 @@ __all__ = [
     'LumpedThermalModel',
     'ThermalReactionParameters',
     'ExothermResult',
+    'DEFAULT_HEAT_OF_REACTION_J_KG',
+    'DEFAULT_SPECIFIC_HEAT_J_KG_K',
     'calculate_exotherm_rise',
+    'heat_of_reaction_from_peak_exotherm',
     'calculate_core_temperature',
     'predict_scorch_risk',
     # Foam Kinetics

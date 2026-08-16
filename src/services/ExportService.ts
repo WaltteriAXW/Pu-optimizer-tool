@@ -90,30 +90,42 @@ export class ExportService {
     rows.push(`Fitting Loss,${results.pressure.fitting_loss_bar.toFixed(2)},bar`)
 
     // Thermal Data
-    rows.push('--- THERMAL DATA ---,')
-    rows.push(`Reference Temperature,${results.thermal.temperature_c},°C`)
-    rows.push(`Reference Viscosity,${results.thermal.reference_viscosity_cp.toFixed(2)},cP`)
-    rows.push(`Current Viscosity,${results.thermal.current_viscosity_cp.toFixed(2)},cP`)
-    rows.push(`Temperature Factor,${results.thermal.temperature_factor.toFixed(4)},`)
-    rows.push(`Shear Heating,${results.thermal.shear_heating_c.toFixed(2)},°C`)
-    rows.push(`Heat Generated,${results.thermal.heat_generated_w.toFixed(2)},W`)
+    const thermal = results.thermal
+    if (thermal) {
+      rows.push('--- THERMAL DATA ---,')
+      rows.push(`Reference Temperature,${thermal.temperature_c},°C`)
+      rows.push(`Reference Viscosity,${thermal.reference_viscosity_cp.toFixed(2)},cP`)
+      rows.push(`Current Viscosity,${thermal.current_viscosity_cp.toFixed(2)},cP`)
+      rows.push(`Temperature Factor,${thermal.temperature_factor.toFixed(4)},`)
+      rows.push(`Shear Heating,${(thermal.shear_heating_c ?? 0).toFixed(2)},°C`)
+      rows.push(`Heat Generated,${(thermal.heat_generated_w ?? 0).toFixed(2)},W`)
+    }
 
     // Environmental Data
-    rows.push('--- ENVIRONMENTAL DATA ---,')
-    rows.push(`Material,${results.environmental.material},`)
-    rows.push(`Blowing Agent,${results.environmental.blowing_agent},`)
-    rows.push(`GWP per kg,${results.environmental.gwp_per_kg},`)
-    rows.push(`Eco-friendly,${results.environmental.is_eco_friendly ? 'Yes' : 'No'},`)
-    rows.push(`Recommendation,${results.environmental.recommendation},`)
+    const environmental = results.environmental
+    if (environmental) {
+      rows.push('--- ENVIRONMENTAL DATA ---,')
+      rows.push(`Material,${environmental.material},`)
+      rows.push(`Blowing Agent,${environmental.blowing_agent},`)
+      rows.push(`GWP per kg,${environmental.gwp_per_kg},`)
+      rows.push(`Eco-friendly,${environmental.is_eco_friendly ? 'Yes' : 'No'},`)
+      rows.push(`Recommendation,${environmental.recommendation},`)
+    }
 
     // Machine Compatibility
-    rows.push('--- MACHINE COMPATIBILITY ---,')
-    rows.push(`Compatible,${results.machine_compatibility.is_compatible ? 'Yes' : 'No'},`)
-    rows.push(`Status,${results.machine_compatibility.status},`)
-    rows.push(`Available Pressure,${results.machine_compatibility.available_pressure_bar},bar`)
-    rows.push(`Max Pressure,${results.machine_compatibility.max_pressure_bar},bar`)
-    if (results.machine_compatibility.warning) {
-      rows.push(`Warning,${results.machine_compatibility.warning},`)
+    const compatibility = results.machine_compatibility
+    if (compatibility) {
+      rows.push('--- MACHINE COMPATIBILITY ---,')
+      rows.push(`Compatible,${compatibility.is_compatible ? 'Yes' : 'No'},`)
+      rows.push(`Status,${compatibility.status},`)
+      rows.push(`Required Pressure,${compatibility.required_pressure_bar},bar`)
+      rows.push(`Max Pressure,${compatibility.max_pressure_bar},bar`)
+      if (compatibility.warning) {
+        rows.push(`Warning,${compatibility.warning},`)
+      }
+      if (compatibility.note) {
+        rows.push(`Note,${compatibility.note},`)
+      }
     }
 
     // Metadata
@@ -172,36 +184,48 @@ export class ExportService {
     lines.push(`Fitting Loss:       ${results.pressure.fitting_loss_bar.toFixed(2)} bar`)
 
     // Thermal Section
-    lines.push('\n' + '─'.repeat(63))
-    lines.push('THERMAL ANALYSIS')
-    lines.push('─'.repeat(63))
-    lines.push(`Reference Temp:     ${results.thermal.temperature_c}°C`)
-    lines.push(`Reference Visc:     ${results.thermal.reference_viscosity_cp.toFixed(2)} cP`)
-    lines.push(`Current Visc:       ${results.thermal.current_viscosity_cp.toFixed(2)} cP`)
-    lines.push(`Temp Factor:        ${results.thermal.temperature_factor.toFixed(4)}`)
-    lines.push(`Shear Heating:      ${results.thermal.shear_heating_c.toFixed(2)}°C`)
-    lines.push(`Heat Generated:     ${results.thermal.heat_generated_w.toFixed(2)} W`)
+    const thermal = results.thermal
+    if (thermal) {
+      lines.push('\n' + '─'.repeat(63))
+      lines.push('THERMAL ANALYSIS')
+      lines.push('─'.repeat(63))
+      lines.push(`Reference Temp:     ${thermal.temperature_c}°C`)
+      lines.push(`Reference Visc:     ${thermal.reference_viscosity_cp.toFixed(2)} cP`)
+      lines.push(`Current Visc:       ${thermal.current_viscosity_cp.toFixed(2)} cP`)
+      lines.push(`Temp Factor:        ${thermal.temperature_factor.toFixed(4)}`)
+      lines.push(`Shear Heating:      ${(thermal.shear_heating_c ?? 0).toFixed(2)}°C`)
+      lines.push(`Heat Generated:     ${(thermal.heat_generated_w ?? 0).toFixed(2)} W`)
+    }
 
     // Environmental Section
-    lines.push('\n' + '─'.repeat(63))
-    lines.push('ENVIRONMENTAL IMPACT')
-    lines.push('─'.repeat(63))
-    lines.push(`Material:           ${results.environmental.material}`)
-    lines.push(`Blowing Agent:      ${results.environmental.blowing_agent}`)
-    lines.push(`GWP (per kg):       ${results.environmental.gwp_per_kg}`)
-    lines.push(`Eco-friendly:       ${results.environmental.is_eco_friendly ? 'YES' : 'NO'}`)
-    lines.push(`Recommendation:     ${results.environmental.recommendation}`)
+    const environmental = results.environmental
+    if (environmental) {
+      lines.push('\n' + '─'.repeat(63))
+      lines.push('ENVIRONMENTAL IMPACT')
+      lines.push('─'.repeat(63))
+      lines.push(`Material:           ${environmental.material}`)
+      lines.push(`Blowing Agent:      ${environmental.blowing_agent}`)
+      lines.push(`GWP (per kg):       ${environmental.gwp_per_kg}`)
+      lines.push(`Eco-friendly:       ${environmental.is_eco_friendly ? 'YES' : 'NO'}`)
+      lines.push(`Recommendation:     ${environmental.recommendation}`)
+    }
 
     // Machine Compatibility Section
-    lines.push('\n' + '─'.repeat(63))
-    lines.push('MACHINE COMPATIBILITY')
-    lines.push('─'.repeat(63))
-    lines.push(`Compatible:         ${results.machine_compatibility.is_compatible ? 'YES' : 'NO'}`)
-    lines.push(`Status:             ${results.machine_compatibility.status}`)
-    lines.push(`Available Pressure: ${results.machine_compatibility.available_pressure_bar} bar`)
-    lines.push(`Max Pressure:       ${results.machine_compatibility.max_pressure_bar} bar`)
-    if (results.machine_compatibility.warning) {
-      lines.push(`⚠️  WARNING:          ${results.machine_compatibility.warning}`)
+    const compatibility = results.machine_compatibility
+    if (compatibility) {
+      lines.push('\n' + '─'.repeat(63))
+      lines.push('MACHINE COMPATIBILITY')
+      lines.push('─'.repeat(63))
+      lines.push(`Compatible:         ${compatibility.is_compatible ? 'YES' : 'NO'}`)
+      lines.push(`Status:             ${compatibility.status}`)
+      lines.push(`Required Pressure:  ${compatibility.required_pressure_bar} bar`)
+      lines.push(`Max Pressure:       ${compatibility.max_pressure_bar} bar`)
+      if (compatibility.warning) {
+        lines.push(`⚠️  WARNING:          ${compatibility.warning}`)
+      }
+      if (compatibility.note) {
+        lines.push(`Note:               ${compatibility.note}`)
+      }
     }
 
     lines.push('\n' + '═'.repeat(63))

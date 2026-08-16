@@ -1,31 +1,17 @@
 /**
- * MaterialProvider - Abstraction layer for material data sources
+ * MaterialProvider - the list of materials the UI offers
  *
- * Allows decoupling of material data from application logic.
- * Can be swapped between CSV (current) and API (future) without changing code.
+ * This supplies the material dropdown. It deliberately carries no physical properties:
+ * those are derived on the Python side, in src/core/data/material_database.py, from the
+ * same CSV this reads. Keeping the mixing formulas in one language means the two halves
+ * of the application cannot drift apart.
  */
 
 export interface MaterialProperties {
-  /** Material identifier */
+  /** Material identifier — the Material_Key column, and what the calculation is keyed on */
   id: string
   /** Display name */
   name: string
-  /** Viscosity in centiPoise (cP) at reference temperature */
-  viscosity_cp: number
-  /** Density in kg/m³ */
-  density_kg_m3: number
-  /** Flow behavior index (0-1, where 1 = Newtonian) */
-  flow_index: number
-  /** Activation energy in J/mol */
-  activation_energy_j_mol: number
-  /** Specific gravity of polyol component */
-  polyol_sg: number
-  /** Specific gravity of isocyanate component */
-  iso_sg: number
-  /** Weight mixing ratio [polyol, isocyanate] */
-  weight_ratio: [number, number]
-  /** Foam density after cure */
-  final_density_kg_m3: number
 }
 
 /**
@@ -63,40 +49,19 @@ export interface IMaterialProvider {
 
 /**
  * CSV-based material provider
- * Loads materials from CSV file (current implementation)
+ * Loads materials from the bundled material database
  */
 export class CSVMaterialProvider implements IMaterialProvider {
   private materials: MaterialProperties[] = []
   private loaded = false
-
-  constructor() {
-    // Will be loaded on first use
-  }
 
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) {
       return
     }
 
-    // Import the database loader
     const { getAllMaterialPresets } = await import('@/utils/database_loader')
-    const presets = await getAllMaterialPresets()
-
-    // Convert presets to MaterialProperties format
-    // Note: Using defaults for properties not in CSV; these can be enhanced later
-    this.materials = presets.map((preset: any) => ({
-      id: preset.id,
-      name: preset.name,
-      viscosity_cp: preset.viscosity || 350,
-      density_kg_m3: preset.density || 1120,
-      flow_index: preset.flow_index || 0.85, // Default to typical value
-      activation_energy_j_mol: preset.activation_energy_j_mol || 25000, // Default typical value
-      polyol_sg: preset.polyolSG || 1.12,
-      iso_sg: preset.isoSG || 1.23,
-      weight_ratio: (preset.weightRatio || [100, 110]) as [number, number],
-      final_density_kg_m3: preset.final_density_kg_m3 || 32
-    }))
-
+    this.materials = await getAllMaterialPresets()
     this.loaded = true
   }
 

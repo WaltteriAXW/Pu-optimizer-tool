@@ -8,7 +8,6 @@
  */
 
 import type { ProcessParameters, CalculationResults } from '@/models/types'
-import { getDefaultMaterialProvider } from './MaterialProvider'
 
 /**
  * Interface for PyodideManager to provide proper typing
@@ -72,13 +71,13 @@ export class CalculationService {
         return cached
       }
 
-      // Enhance parameters with material properties (Phase Beta feature)
-      const enhancedParameters = await this.injectMaterialProperties(parameters)
+      // Catalogued materials go across as a key; Python resolves them from the CSV
+      const preparedParameters = this.prepareParameters(parameters)
 
       // Call Python backend with full module path
       const result = await this.pyodideManager.callPython<PythonCalculationResult>(
         'src.core.processors.calculation_processor.calculate_all',
-        [enhancedParameters]
+        [preparedParameters]
       )
 
       // Validate result is properly typed
@@ -104,6 +103,11 @@ export class CalculationService {
         thermal: result.data.thermal,
         environmental: result.data.environmental,
         machine_compatibility: result.data.machine_compatibility,
+        // Optional blocks — undefined when Python omitted them, which is how the UI
+        // tells "not asked for" apart from "evaluated and found nothing"
+        volatility: result.data.volatility,
+        line_temperature: result.data.line_temperature,
+        cure: result.data.cure,
         timestamp: result.data.timestamp,
         warnings: result.data.warnings || []
       }
@@ -224,6 +228,14 @@ export class CalculationService {
       safeValue(parameters.temperature_c),
       safeValue(parameters.flow_rate_lpm),
       safeValue(parameters.machine_type) || 'high_pressure',
+      // Optional inputs must be part of the key too. Leaving them out would serve a
+      // cached result computed at a different ambient temperature, which looks exactly
+      // like the feature silently not working.
+      safeValue(parameters.ambient_temperature_c),
+      safeValue(parameters.idle_time_s),
+      safeValue(parameters.hose_heat_transfer_coeff_w_m2_k),
+      safeValue(parameters.mold_temperature_c),
+      safeValue(parameters.part_thickness_mm),
     ]
 
     if (parameters.material_key === 'custom') {
@@ -257,48 +269,39 @@ export class CalculationService {
   }
 
   /**
-   * Inject material properties into parameters (Phase Beta feature).
+   * Prepare the parameters sent to Python.
    *
-   * For preset materials: loads properties from MaterialProvider and adds them
-   * to the parameter object so Python receives full material data.
+   * Catalogued materials travel as a material_key alone: Python reads the same material
+   * database CSV and derives the properties there, so there is nothing to look up here
+   * and no chance of the two sides disagreeing.
    *
-   * For custom materials: properties were entered directly by the user and are
-   * already present on the parameters object — no lookup needed.
+   * Custom materials are the exception — the user typed those values, and they are
+   * passed through so Python calculates with them instead of a database lookup.
    */
-  private async injectMaterialProperties(parameters: ProcessParameters): Promise<Record<string, unknown>> {
-    const enhancedParams: Record<string, unknown> = { ...parameters }
+  private prepareParameters(parameters: ProcessParameters): Record<string, unknown> {
+    const prepared: Record<string, unknown> = { ...parameters }
 
-    const materialKey = parameters.material_key
-
-    // Custom material — user supplied the properties directly; pass them through as-is
-    if (materialKey === 'custom') {
-      return enhancedParams
+    if (parameters.material_key === 'custom') {
+      return prepared
     }
 
-    // Preset material — always inject from provider so preset values are authoritative
-    // (this also overwrites any stale custom values left in state after switching away)
-    try {
-      const provider = getDefaultMaterialProvider()
-      const material = await provider.getById(materialKey)
-
-      if (material) {
-        Object.assign(enhancedParams, {
-          viscosity_cp: material.viscosity_cp,
-          density_kg_m3: material.density_kg_m3,
-          flow_index: material.flow_index,
-          activation_energy_j_mol: material.activation_energy_j_mol,
-          polyol_sg: material.polyol_sg,
-          iso_sg: material.iso_sg,
-          weight_ratio: material.weight_ratio,
-          final_density_kg_m3: material.final_density_kg_m3,
-        })
-      }
-    } catch (error) {
-      console.warn('Failed to inject material properties, falling back to material_key:', error)
-      // Python will fall back to its own MATERIAL_PRESETS lookup
+    // Strip any custom values left in state after switching back to a catalogued
+    // material, so a stale viscosity cannot silently override the database.
+    for (const key of [
+      'viscosity_cp',
+      'density_kg_m3',
+      'reference_temp_c',
+      'flow_index',
+      'activation_energy_j_mol',
+      'polyol_sg',
+      'iso_sg',
+      'weight_ratio',
+      'final_density_kg_m3',
+    ]) {
+      delete prepared[key]
     }
 
-    return enhancedParams
+    return prepared
   }
 }
 

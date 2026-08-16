@@ -33,12 +33,16 @@ class TestPressureDrop:
         assert result['reynolds_number'] < 2300
 
     def test_turbulent_flow_pressure_drop(self):
-        """Test pressure drop in turbulent flow regime."""
+        """Test pressure drop in turbulent flow regime.
+
+        A polyurethane system at a few hundred cP is laminar in these line sizes, so a
+        low viscosity is used to reach the Swamee-Jain branch.
+        """
         result = calculate_pressure_drop(
             diameter_mm=12,
             length_mm=500,
             flow_rate_lpm=5.0,
-            viscosity_cp=350,
+            viscosity_cp=1.0,
             density_kg_m3=1120,
         )
 
@@ -124,14 +128,19 @@ class TestFrictionFactor:
         assert abs(result['friction_factor'] - expected_f) < 0.01
 
     def test_turbulent_friction_factor_positive(self):
-        """Friction factor should be positive in turbulent flow."""
+        """Friction factor should be positive and bounded in turbulent flow.
+
+        The 0.1 ceiling is the Swamee-Jain clamp, which only applies to the turbulent
+        branch — in laminar flow f = 64/Re legitimately exceeds 1 at low Reynolds numbers.
+        """
         result = calculate_pressure_drop(
             diameter_mm=12,
             length_mm=500,
             flow_rate_lpm=5.0,
-            viscosity_cp=350,
+            viscosity_cp=1.0,
         )
 
+        assert result['flow_regime'] == 'turbulent'
         assert result['friction_factor'] > 0
         assert result['friction_factor'] < 0.1
 
@@ -204,8 +213,8 @@ class TestMachineCompatibility:
         assert result['is_compatible'] is False
         assert result['status'] == 'incompatible_high'
 
-    def test_incompatible_pressure_too_low(self):
-        """Test incompatibility when pressure below minimum."""
+    def test_below_minimum_is_compatible_with_note(self):
+        """A demand below the machine minimum is normal, not an incompatibility."""
         machine_specs = {
             'max_pressure': 200,
             'min_operating_pressure': 100,
@@ -217,11 +226,14 @@ class TestMachineCompatibility:
             machine_specs=machine_specs,
         )
 
-        assert result['is_compatible'] is False
-        assert result['status'] == 'incompatible_low'
+        # The machine simply holds at its minimum; there is ample pressure available.
+        assert result['is_compatible'] is True
+        assert result['status'] == 'below_machine_minimum'
+        assert result['warning'] is None
+        assert result['note'] is not None
 
-    def test_available_pressure_calculation(self):
-        """Test available pressure includes process loss."""
+    def test_required_pressure_calculation(self):
+        """Test required pressure includes process loss."""
         machine_specs = {
             'max_pressure': 200,
             'min_operating_pressure': 100,
@@ -233,8 +245,8 @@ class TestMachineCompatibility:
             machine_specs=machine_specs,
         )
 
-        # Available = pressure + process loss
-        assert result['available_pressure_bar'] == pytest.approx(125, abs=0.1)
+        # Required = line pressure drop + machine process loss
+        assert result['required_pressure_bar'] == pytest.approx(125, abs=0.1)
 
 
 class TestPhysicsValidation:

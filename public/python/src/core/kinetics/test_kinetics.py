@@ -118,9 +118,12 @@ class TestKamalSourourModel:
 
     @pytest.fixture
     def params(self):
-        return CureKineticsParameters(
-            k1_ref=0.0001,
-            k2_ref=0.001,
+        # Calibrated to the Genfoam HD12 data sheet: cream 50-60 s, gel 130-140 s.
+        # Rate constants picked out of the air put the gel point thousands of seconds
+        # away from any real system, which makes every assertion below meaningless.
+        return CureKineticsParameters.calibrated_to_gel_time(
+            gel_time_s=135.0,
+            cream_time_s=55.0,
             m=1.0,
             n=1.5,
             activation_energy_k1=50000,
@@ -590,10 +593,10 @@ class TestIntegration:
 
     def test_complete_cure_workflow(self):
         """Test complete cure calculation workflow"""
-        # Create parameters
-        params = CureKineticsParameters(
-            k1_ref=0.0001,
-            k2_ref=0.001,
+        # Calibrated to the Genfoam HD12 data sheet gel time
+        params = CureKineticsParameters.calibrated_to_gel_time(
+            gel_time_s=135.0,
+            cream_time_s=55.0,
             gel_conversion=0.65,
         )
 

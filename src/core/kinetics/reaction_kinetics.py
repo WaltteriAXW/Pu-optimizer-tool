@@ -52,6 +52,60 @@ class CureModel(Enum):
     KAMAL_SOUROUR = "kamal_sourour"
 
 
+def _normalised_gel_time(
+    gel_conversion: float,
+    m: float,
+    n: float,
+    autocatalytic_ratio: float,
+    dt: float = 1e-4,
+    max_steps: int = 2_000_000,
+) -> float:
+    """
+    Time to reach `gel_conversion` for the Kamal-Sourour equation with k1 = 1.
+
+        dα/dt = (1 + r·α^m) · (1 - α)^n
+
+    Because k1 enters the full equation only as a multiplier, the time to any given
+    conversion scales as 1/k1. Solving this normalised problem once therefore calibrates
+    the rate constant for any measured gel time: k1 = τ / t_gel.
+
+    Integrated with RK4 and linear interpolation onto the crossing.
+    """
+    def rate(alpha: float) -> float:
+        if alpha >= 1.0:
+            return 0.0
+        alpha = max(alpha, 0.0)
+        return (1.0 + autocatalytic_ratio * math.pow(max(alpha, 1e-12), m)) * math.pow(1.0 - alpha, n)
+
+    alpha = 0.0
+    t = 0.0
+
+    for _ in range(max_steps):
+        if alpha >= gel_conversion:
+            break
+
+        k1 = rate(alpha)
+        k2 = rate(alpha + 0.5 * dt * k1)
+        k3 = rate(alpha + 0.5 * dt * k2)
+        k4 = rate(alpha + dt * k3)
+
+        next_alpha = alpha + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+        if next_alpha >= gel_conversion:
+            # Interpolate onto the crossing rather than overshooting by up to one step
+            span = next_alpha - alpha
+            fraction = (gel_conversion - alpha) / span if span > 0 else 0.0
+            return t + fraction * dt
+
+        alpha = next_alpha
+        t += dt
+
+    raise ValueError(
+        f'Cure model does not reach a conversion of {gel_conversion} — check the '
+        'reaction order and autocatalytic exponent.'
+    )
+
+
 @dataclass
 class CureKineticsParameters:
     """
@@ -64,9 +118,15 @@ class CureKineticsParameters:
     avrami_k: float = 0.001  # Rate constant at reference temp (s^-n)
     avrami_n: float = 2.0    # Avrami exponent (1.5-3 for PU)
 
-    # Kamal-Sourour model parameters
-    k1_ref: float = 0.0001   # Uncatalyzed rate constant at ref temp (s^-1)
-    k2_ref: float = 0.001    # Autocatalyzed rate constant at ref temp (s^-1)
+    # Kamal-Sourour model parameters.
+    #
+    # These defaults are not arbitrary: they are the constants that make the model gel at
+    # the default gel_time_ref_s of 150 s, computed as k1 = τ/150 where τ = 0.338698 is
+    # the normalised gel time for gel_conversion=0.65, m=1.0, n=1.5 and k2/k1 = 10 (see
+    # _normalised_gel_time). Prefer calibrated_to_gel_time() or from_material(), which
+    # solve for a specific material's measured gel time rather than relying on these.
+    k1_ref: float = 2.2580e-3   # Uncatalyzed rate constant at ref temp (s^-1)
+    k2_ref: float = 2.2580e-2   # Autocatalyzed rate constant at ref temp (s^-1)
     m: float = 1.0           # Autocatalytic exponent
     n: float = 1.5           # Reaction order
 
@@ -89,6 +149,117 @@ class CureKineticsParameters:
     def reference_temp_k(self) -> float:
         """Reference temperature in Kelvin"""
         return self.reference_temp_c + 273.15
+
+    @classmethod
+    def calibrated_to_gel_time(
+        cls,
+        gel_time_s: float,
+        cream_time_s: Optional[float] = None,
+        reference_temp_c: float = 25.0,
+        gel_conversion: float = 0.65,
+        m: float = 1.0,
+        n: float = 1.5,
+        autocatalytic_ratio: float = 10.0,
+        activation_energy_k1: float = 50000,
+        activation_energy_k2: float = 45000,
+    ) -> 'CureKineticsParameters':
+        """
+        Build parameters that reproduce a measured gel time.
+
+        Rate constants are not something to guess: an arbitrary k1 puts the gel point
+        thousands of seconds away from where the data sheet says it is, and every
+        prediction downstream — processing window, exotherm, scorch risk — inherits that
+        error. So instead of inventing k1 and k2, this solves for them.
+
+        The two constants are tied together by `autocatalytic_ratio` (k2 = ratio × k1),
+        which sets how strongly the reaction accelerates as urethane groups form, leaving
+        a single unknown. That unknown has a closed form. With k2 = r·k1 the rate equation
+        becomes
+
+            dα/dt = k1 · (1 + r·α^m) · (1 - α)^n
+
+        in which k1 appears only as a multiplier, so time scales exactly as 1/k1. Solving
+        the normalised problem once (k1 = 1) to get the time τ at which it gels gives
+
+            k1 = τ / gel_time_s
+
+        directly — no iterative search, and no dependency on scipy, which matters because
+        this has to run under Pyodide.
+
+        Args:
+            gel_time_s: Measured gel time at the reference temperature (seconds)
+            cream_time_s: Measured cream time, recorded for reference (seconds)
+            reference_temp_c: Temperature the times were measured at
+            gel_conversion: Conversion defining the gel point
+            m: Autocatalytic exponent
+            n: Reaction order
+            autocatalytic_ratio: k2/k1
+            activation_energy_k1: Ea for the uncatalyzed path (J/mol)
+            activation_energy_k2: Ea for the autocatalyzed path (J/mol)
+
+        Returns:
+            Parameters whose gel time matches the measurement
+        """
+        if gel_time_s <= 0:
+            raise ValueError('gel_time_s must be positive')
+
+        def build(k1: float) -> 'CureKineticsParameters':
+            return cls(
+                k1_ref=k1,
+                k2_ref=k1 * autocatalytic_ratio,
+                m=m,
+                n=n,
+                activation_energy_k1=activation_energy_k1,
+                activation_energy_k2=activation_energy_k2,
+                reference_temp_c=reference_temp_c,
+                gel_conversion=gel_conversion,
+                cream_time_ref_s=cream_time_s if cream_time_s is not None else gel_time_s / 3.0,
+                gel_time_ref_s=gel_time_s,
+            )
+
+        tau = _normalised_gel_time(gel_conversion, m, n, autocatalytic_ratio)
+
+        return build(tau / gel_time_s)
+
+    @classmethod
+    def from_material(
+        cls,
+        material: Dict,
+        **overrides
+    ) -> 'CureKineticsParameters':
+        """
+        Build calibrated parameters from a material database entry.
+
+        Uses the cream and gel times the technical data sheet states for that material,
+        so the model reproduces the reaction the supplier measured.
+
+        Args:
+            material: A material dict from core.data.material_database
+            **overrides: Passed through to calibrated_to_gel_time
+
+        Returns:
+            Parameters calibrated to this material's data sheet
+
+        Raises:
+            ValueError: if the material states no gel time to calibrate against
+        """
+        reaction = material.get('reaction', {})
+        gel_time_s = reaction.get('gel_time_s')
+
+        if not gel_time_s:
+            raise ValueError(
+                f"Material '{material.get('key', 'unknown')}' states no gel time, so its "
+                'cure kinetics cannot be calibrated.'
+            )
+
+        params = {
+            'gel_time_s': gel_time_s,
+            'cream_time_s': reaction.get('cream_time_s'),
+            'reference_temp_c': material.get('reference_temp_c', 25.0),
+        }
+        params.update(overrides)
+
+        return cls.calibrated_to_gel_time(**params)
 
 
 @dataclass
