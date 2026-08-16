@@ -3,48 +3,9 @@ Environmental impact calculations for polyurethane materials.
 Evaluates blowing agents and sustainability aspects.
 """
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
-
-# Material environmental data - Based on real products
-MATERIAL_ENVIRONMENTAL_DATA = {
-    'genfoam_hd12': {
-        'name': 'Genfoam HD12 (Water-Blown)',
-        'blowing_agent': 'Water (H2O)',
-        'gwp': 0,  # Global Warming Potential (kg CO2-eq per kg material)
-        'ozone_depletion_potential': 0,
-        'toxicity': 'Low',
-        'recyclability': 'High',
-        'recommendation': 'Preferred - zero environmental impact'
-    },
-    'genfoam_hd20': {
-        'name': 'Genfoam HD20 (Water-Blown)',
-        'blowing_agent': 'Water (H2O)',
-        'gwp': 0,
-        'ozone_depletion_potential': 0,
-        'toxicity': 'Low',
-        'recyclability': 'High',
-        'recommendation': 'Preferred - zero environmental impact'
-    },
-    'ecomate_spray': {
-        'name': 'Ecomate Spray (eco-mate®)',
-        'blowing_agent': 'eco-mate® (Zero GWP)',
-        'gwp': 0,
-        'ozone_depletion_potential': 0,
-        'toxicity': 'Low',
-        'recyclability': 'High',
-        'recommendation': 'Best in class - zero GWP, eco-friendly'
-    },
-    'ecofoam_xhd_rc': {
-        'name': 'Ecofoam XHD RC (eco-mate®)',
-        'blowing_agent': 'eco-mate® (Zero GWP)',
-        'gwp': 0,
-        'ozone_depletion_potential': 0,
-        'toxicity': 'Low',
-        'recyclability': 'High',
-        'recommendation': 'Best in class - zero GWP, eco-friendly'
-    }
-}
+from ..data.material_database import get_material
 
 
 def calculate_environmental_impact(
@@ -58,45 +19,64 @@ def calculate_environmental_impact(
     """
     Calculate environmental impact for a given material and quantity.
 
-    Values supplied by the caller take precedence over the table below. They come from the
-    material database CSV, which is the source of truth — this table only covers the four
-    original formulations, so a material added to the CSV would otherwise report the wrong
-    blowing agent.
+    Figures come from the material database CSV, so a material added there reports its own
+    blowing agent and GWP with no change here. Explicitly supplied values take precedence,
+    which is how user-entered custom materials pass their own data in.
 
     Args:
-        material_key: Key of material from MATERIAL_ENVIRONMENTAL_DATA
+        material_key: Material_Key from the database
         quantity_kg: Quantity of material in kilograms
-        blowing_agent: Blowing agent from the data sheet, overriding the table
-        gwp_per_kg: GWP in kg CO2-eq per kg, overriding the table
-        is_eco_friendly: Whether the sheet declares neither GWP nor ODP
-        material_name: Display name from the data sheet
+        blowing_agent: Overrides the database value
+        gwp_per_kg: GWP in kg CO2-eq per kg, overriding the database value
+        is_eco_friendly: Whether neither GWP nor ODP is declared
+        material_name: Display name, overriding the database value
 
     Returns:
         Dict with environmental impact metrics
     """
 
-    material = MATERIAL_ENVIRONMENTAL_DATA.get(material_key, {})
+    profile: Dict[str, Any] = {}
+    database_name = None
+    try:
+        material = get_material(material_key)
+        if material is not None:
+            profile = material['environmental']
+            database_name = material['name']
+    except Exception:
+        # A missing or malformed database must not take the whole calculation down;
+        # the caller-supplied values below still apply.
+        profile = {}
 
-    gwp = gwp_per_kg if gwp_per_kg is not None else material.get('gwp', 0)
-    eco_friendly = is_eco_friendly if is_eco_friendly is not None else gwp == 0
-
-    if material:
-        recommendation = material.get('recommendation', '')
-    elif eco_friendly:
-        recommendation = 'Zero GWP and ODP declared on the data sheet'
+    if gwp_per_kg is not None:
+        gwp = gwp_per_kg
+    elif profile.get('gwp_per_kg') is not None:
+        gwp = profile['gwp_per_kg']
     else:
-        recommendation = 'Review the data sheet for this material'
+        gwp = 0
+
+    if is_eco_friendly is not None:
+        eco_friendly = is_eco_friendly
+    elif profile:
+        eco_friendly = bool(profile.get('is_eco_friendly'))
+    else:
+        eco_friendly = gwp == 0
+
+    agent = blowing_agent or profile.get('blowing_agent') or 'Unknown'
+
+    if eco_friendly:
+        recommendation = f'Preferred — {agent} with no declared GWP or ODP'
+    else:
+        recommendation = get_environmental_recommendation(gwp)
 
     return {
-        'material': material_name or material.get('name') or material_key,
+        'material': material_name or database_name or material_key,
         'material_key': material_key,
         'quantity_kg': quantity_kg,
-        'blowing_agent': blowing_agent or material.get('blowing_agent', 'Unknown'),
+        'blowing_agent': agent,
         'gwp_per_kg': gwp,
         'total_gwp_kg_co2_eq': gwp * quantity_kg,
-        'ozone_depletion_potential': material.get('ozone_depletion_potential', 0),
-        'toxicity': material.get('toxicity', 'Unknown'),
-        'recyclability': material.get('recyclability', 'Unknown'),
+        'ozone_depletion_potential': 0 if eco_friendly else None,
+        'pfas_free': profile.get('pfas_free'),
         'recommendation': recommendation,
         'is_eco_friendly': eco_friendly,
     }

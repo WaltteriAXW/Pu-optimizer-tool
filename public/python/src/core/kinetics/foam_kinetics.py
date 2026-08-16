@@ -55,6 +55,11 @@ from .reaction_kinetics import (
 # Physical constants
 BOLTZMANN_CONSTANT = 1.380649e-23  # J/K
 
+# Upper bound on a physically meaningful foam cell (10 mm). Real PU cells are 50-500 μm;
+# anything approaching this ceiling means the nucleation parameters are wrong, and the
+# clamp keeps that from propagating as a plausible-looking number.
+MAX_PHYSICAL_CELL_DIAMETER_UM = 10_000.0
+
 
 class FoamType(Enum):
     """Foam classification"""
@@ -90,6 +95,23 @@ class FoamKineticsParameters:
     surface_tension_n_m: float = 0.025   # γ (0.02-0.03 for PU)
     nucleation_prefactor: float = 1e20   # N_0 (cells/m³)
     supersaturation_pa: float = 500000   # ΔP (0.5-2 MPa typical)
+
+    # Heterogeneous nucleation factor f(θ), the fraction of the homogeneous free-energy
+    # barrier that survives when bubbles form on a nucleating agent or entrained air
+    # rather than spontaneously in the bulk: ΔG*_het = ΔG*_hom · f(θ).
+    #
+    # This matters more than it looks. The homogeneous barrier for a PU system at these
+    # conditions is of order 10^5, meaning spontaneous nucleation essentially never
+    # happens — yet real foams nucleate readily, because they are formulated with
+    # surfactants and nucleating agents precisely to make it easy. Ignoring that gives
+    # nucleation densities around 10^-24 cells/m³ instead of the 10^11-10^15 that real
+    # foams show, and absurd cell sizes follow.
+    #
+    # CALIBRATED, NOT MEASURED: the data sheets state no cell size, so this default is
+    # solved so that reference conditions reproduce target_cell_diameter_um. Recompute it
+    # with calibrate_heterogeneous_factor() if the reference conditions change, and
+    # replace it with a fitted value if cell-size measurements become available.
+    heterogeneous_nucleation_factor: float = 7.82e-5
 
     # Cell characteristics
     target_cell_diameter_um: float = 200  # Target cell size (100-500 μm)
@@ -508,7 +530,12 @@ class CellNucleationModel:
         """
         Calculate cell nucleation density.
 
-        N = N_0 × exp(-16πγ³ / (3k_B × T × ΔP²))
+        N = N_0 × exp(-f(θ) × 16πγ³ / (3k_B × T × ΔP²))
+
+        The f(θ) term is what makes this heterogeneous rather than homogeneous
+        nucleation. Bubbles in a real foam form on nucleating agents and entrained air,
+        which cuts the free-energy barrier by orders of magnitude; without it the model
+        predicts that foam essentially cannot nucleate at all.
 
         Args:
             temperature_c: Temperature (°C)
@@ -525,15 +552,14 @@ class CellNucleationModel:
         if delta_p <= 0:
             return 0
 
-        # Nucleation barrier
-        barrier = (16 * math.pi * gamma**3) / (3 * BOLTZMANN_CONSTANT * temp_k * delta_p**2)
+        # Homogeneous barrier, then the heterogeneous reduction
+        homogeneous_barrier = (16 * math.pi * gamma**3) / (3 * BOLTZMANN_CONSTANT * temp_k * delta_p**2)
+        barrier = homogeneous_barrier * self.foam_params.heterogeneous_nucleation_factor
 
-        # Limit to prevent underflow
-        barrier = min(barrier, 100)
+        # Guard the exponential against overflow at extreme parameter values
+        barrier = max(0.0, min(barrier, 700))
 
-        n = n_0 * math.exp(-barrier)
-
-        return n
+        return n_0 * math.exp(-barrier)
 
     def cell_diameter_from_density(
         self,
@@ -574,6 +600,12 @@ class CellNucleationModel:
         diameter_m = math.pow(6 * cell_volume / math.pi, 1/3)
         diameter_um = diameter_m * 1e6
 
+        # A cell cannot be larger than the part it is in. An implausible nucleation
+        # density used to escape as a "cell" tens of millions of metres across, which is
+        # the kind of number that should never leave a physical model quietly.
+        if not math.isfinite(diameter_um) or diameter_um > MAX_PHYSICAL_CELL_DIAMETER_UM:
+            return MAX_PHYSICAL_CELL_DIAMETER_UM
+
         return diameter_um
 
     def predict_cell_diameter(
@@ -595,6 +627,59 @@ class CellNucleationModel:
         n = self.nucleation_density(temperature_c)
 
         return self.cell_diameter_from_density(n, density)
+
+    def calibrate_heterogeneous_factor(
+        self,
+        target_cell_diameter_um: Optional[float] = None,
+        temperature_c: float = 25.0,
+        foam_density_kg_m3: Optional[float] = None,
+    ) -> float:
+        """
+        Solve for the heterogeneous nucleation factor that yields a known cell size.
+
+        Classical nucleation theory gives the shape of the temperature and
+        supersaturation dependence but not its absolute scale, because that depends on
+        the surfactant and nucleating-agent package, which no data sheet quantifies.
+        Rather than inventing the factor, this inverts the model against a cell diameter
+        that IS known:
+
+            N_target = gas_fraction / cell_volume     from the target diameter
+            f        = ln(N_0 / N_target) / ΔG*_hom   from the barrier equation
+
+        The result is a calibration to an assumed cell size, not a measurement. Treat it
+        as such: it makes the temperature and pressure trends meaningful, and it will be
+        no more accurate than the target it was anchored to.
+
+        Args:
+            target_cell_diameter_um: Cell size to anchor to (defaults to the parameter)
+            temperature_c: Reference temperature for the calibration
+            foam_density_kg_m3: Reference foam density (defaults to free-rise)
+
+        Returns:
+            The heterogeneous factor, in (0, 1]
+        """
+        target_um = target_cell_diameter_um or self.foam_params.target_cell_diameter_um
+        density = foam_density_kg_m3 or self.foam_params.free_rise_density_kg_m3
+
+        gas_fraction = 1 - (density / self.foam_params.initial_density_kg_m3)
+        if gas_fraction <= 0 or target_um <= 0:
+            raise ValueError('Cannot calibrate against a non-foaming reference state')
+
+        cell_volume_m3 = (math.pi / 6.0) * (target_um * 1e-6) ** 3
+        target_density = gas_fraction / cell_volume_m3
+
+        temp_k = temperature_c + 273.15
+        gamma = self.foam_params.surface_tension_n_m
+        delta_p = self.foam_params.supersaturation_pa
+        homogeneous_barrier = (16 * math.pi * gamma**3) / (3 * BOLTZMANN_CONSTANT * temp_k * delta_p**2)
+
+        required_barrier = math.log(self.foam_params.nucleation_prefactor / target_density)
+
+        # A negative barrier would mean the prefactor alone undershoots the target, in
+        # which case no reduction helps and nucleation is already unhindered.
+        factor = max(0.0, required_barrier) / homogeneous_barrier
+
+        return min(1.0, factor)
 
     def thermal_conductivity(
         self,

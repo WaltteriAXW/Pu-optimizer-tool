@@ -102,27 +102,6 @@ export interface PolyurethaneProduct {
   Notes: string;
 }
 
-/**
- * Physics properties derived from a product's two components.
- *
- * The optimizer models the mixed liquid travelling down a single line, so neither the
- * polyol nor the isocyanate figure is usable on its own — both are blended here.
- */
-export interface DerivedMaterialPhysics {
-  /** Mixed liquid viscosity at the reference temperature (cP) */
-  viscosity_cp: number;
-  /** Mixed liquid density before foaming (kg/m³) */
-  density_kg_m3: number;
-  /** Temperature the component viscosities were measured at (°C) */
-  reference_temp_c: number;
-  /** Power-law flow behaviour index */
-  flow_index: number;
-  /** Arrhenius activation energy (J/mol) */
-  activation_energy_j_mol: number;
-  /** Density of the cured foam, not the liquid (kg/m³) */
-  final_density_kg_m3: number;
-}
-
 let cachedDatabase: PolyurethaneProduct[] | null = null;
 
 /**
@@ -202,155 +181,6 @@ function getDatabase(): PolyurethaneProduct[] {
 }
 
 /**
- * Parse a viscosity cell written as a range ("900-1050") or a tolerance ("200±20").
- * Returns the midpoint of a range, or the nominal value of a tolerance.
- */
-export function parseViscosity(value: string): number {
-  const text = (value || '').trim();
-
-  if (text.includes('±')) {
-    return parseFloat(text.split('±')[0]);
-  }
-
-  if (text.includes('-')) {
-    const [min, max] = text.split('-').map(v => parseFloat(v));
-    if (Number.isFinite(min) && Number.isFinite(max)) {
-      return (min + max) / 2;
-    }
-  }
-
-  return parseFloat(text);
-}
-
-/** Parse a numeric cell, returning null when it is empty or unparseable. */
-function parseNumber(value: string): number | null {
-  const parsed = parseFloat((value || '').trim());
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function requireNumber(value: string, column: string, product: string): number {
-  const parsed = parseNumber(value);
-  if (parsed === null) {
-    throw new Error(`Material "${product}" is missing a valid ${column}.`);
-  }
-  return parsed;
-}
-
-function requireViscosity(value: string, column: string, product: string): number {
-  const parsed = parseViscosity(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`Material "${product}" is missing a valid ${column}.`);
-  }
-  return parsed;
-}
-
-/**
- * Derive the mixed-liquid physics the pressure model needs from a product's two components.
- *
- * Density uses volume-additive mixing, viscosity uses logarithmic blending on volume
- * fractions (the standard Arrhenius blending rule for miscible liquids). Both are
- * properties of the liquid being pumped, and are unrelated to the density of the cured
- * foam, which is reported separately as final_density_kg_m3.
- */
-export function deriveMaterialPhysics(product: PolyurethaneProduct): DerivedMaterialPhysics {
-  const name = product.Product_Name || product.Material_Key;
-
-  const polyolViscosity = requireViscosity(product.Polyol_Viscosity_cP, 'Polyol_Viscosity_cP', name);
-  const isoViscosity = requireViscosity(product.Isocyanate_Viscosity_cP, 'Isocyanate_Viscosity_cP', name);
-  const polyolSg = requireNumber(product.Polyol_Specific_Gravity, 'Polyol_Specific_Gravity', name);
-  const isoSg = requireNumber(product.Isocyanate_Specific_Gravity, 'Isocyanate_Specific_Gravity', name);
-  const polyolParts = requireNumber(product.Mix_Ratio_Weight_Polyol, 'Mix_Ratio_Weight_Polyol', name);
-  const isoParts = requireNumber(product.Mix_Ratio_Weight_Iso, 'Mix_Ratio_Weight_Iso', name);
-
-  if (polyolParts + isoParts <= 0) {
-    throw new Error(`Material "${name}" has a zero total mix ratio.`);
-  }
-
-  const polyolDensity = polyolSg * 1000;
-  const isoDensity = isoSg * 1000;
-
-  // Mass fractions from the weight mix ratio
-  const totalParts = polyolParts + isoParts;
-  const polyolMassFraction = polyolParts / totalParts;
-  const isoMassFraction = isoParts / totalParts;
-
-  // Specific volumes, from which both the mixed density and the volume fractions follow
-  const polyolSpecificVolume = polyolMassFraction / polyolDensity;
-  const isoSpecificVolume = isoMassFraction / isoDensity;
-  const totalSpecificVolume = polyolSpecificVolume + isoSpecificVolume;
-
-  const density_kg_m3 = 1 / totalSpecificVolume;
-  const polyolVolumeFraction = polyolSpecificVolume / totalSpecificVolume;
-  const isoVolumeFraction = isoSpecificVolume / totalSpecificVolume;
-
-  const viscosity_cp = Math.exp(
-    polyolVolumeFraction * Math.log(polyolViscosity) +
-    isoVolumeFraction * Math.log(isoViscosity)
-  );
-
-  return {
-    viscosity_cp,
-    density_kg_m3,
-    reference_temp_c: parseNumber(product.Viscosity_Reference_Temp_C) ?? 25,
-    flow_index: requireNumber(product.Flow_Index, 'Flow_Index', name),
-    activation_energy_j_mol: requireNumber(product.Activation_Energy_J_mol, 'Activation_Energy_J_mol', name),
-    final_density_kg_m3: deriveFinalFoamDensity(product),
-  };
-}
-
-/**
- * Density of the cured foam. Prefers the stated applied density, falling back to the
- * midpoint of the free-rise range and then the molded range.
- */
-function deriveFinalFoamDensity(product: PolyurethaneProduct): number {
-  const applied = parseViscosity(product.Overall_Applied_Density_kg_m3);
-  if (Number.isFinite(applied) && applied > 0) {
-    return applied;
-  }
-
-  const ranges: Array<[string, string]> = [
-    [product.Free_Rise_Density_kg_m3_Min, product.Free_Rise_Density_kg_m3_Max],
-    [product.Molded_Density_kg_m3_Min, product.Molded_Density_kg_m3_Max],
-  ];
-
-  for (const [minText, maxText] of ranges) {
-    const min = parseNumber(minText);
-    const max = parseNumber(maxText);
-    if (min !== null && max !== null) {
-      return (min + max) / 2;
-    }
-    if (min !== null) {
-      return min;
-    }
-    if (max !== null) {
-      return max;
-    }
-  }
-
-  return 0;
-}
-
-/**
- * Environmental characteristics as stated on the technical data sheet.
- */
-export function deriveEnvironmentalProfile(product: PolyurethaneProduct) {
-  const isNo = (value: string) => (value || '').trim().toLowerCase() === 'no';
-  const isYes = (value: string) => (value || '').trim().toLowerCase() === 'yes';
-
-  const hasGwp = !isNo(product.GWP);
-  const hasOdp = !isNo(product.ODP);
-
-  return {
-    blowing_agent: product.Blowing_Agent || 'Unknown',
-    // The sheets record GWP/ODP as a Yes/No presence flag rather than a figure, so a
-    // product declared free of both contributes zero.
-    gwp_per_kg: hasGwp ? null : 0,
-    is_eco_friendly: !hasGwp && !hasOdp,
-    pfas_free: isYes(product.PFAS_Free),
-  };
-}
-
-/**
  * Get all products from the database
  */
 export async function getAllProducts(): Promise<PolyurethaneProduct[]> {
@@ -379,20 +209,15 @@ export async function getProductTypes(): Promise<string[]> {
 }
 
 /**
- * Get all products as material presets, with their physics derived from the component data.
+ * The materials offered in the UI: identifier and display name.
+ *
+ * Only these two fields are read here. The physics is derived on the Python side, in
+ * src/core/data/material_database.py, from this same CSV — keeping the mixing formulas
+ * in exactly one place rather than in two languages that can drift apart.
  */
-export async function getAllMaterialPresets() {
+export async function getAllMaterialPresets(): Promise<Array<{ id: string; name: string }>> {
   return getDatabase().map(product => ({
     id: product.Material_Key,
     name: product.Product_Name,
-    ...deriveMaterialPhysics(product),
-    environmental: deriveEnvironmentalProfile(product),
-    polyol_sg: parseNumber(product.Polyol_Specific_Gravity) ?? 0,
-    iso_sg: parseNumber(product.Isocyanate_Specific_Gravity) ?? 0,
-    weight_ratio: [
-      parseNumber(product.Mix_Ratio_Weight_Polyol) ?? 0,
-      parseNumber(product.Mix_Ratio_Weight_Iso) ?? 0,
-    ] as [number, number],
-    fullProduct: product,
   }));
 }

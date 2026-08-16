@@ -6,7 +6,8 @@ Tests the main orchestrator that coordinates all calculation modules.
 import pytest
 from . import calculation_processor
 from .calculation_processor import CalculationProcessor
-from ...constants import MATERIAL_PRESETS, VALIDATION_RANGES
+from ...constants import VALIDATION_RANGES
+from ..data.material_database import get_material, list_material_keys
 
 
 class TestCalculationProcessorBasic:
@@ -17,7 +18,7 @@ class TestCalculationProcessorBasic:
         processor = CalculationProcessor()
         assert processor is not None
         assert processor.physics is not None
-        assert processor.material_presets is not None
+        assert processor.machine_specs is not None
 
     def test_calculate_all_returns_success(self):
         """Complete calculation should return success."""
@@ -217,7 +218,7 @@ class TestMaterialPresets:
         """All valid materials should calculate without error."""
         processor = CalculationProcessor()
 
-        materials = list(MATERIAL_PRESETS.keys())
+        materials = list_material_keys()
 
         for material in materials:
             result = processor.calculate_all({
@@ -417,7 +418,7 @@ class TestExtremeValues:
         # Viscosity should decrease with temperature but stay physical
         viscosity = result['data']['thermal']['current_viscosity_cp']
         assert viscosity > 0
-        assert viscosity < MATERIAL_PRESETS['genfoam_hd12']['viscosity']
+        assert viscosity < get_material('genfoam_hd12')['viscosity']
 
     def test_temperature_above_supported_range_is_rejected(self):
         """A temperature outside the validated range is refused, not silently clamped."""

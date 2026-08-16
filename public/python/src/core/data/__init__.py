@@ -1,41 +1,31 @@
 """
-Data modules for polyurethane material and machine databases.
+Data modules for polyurethane materials.
 
-- materials_database: Core material definitions (Genfoam, Ecomate, Ecofoam)
-- extended_materials_database: Extended material properties and processing windows
+- material_database: the material database CSV, the single source of truth for every
+  material the optimizer offers. Adding a material means appending one row to
+  src/data/polyurethane_foam_database.csv.
 """
 
-from .materials_database import (
-    BlowingAgent,
-    PolyurethaneMaterial,
-    MaterialDatabase,
+from .material_database import (
+    MaterialDatabaseError,
+    derive_environmental,
+    derive_physics,
+    derive_reaction,
+    gel_time_window_s,
     get_material,
-    list_materials,
-    GENFOAM_HD12,
-    GENFOAM_HD20,
-    ECOMATE_SPRAY,
-    ECOFOAM_XHD_RC,
-)
-
-from .extended_materials_database import (
-    MaterialFamily,
-    ExtendedPolyurethaneMaterial,
-    ExtendedMaterialDatabase,
+    list_material_keys,
+    load_materials,
+    parse_measurement,
 )
 
 __all__ = [
-    # materials_database
-    'BlowingAgent',
-    'PolyurethaneMaterial',
-    'MaterialDatabase',
+    'MaterialDatabaseError',
+    'derive_environmental',
+    'derive_physics',
+    'derive_reaction',
+    'gel_time_window_s',
     'get_material',
-    'list_materials',
-    'GENFOAM_HD12',
-    'GENFOAM_HD20',
-    'ECOMATE_SPRAY',
-    'ECOFOAM_XHD_RC',
-    # extended_materials_database
-    'MaterialFamily',
-    'ExtendedPolyurethaneMaterial',
-    'ExtendedMaterialDatabase',
+    'list_material_keys',
+    'load_materials',
+    'parse_measurement',
 ]

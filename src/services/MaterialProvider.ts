@@ -1,46 +1,17 @@
 /**
- * MaterialProvider - Abstraction layer for material data sources
+ * MaterialProvider - the list of materials the UI offers
  *
- * Allows decoupling of material data from application logic.
- * Can be swapped between CSV (current) and API (future) without changing code.
+ * This supplies the material dropdown. It deliberately carries no physical properties:
+ * those are derived on the Python side, in src/core/data/material_database.py, from the
+ * same CSV this reads. Keeping the mixing formulas in one language means the two halves
+ * of the application cannot drift apart.
  */
 
-export interface MaterialEnvironmentalProfile {
-  /** Blowing agent as stated on the technical data sheet */
-  blowing_agent: string
-  /** GWP in kg CO₂-eq per kg, or null when the data sheet states no figure */
-  gwp_per_kg: number | null
-  /** True when the data sheet declares neither GWP nor ODP */
-  is_eco_friendly: boolean
-  /** True when the data sheet declares the product PFAS-free */
-  pfas_free: boolean
-}
-
 export interface MaterialProperties {
-  /** Material identifier */
+  /** Material identifier — the Material_Key column, and what the calculation is keyed on */
   id: string
   /** Display name */
   name: string
-  /** Mixed liquid viscosity in centiPoise (cP) at the reference temperature */
-  viscosity_cp: number
-  /** Mixed liquid density before foaming, in kg/m³ */
-  density_kg_m3: number
-  /** Temperature the component viscosities were measured at (°C) */
-  reference_temp_c: number
-  /** Flow behavior index (0-1, where 1 = Newtonian) */
-  flow_index: number
-  /** Activation energy in J/mol */
-  activation_energy_j_mol: number
-  /** Specific gravity of polyol component */
-  polyol_sg: number
-  /** Specific gravity of isocyanate component */
-  iso_sg: number
-  /** Weight mixing ratio [polyol, isocyanate] */
-  weight_ratio: [number, number]
-  /** Density of the cured foam — not the liquid being pumped */
-  final_density_kg_m3: number
-  /** Environmental characteristics from the data sheet */
-  environmental: MaterialEnvironmentalProfile
 }
 
 /**
@@ -78,43 +49,19 @@ export interface IMaterialProvider {
 
 /**
  * CSV-based material provider
- * Loads materials from CSV file (current implementation)
+ * Loads materials from the bundled material database
  */
 export class CSVMaterialProvider implements IMaterialProvider {
   private materials: MaterialProperties[] = []
   private loaded = false
-
-  constructor() {
-    // Will be loaded on first use
-  }
 
   private async ensureLoaded(): Promise<void> {
     if (this.loaded) {
       return
     }
 
-    // Import the database loader
     const { getAllMaterialPresets } = await import('@/utils/database_loader')
-    const presets = await getAllMaterialPresets()
-
-    // Every value comes from the CSV. A material missing a required property throws in
-    // the loader rather than being filled in with a plausible-looking default — a guessed
-    // viscosity is indistinguishable from a measured one once it reaches the physics.
-    this.materials = presets.map(preset => ({
-      id: preset.id,
-      name: preset.name,
-      viscosity_cp: preset.viscosity_cp,
-      density_kg_m3: preset.density_kg_m3,
-      reference_temp_c: preset.reference_temp_c,
-      flow_index: preset.flow_index,
-      activation_energy_j_mol: preset.activation_energy_j_mol,
-      polyol_sg: preset.polyol_sg,
-      iso_sg: preset.iso_sg,
-      weight_ratio: preset.weight_ratio,
-      final_density_kg_m3: preset.final_density_kg_m3,
-      environmental: preset.environmental,
-    }))
-
+    this.materials = await getAllMaterialPresets()
     this.loaded = true
   }
 

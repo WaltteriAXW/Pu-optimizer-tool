@@ -341,77 +341,6 @@ MACHINE_SPECS = {
     }
 }
 
-# ============================================================================
-# MATERIAL PRESETS - Fallback mirror of the material database
-# ============================================================================
-#
-# src/data/polyurethane_foam_database.csv is the source of truth for materials. The
-# TypeScript layer reads it and injects the resulting properties into every calculation,
-# so these values are only reached when a calculation runs without injected properties
-# (direct Python use, and the tests).
-#
-# "viscosity" and "density" describe the MIXED LIQUID being pumped, derived from the two
-# components in the CSV: density by volume-additive mixing of the specific gravities at
-# the weight mix ratio, viscosity by logarithmic blending on volume fractions. They are
-# not polyol figures, and "final_density" — the cured foam — is a different quantity again.
-#
-# Adding a material here is not necessary; add a row to the CSV instead.
-
-MATERIAL_PRESETS = {
-    "genfoam_hd12": {
-        "name": "Genfoam HD12 (Water-Blown)",
-        "density": 1148.6,
-        "specific_gravity": 1.149,
-        "viscosity": 447.6,
-        "reference_temp_c": 25,
-        "flow_index": 0.85,
-        "activation_energy": 25000,
-        "polyol_sg": 1.07,
-        "iso_sg": 1.23,
-        "weight_ratio": [90, 100],
-        "final_density": 205
-    },
-    "genfoam_hd20": {
-        "name": "Genfoam HD20 (Water-Blown)",
-        "density": 1148.6,
-        "specific_gravity": 1.149,
-        "viscosity": 447.6,
-        "reference_temp_c": 25,
-        "flow_index": 0.83,
-        "activation_energy": 26000,
-        "polyol_sg": 1.07,
-        "iso_sg": 1.23,
-        "weight_ratio": [90, 100],
-        "final_density": 302.5
-    },
-    "ecomate_spray": {
-        "name": "Ecomate Spray EC (eco-mate®, Zero GWP)",
-        "density": 1175.0,
-        "specific_gravity": 1.175,
-        "viscosity": 264.5,
-        "reference_temp_c": 25,
-        "flow_index": 0.88,
-        "activation_energy": 24000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 40
-    },
-    "ecofoam_xhd_rc": {
-        "name": "Ecofoam XHD RC (eco-mate®, Zero GWP)",
-        "density": 1175.0,
-        "specific_gravity": 1.175,
-        "viscosity": 412.1,
-        "reference_temp_c": 25,
-        "flow_index": 0.82,
-        "activation_energy": 28000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 42.5
-    }
-}
-
 # Create PHYSICS as an instance for backward compatibility
 PHYSICS = Physics
 
@@ -424,7 +353,6 @@ __all__ = [
     'PHYSICS',
     'MaterialDefaults',
     'VALIDATION_RANGES',
-    'MATERIAL_PRESETS',
     'MACHINE_SPECS',
     'Thresholds',
     'Conversions',

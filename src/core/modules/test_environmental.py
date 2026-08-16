@@ -5,6 +5,7 @@ Tests environmental impact calculations and material comparisons.
 
 import pytest
 from . import environmental
+from ..data.material_database import list_material_keys
 from .environmental import (
     calculate_environmental_impact,
     compare_materials,
@@ -256,7 +257,7 @@ class TestPhysicsValidation:
 
     def test_catalogued_materials_are_all_zero_gwp(self):
         """Every material currently offered is water-blown or ecomate®-blown."""
-        for material_key in environmental.MATERIAL_ENVIRONMENTAL_DATA:
+        for material_key in list_material_keys():
             result = calculate_environmental_impact(material_key=material_key, quantity_kg=1)
 
             assert result['gwp_per_kg'] == 0

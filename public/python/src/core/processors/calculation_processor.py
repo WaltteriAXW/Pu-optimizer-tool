@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 # Import core calculation modules (required)
 from ..modules import pressure, thermal, flow, environmental
-from ...constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
+from ...constants import PHYSICS, VALIDATION_RANGES, MACHINE_SPECS
+from ..data.material_database import get_material, list_material_keys
 from ..validation import validate_parameters
 
 # Import kinetics modules (optional extension - Phase 4)
@@ -59,7 +60,6 @@ class CalculationProcessor:
     def __init__(self):
         self.physics = PHYSICS
         self.validation_ranges = VALIDATION_RANGES
-        self.material_presets = MATERIAL_PRESETS
         self.machine_specs = MACHINE_SPECS
         self.last_calculation = None
         self.calculation_cache = {}
@@ -374,16 +374,22 @@ class CalculationProcessor:
             }
 
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
-        """Get material properties from presets (fallback for backward compatibility)."""
-        return self.material_presets.get(material_key)
+        """Look a material up in the database CSV."""
+        try:
+            return get_material(material_key)
+        except Exception as e:
+            logger.error(f"Material database unavailable: {e}")
+            return None
 
     def _resolve_material_properties(self, parameters: Dict[str, Any]) -> tuple:
         """
-        Resolve material properties with Phase Beta injection support.
+        Resolve the material properties to calculate with.
 
         PRIORITY (highest to lowest):
-        1. Injected properties from TypeScript (Phase Beta feature)
-        2. Hardcoded material_key lookup (backward compatibility)
+        1. Properties supplied on the parameters — how a user-entered custom material
+           gets its values in.
+        2. Lookup by material_key in the database CSV, the source of truth for every
+           catalogued material.
 
         Returns:
             Tuple of (material_dict, source_description)
@@ -391,12 +397,11 @@ class CalculationProcessor:
             - source_description: String describing where properties came from
         """
 
-        # CHECK 1: Look for injected properties (Phase Beta)
-        injected_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
-        has_injected = all(key in parameters for key in injected_keys)
+        # CHECK 1: Properties supplied directly (custom materials)
+        supplied_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys)
 
-        if has_injected:
-            # Construct material dict from injected properties
+        if has_supplied:
             material = {
                 'name': parameters.get('material_name'),
                 'viscosity': parameters.get('viscosity_cp'),
@@ -404,24 +409,28 @@ class CalculationProcessor:
                 'reference_temp_c': parameters.get('reference_temp_c', 25.0),
                 'flow_index': parameters.get('flow_index'),
                 'activation_energy': parameters.get('activation_energy_j_mol'),
-                'polyol_sg': parameters.get('polyol_sg', 1.12),
-                'iso_sg': parameters.get('iso_sg', 1.23),
-                'weight_ratio': parameters.get('weight_ratio', [100, 110]),
-                'final_density': parameters.get('final_density_kg_m3', 32),
+                'polyol_sg': parameters.get('polyol_sg'),
+                'iso_sg': parameters.get('iso_sg'),
+                'weight_ratio': parameters.get('weight_ratio'),
+                'final_density': parameters.get('final_density_kg_m3'),
             }
-            logger.info(f"Using INJECTED material properties (viscosity={material['viscosity']}cP)")
-            return material, 'injected_properties'
+            logger.info(f"Using SUPPLIED material properties (viscosity={material['viscosity']}cP)")
+            return material, 'supplied_properties'
 
-        # CHECK 2: Fall back to material_key lookup (backward compatibility)
+        # CHECK 2: Look the material up in the database
         material_key = parameters.get('material_key', 'genfoam_hd12')
         material = self._get_material_properties(material_key)
 
         if material is not None:
-            logger.info(f"Using HARDCODED material properties for key: {material_key}")
-            return material, f'material_key:{material_key}'
+            logger.info(f"Using material database entry: {material_key}")
+            return material, f'material_database:{material_key}'
 
-        # Neither available
-        return None, f'no_injected_properties, material_key_not_found:{material_key}'
+        try:
+            available = ', '.join(list_material_keys())
+        except Exception:
+            available = 'material database unavailable'
+
+        return None, f'material_key "{material_key}" not in the database (available: {available})'
 
     def calculate_kinetics(
         self,
@@ -470,21 +479,27 @@ class CalculationProcessor:
                     'data': None,
                 }
 
-            # Get kinetics parameters from material or use defaults
             kinetics_data = material.get('kinetics', {})
+            reaction = material.get('reaction', {})
 
-            # Build cure kinetics parameters
-            cure_params = CureKineticsParameters(
-                k1_ref=kinetics_data.get('k1_ref', 0.0001),
-                k2_ref=kinetics_data.get('k2_ref', 0.001),
-                m=kinetics_data.get('m', 1.0),
-                n=kinetics_data.get('n', 1.5),
-                activation_energy_k1=kinetics_data.get('activation_energy_k1', 50000),
-                activation_energy_k2=kinetics_data.get('activation_energy_k2', 45000),
-                gel_conversion=kinetics_data.get('gel_conversion', 0.65),
-                cream_time_ref_s=material.get('cream_time', 50),
-                gel_time_ref_s=material.get('gel_time', 150),
-            )
+            # Calibrate the rate constants to the cream and gel times this material's
+            # data sheet states, so the cure curve reproduces the reaction the supplier
+            # measured rather than a set of invented constants.
+            try:
+                cure_params = CureKineticsParameters.from_material(
+                    material,
+                    m=kinetics_data.get('m', 1.0),
+                    n=kinetics_data.get('n', 1.5),
+                    activation_energy_k1=kinetics_data.get('activation_energy_k1', 50000),
+                    activation_energy_k2=kinetics_data.get('activation_energy_k2', 45000),
+                    gel_conversion=kinetics_data.get('gel_conversion', 0.65),
+                )
+            except ValueError as e:
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'data': None,
+                }
 
             # Initialize cure kinetics model
             cure_model = CureKinetics(cure_params)
@@ -511,7 +526,7 @@ class CalculationProcessor:
             visc_ratio = viscosity_model.viscosity_ratio(cure_state.conversion, temperature_c)
 
             # Build thermal reaction parameters
-            effective_mold_temp = mold_temp_c or material.get('mold_temp_min', 40)
+            effective_mold_temp = mold_temp_c or reaction.get('mold_temp_min_c') or 40
             thermal_params = ThermalReactionParameters(
                 heat_of_reaction_j_kg=kinetics_data.get('heat_of_reaction', 100000),
                 density_kg_m3=material.get('density', 1100),
@@ -541,10 +556,10 @@ class CalculationProcessor:
 
             # Foam rise calculation (if foam material)
             foam_data = None
-            free_rise_density = material.get('free_rise_density')
+            free_rise_density = reaction.get('free_rise_density_kg_m3')
             if free_rise_density and free_rise_density < 500:  # Foam material
                 foam_params = FoamKineticsParameters(
-                    cream_time_s=material.get('cream_time', 10),
+                    cream_time_s=reaction.get('cream_time_s') or 10,
                     rise_time_constant_s=kinetics_data.get('rise_time_constant', 30),
                     free_rise_density_kg_m3=free_rise_density,
                     initial_density_kg_m3=material.get('density', 1100),
