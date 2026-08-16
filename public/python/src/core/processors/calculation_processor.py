@@ -70,6 +70,9 @@ class CalculationProcessor:
 
         Main entry point. This is the ONLY function JavaScript calls.
 
+        PHASE BETA FEATURE: Accepts injected material properties from TypeScript layer.
+        This enables decoupling from hardcoded materials and CSV-based data sources.
+
         Input: Raw user parameters
         Output: All calculated values with complete detail
 
@@ -77,11 +80,25 @@ class CalculationProcessor:
             parameters: Dict with keys:
                 - pipe_length_mm
                 - pipe_diameter_mm
-                - material_key
+                - material_key (string identifier) OR injected properties (see below)
                 - temperature_c
                 - flow_rate_lpm
                 - machine_type (optional)
                 - pressure_override (optional)
+
+                INJECTED PROPERTIES (TypeScript reads these from the material database
+                CSV and provides them; they describe the MIXED LIQUID being pumped):
+                - viscosity_cp (number) - overrides material lookup
+                - density_kg_m3 (number)
+                - reference_temp_c (number) - temperature viscosity_cp was measured at
+                - flow_index (number)
+                - activation_energy_j_mol (number)
+                - polyol_sg (number)
+                - iso_sg (number)
+                - weight_ratio (list)
+                - final_density_kg_m3 (number) - cured foam, not the liquid
+                - material_name (str)
+                - blowing_agent (str), gwp_per_kg (number), is_eco_friendly (bool)
 
         Returns:
             Dict with structure:
@@ -99,6 +116,11 @@ class CalculationProcessor:
                     'timestamp': str
                 }
             }
+
+        BACKWARD COMPATIBILITY:
+        - If injected properties present, uses them (no material_key lookup)
+        - If only material_key present, falls back to hardcoded lookup
+        - If both present, injected properties take precedence
         """
 
         try:
@@ -116,7 +138,7 @@ class CalculationProcessor:
             try:
                 pipe_length_mm = float(parameters.get('pipe_length_mm', 500))
                 pipe_diameter_mm = float(parameters.get('pipe_diameter_mm', 12))
-                material_key = parameters.get('material_key', 'ecofoam_standard')
+                material_key = parameters.get('material_key', 'genfoam_hd12')
                 temperature_c = float(parameters.get('temperature_c', 25))
                 flow_rate_lpm = float(parameters.get('flow_rate_lpm', 1.0))
                 machine_type = parameters.get('machine_type', 'high_pressure')
@@ -128,12 +150,12 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 3: Get material properties
-            material = self._get_material_properties(material_key)
+            # Step 3: Resolve material properties (Phase Beta: prefers injected)
+            material, material_source = self._resolve_material_properties(parameters)
             if material is None:
                 return {
                     'success': False,
-                    'errors': [f'Material "{material_key}" not found'],
+                    'errors': [f'No material properties available (tried: {material_source})'],
                     'warnings': [],
                     'data': None
                 }
@@ -141,12 +163,34 @@ class CalculationProcessor:
             # Step 4: Get machine specifications
             machine = self.machine_specs.get(machine_type, self.machine_specs['high_pressure'])
 
-            # Step 5: Calculate all flow properties
+            # Step 5: Correct the viscosity for process temperature.
+            # This runs before flow and pressure because everything downstream depends on
+            # it: the Arrhenius-corrected viscosity is the consistency the power-law model
+            # thins from, and the pressure drop follows from that.
+            try:
+                thermal_result = thermal.calculate_temperature_dependent_viscosity(
+                    reference_temp_c=material.get('reference_temp_c', 25.0),
+                    reference_viscosity_cp=material['viscosity'],
+                    activation_energy_j_mol=material['activation_energy'],
+                    current_temp_c=temperature_c,
+                )
+            except Exception as e:
+                logger.error(f"Thermal calculation failed: {e}")
+                return {
+                    'success': False,
+                    'errors': [f'Thermal calculation error: {str(e)}'],
+                    'warnings': [],
+                    'data': None,
+                }
+
+            temperature_corrected_viscosity_cp = thermal_result['current_viscosity_cp']
+
+            # Step 6: Calculate all flow properties at the process temperature
             try:
                 flow_result = flow.calculate_all_flow_properties(
                     diameter_mm=pipe_diameter_mm,
                     flow_rate_lpm=flow_rate_lpm,
-                    consistency_cp=material['viscosity'],
+                    consistency_cp=temperature_corrected_viscosity_cp,
                     flow_index=material['flow_index'],
                     density_kg_m3=material['density'],
                 )
@@ -161,7 +205,7 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 6: Calculate pressure drop
+            # Step 7: Calculate pressure drop
             try:
                 pressure_result = pressure.calculate_pressure_drop(
                     diameter_mm=pipe_diameter_mm,
@@ -181,7 +225,7 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 7: Account for fitting losses
+            # Step 8: Account for fitting losses
             try:
                 pressure_with_fittings = pressure.calculate_pressure_with_fittings(
                     base_pressure_bar=pressure_result['pressure_drop_bar'],
@@ -190,23 +234,6 @@ class CalculationProcessor:
             except Exception as e:
                 logger.error(f"Fitting loss calculation failed: {e}")
                 pressure_with_fittings = pressure_result  # Fallback without fittings
-
-            # Step 8: Calculate thermal effects
-            try:
-                thermal_result = thermal.calculate_temperature_dependent_viscosity(
-                    reference_temp_c=25.0,
-                    reference_viscosity_cp=material['viscosity'],
-                    activation_energy_j_mol=material['activation_energy'],
-                    current_temp_c=temperature_c,
-                )
-            except Exception as e:
-                logger.error(f"Thermal calculation failed: {e}")
-                return {
-                    'success': False,
-                    'errors': [f'Thermal calculation error: {str(e)}'],
-                    'warnings': [],
-                    'data': None
-                }
 
             # Step 9: Calculate shear heating
             try:
@@ -237,6 +264,10 @@ class CalculationProcessor:
                     env_result = environmental.calculate_environmental_impact(
                         material_key=material_key,
                         quantity_kg=1.0,
+                        blowing_agent=parameters.get('blowing_agent'),
+                        gwp_per_kg=parameters.get('gwp_per_kg'),
+                        is_eco_friendly=parameters.get('is_eco_friendly'),
+                        material_name=material.get('name'),
                     )
                 except Exception as e:
                     logger.error(f"Environmental calculation failed: {e}")
@@ -259,9 +290,10 @@ class CalculationProcessor:
                 machine_compat = {
                     'is_compatible': False,
                     'status': 'Check failed',
-                    'available_pressure_bar': 0,
+                    'required_pressure_bar': 0,
                     'max_pressure_bar': 0,
-                    'warning': str(e)
+                    'warning': str(e),
+                    'note': None,
                 }  # Fallback
 
             # Step 12: Generate warnings
@@ -275,7 +307,7 @@ class CalculationProcessor:
                     'pipe_length_mm': pipe_length_mm,
                     'pipe_diameter_mm': pipe_diameter_mm,
                     'material_key': material_key,
-                    'material_name': material.get('name', material_key),
+                    'material_name': material.get('name') or material_key,
                     'temperature_c': temperature_c,
                     'flow_rate_lpm': flow_rate_lpm,
                     'machine_type': machine_type,
@@ -291,6 +323,7 @@ class CalculationProcessor:
                 },
                 'thermal': {
                     'temperature_c': temperature_c,
+                    'reference_temp_c': thermal_result['reference_temp_c'],
                     'reference_viscosity_cp': thermal_result['reference_viscosity_cp'],
                     'current_viscosity_cp': thermal_result['current_viscosity_cp'],
                     'temperature_factor': thermal_result['temperature_factor'],
@@ -307,9 +340,10 @@ class CalculationProcessor:
                 'machine_compatibility': {
                     'is_compatible': machine_compat['is_compatible'],
                     'status': machine_compat['status'],
-                    'available_pressure_bar': machine_compat['available_pressure_bar'],
+                    'required_pressure_bar': machine_compat['required_pressure_bar'],
                     'max_pressure_bar': machine_compat['max_pressure_bar'],
                     'warning': machine_compat['warning'],
+                    'note': machine_compat.get('note'),
                 },
                 'timestamp': datetime.now().isoformat(),
             }
@@ -340,8 +374,54 @@ class CalculationProcessor:
             }
 
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
-        """Get material properties from presets."""
+        """Get material properties from presets (fallback for backward compatibility)."""
         return self.material_presets.get(material_key)
+
+    def _resolve_material_properties(self, parameters: Dict[str, Any]) -> tuple:
+        """
+        Resolve material properties with Phase Beta injection support.
+
+        PRIORITY (highest to lowest):
+        1. Injected properties from TypeScript (Phase Beta feature)
+        2. Hardcoded material_key lookup (backward compatibility)
+
+        Returns:
+            Tuple of (material_dict, source_description)
+            - material_dict: Dict with material properties, or None if not found
+            - source_description: String describing where properties came from
+        """
+
+        # CHECK 1: Look for injected properties (Phase Beta)
+        injected_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        has_injected = all(key in parameters for key in injected_keys)
+
+        if has_injected:
+            # Construct material dict from injected properties
+            material = {
+                'name': parameters.get('material_name'),
+                'viscosity': parameters.get('viscosity_cp'),
+                'density': parameters.get('density_kg_m3'),
+                'reference_temp_c': parameters.get('reference_temp_c', 25.0),
+                'flow_index': parameters.get('flow_index'),
+                'activation_energy': parameters.get('activation_energy_j_mol'),
+                'polyol_sg': parameters.get('polyol_sg', 1.12),
+                'iso_sg': parameters.get('iso_sg', 1.23),
+                'weight_ratio': parameters.get('weight_ratio', [100, 110]),
+                'final_density': parameters.get('final_density_kg_m3', 32),
+            }
+            logger.info(f"Using INJECTED material properties (viscosity={material['viscosity']}cP)")
+            return material, 'injected_properties'
+
+        # CHECK 2: Fall back to material_key lookup (backward compatibility)
+        material_key = parameters.get('material_key', 'genfoam_hd12')
+        material = self._get_material_properties(material_key)
+
+        if material is not None:
+            logger.info(f"Using HARDCODED material properties for key: {material_key}")
+            return material, f'material_key:{material_key}'
+
+        # Neither available
+        return None, f'no_injected_properties, material_key_not_found:{material_key}'
 
     def calculate_kinetics(
         self,
@@ -562,9 +642,10 @@ class CalculationProcessor:
                 "Flow rates may be affected."
             )
 
-        # Machine compatibility warning
+        # Machine compatibility warning. A pressure below the machine's minimum is normal
+        # and carries a note instead, so only a genuine incompatibility warns here.
         if not machine_compat.get('is_compatible'):
-            warnings.append(f"⚠️ {machine_compat.get('warning', 'Not compatible with machine.')}")
+            warnings.append(f"⚠️ {machine_compat.get('warning') or 'Not compatible with machine.'}")
 
         return warnings
 

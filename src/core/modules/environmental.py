@@ -3,7 +3,7 @@ Environmental impact calculations for polyurethane materials.
 Evaluates blowing agents and sustainability aspects.
 """
 
-from typing import Dict
+from typing import Dict, Optional
 
 
 # Material environmental data - Based on real products
@@ -50,39 +50,55 @@ MATERIAL_ENVIRONMENTAL_DATA = {
 def calculate_environmental_impact(
     material_key: str,
     quantity_kg: float,
+    blowing_agent: Optional[str] = None,
+    gwp_per_kg: Optional[float] = None,
+    is_eco_friendly: Optional[bool] = None,
+    material_name: Optional[str] = None,
 ) -> Dict:
     """
     Calculate environmental impact for a given material and quantity.
 
+    Values supplied by the caller take precedence over the table below. They come from the
+    material database CSV, which is the source of truth — this table only covers the four
+    original formulations, so a material added to the CSV would otherwise report the wrong
+    blowing agent.
+
     Args:
         material_key: Key of material from MATERIAL_ENVIRONMENTAL_DATA
         quantity_kg: Quantity of material in kilograms
+        blowing_agent: Blowing agent from the data sheet, overriding the table
+        gwp_per_kg: GWP in kg CO2-eq per kg, overriding the table
+        is_eco_friendly: Whether the sheet declares neither GWP nor ODP
+        material_name: Display name from the data sheet
 
     Returns:
         Dict with environmental impact metrics
     """
 
-    # Get material data (default to genfoam_hd12 if not found)
-    material = MATERIAL_ENVIRONMENTAL_DATA.get(
-        material_key,
-        MATERIAL_ENVIRONMENTAL_DATA['genfoam_hd12']
-    )
+    material = MATERIAL_ENVIRONMENTAL_DATA.get(material_key, {})
 
-    gwp = material.get('gwp', 0)
-    total_gwp_kg_co2_eq = gwp * quantity_kg
+    gwp = gwp_per_kg if gwp_per_kg is not None else material.get('gwp', 0)
+    eco_friendly = is_eco_friendly if is_eco_friendly is not None else gwp == 0
+
+    if material:
+        recommendation = material.get('recommendation', '')
+    elif eco_friendly:
+        recommendation = 'Zero GWP and ODP declared on the data sheet'
+    else:
+        recommendation = 'Review the data sheet for this material'
 
     return {
-        'material': material.get('name', material_key),
+        'material': material_name or material.get('name') or material_key,
         'material_key': material_key,
         'quantity_kg': quantity_kg,
-        'blowing_agent': material.get('blowing_agent', 'Unknown'),
+        'blowing_agent': blowing_agent or material.get('blowing_agent', 'Unknown'),
         'gwp_per_kg': gwp,
-        'total_gwp_kg_co2_eq': total_gwp_kg_co2_eq,
+        'total_gwp_kg_co2_eq': gwp * quantity_kg,
         'ozone_depletion_potential': material.get('ozone_depletion_potential', 0),
         'toxicity': material.get('toxicity', 'Unknown'),
         'recyclability': material.get('recyclability', 'Unknown'),
-        'recommendation': material.get('recommendation', ''),
-        'is_eco_friendly': gwp == 0,
+        'recommendation': recommendation,
+        'is_eco_friendly': eco_friendly,
     }
 
 

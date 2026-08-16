@@ -5,15 +5,28 @@
  * Can be swapped between CSV (current) and API (future) without changing code.
  */
 
+export interface MaterialEnvironmentalProfile {
+  /** Blowing agent as stated on the technical data sheet */
+  blowing_agent: string
+  /** GWP in kg CO₂-eq per kg, or null when the data sheet states no figure */
+  gwp_per_kg: number | null
+  /** True when the data sheet declares neither GWP nor ODP */
+  is_eco_friendly: boolean
+  /** True when the data sheet declares the product PFAS-free */
+  pfas_free: boolean
+}
+
 export interface MaterialProperties {
   /** Material identifier */
   id: string
   /** Display name */
   name: string
-  /** Viscosity in centiPoise (cP) at reference temperature */
+  /** Mixed liquid viscosity in centiPoise (cP) at the reference temperature */
   viscosity_cp: number
-  /** Density in kg/m³ */
+  /** Mixed liquid density before foaming, in kg/m³ */
   density_kg_m3: number
+  /** Temperature the component viscosities were measured at (°C) */
+  reference_temp_c: number
   /** Flow behavior index (0-1, where 1 = Newtonian) */
   flow_index: number
   /** Activation energy in J/mol */
@@ -24,8 +37,10 @@ export interface MaterialProperties {
   iso_sg: number
   /** Weight mixing ratio [polyol, isocyanate] */
   weight_ratio: [number, number]
-  /** Foam density after cure */
+  /** Density of the cured foam — not the liquid being pumped */
   final_density_kg_m3: number
+  /** Environmental characteristics from the data sheet */
+  environmental: MaterialEnvironmentalProfile
 }
 
 /**
@@ -82,19 +97,22 @@ export class CSVMaterialProvider implements IMaterialProvider {
     const { getAllMaterialPresets } = await import('@/utils/database_loader')
     const presets = await getAllMaterialPresets()
 
-    // Convert presets to MaterialProperties format
-    // Note: Using defaults for properties not in CSV; these can be enhanced later
-    this.materials = presets.map((preset: any) => ({
+    // Every value comes from the CSV. A material missing a required property throws in
+    // the loader rather than being filled in with a plausible-looking default — a guessed
+    // viscosity is indistinguishable from a measured one once it reaches the physics.
+    this.materials = presets.map(preset => ({
       id: preset.id,
       name: preset.name,
-      viscosity_cp: preset.viscosity || 350,
-      density_kg_m3: preset.density || 1120,
-      flow_index: preset.flow_index || 0.85, // Default to typical value
-      activation_energy_j_mol: preset.activation_energy_j_mol || 25000, // Default typical value
-      polyol_sg: preset.polyolSG || 1.12,
-      iso_sg: preset.isoSG || 1.23,
-      weight_ratio: (preset.weightRatio || [100, 110]) as [number, number],
-      final_density_kg_m3: preset.final_density_kg_m3 || 32
+      viscosity_cp: preset.viscosity_cp,
+      density_kg_m3: preset.density_kg_m3,
+      reference_temp_c: preset.reference_temp_c,
+      flow_index: preset.flow_index,
+      activation_energy_j_mol: preset.activation_energy_j_mol,
+      polyol_sg: preset.polyol_sg,
+      iso_sg: preset.iso_sg,
+      weight_ratio: preset.weight_ratio,
+      final_density_kg_m3: preset.final_density_kg_m3,
+      environmental: preset.environmental,
     }))
 
     this.loaded = true

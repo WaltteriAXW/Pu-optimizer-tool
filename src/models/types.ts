@@ -4,18 +4,19 @@
  * and constants used throughout the application.
  */
 
-// Re-export all types from calculator_types
-export {
+// Interfaces must be re-exported as types under isolatedModules
+export type {
   ProcessParameters,
   PressurePoint,
   CalculationResults,
   EnvironmentalImpact,
   ProductionLogEntry,
-  CalculatorState,
-  DEFAULT_ECOFOAM_PARAMETERS,
-  DEFAULT_ISOCYANATE_PARAMETERS,
+  CalculatorState
+} from '@/calculator_types'
+
+// Runtime values (constants and error classes)
+export {
   BLOWING_AGENT_DATA,
-  MATERIAL_CONSTANTS,
   ValidationError,
   PyodideError
 } from '@/calculator_types'

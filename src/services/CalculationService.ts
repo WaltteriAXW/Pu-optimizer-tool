@@ -285,12 +285,19 @@ export class CalculationService {
         Object.assign(enhancedParams, {
           viscosity_cp: material.viscosity_cp,
           density_kg_m3: material.density_kg_m3,
+          reference_temp_c: material.reference_temp_c,
           flow_index: material.flow_index,
           activation_energy_j_mol: material.activation_energy_j_mol,
           polyol_sg: material.polyol_sg,
           iso_sg: material.iso_sg,
           weight_ratio: material.weight_ratio,
           final_density_kg_m3: material.final_density_kg_m3,
+          material_name: material.name,
+          // Environmental data travels with the material so a new CSV row needs no
+          // corresponding entry in the Python-side table.
+          blowing_agent: material.environmental.blowing_agent,
+          gwp_per_kg: material.environmental.gwp_per_kg,
+          is_eco_friendly: material.environmental.is_eco_friendly,
         })
       }
     } catch (error) {

@@ -54,11 +54,11 @@ export function ResultsDisplay() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Required Pressure"
-          value={results.pressure?.base_pressure_drop_bar?.toFixed(2) || 'N/A'}
+          value={results.pressure?.pressure_with_fittings_bar?.toFixed(2) || 'N/A'}
           unit="bar"
           icon={<Gauge className="w-5 h-5" />}
           trend={
-            (results.pressure?.base_pressure_drop_bar || 0) > 150 ? 'high' : 'normal'
+            (results.pressure?.pressure_with_fittings_bar || 0) > 150 ? 'high' : 'normal'
           }
         />
         <KpiCard
@@ -188,12 +188,16 @@ export function ResultsDisplay() {
                   unit="°C"
                 />
                 <DetailRow
-                  label="Reference Viscosity"
+                  label={
+                    results.thermal.reference_temp_c !== undefined
+                      ? `Viscosity at ${results.thermal.reference_temp_c} °C`
+                      : 'Reference Viscosity'
+                  }
                   value={results.thermal.reference_viscosity_cp}
                   unit="cP"
                 />
                 <DetailRow
-                  label="Current Viscosity"
+                  label={`Viscosity at ${results.thermal.temperature_c} °C`}
                   value={results.thermal.current_viscosity_cp}
                   unit="cP"
                 />
@@ -265,11 +269,13 @@ export function ResultsDisplay() {
                     : '⚠ Incompatible'}
                 </p>
               </div>
-              {results.machine_compatibility.max_pressure_bar && (
+              {results.machine_compatibility.required_pressure_bar !== undefined && (
                 <div className="text-right">
-                  <p className="text-sm text-slate-600 mb-1">Max Pressure</p>
+                  <p className="text-sm text-slate-600 mb-1">Required / Max Pressure</p>
                   <p className="text-lg font-bold text-slate-900">
-                    {results.machine_compatibility.max_pressure_bar.toFixed(1)} bar
+                    {results.machine_compatibility.required_pressure_bar.toFixed(1)}
+                    {results.machine_compatibility.max_pressure_bar !== undefined &&
+                      ` / ${results.machine_compatibility.max_pressure_bar.toFixed(1)}`} bar
                   </p>
                 </div>
               )}
@@ -277,6 +283,11 @@ export function ResultsDisplay() {
             {results.machine_compatibility.warning && (
               <p className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                 {results.machine_compatibility.warning}
+              </p>
+            )}
+            {results.machine_compatibility.note && (
+              <p className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+                {results.machine_compatibility.note}
               </p>
             )}
           </div>

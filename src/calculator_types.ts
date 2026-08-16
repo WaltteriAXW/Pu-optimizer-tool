@@ -64,6 +64,7 @@ export interface CalculationResults {
   };
   thermal?: {
     temperature_c: number;
+    reference_temp_c?: number;
     reference_viscosity_cp: number;
     current_viscosity_cp: number;
     temperature_factor: number;
@@ -80,9 +81,13 @@ export interface CalculationResults {
   machine_compatibility?: {
     is_compatible: boolean;
     status: string;
-    available_pressure_bar?: number;
+    /** Pressure the line demands, including the machine's internal losses (bar) */
+    required_pressure_bar?: number;
     max_pressure_bar?: number;
-    warning?: string;
+    /** Set only when the combination genuinely will not work */
+    warning?: string | null;
+    /** Informational — e.g. the demand sits below the machine's minimum operating pressure */
+    note?: string | null;
   };
   timestamp?: string;
   warnings?: string[];
@@ -124,23 +129,10 @@ export interface CalculatorState {
 }
 
 /**
- * Default parameters for Ecofoam materials
- */
-export const DEFAULT_ECOFOAM_PARAMETERS: Partial<ProcessParameters> = {
-  viscosity: 350,     // cP
-  density: 1.12       // g/cm³
-};
-
-/**
- * Default parameters for Isocyanate
- */
-export const DEFAULT_ISOCYANATE_PARAMETERS: Partial<ProcessParameters> = {
-  viscosity: 200,     // cP
-  density: 1.23       // g/cm³
-};
-
-/**
- * Blowing agent data
+ * Reference data for blowing agents, independent of any specific formulation.
+ *
+ * Per-material properties are NOT defined here — they live in
+ * src/data/polyurethane_foam_database.csv, which is the single source of truth.
  */
 export const BLOWING_AGENT_DATA = {
   HFC: { gwp: 1430, odp: 0, lambda: 0.022, cost: 4.50 },
@@ -148,15 +140,6 @@ export const BLOWING_AGENT_DATA = {
   Pentane: { gwp: 5, odp: 0, lambda: 0.024, cost: 3.80 },
   HFO: { gwp: 1, odp: 0, lambda: 0.022, cost: 5.20 },
   Ecomate: { gwp: 0, odp: 0, lambda: 0.019, cost: 3.95 }
-};
-
-/**
- * Material property constants
- */
-export const MATERIAL_CONSTANTS = {
-  ACTIVATION_ENERGY: 50000,   // J/mol
-  GAS_CONSTANT: 8.314,        // J/(mol·K)
-  POWER_LAW_INDEX: 0.85       // dimensionless
 };
 
 /**

@@ -1,10 +1,16 @@
 /**
  * Polyurethane Foam Database Loader
- * Loads and parses the polyurethane foam database CSV file
+ *
+ * Loads and parses the polyurethane foam database CSV, which is the single source of
+ * truth for the materials the optimizer offers. The CSV is imported at build time, so
+ * adding a material is a one-row edit with no code change and no runtime fetch.
  */
 
+import csvText from '@/data/polyurethane_foam_database.csv?raw'
+
 export interface PolyurethaneProduct {
-  // Basic Info
+  // Identification
+  Material_Key: string;
   Product_Name: string;
   Product_Type: string;
   Polyol_Component: string;
@@ -14,13 +20,18 @@ export interface PolyurethaneProduct {
 
   // Component Properties
   Polyol_Viscosity_cP: string;
-  Polyol_Specific_Gravity: number;
+  Polyol_Specific_Gravity: string;
   Isocyanate_Viscosity_cP: string;
-  Isocyanate_Specific_Gravity: number;
+  Isocyanate_Specific_Gravity: string;
+
+  // Rheology (drives the pressure model)
+  Viscosity_Reference_Temp_C: string;
+  Flow_Index: string;
+  Activation_Energy_J_mol: string;
 
   // Mix Ratios
-  Mix_Ratio_Weight_Polyol: number;
-  Mix_Ratio_Weight_Iso: number;
+  Mix_Ratio_Weight_Polyol: string;
+  Mix_Ratio_Weight_Iso: string;
   Mix_Ratio_Volume_Polyol: string;
   Mix_Ratio_Volume_Iso: string;
 
@@ -43,7 +54,7 @@ export interface PolyurethaneProduct {
   Free_Rise_Density_kg_m3_Max: string;
   Molded_Density_kg_m3_Min: string;
   Molded_Density_kg_m3_Max: string;
-  Overall_Applied_Density_kg_m3: number;
+  Overall_Applied_Density_kg_m3: string;
 
   // Dimensional Stability
   Dim_Stability_24h_Minus20C_Max_Percent: string;
@@ -91,86 +102,28 @@ export interface PolyurethaneProduct {
   Notes: string;
 }
 
-// Default fallback database (used when CSV files cannot be loaded from public directory)
-const DEFAULT_FALLBACK_CSV = `Product_Name,Product_Type,Polyol_Component,Isocyanate_Component,Application_Type,Blowing_Agent,Polyol_Viscosity_cP,Polyol_Specific_Gravity,Isocyanate_Viscosity_cP,Isocyanate_Specific_Gravity,Mix_Ratio_Weight_Polyol,Mix_Ratio_Weight_Iso,Mix_Ratio_Volume_Polyol,Mix_Ratio_Volume_Iso,Polyol_Temp_C,Iso_Temp_C,Mold_Substrate_Temp_C_Min,Mold_Substrate_Temp_C_Max,Cream_Time_s_Min,Cream_Time_s_Max,Gel_Time_s_Min,Gel_Time_s_Max,Tack_Free_Time_s_Min,Tack_Free_Time_s_Max,Free_Rise_Density_kg_m3_Min,Free_Rise_Density_kg_m3_Max,Molded_Density_kg_m3_Min,Molded_Density_kg_m3_Max,Overall_Applied_Density_kg_m3,Dim_Stability_24h_Minus20C_Max_Percent,Dim_Stability_24h_Plus80C_Max_Percent,Dim_Stability_48h_Minus25C_Max_Percent,Dim_Stability_48h_Plus70C_Max_Percent,Compressive_Strength_Parallel_kPa_Min,Compressive_Strength_Perpendicular_kPa_Min,Closed_Cell_Content_Percent_Min,Initial_K_Factor_W_mK_Min,Initial_K_Factor_W_mK_Max,Declared_Lambda_80mm_W_mK,Declared_Lambda_120mm_W_mK,Fire_Rating_EN13501,Polyol_Storage_Temp_C_Min,Polyol_Storage_Temp_C_Max,Iso_Storage_Temp_C_Min,Iso_Storage_Temp_C_Max,Polyol_Shelf_Life_Months,Iso_Shelf_Life_Months,CE_Marked,DoP_Number,Standard,GWP,ODP,PFAS_Free,Substrate_Humidity_Porous_Max,Substrate_Humidity_Nonporous,Layer_Thickness_cm_Min,Layer_Thickness_cm_Max,Notes
-Genfoam HD12,High Density Pour/Mold,Genfoam HD12 Polyol,Genfoam Isocyanate,Pour-in-place and molded foam,Water-blown,900-1050,1.07,200±20,1.23,90,100,,,22-25,22-25,,,,50,60,130,140,,,,195,215,350,550,,1,1,,,,,,,,,,,,,15,25,15,25,6,6,No,,,No,No,,,,,,"High and low pressure machines, very high applied density, re-mix polyol after 3 months"
-Genfoam HD20,High Density Pour/Mold,Genfoam HD20 Polyol,Genfoam Isocyanate,Pour-in-place and molded foam,Water-blown,900-1050,1.07,200±20,1.23,90,100,,,22-25,22-25,,,,50,60,130,140,,,,290,315,400,600,,1,1,,,,,,,,,,,,,15,25,15,25,6,6,No,,,No,No,,,,,,"High and low pressure machines, very high applied density, re-mix polyol after 3 months"
-Ecomate Spray EC,Spray Foam,Ecomate Spray EC Polyol,Ecomate Spray Isocyanate,Spray foam - continuous coatings,ecomate®,350±50,1.12,200±20,1.23,100,110,100,100,25-30,25-30,5,40,8,12,18,26,18,26,28.8,32.0,,,,40±4,,,,,200,,90,0.019,0.022,0.027,0.026,E (d0),10,25,10,25,3,6,Yes,CPR-DE-7538-001/24,EN 14315-1:2013,No,No,Yes,≤20%,No condensation,1,2.5,"Good adhesion to concrete/brick/wood/steel/aluminum/fiberglass, evaluate adhesion on samples first, closed cells, high thermal resistance"
-Ecofoam XHD RC,Extra High Density Panel/Cavity Fill,Ecofoam XHD RC Polyol,Ecofoam Isocyanate,Insulating panels and cavity filling - discontinuous,ecomate®,850±50,1.12,200±20,1.23,100,110,,,22-25,22-25,35,45,8,12,28,32,,,,40.0,45.0,,,,,,,0.5,1.0,414,275,95,0.019,0.022,,,E,10,25,10,25,6,6,No,,,No,No,Yes,,,,,Yellowish to brown polyol appearance; verify substrate conditions to avoid heat sink effect`;
+/**
+ * Physics properties derived from a product's two components.
+ *
+ * The optimizer models the mixed liquid travelling down a single line, so neither the
+ * polyol nor the isocyanate figure is usable on its own — both are blended here.
+ */
+export interface DerivedMaterialPhysics {
+  /** Mixed liquid viscosity at the reference temperature (cP) */
+  viscosity_cp: number;
+  /** Mixed liquid density before foaming (kg/m³) */
+  density_kg_m3: number;
+  /** Temperature the component viscosities were measured at (°C) */
+  reference_temp_c: number;
+  /** Power-law flow behaviour index */
+  flow_index: number;
+  /** Arrhenius activation energy (J/mol) */
+  activation_energy_j_mol: number;
+  /** Density of the cured foam, not the liquid (kg/m³) */
+  final_density_kg_m3: number;
+}
 
-// Cache for loaded database
 let cachedDatabase: PolyurethaneProduct[] | null = null;
-
-/**
- * Load database from external CSV files or fall back to defaults
- * Attempts to load from public directory first, then uses fallback data
- */
-async function loadDatabase(): Promise<PolyurethaneProduct[]> {
-  // Return cached database if already loaded
-  if (cachedDatabase) {
-    return cachedDatabase;
-  }
-
-  try {
-    // Try to load from the actual CSV files in the public directory
-    const csvPath = '/Dimensions database/polyurethane_foam_database.csv';
-    const response = await fetch(csvPath);
-
-    if (response.ok) {
-      const csvText = await response.text();
-      cachedDatabase = parseCSV(csvText);
-      return cachedDatabase;
-    }
-  } catch (error) {
-    console.warn('Failed to load external CSV database, using fallback data:', error);
-  }
-
-  // Fallback to default database
-  cachedDatabase = parseCSV(DEFAULT_FALLBACK_CSV);
-  return cachedDatabase;
-}
-
-/**
- * Get the currently loaded database (async - ensures database is loaded)
- */
-async function getDatabase(): Promise<PolyurethaneProduct[]> {
-  return await loadDatabase();
-}
-
-/**
- * Get database synchronously (returns cached or fallback)
- * Use this only when async is not available
- */
-function getDatabaseSync(): PolyurethaneProduct[] {
-  if (cachedDatabase) {
-    return cachedDatabase;
-  }
-  // Return fallback if not yet loaded
-  return parseCSV(DEFAULT_FALLBACK_CSV);
-}
-
-/**
- * Parse CSV string to array of objects
- */
-function parseCSV(csv: string): PolyurethaneProduct[] {
-  // Normalize line endings
-  const normalizedCsv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalizedCsv.trim().split('\n');
-
-  // Parse headers using parseCSVLine to handle quoted fields with commas
-  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
-
-  return lines.slice(1).map(line => {
-    const values = parseCSVLine(line);
-    const product: Record<string, string> = {};
-
-    headers.forEach((header, index) => {
-      product[header] = values[index] || '';
-    });
-
-    return product as PolyurethaneProduct;
-  });
-}
 
 /**
  * Parse a single CSV line, handling quoted values with commas
@@ -198,122 +151,248 @@ function parseCSVLine(line: string): string[] {
 }
 
 /**
- * Get all products from the database (async version - recommended)
+ * Parse the database CSV.
+ *
+ * Rows whose field count does not match the header are rejected rather than mapped, since
+ * a short or long row silently shifts every column after it — which is exactly how foam
+ * densities once ended up in the viscosity columns.
  */
-export async function getAllProducts(): Promise<PolyurethaneProduct[]> {
-  return await getDatabase();
-}
+export function parseCSV(csv: string): PolyurethaneProduct[] {
+  const normalizedCsv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalizedCsv.trim().split('\n').filter(line => line.trim() !== '');
 
-/**
- * Get all products synchronously (uses cached or fallback data)
- * Note: For initial loads, use getAllProductsAsync() instead
- */
-export function getAllProductsSync(): PolyurethaneProduct[] {
-  return getDatabaseSync();
-}
+  if (lines.length === 0) {
+    throw new Error('Material database is empty');
+  }
 
-/**
- * Get a specific product by name (async version)
- */
-export async function getProductByName(name: string): Promise<PolyurethaneProduct | undefined> {
-  const products = await getAllProducts();
-  return products.find(p => p.Product_Name === name);
-}
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
 
-/**
- * Get a specific product by name (sync version - uses cached/fallback data)
- */
-export function getProductByNameSync(name: string): PolyurethaneProduct | undefined {
-  const products = getAllProductsSync();
-  return products.find(p => p.Product_Name === name);
-}
+  return lines.slice(1).map((line, index) => {
+    const values = parseCSVLine(line);
 
-/**
- * Get products by type (async version)
- */
-export async function getProductsByType(type: string): Promise<PolyurethaneProduct[]> {
-  const products = await getAllProducts();
-  return products.filter(p => p.Product_Type === type);
-}
-
-/**
- * Get products by type (sync version - uses cached/fallback data)
- */
-export function getProductsByTypeSync(type: string): PolyurethaneProduct[] {
-  const products = getAllProductsSync();
-  return products.filter(p => p.Product_Type === type);
-}
-
-/**
- * Get all unique product types (async version)
- */
-export async function getProductTypes(): Promise<string[]> {
-  const products = await getAllProducts();
-  const types = new Set(products.map(p => p.Product_Type));
-  return Array.from(types);
-}
-
-/**
- * Get all unique product types (sync version - uses cached/fallback data)
- */
-export function getProductTypesSync(): string[] {
-  const products = getAllProductsSync();
-  const types = new Set(products.map(p => p.Product_Type));
-  return Array.from(types);
-}
-
-/**
- * Convert product data to material preset format
- */
-export function productToMaterialPreset(product: PolyurethaneProduct) {
-  // Parse viscosity range (e.g., "900-1050" or "350±50")
-  const parseViscosity = (viscStr: string): number => {
-    if (viscStr.includes('±')) {
-      return parseFloat(viscStr.split('±')[0]);
+    if (values.length !== headers.length) {
+      const name = values[1] || values[0] || `row ${index + 2}`;
+      throw new Error(
+        `Material database row "${name}" has ${values.length} fields but the header has ` +
+        `${headers.length}. Every row must have exactly one field per column.`
+      );
     }
-    if (viscStr.includes('-')) {
-      const [min, max] = viscStr.split('-').map(v => parseFloat(v));
+
+    const product: Record<string, string> = {};
+    headers.forEach((header, i) => {
+      product[header] = values[i];
+    });
+
+    if (!product.Material_Key) {
+      throw new Error(
+        `Material database row "${product.Product_Name || `row ${index + 2}`}" is missing ` +
+        'a Material_Key.'
+      );
+    }
+
+    return product as unknown as PolyurethaneProduct;
+  });
+}
+
+function getDatabase(): PolyurethaneProduct[] {
+  if (!cachedDatabase) {
+    cachedDatabase = parseCSV(csvText);
+  }
+  return cachedDatabase;
+}
+
+/**
+ * Parse a viscosity cell written as a range ("900-1050") or a tolerance ("200±20").
+ * Returns the midpoint of a range, or the nominal value of a tolerance.
+ */
+export function parseViscosity(value: string): number {
+  const text = (value || '').trim();
+
+  if (text.includes('±')) {
+    return parseFloat(text.split('±')[0]);
+  }
+
+  if (text.includes('-')) {
+    const [min, max] = text.split('-').map(v => parseFloat(v));
+    if (Number.isFinite(min) && Number.isFinite(max)) {
       return (min + max) / 2;
     }
-    return parseFloat(viscStr) || 350;
-  };
+  }
 
-  // Parse density (use Overall_Applied_Density_kg_m3 if available)
-  const density = product.Overall_Applied_Density_kg_m3 || 1120;
+  return parseFloat(text);
+}
+
+/** Parse a numeric cell, returning null when it is empty or unparseable. */
+function parseNumber(value: string): number | null {
+  const parsed = parseFloat((value || '').trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function requireNumber(value: string, column: string, product: string): number {
+  const parsed = parseNumber(value);
+  if (parsed === null) {
+    throw new Error(`Material "${product}" is missing a valid ${column}.`);
+  }
+  return parsed;
+}
+
+function requireViscosity(value: string, column: string, product: string): number {
+  const parsed = parseViscosity(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`Material "${product}" is missing a valid ${column}.`);
+  }
+  return parsed;
+}
+
+/**
+ * Derive the mixed-liquid physics the pressure model needs from a product's two components.
+ *
+ * Density uses volume-additive mixing, viscosity uses logarithmic blending on volume
+ * fractions (the standard Arrhenius blending rule for miscible liquids). Both are
+ * properties of the liquid being pumped, and are unrelated to the density of the cured
+ * foam, which is reported separately as final_density_kg_m3.
+ */
+export function deriveMaterialPhysics(product: PolyurethaneProduct): DerivedMaterialPhysics {
+  const name = product.Product_Name || product.Material_Key;
+
+  const polyolViscosity = requireViscosity(product.Polyol_Viscosity_cP, 'Polyol_Viscosity_cP', name);
+  const isoViscosity = requireViscosity(product.Isocyanate_Viscosity_cP, 'Isocyanate_Viscosity_cP', name);
+  const polyolSg = requireNumber(product.Polyol_Specific_Gravity, 'Polyol_Specific_Gravity', name);
+  const isoSg = requireNumber(product.Isocyanate_Specific_Gravity, 'Isocyanate_Specific_Gravity', name);
+  const polyolParts = requireNumber(product.Mix_Ratio_Weight_Polyol, 'Mix_Ratio_Weight_Polyol', name);
+  const isoParts = requireNumber(product.Mix_Ratio_Weight_Iso, 'Mix_Ratio_Weight_Iso', name);
+
+  if (polyolParts + isoParts <= 0) {
+    throw new Error(`Material "${name}" has a zero total mix ratio.`);
+  }
+
+  const polyolDensity = polyolSg * 1000;
+  const isoDensity = isoSg * 1000;
+
+  // Mass fractions from the weight mix ratio
+  const totalParts = polyolParts + isoParts;
+  const polyolMassFraction = polyolParts / totalParts;
+  const isoMassFraction = isoParts / totalParts;
+
+  // Specific volumes, from which both the mixed density and the volume fractions follow
+  const polyolSpecificVolume = polyolMassFraction / polyolDensity;
+  const isoSpecificVolume = isoMassFraction / isoDensity;
+  const totalSpecificVolume = polyolSpecificVolume + isoSpecificVolume;
+
+  const density_kg_m3 = 1 / totalSpecificVolume;
+  const polyolVolumeFraction = polyolSpecificVolume / totalSpecificVolume;
+  const isoVolumeFraction = isoSpecificVolume / totalSpecificVolume;
+
+  const viscosity_cp = Math.exp(
+    polyolVolumeFraction * Math.log(polyolViscosity) +
+    isoVolumeFraction * Math.log(isoViscosity)
+  );
 
   return {
-    name: product.Product_Name,
-    density: density,
-    viscosity: parseViscosity(product.Polyol_Viscosity_cP),
-    polyolSG: product.Polyol_Specific_Gravity,
-    isoSG: product.Isocyanate_Specific_Gravity,
-    weightRatio: [
-      product.Mix_Ratio_Weight_Polyol,
-      product.Mix_Ratio_Weight_Iso
-    ]
+    viscosity_cp,
+    density_kg_m3,
+    reference_temp_c: parseNumber(product.Viscosity_Reference_Temp_C) ?? 25,
+    flow_index: requireNumber(product.Flow_Index, 'Flow_Index', name),
+    activation_energy_j_mol: requireNumber(product.Activation_Energy_J_mol, 'Activation_Energy_J_mol', name),
+    final_density_kg_m3: deriveFinalFoamDensity(product),
   };
 }
 
 /**
- * Get all products as material presets (async version)
+ * Density of the cured foam. Prefers the stated applied density, falling back to the
+ * midpoint of the free-rise range and then the molded range.
  */
-export async function getAllMaterialPresets() {
-  const products = await getAllProducts();
-  return products.map(product => ({
-    id: product.Product_Name.toLowerCase().replace(/\s+/g, '_'),
-    ...productToMaterialPreset(product),
-    fullProduct: product
-  }));
+function deriveFinalFoamDensity(product: PolyurethaneProduct): number {
+  const applied = parseViscosity(product.Overall_Applied_Density_kg_m3);
+  if (Number.isFinite(applied) && applied > 0) {
+    return applied;
+  }
+
+  const ranges: Array<[string, string]> = [
+    [product.Free_Rise_Density_kg_m3_Min, product.Free_Rise_Density_kg_m3_Max],
+    [product.Molded_Density_kg_m3_Min, product.Molded_Density_kg_m3_Max],
+  ];
+
+  for (const [minText, maxText] of ranges) {
+    const min = parseNumber(minText);
+    const max = parseNumber(maxText);
+    if (min !== null && max !== null) {
+      return (min + max) / 2;
+    }
+    if (min !== null) {
+      return min;
+    }
+    if (max !== null) {
+      return max;
+    }
+  }
+
+  return 0;
 }
 
 /**
- * Get all products as material presets (sync version - uses cached/fallback data)
+ * Environmental characteristics as stated on the technical data sheet.
  */
-export function getAllMaterialPresetsSync() {
-  const products = getAllProductsSync();
-  return products.map(product => ({
-    id: product.Product_Name.toLowerCase().replace(/\s+/g, '_'),
-    ...productToMaterialPreset(product),
-    fullProduct: product
+export function deriveEnvironmentalProfile(product: PolyurethaneProduct) {
+  const isNo = (value: string) => (value || '').trim().toLowerCase() === 'no';
+  const isYes = (value: string) => (value || '').trim().toLowerCase() === 'yes';
+
+  const hasGwp = !isNo(product.GWP);
+  const hasOdp = !isNo(product.ODP);
+
+  return {
+    blowing_agent: product.Blowing_Agent || 'Unknown',
+    // The sheets record GWP/ODP as a Yes/No presence flag rather than a figure, so a
+    // product declared free of both contributes zero.
+    gwp_per_kg: hasGwp ? null : 0,
+    is_eco_friendly: !hasGwp && !hasOdp,
+    pfas_free: isYes(product.PFAS_Free),
+  };
+}
+
+/**
+ * Get all products from the database
+ */
+export async function getAllProducts(): Promise<PolyurethaneProduct[]> {
+  return getDatabase();
+}
+
+/**
+ * Get a specific product by name
+ */
+export async function getProductByName(name: string): Promise<PolyurethaneProduct | undefined> {
+  return getDatabase().find(p => p.Product_Name === name);
+}
+
+/**
+ * Get products by type
+ */
+export async function getProductsByType(type: string): Promise<PolyurethaneProduct[]> {
+  return getDatabase().filter(p => p.Product_Type === type);
+}
+
+/**
+ * Get all unique product types
+ */
+export async function getProductTypes(): Promise<string[]> {
+  return Array.from(new Set(getDatabase().map(p => p.Product_Type)));
+}
+
+/**
+ * Get all products as material presets, with their physics derived from the component data.
+ */
+export async function getAllMaterialPresets() {
+  return getDatabase().map(product => ({
+    id: product.Material_Key,
+    name: product.Product_Name,
+    ...deriveMaterialPhysics(product),
+    environmental: deriveEnvironmentalProfile(product),
+    polyol_sg: parseNumber(product.Polyol_Specific_Gravity) ?? 0,
+    iso_sg: parseNumber(product.Isocyanate_Specific_Gravity) ?? 0,
+    weight_ratio: [
+      parseNumber(product.Mix_Ratio_Weight_Polyol) ?? 0,
+      parseNumber(product.Mix_Ratio_Weight_Iso) ?? 0,
+    ] as [number, number],
+    fullProduct: product,
   }));
 }

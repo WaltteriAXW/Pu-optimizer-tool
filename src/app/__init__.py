@@ -8,10 +8,11 @@ Provides user-facing interfaces for:
 """
 
 from .calculator import (
-    calculate_all_parameters,
-    get_material_list,
-    get_machine_types,
-    CalculationError,
+    PolyurethaneCalculator,
+    ValidationError,
+    calculate_environmental_impact,
+    MACHINE_SPECS,
+    MATERIAL_PRESETS,
 )
 
 from .optimizer import (
@@ -27,10 +28,11 @@ from .reporter import (
 
 __all__ = [
     # Calculator
-    'calculate_all_parameters',
-    'get_material_list',
-    'get_machine_types',
-    'CalculationError',
+    'PolyurethaneCalculator',
+    'ValidationError',
+    'calculate_environmental_impact',
+    'MACHINE_SPECS',
+    'MATERIAL_PRESETS',
 
     # Optimizer
     'ProcessOptimizerML',

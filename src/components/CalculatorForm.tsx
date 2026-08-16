@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, validateInput } from '../constants'
+import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import type { ProcessParameters } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -34,12 +35,41 @@ export function CalculatorForm() {
     pipe_diameter_mm: DEFAULTS.pipeDiameter,
     temperature_c: DEFAULTS.temperature,
     flow_rate_lpm: DEFAULTS.flowRate,
-    material_key: 'genfoam_hd12',
+    material_key: '',
     machine_type: 'high_pressure',
   })
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showCustomHelp, setShowCustomHelp] = useState(false)
+
+  // Materials come from the database CSV, so adding one needs no change here.
+  const [materials, setMaterials] = useState<Array<{ id: string; name: string }>>([])
+  const [materialError, setMaterialError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getDefaultMaterialProvider()
+      .getAll()
+      .then((loaded) => {
+        if (cancelled) return
+        setMaterials(loaded.map(({ id, name }) => ({ id, name })))
+        // Select the first material once, without clobbering a user's choice
+        setInputs((prev) =>
+          prev.material_key === '' && loaded.length > 0
+            ? { ...prev, material_key: loaded[0].id }
+            : prev
+        )
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return
+        setMaterialError(e instanceof Error ? e.message : 'Failed to load material database')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -129,7 +159,7 @@ export function CalculatorForm() {
   )
 
   const hasErrors = Object.keys(fieldErrors).length > 0
-  const canSubmit = !hasErrors && isReady && !isLoading
+  const canSubmit = !hasErrors && isReady && !isLoading && inputs.material_key !== ''
   const isCustomMaterial = inputs.material_key === 'custom'
 
   return (
@@ -195,12 +225,22 @@ export function CalculatorForm() {
             onChange={handleChange}
             className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
           >
-            <option value="genfoam_hd12">Genfoam HD12 (Water-Blown)</option>
-            <option value="genfoam_hd20">Genfoam HD20 (Water-Blown)</option>
-            <option value="ecomate_spray">Ecomate Spray (eco-mate®, Zero GWP)</option>
-            <option value="ecofoam_xhd_rc">Ecofoam XHD RC (eco-mate®, Zero GWP)</option>
+            {materials.length === 0 && !materialError && (
+              <option value="">Loading materials…</option>
+            )}
+            {materials.map((material) => (
+              <option key={material.id} value={material.id}>
+                {material.name}
+              </option>
+            ))}
             <option value="custom">Custom Material…</option>
           </select>
+          {materialError && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
+              <AlertCircle className="w-3 h-3" />
+              <span>{materialError}</span>
+            </p>
+          )}
         </div>
 
         {/* Custom Material Properties — shown only when Custom is selected */}
@@ -287,7 +327,6 @@ export function CalculatorForm() {
           >
             <option value="low_pressure">Low Pressure</option>
             <option value="high_pressure">High Pressure</option>
-            <option value="dispensing">Dispensing</option>
           </select>
         </div>
 

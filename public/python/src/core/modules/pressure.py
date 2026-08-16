@@ -140,7 +140,13 @@ def calculate_machine_compatibility(
     machine_specs: Dict,
 ) -> Dict[str, Any]:
     """
-    Check if calculated pressure is compatible with machine capabilities.
+    Check whether the pressure this line demands is within the machine's capability.
+
+    The figure being checked is a *demand*: the line pressure drop plus the machine's own
+    internal losses. Only exceeding the machine's maximum makes the combination unworkable.
+    A demand below the machine's minimum operating pressure is normal and expected — a
+    high-pressure machine holds at least 100 bar regardless of how little the line needs —
+    so it is reported as an informational note rather than an incompatibility.
 
     Returns compatibility status and recommendations.
     """
@@ -148,27 +154,36 @@ def calculate_machine_compatibility(
     min_pressure = machine_specs.get('min_operating_pressure', 8)
     process_loss = machine_specs.get('process_loss', {}).get('total', 10)
 
-    # Calculate available pressure after machine losses
-    available_pressure = total_pressure_bar + process_loss
+    # Pressure the line requires, including the machine's internal losses
+    required_pressure = total_pressure_bar + process_loss
 
-    is_compatible = min_pressure <= available_pressure <= max_pressure
+    is_compatible = required_pressure <= max_pressure
 
     status = 'compatible'
     warning = None
+    note = None
 
-    if available_pressure < min_pressure:
-        status = 'incompatible_low'
-        warning = f'Pressure {available_pressure:.1f} bar is below minimum {min_pressure} bar'
-    elif available_pressure > max_pressure:
+    if required_pressure > max_pressure:
         status = 'incompatible_high'
-        warning = f'Pressure {available_pressure:.1f} bar exceeds maximum {max_pressure} bar'
+        warning = (
+            f'Required pressure {required_pressure:.1f} bar exceeds the machine maximum '
+            f'of {max_pressure} bar'
+        )
+    elif required_pressure < min_pressure:
+        status = 'below_machine_minimum'
+        note = (
+            f'This line needs {required_pressure:.1f} bar, below the machine minimum '
+            f'operating pressure of {min_pressure} bar. The machine will run at its '
+            f'minimum — there is ample pressure available.'
+        )
 
     return {
         'is_compatible': is_compatible,
         'status': status,
-        'available_pressure_bar': available_pressure,
+        'required_pressure_bar': required_pressure,
         'max_pressure_bar': max_pressure,
         'min_pressure_bar': min_pressure,
         'process_loss_bar': process_loss,
         'warning': warning,
+        'note': note,
     }

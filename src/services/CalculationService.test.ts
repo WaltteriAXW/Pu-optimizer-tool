@@ -61,7 +61,7 @@ const mockCalculationResults: CalculationResults = {
   machine_compatibility: {
     is_compatible: true,
     status: 'compatible',
-    available_pressure_bar: 250,
+    required_pressure_bar: 250,
     max_pressure_bar: 250,
     warning: undefined
   },

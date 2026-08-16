@@ -6,6 +6,7 @@ Tests the main orchestrator that coordinates all calculation modules.
 import pytest
 from . import calculation_processor
 from .calculation_processor import CalculationProcessor
+from ...constants import MATERIAL_PRESETS, VALIDATION_RANGES
 
 
 class TestCalculationProcessorBasic:
@@ -25,7 +26,7 @@ class TestCalculationProcessorBasic:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -41,7 +42,7 @@ class TestCalculationProcessorBasic:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -71,7 +72,7 @@ class TestCalculationValidation:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': -12,  # Invalid
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -108,7 +109,7 @@ class TestCalculationValidation:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 0,  # Invalid
         })
@@ -126,7 +127,7 @@ class TestCalculationPhysics:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -142,7 +143,7 @@ class TestCalculationPhysics:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -151,6 +152,32 @@ class TestCalculationPhysics:
         valid_regimes = ['laminar', 'transitional', 'turbulent']
         assert flow_regime in valid_regimes
 
+    def test_temperature_changes_required_pressure(self):
+        """Process temperature must reach the pressure result, not just the display.
+
+        Viscosity falls as the material warms, so the pressure the line demands must fall
+        with it. This guards the ordering of the pipeline: the Arrhenius correction has to
+        run before the flow and pressure steps for its result to have any effect.
+        """
+        processor = CalculationProcessor()
+
+        def pressure_at(temperature_c):
+            result = processor.calculate_all({
+                'pipe_length_mm': 500,
+                'pipe_diameter_mm': 12,
+                'material_key': 'genfoam_hd12',
+                'temperature_c': temperature_c,
+                'flow_rate_lpm': 5.0,
+            })
+            assert result['success'], result['errors']
+            return result['data']['pressure']['pressure_with_fittings_bar']
+
+        cold = pressure_at(18)
+        reference = pressure_at(25)
+        warm = pressure_at(35)
+
+        assert cold > reference > warm
+
     def test_viscosity_positive(self):
         """Viscosity should always be positive."""
         processor = CalculationProcessor()
@@ -158,7 +185,7 @@ class TestCalculationPhysics:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 50,  # High temperature
             'flow_rate_lpm': 1.0,
         })
@@ -173,7 +200,7 @@ class TestCalculationPhysics:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_water',  # Eco-friendly
+            'material_key': 'ecomate_spray',  # Eco-friendly
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -190,11 +217,7 @@ class TestMaterialPresets:
         """All valid materials should calculate without error."""
         processor = CalculationProcessor()
 
-        materials = [
-            'ecofoam_standard',
-            'ecofoam_xhd',
-            'ecofoam_water',
-        ]
+        materials = list(MATERIAL_PRESETS.keys())
 
         for material in materials:
             result = processor.calculate_all({
@@ -214,7 +237,7 @@ class TestMaterialPresets:
         result_standard = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -222,7 +245,7 @@ class TestMaterialPresets:
         result_xhd = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_xhd',
+            'material_key': 'ecofoam_xhd_rc',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         })
@@ -244,7 +267,7 @@ class TestMachineCompatibility:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 2.0,
             'machine_type': 'high_pressure',
@@ -261,7 +284,7 @@ class TestMachineCompatibility:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
             'machine_type': 'low_pressure',
@@ -281,7 +304,7 @@ class TestCaching:
         params = {
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         }
@@ -296,7 +319,7 @@ class TestCaching:
         params = {
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 1.0,
         }
@@ -317,15 +340,15 @@ class TestWarningGeneration:
 
         result = processor.calculate_all({
             'pipe_length_mm': 500,
-            'pipe_diameter_mm': 6,  # Small diameter = high shear
-            'material_key': 'ecofoam_standard',
+            'pipe_diameter_mm': 4,  # Small diameter = high shear
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 5.0,  # High flow
         })
 
-        warnings = result['warnings']
-        # Should have warnings for high shear rate
-        assert len(warnings) > 0
+        # ~13 000 1/s at these settings, well past the 5 000 1/s warning threshold
+        assert result['data']['flow']['shear_rate_s_inv'] > 5000
+        assert any('shear rate' in w.lower() for w in result['warnings'])
 
     def test_turbulent_flow_generates_warning(self):
         """Turbulent flow should generate warning."""
@@ -334,7 +357,7 @@ class TestWarningGeneration:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 5.0,  # High flow = turbulent
         })
@@ -356,7 +379,7 @@ class TestExtremeValues:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 1,  # Very small
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 0.1,
         })
@@ -371,7 +394,7 @@ class TestExtremeValues:
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 100,  # Very large
-            'material_key': 'ecofoam_standard',
+            'material_key': 'genfoam_hd12',
             'temperature_c': 25,
             'flow_rate_lpm': 10.0,
         })
@@ -379,18 +402,34 @@ class TestExtremeValues:
         assert result['success'] is True
 
     def test_high_temperature(self):
-        """High temperature should be handled."""
+        """The top of the supported temperature range should calculate."""
         processor = CalculationProcessor()
 
         result = processor.calculate_all({
             'pipe_length_mm': 500,
             'pipe_diameter_mm': 12,
-            'material_key': 'ecofoam_standard',
-            'temperature_c': 100,  # High temperature
+            'material_key': 'genfoam_hd12',
+            'temperature_c': VALIDATION_RANGES['temperature']['max'],
             'flow_rate_lpm': 1.0,
         })
 
         assert result['success'] is True
-        # Viscosity should decrease with temperature
+        # Viscosity should decrease with temperature but stay physical
         viscosity = result['data']['thermal']['current_viscosity_cp']
         assert viscosity > 0
+        assert viscosity < MATERIAL_PRESETS['genfoam_hd12']['viscosity']
+
+    def test_temperature_above_supported_range_is_rejected(self):
+        """A temperature outside the validated range is refused, not silently clamped."""
+        processor = CalculationProcessor()
+
+        result = processor.calculate_all({
+            'pipe_length_mm': 500,
+            'pipe_diameter_mm': 12,
+            'material_key': 'genfoam_hd12',
+            'temperature_c': VALIDATION_RANGES['temperature']['max'] + 50,
+            'flow_rate_lpm': 1.0,
+        })
+
+        assert result['success'] is False
+        assert result['errors']

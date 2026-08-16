@@ -145,8 +145,13 @@ class TestShearHeating:
 
         assert result_high_p['temperature_rise_c'] > result_low_p['temperature_rise_c']
 
-    def test_heating_increases_with_flow_rate(self):
-        """Higher flow rate should increase heating."""
+    def test_heat_scales_with_flow_rate_but_temperature_rise_does_not(self):
+        """Heat generated scales with flow rate; the temperature rise does not.
+
+        At a fixed pressure drop the dissipated power and the mass flow both scale
+        linearly with Q, so ΔT = ΔP(1-η)/(ρ·c_p) cancels out and depends only on the
+        pressure drop. Expecting ΔT to climb with flow rate misreads the model.
+        """
         result_low_q = calculate_shear_heating(
             pressure_drop_pa=50000,
             flow_rate_lpm=0.5,
@@ -161,7 +166,10 @@ class TestShearHeating:
             density_kg_m3=1120,
         )
 
-        assert result_high_q['temperature_rise_c'] > result_low_q['temperature_rise_c']
+        assert result_high_q['heat_generated_w'] > result_low_q['heat_generated_w']
+        assert result_high_q['temperature_rise_c'] == pytest.approx(
+            result_low_q['temperature_rise_c'], rel=1e-9
+        )
 
     def test_efficiency_affects_heat(self):
         """Better efficiency should reduce heat generated."""

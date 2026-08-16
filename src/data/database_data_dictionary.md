@@ -1,6 +1,13 @@
 # Polyurethane Foam Database - Data Dictionary
 
+This CSV is the single source of truth for the materials the optimizer offers. Adding a
+material means appending one row here — no code change is required. See
+"Adding a new material" at the end of this document.
+
 ## Product Identification
+- **Material_Key**: Stable machine-readable identifier (lowercase, underscores). This is what
+  the application stores and what the calculation engine looks up, so it must be unique and
+  must not change once published — renaming a product is safe, renaming its key is not.
 - **Product_Name**: Commercial product name
 - **Product_Type**: Category of foam (High Density Pour/Mold, Spray Foam, etc.)
 - **Polyol_Component**: Name of the polyol component
@@ -13,6 +20,22 @@
 - **Polyol_Specific_Gravity**: Specific gravity of polyol in g/dm³ at 25°C
 - **Isocyanate_Viscosity_cP**: Viscosity of isocyanate in centipoise at 25°C
 - **Isocyanate_Specific_Gravity**: Specific gravity of isocyanate in g/dm³ at 25°C
+
+Viscosities may be written as a range (`900-1050`) or as a tolerance (`200±20`); both are
+parsed to their midpoint / nominal value.
+
+## Rheological Properties (drive the pressure model)
+- **Viscosity_Reference_Temp_C**: Temperature the two component viscosities were measured at,
+  in °C. The Arrhenius correction is applied relative to this temperature.
+- **Flow_Index**: Power-law flow behaviour index *n* (dimensionless). 1.0 is Newtonian;
+  below 1.0 is shear-thinning. Typical rigid PU systems fall in 0.80–0.90.
+- **Activation_Energy_J_mol**: Arrhenius activation energy in J/mol, controlling how strongly
+  viscosity responds to temperature. Typical PU systems fall in 20 000–35 000 J/mol.
+
+The mixed-liquid density and viscosity actually used by the pressure calculation are derived
+from the two components rather than stored: density by volume-additive mixing of the two
+specific gravities at the weight mix ratio, and viscosity by logarithmic blending on volume
+fractions. Neither is a column — do not add one.
 
 ## Process Conditions
 - **Mix_Ratio_Weight_Polyol**: Parts by weight of polyol
@@ -89,6 +112,29 @@ All data extracted from official Technical Data Sheets (TDS) provided by:
 - Foam Supplies Srl / FSI Europe Srl
 - Via della Sirena, 3, 42015 Correggio (RE), Italy
 - Via Roma, 50/52, 46040 Casalromano (MN), Italy
+
+## Adding a new material
+
+Append one row. Every row must have exactly as many comma-separated fields as the header —
+a row with the wrong field count is rejected at load time with an error naming the product,
+because a short or long row silently shifts every column after it.
+
+Required for the material to calculate at all:
+
+| Column | Why |
+|---|---|
+| `Material_Key` | Unique identifier; how the material is stored and looked up |
+| `Product_Name` | Shown in the material dropdown |
+| `Polyol_Viscosity_cP`, `Isocyanate_Viscosity_cP` | Blended into the mixed-liquid viscosity |
+| `Polyol_Specific_Gravity`, `Isocyanate_Specific_Gravity` | Blended into the mixed-liquid density |
+| `Mix_Ratio_Weight_Polyol`, `Mix_Ratio_Weight_Iso` | Sets the blend fractions |
+| `Flow_Index` | Shear-thinning behaviour |
+| `Activation_Energy_J_mol` | Temperature response |
+| `Blowing_Agent`, `GWP`, `ODP`, `PFAS_Free` | Environmental panel |
+
+Everything else is descriptive and may be left empty where the technical data sheet does not
+state a value. Leave a cell empty rather than guessing — an invented number is worse than a
+blank one, because it is indistinguishable from a measured one.
 
 ## Notes on Data
 - Values shown as ranges (min-max) indicate typical operating windows
