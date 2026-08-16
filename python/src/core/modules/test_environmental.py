@@ -5,6 +5,7 @@ Tests environmental impact calculations and material comparisons.
 
 import pytest
 from . import environmental
+from ..data.material_database import list_material_keys
 from .environmental import (
     calculate_environmental_impact,
     compare_materials,
@@ -54,29 +55,35 @@ class TestEnvironmentalImpact:
         assert result['total_gwp_kg_co2_eq'] == 0
         assert result['is_eco_friendly'] is True
 
-    def test_standard_foam_has_high_gwp(self):
-        """Standard foam should have high GWP."""
+    def test_injected_gwp_overrides_the_table(self):
+        """A GWP supplied from the material database takes precedence.
+
+        The table below only covers the original formulations, so a material added to the
+        CSV must be able to carry its own figures through.
+        """
         result = calculate_environmental_impact(
-            material_key='ecofoam_standard',
+            material_key='some_hfc_blown_system',
             quantity_kg=10,
+            blowing_agent='HFC-245fa',
+            gwp_per_kg=1030,
+            is_eco_friendly=False,
         )
 
-        assert result['gwp_per_kg'] > 1000
+        assert result['gwp_per_kg'] == 1030
+        assert result['total_gwp_kg_co2_eq'] == 10300
+        assert result['blowing_agent'] == 'HFC-245fa'
         assert result['is_eco_friendly'] is False
 
-    def test_unknown_material_defaults_to_standard(self):
-        """Unknown material should default to standard foam."""
-        result_unknown = calculate_environmental_impact(
+    def test_unknown_material_reports_no_impact_rather_than_another_material(self):
+        """An unrecognised key must not silently borrow another material's figures."""
+        result = calculate_environmental_impact(
             material_key='unknown_material',
             quantity_kg=10,
         )
 
-        result_standard = calculate_environmental_impact(
-            material_key='ecofoam_standard',
-            quantity_kg=10,
-        )
-
-        assert result_unknown['gwp_per_kg'] == result_standard['gwp_per_kg']
+        assert result['material'] == 'unknown_material'
+        assert result['gwp_per_kg'] == 0
+        assert result['blowing_agent'] == 'Unknown'
 
     def test_hfo_is_best_material(self):
         """HFO foam should have lowest GWP."""
@@ -248,33 +255,29 @@ class TestEnvironmentalRecommendation:
 class TestPhysicsValidation:
     """Test physics and logic validity of environmental calculations."""
 
-    def test_water_foam_is_most_eco_friendly(self):
-        """Water-blown foam should be more eco-friendly than others."""
-        water = calculate_environmental_impact(material_key='ecofoam_water', quantity_kg=1)
-        hc = calculate_environmental_impact(material_key='ecofoam_hc', quantity_kg=1)
-        standard = calculate_environmental_impact(
-            material_key='ecofoam_standard', quantity_kg=1
-        )
+    def test_catalogued_materials_are_all_zero_gwp(self):
+        """Every material currently offered is water-blown or ecomate®-blown."""
+        for material_key in list_material_keys():
+            result = calculate_environmental_impact(material_key=material_key, quantity_kg=1)
 
-        assert water['gwp_per_kg'] < hc['gwp_per_kg']
-        assert hc['gwp_per_kg'] < standard['gwp_per_kg']
+            assert result['gwp_per_kg'] == 0
+            assert result['is_eco_friendly'] is True
 
-    def test_material_ranking_consistent(self):
-        """Material GWP ranking should be consistent."""
-        materials = {
-            'ecofoam_water': 0,  # Best
-            'ecofoam_hfo': 1,  # Near best
-            'ecofoam_hc': 1000,  # Medium
-            'ecofoam_standard': 5000,  # Worst
-        }
+    def test_ranking_follows_gwp(self):
+        """Materials rank by GWP regardless of where the figure came from."""
+        ranked = [
+            calculate_environmental_impact(
+                material_key=key, quantity_kg=1, gwp_per_kg=gwp, is_eco_friendly=gwp == 0
+            )
+            for key, gwp in [
+                ('water_blown', 0),      # Best
+                ('hfo_blown', 1),        # Near best
+                ('pentane_blown', 5),
+                ('hfc_blown', 1030),     # Worst
+            ]
+        ]
 
-        for material, expected_gwp in materials.items():
-            result = calculate_environmental_impact(material_key=material, quantity_kg=1)
-
-            if expected_gwp == 0:
-                assert result['gwp_per_kg'] == 0
-            elif expected_gwp == 1:
-                assert result['gwp_per_kg'] <= 10
-            else:
-                # For medium/high, just check it's in right ballpark
-                assert result['gwp_per_kg'] > 0
+        gwp_values = [r['gwp_per_kg'] for r in ranked]
+        assert gwp_values == sorted(gwp_values)
+        assert ranked[0]['is_eco_friendly'] is True
+        assert ranked[-1]['is_eco_friendly'] is False

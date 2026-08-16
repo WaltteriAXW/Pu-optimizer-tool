@@ -48,6 +48,8 @@ class MaterialDefaults:
 # VALIDATION RANGES
 # ============================================================================
 
+# These are authoritative. src/constants.js mirrors them for the form; if you change a
+# range here, change it there too — the JS table names this file as its source.
 VALIDATION_RANGES = {
     'pipe_length': {
         'min': 50,
@@ -200,7 +202,7 @@ class Defaults:
     SPECIFIC_GRAVITY = 1.12
 
     MACHINE = 'low_pressure'
-    MATERIAL = 'ecofoam_standard'
+    MATERIAL = 'genfoam_hd12'
 
 
 # ============================================================================
@@ -341,61 +343,6 @@ MACHINE_SPECS = {
     }
 }
 
-# ============================================================================
-# MATERIAL PRESETS - Based on real products from materials database
-# ============================================================================
-
-MATERIAL_PRESETS = {
-    "genfoam_hd12": {
-        "name": "Genfoam HD12 (Water-Blown)",
-        "density": 1120,
-        "specific_gravity": 1.12,
-        "viscosity": 350,
-        "flow_index": 0.85,
-        "activation_energy": 25000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 32
-    },
-    "genfoam_hd20": {
-        "name": "Genfoam HD20 (Water-Blown)",
-        "density": 1120,
-        "specific_gravity": 1.12,
-        "viscosity": 450,
-        "flow_index": 0.83,
-        "activation_energy": 26000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 40
-    },
-    "ecomate_spray": {
-        "name": "Ecomate Spray (eco-mate®, Zero GWP)",
-        "density": 1120,
-        "specific_gravity": 1.12,
-        "viscosity": 350,
-        "flow_index": 0.88,
-        "activation_energy": 24000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 32
-    },
-    "ecofoam_xhd_rc": {
-        "name": "Ecofoam XHD RC (eco-mate®, Zero GWP)",
-        "density": 1120,
-        "specific_gravity": 1.12,
-        "viscosity": 850,
-        "flow_index": 0.82,
-        "activation_energy": 28000,
-        "polyol_sg": 1.12,
-        "iso_sg": 1.23,
-        "weight_ratio": [100, 110],
-        "final_density": 40
-    }
-}
-
 # Create PHYSICS as an instance for backward compatibility
 PHYSICS = Physics
 
@@ -408,7 +355,6 @@ __all__ = [
     'PHYSICS',
     'MaterialDefaults',
     'VALIDATION_RANGES',
-    'MATERIAL_PRESETS',
     'MACHINE_SPECS',
     'Thresholds',
     'Conversions',

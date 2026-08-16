@@ -22,7 +22,13 @@ logger = logging.getLogger(__name__)
 
 # Import core calculation modules (required)
 from ..modules import pressure, thermal, flow, environmental
-from ...constants import PHYSICS, VALIDATION_RANGES, MATERIAL_PRESETS, MACHINE_SPECS
+from ..modules.line_thermal import (
+    DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K,
+    calculate_line_temperature,
+)
+from ..modules.volatility import check_blowing_agent_volatility
+from ...constants import PHYSICS, VALIDATION_RANGES, MACHINE_SPECS
+from ..data.material_database import get_material, list_material_keys
 from ..validation import validate_parameters
 
 # Import kinetics modules (optional extension - Phase 4)
@@ -39,7 +45,10 @@ try:
         FoamKineticsParameters,
         calculate_processing_window,
         calculate_reactive_viscosity,
+        DEFAULT_HEAT_OF_REACTION_J_KG,
+        DEFAULT_SPECIFIC_HEAT_J_KG_K,
         calculate_exotherm_rise,
+        heat_of_reaction_from_peak_exotherm,
         predict_scorch_risk,
         calculate_foam_rise,
     )
@@ -59,7 +68,6 @@ class CalculationProcessor:
     def __init__(self):
         self.physics = PHYSICS
         self.validation_ranges = VALIDATION_RANGES
-        self.material_presets = MATERIAL_PRESETS
         self.machine_specs = MACHINE_SPECS
         self.last_calculation = None
         self.calculation_cache = {}
@@ -86,15 +94,19 @@ class CalculationProcessor:
                 - machine_type (optional)
                 - pressure_override (optional)
 
-                INJECTED PROPERTIES (Phase Beta - TypeScript provides these):
+                INJECTED PROPERTIES (TypeScript reads these from the material database
+                CSV and provides them; they describe the MIXED LIQUID being pumped):
                 - viscosity_cp (number) - overrides material lookup
                 - density_kg_m3 (number)
+                - reference_temp_c (number) - temperature viscosity_cp was measured at
                 - flow_index (number)
                 - activation_energy_j_mol (number)
                 - polyol_sg (number)
                 - iso_sg (number)
                 - weight_ratio (list)
-                - final_density_kg_m3 (number)
+                - final_density_kg_m3 (number) - cured foam, not the liquid
+                - material_name (str)
+                - blowing_agent (str), gwp_per_kg (number), is_eco_friendly (bool)
 
         Returns:
             Dict with structure:
@@ -134,7 +146,7 @@ class CalculationProcessor:
             try:
                 pipe_length_mm = float(parameters.get('pipe_length_mm', 500))
                 pipe_diameter_mm = float(parameters.get('pipe_diameter_mm', 12))
-                material_key = parameters.get('material_key', 'ecofoam_standard')
+                material_key = parameters.get('material_key', 'genfoam_hd12')
                 temperature_c = float(parameters.get('temperature_c', 25))
                 flow_rate_lpm = float(parameters.get('flow_rate_lpm', 1.0))
                 machine_type = parameters.get('machine_type', 'high_pressure')
@@ -159,12 +171,61 @@ class CalculationProcessor:
             # Step 4: Get machine specifications
             machine = self.machine_specs.get(machine_type, self.machine_specs['high_pressure'])
 
-            # Step 5: Calculate all flow properties
+            # Step 4b: Work out the temperature the material actually arrives at.
+            # Only when an ambient temperature is supplied — without it this is skipped
+            # entirely and the set point is used, exactly as before.
+            line_temperature = None
+            process_temperature_c = temperature_c
+            ambient_temperature_c = parameters.get('ambient_temperature_c')
+
+            if ambient_temperature_c is not None:
+                try:
+                    line_temperature = calculate_line_temperature(
+                        set_temperature_c=temperature_c,
+                        ambient_temperature_c=float(ambient_temperature_c),
+                        diameter_mm=pipe_diameter_mm,
+                        length_mm=pipe_length_mm,
+                        flow_rate_lpm=flow_rate_lpm,
+                        density_kg_m3=material['density'],
+                        idle_time_s=float(parameters.get('idle_time_s', 0) or 0),
+                        heat_transfer_coeff_w_m2_k=float(
+                            parameters.get('hose_heat_transfer_coeff_w_m2_k')
+                            or DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K
+                        ),
+                    )
+                    process_temperature_c = line_temperature['effective_temperature_c']
+                except Exception as e:
+                    logger.error(f"Line temperature calculation failed: {e}")
+                    line_temperature = None
+
+            # Step 5: Correct the viscosity for process temperature.
+            # This runs before flow and pressure because everything downstream depends on
+            # it: the Arrhenius-corrected viscosity is the consistency the power-law model
+            # thins from, and the pressure drop follows from that.
+            try:
+                thermal_result = thermal.calculate_temperature_dependent_viscosity(
+                    reference_temp_c=material.get('reference_temp_c', 25.0),
+                    reference_viscosity_cp=material['viscosity'],
+                    activation_energy_j_mol=material['activation_energy'],
+                    current_temp_c=process_temperature_c,
+                )
+            except Exception as e:
+                logger.error(f"Thermal calculation failed: {e}")
+                return {
+                    'success': False,
+                    'errors': [f'Thermal calculation error: {str(e)}'],
+                    'warnings': [],
+                    'data': None,
+                }
+
+            temperature_corrected_viscosity_cp = thermal_result['current_viscosity_cp']
+
+            # Step 6: Calculate all flow properties at the process temperature
             try:
                 flow_result = flow.calculate_all_flow_properties(
                     diameter_mm=pipe_diameter_mm,
                     flow_rate_lpm=flow_rate_lpm,
-                    consistency_cp=material['viscosity'],
+                    consistency_cp=temperature_corrected_viscosity_cp,
                     flow_index=material['flow_index'],
                     density_kg_m3=material['density'],
                 )
@@ -179,7 +240,7 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 6: Calculate pressure drop
+            # Step 7: Calculate pressure drop
             try:
                 pressure_result = pressure.calculate_pressure_drop(
                     diameter_mm=pipe_diameter_mm,
@@ -199,7 +260,7 @@ class CalculationProcessor:
                     'data': None
                 }
 
-            # Step 7: Account for fitting losses
+            # Step 8: Account for fitting losses
             try:
                 pressure_with_fittings = pressure.calculate_pressure_with_fittings(
                     base_pressure_bar=pressure_result['pressure_drop_bar'],
@@ -208,23 +269,6 @@ class CalculationProcessor:
             except Exception as e:
                 logger.error(f"Fitting loss calculation failed: {e}")
                 pressure_with_fittings = pressure_result  # Fallback without fittings
-
-            # Step 8: Calculate thermal effects
-            try:
-                thermal_result = thermal.calculate_temperature_dependent_viscosity(
-                    reference_temp_c=25.0,
-                    reference_viscosity_cp=material['viscosity'],
-                    activation_energy_j_mol=material['activation_energy'],
-                    current_temp_c=temperature_c,
-                )
-            except Exception as e:
-                logger.error(f"Thermal calculation failed: {e}")
-                return {
-                    'success': False,
-                    'errors': [f'Thermal calculation error: {str(e)}'],
-                    'warnings': [],
-                    'data': None
-                }
 
             # Step 9: Calculate shear heating
             try:
@@ -255,6 +299,10 @@ class CalculationProcessor:
                     env_result = environmental.calculate_environmental_impact(
                         material_key=material_key,
                         quantity_kg=1.0,
+                        blowing_agent=parameters.get('blowing_agent'),
+                        gwp_per_kg=parameters.get('gwp_per_kg'),
+                        is_eco_friendly=parameters.get('is_eco_friendly'),
+                        material_name=material.get('name'),
                     )
                 except Exception as e:
                     logger.error(f"Environmental calculation failed: {e}")
@@ -265,6 +313,23 @@ class CalculationProcessor:
                         'recommendation': 'N/A',
                         'is_eco_friendly': False
                     }
+
+            # Step 10b: Will the blowing agent stay in solution at this temperature?
+            # Uses the line pressure computed above, so it runs after the pressure steps.
+            try:
+                volatility_result = check_blowing_agent_volatility(
+                    blowing_agent=(
+                        parameters.get('blowing_agent')
+                        or (material.get('environmental') or {}).get('blowing_agent')
+                    ),
+                    temperature_c=process_temperature_c,
+                    line_pressure_bar=pressure_with_fittings.get(
+                        'total_pressure_bar', pressure_result['pressure_drop_bar']
+                    ),
+                )
+            except Exception as e:
+                logger.error(f"Volatility check failed: {e}")
+                volatility_result = None
 
             # Step 11: Check machine compatibility
             try:
@@ -277,15 +342,33 @@ class CalculationProcessor:
                 machine_compat = {
                     'is_compatible': False,
                     'status': 'Check failed',
-                    'available_pressure_bar': 0,
+                    'required_pressure_bar': 0,
                     'max_pressure_bar': 0,
-                    'warning': str(e)
+                    'warning': str(e),
+                    'note': None,
                 }  # Fallback
+
+            # Step 11b: Cure and exotherm, when the caller asked for them.
+            # This describes the part after the mix head, not the feed line, and is
+            # attached only when both inputs are present and the material is catalogued.
+            # Nothing here can change the feed-line result above.
+            cure_result = self._calculate_cure_block(
+                material_key=material_key,
+                temperature_c=process_temperature_c,
+                material=material,
+                parameters=parameters,
+            )
 
             # Step 12: Generate warnings
             warnings = self._generate_warnings(
                 flow_result, pressure_result, thermal_result, machine_compat
             )
+            for extra in (
+                (line_temperature or {}).get('warning'),
+                (volatility_result or {}).get('warning'),
+            ):
+                if extra:
+                    warnings.append(extra)
 
             # Step 13: Compile complete results
             result_data = {
@@ -293,7 +376,7 @@ class CalculationProcessor:
                     'pipe_length_mm': pipe_length_mm,
                     'pipe_diameter_mm': pipe_diameter_mm,
                     'material_key': material_key,
-                    'material_name': material.get('name', material_key),
+                    'material_name': material.get('name') or material_key,
                     'temperature_c': temperature_c,
                     'flow_rate_lpm': flow_rate_lpm,
                     'machine_type': machine_type,
@@ -308,7 +391,9 @@ class CalculationProcessor:
                     'flow_regime': pressure_result['flow_regime'],
                 },
                 'thermal': {
-                    'temperature_c': temperature_c,
+                    'temperature_c': process_temperature_c,
+                    'set_temperature_c': temperature_c,
+                    'reference_temp_c': thermal_result['reference_temp_c'],
                     'reference_viscosity_cp': thermal_result['reference_viscosity_cp'],
                     'current_viscosity_cp': thermal_result['current_viscosity_cp'],
                     'temperature_factor': thermal_result['temperature_factor'],
@@ -325,12 +410,22 @@ class CalculationProcessor:
                 'machine_compatibility': {
                     'is_compatible': machine_compat['is_compatible'],
                     'status': machine_compat['status'],
-                    'available_pressure_bar': machine_compat['available_pressure_bar'],
+                    'required_pressure_bar': machine_compat['required_pressure_bar'],
                     'max_pressure_bar': machine_compat['max_pressure_bar'],
                     'warning': machine_compat['warning'],
+                    'note': machine_compat.get('note'),
                 },
                 'timestamp': datetime.now().isoformat(),
             }
+
+            # Optional blocks. Omitted entirely rather than present-but-empty, so the UI
+            # can tell "not asked for" apart from "evaluated and found nothing".
+            if volatility_result is not None:
+                result_data['volatility'] = volatility_result
+            if line_temperature is not None:
+                result_data['line_temperature'] = line_temperature
+            if cure_result is not None:
+                result_data['cure'] = cure_result
 
             # Step 14: Validate results sanity
             if not self._validate_results(result_data):
@@ -357,17 +452,97 @@ class CalculationProcessor:
                 'data': None,
             }
 
+    def _calculate_cure_block(
+        self,
+        material_key: str,
+        temperature_c: float,
+        material: Dict[str, Any],
+        parameters: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Cure and exotherm prediction for the part, or None when not applicable.
+
+        This describes what happens after the mix head and has no bearing on the feed-line
+        pressure. It is attached only when the caller supplies a part thickness, the
+        kinetics module is available, and the material is one whose data sheet states the
+        reaction times the model is calibrated against. Anything else returns None so the
+        UI shows nothing rather than something invented.
+        """
+        part_thickness_mm = parameters.get('part_thickness_mm')
+        if part_thickness_mm is None or not KINETICS_AVAILABLE:
+            return None
+
+        # Custom materials have no data sheet reaction times to calibrate against
+        if material_key == 'custom' or not material.get('reaction', {}).get('gel_time_s'):
+            return None
+
+        reaction = material['reaction']
+        mold_temperature_c = parameters.get('mold_temperature_c')
+        if mold_temperature_c is None:
+            mold_temperature_c = reaction.get('mold_temp_min_c')
+
+        try:
+            result = self.calculate_kinetics(
+                material_key=material_key,
+                temperature_c=temperature_c,
+                time_s=0.0,
+                part_thickness_mm=float(part_thickness_mm),
+                mold_temp_c=float(mold_temperature_c) if mold_temperature_c is not None else None,
+            )
+        except Exception as e:
+            logger.error(f"Cure calculation failed: {e}")
+            return None
+
+        if not result.get('success'):
+            logger.info(f"Cure calculation unavailable: {result.get('error')}")
+            return None
+
+        data = result['data']
+        exotherm = data.get('exotherm', {})
+
+        return {
+            'part_thickness_mm': float(part_thickness_mm),
+            # The mould temperature actually used, which may be the model's own fallback
+            # when neither the caller nor the data sheet gives one
+            'mold_temperature_c': exotherm.get('mold_temperature_c'),
+            'mold_temperature_source': (
+                'user' if parameters.get('mold_temperature_c') is not None
+                else 'data_sheet' if reaction.get('mold_temp_min_c') is not None
+                else 'default'
+            ),
+            'processing_window': data.get('processing_window'),
+            'cream_time_s': reaction.get('cream_time_s'),
+            'gel_time_s': reaction.get('gel_time_s'),
+            'tack_free_time_s': reaction.get('tack_free_time_s'),
+            # Total heat the reaction can release, at full conversion
+            'adiabatic_rise_c': exotherm.get('adiabatic_rise_c'),
+            'peak_temperature_c': exotherm.get('peak_temperature_c'),
+            'scorch_risk': exotherm.get('scorch_risk'),
+            'scorch_margin_c': exotherm.get('scorch_margin_c'),
+            'heat_of_reaction_j_kg': exotherm.get('heat_of_reaction_j_kg'),
+            # These data sheets state no heat of reaction, so the exotherm figures rest on
+            # a literature-typical value. Flagged so the UI says so rather than presenting
+            # them as measurements of this product.
+            'heat_of_reaction_is_estimated': exotherm.get('heat_of_reaction_is_estimated', True),
+        }
+
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
-        """Get material properties from presets (fallback for backward compatibility)."""
-        return self.material_presets.get(material_key)
+        """Look a material up in the database CSV."""
+        try:
+            return get_material(material_key)
+        except Exception as e:
+            logger.error(f"Material database unavailable: {e}")
+            return None
 
     def _resolve_material_properties(self, parameters: Dict[str, Any]) -> tuple:
         """
-        Resolve material properties with Phase Beta injection support.
+        Resolve the material properties to calculate with.
 
         PRIORITY (highest to lowest):
-        1. Injected properties from TypeScript (Phase Beta feature)
-        2. Hardcoded material_key lookup (backward compatibility)
+        1. Properties supplied on the parameters — how a user-entered custom material
+           gets its values in.
+        2. Lookup by material_key in the database CSV, the source of truth for every
+           catalogued material.
 
         Returns:
             Tuple of (material_dict, source_description)
@@ -375,35 +550,40 @@ class CalculationProcessor:
             - source_description: String describing where properties came from
         """
 
-        # CHECK 1: Look for injected properties (Phase Beta)
-        injected_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
-        has_injected = all(key in parameters for key in injected_keys)
+        # CHECK 1: Properties supplied directly (custom materials)
+        supplied_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys)
 
-        if has_injected:
-            # Construct material dict from injected properties
+        if has_supplied:
             material = {
+                'name': parameters.get('material_name'),
                 'viscosity': parameters.get('viscosity_cp'),
                 'density': parameters.get('density_kg_m3'),
+                'reference_temp_c': parameters.get('reference_temp_c', 25.0),
                 'flow_index': parameters.get('flow_index'),
                 'activation_energy': parameters.get('activation_energy_j_mol'),
-                'polyol_sg': parameters.get('polyol_sg', 1.12),
-                'iso_sg': parameters.get('iso_sg', 1.23),
-                'weight_ratio': parameters.get('weight_ratio', [100, 110]),
-                'final_density': parameters.get('final_density_kg_m3', 32),
+                'polyol_sg': parameters.get('polyol_sg'),
+                'iso_sg': parameters.get('iso_sg'),
+                'weight_ratio': parameters.get('weight_ratio'),
+                'final_density': parameters.get('final_density_kg_m3'),
             }
-            logger.info(f"Using INJECTED material properties (viscosity={material['viscosity']}cP)")
-            return material, 'injected_properties'
+            logger.info(f"Using SUPPLIED material properties (viscosity={material['viscosity']}cP)")
+            return material, 'supplied_properties'
 
-        # CHECK 2: Fall back to material_key lookup (backward compatibility)
-        material_key = parameters.get('material_key', 'ecofoam_standard')
+        # CHECK 2: Look the material up in the database
+        material_key = parameters.get('material_key', 'genfoam_hd12')
         material = self._get_material_properties(material_key)
 
         if material is not None:
-            logger.info(f"Using HARDCODED material properties for key: {material_key}")
-            return material, f'material_key:{material_key}'
+            logger.info(f"Using material database entry: {material_key}")
+            return material, f'material_database:{material_key}'
 
-        # Neither available
-        return None, f'no_injected_properties, material_key_not_found:{material_key}'
+        try:
+            available = ', '.join(list_material_keys())
+        except Exception:
+            available = 'material database unavailable'
+
+        return None, f'material_key "{material_key}" not in the database (available: {available})'
 
     def calculate_kinetics(
         self,
@@ -452,21 +632,27 @@ class CalculationProcessor:
                     'data': None,
                 }
 
-            # Get kinetics parameters from material or use defaults
             kinetics_data = material.get('kinetics', {})
+            reaction = material.get('reaction', {})
 
-            # Build cure kinetics parameters
-            cure_params = CureKineticsParameters(
-                k1_ref=kinetics_data.get('k1_ref', 0.0001),
-                k2_ref=kinetics_data.get('k2_ref', 0.001),
-                m=kinetics_data.get('m', 1.0),
-                n=kinetics_data.get('n', 1.5),
-                activation_energy_k1=kinetics_data.get('activation_energy_k1', 50000),
-                activation_energy_k2=kinetics_data.get('activation_energy_k2', 45000),
-                gel_conversion=kinetics_data.get('gel_conversion', 0.65),
-                cream_time_ref_s=material.get('cream_time', 50),
-                gel_time_ref_s=material.get('gel_time', 150),
-            )
+            # Calibrate the rate constants to the cream and gel times this material's
+            # data sheet states, so the cure curve reproduces the reaction the supplier
+            # measured rather than a set of invented constants.
+            try:
+                cure_params = CureKineticsParameters.from_material(
+                    material,
+                    m=kinetics_data.get('m', 1.0),
+                    n=kinetics_data.get('n', 1.5),
+                    activation_energy_k1=kinetics_data.get('activation_energy_k1', 50000),
+                    activation_energy_k2=kinetics_data.get('activation_energy_k2', 45000),
+                    gel_conversion=kinetics_data.get('gel_conversion', 0.65),
+                )
+            except ValueError as e:
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'data': None,
+                }
 
             # Initialize cure kinetics model
             cure_model = CureKinetics(cure_params)
@@ -492,12 +678,36 @@ class CalculationProcessor:
             reactive_visc = viscosity_model.viscosity_from_time(time_s, temperature_c)
             visc_ratio = viscosity_model.viscosity_ratio(cure_state.conversion, temperature_c)
 
-            # Build thermal reaction parameters
-            effective_mold_temp = mold_temp_c or material.get('mold_temp_min', 40)
+            # Build thermal reaction parameters.
+            # Heat of reaction comes from the data sheet where stated, is derived from a
+            # stated peak exotherm where that is given, and otherwise falls back to a
+            # literature-typical value which the result flags as an estimate.
+            effective_mold_temp = mold_temp_c or reaction.get('mold_temp_min_c') or 40
+            specific_heat = (
+                reaction.get('specific_heat_j_kg_k')
+                or kinetics_data.get('specific_heat')
+                or DEFAULT_SPECIFIC_HEAT_J_KG_K
+            )
+
+            heat_of_reaction = reaction.get('heat_of_reaction_j_kg')
+            heat_of_reaction_is_estimated = heat_of_reaction is None
+            if heat_of_reaction is None and reaction.get('peak_exotherm_c'):
+                try:
+                    heat_of_reaction = heat_of_reaction_from_peak_exotherm(
+                        peak_exotherm_c=reaction['peak_exotherm_c'],
+                        initial_temp_c=temperature_c,
+                        specific_heat_j_kg_k=specific_heat,
+                    )
+                    heat_of_reaction_is_estimated = False
+                except ValueError:
+                    heat_of_reaction = None
+            if heat_of_reaction is None:
+                heat_of_reaction = DEFAULT_HEAT_OF_REACTION_J_KG
+
             thermal_params = ThermalReactionParameters(
-                heat_of_reaction_j_kg=kinetics_data.get('heat_of_reaction', 100000),
+                heat_of_reaction_j_kg=heat_of_reaction,
                 density_kg_m3=material.get('density', 1100),
-                specific_heat_j_kg_k=kinetics_data.get('specific_heat', 1800),
+                specific_heat_j_kg_k=specific_heat,
                 thermal_conductivity_w_m_k=kinetics_data.get('thermal_conductivity', 0.2),
                 heat_transfer_coeff_w_m2_k=kinetics_data.get('heat_transfer_coeff', 100),
                 mold_temperature_c=effective_mold_temp,
@@ -506,11 +716,13 @@ class CalculationProcessor:
                 initial_temp_c=temperature_c,
             )
 
-            # Calculate exotherm
+            # Adiabatic rise at FULL conversion — the total heat the reaction can release,
+            # which is what "how hot does this get" means. The rise at the current instant
+            # is reported separately via cure_state.
             adiabatic_rise = calculate_exotherm_rise(
                 heat_of_reaction_j_kg=thermal_params.heat_of_reaction_j_kg,
                 specific_heat_j_kg_k=thermal_params.specific_heat_j_kg_k,
-                conversion=cure_state.conversion,
+                conversion=1.0,
             )
 
             # Scorch risk prediction
@@ -523,10 +735,10 @@ class CalculationProcessor:
 
             # Foam rise calculation (if foam material)
             foam_data = None
-            free_rise_density = material.get('free_rise_density')
+            free_rise_density = reaction.get('free_rise_density_kg_m3')
             if free_rise_density and free_rise_density < 500:  # Foam material
                 foam_params = FoamKineticsParameters(
-                    cream_time_s=material.get('cream_time', 10),
+                    cream_time_s=reaction.get('cream_time_s') or 10,
                     rise_time_constant_s=kinetics_data.get('rise_time_constant', 30),
                     free_rise_density_kg_m3=free_rise_density,
                     initial_density_kg_m3=material.get('density', 1100),
@@ -563,6 +775,9 @@ class CalculationProcessor:
                     },
                     'exotherm': {
                         'adiabatic_rise_c': adiabatic_rise,
+                        'heat_of_reaction_j_kg': thermal_params.heat_of_reaction_j_kg,
+                        'heat_of_reaction_is_estimated': heat_of_reaction_is_estimated,
+                        'mold_temperature_c': effective_mold_temp,
                         'peak_temperature_c': scorch_analysis.get('peak_temperature_c'),
                         'scorch_risk': scorch_analysis.get('scorch_risk'),
                         'scorch_margin_c': scorch_analysis.get('scorch_margin_c'),
@@ -624,9 +839,10 @@ class CalculationProcessor:
                 "Flow rates may be affected."
             )
 
-        # Machine compatibility warning
+        # Machine compatibility warning. A pressure below the machine's minimum is normal
+        # and carries a note instead, so only a genuine incompatibility warns here.
         if not machine_compat.get('is_compatible'):
-            warnings.append(f"⚠️ {machine_compat.get('warning', 'Not compatible with machine.')}")
+            warnings.append(f"⚠️ {machine_compat.get('warning') or 'Not compatible with machine.'}")
 
         return warnings
 
