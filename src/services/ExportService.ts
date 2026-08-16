@@ -150,7 +150,13 @@ export class ExportService {
 
     if (options.includeTimestamp) {
       lines.push(`\nGenerated: ${new Date().toLocaleString()}`)
-      lines.push(`Calculation: ${new Date(results.timestamp).toLocaleString()}`)
+      // timestamp is optional, and new Date(undefined) renders as "Invalid Date" —
+      // say the value is absent rather than printing something that looks like a fault
+      lines.push(
+        `Calculation: ${
+          results.timestamp ? new Date(results.timestamp).toLocaleString() : 'not recorded'
+        }`
+      )
     }
 
     // Input Section

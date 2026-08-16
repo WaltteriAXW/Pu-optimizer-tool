@@ -8,6 +8,25 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { ExportService, createExportService } from './ExportService'
 import type { CalculationResults } from '@/models/types'
 
+// Named so that spreading them in the tests below preserves the required fields.
+// Spreading `mockResults.machine_compatibility` instead widens every field to optional,
+// because the property itself is optional on CalculationResults.
+const mockEnvironmental: NonNullable<CalculationResults['environmental']> = {
+  material: 'EcoFoam Standard',
+  blowing_agent: 'HFC-134a',
+  gwp_per_kg: 5000,
+  recommendation: 'Standard option',
+  is_eco_friendly: false
+}
+
+const mockMachineCompatibility: NonNullable<CalculationResults['machine_compatibility']> = {
+  is_compatible: true,
+  status: 'compatible',
+  required_pressure_bar: 250,
+  max_pressure_bar: 250,
+  warning: undefined
+}
+
 const mockResults: CalculationResults = {
   input: {
     pipe_length_mm: 1000,
@@ -42,20 +61,8 @@ const mockResults: CalculationResults = {
     shear_heating_c: 0.5,
     heat_generated_w: 58.0
   },
-  environmental: {
-    material: 'EcoFoam Standard',
-    blowing_agent: 'HFC-134a',
-    gwp_per_kg: 5000,
-    recommendation: 'Standard option',
-    is_eco_friendly: false
-  },
-  machine_compatibility: {
-    is_compatible: true,
-    status: 'compatible',
-    required_pressure_bar: 250,
-    max_pressure_bar: 250,
-    warning: undefined
-  },
+  environmental: mockEnvironmental,
+  machine_compatibility: mockMachineCompatibility,
   timestamp: '2024-12-08T10:00:00Z'
 }
 
@@ -166,7 +173,7 @@ describe('ExportService', () => {
       const resultsWithWarning: CalculationResults = {
         ...mockResults,
         machine_compatibility: {
-          ...mockResults.machine_compatibility,
+          ...mockMachineCompatibility,
           warning: 'Pressure exceeds limit'
         }
       }
@@ -227,7 +234,7 @@ describe('ExportService', () => {
       const resultsWithWarning: CalculationResults = {
         ...mockResults,
         machine_compatibility: {
-          ...mockResults.machine_compatibility,
+          ...mockMachineCompatibility,
           warning: 'Critical pressure issue'
         }
       }
@@ -418,7 +425,7 @@ describe('ExportService', () => {
       const resultsWithSpecial: CalculationResults = {
         ...mockResults,
         environmental: {
-          ...mockResults.environmental,
+          ...mockEnvironmental,
           recommendation: 'Use "eco-friendly" option with 50% reduction'
         }
       }

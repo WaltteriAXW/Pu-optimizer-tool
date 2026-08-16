@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { CalculatorProvider, useCalculator } from './context/CalculatorContext'
 import { CalculatorForm } from './components/CalculatorForm'
 import { ResultsDisplay } from './components/ResultsDisplay'

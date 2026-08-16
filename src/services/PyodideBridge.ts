@@ -335,19 +335,25 @@ export class PyodideBridge implements PyodideManager {
       throw new Error('Pyodide not ready. Call initialize() first.')
     }
 
+    // Pin the instance for the duration of this call. pyodideInstance is module-level and
+    // reassignable, so the guard above does not narrow it inside the callback below —
+    // and were it reassigned mid-call, the failure would surface as an opaque TypeError
+    // rather than the clear error above.
+    const pyodide = pyodideInstance
+
     try {
       // Convert JavaScript objects to Python-compatible format
       const pythonArgs = args.map(arg => {
         if (typeof arg === 'object' && arg !== null) {
           // Convert JS object to Python dict via JSON
-          return pyodideInstance.toPy(arg)
+          return pyodide.toPy(arg)
         }
         return arg
       })
 
       // Set up arguments in Python
       const argName = `_args_${Date.now()}`
-      pyodideInstance.globals.set(argName, pythonArgs)
+      pyodide.globals.set(argName, pythonArgs)
 
       // Execute Python code
       const pythonCode = `
@@ -398,9 +404,9 @@ except Exception as e:
 _result
 `
 
-      const result = await pyodideInstance.runPythonAsync(pythonCode)
+      const result = await pyodide.runPythonAsync(pythonCode)
       const jsResult = result.toJs({ dict_converter: Object.fromEntries })
-      pyodideInstance.globals.delete(argName)
+      pyodide.globals.delete(argName)
 
       return jsResult as T
     } catch (error) {
