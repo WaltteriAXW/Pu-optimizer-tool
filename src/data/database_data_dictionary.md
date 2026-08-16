@@ -37,6 +37,21 @@ from the two components rather than stored: density by volume-additive mixing of
 specific gravities at the weight mix ratio, and viscosity by logarithmic blending on volume
 fractions. Neither is a column — do not add one.
 
+## Reaction Thermal Properties (optional — drive the cure and exotherm prediction)
+- **Heat_Of_Reaction_kJ_kg**: Heat released by the full reaction, in kJ per kg of mixed
+  material. Usually from DSC.
+- **Specific_Heat_J_kg_K**: Specific heat of the reacting mix, in J/(kg·K).
+- **Peak_Exotherm_C**: Measured peak internal temperature during foaming, in °C.
+
+All three may be left empty, and are for every product currently in the database because the
+technical data sheets do not state them. When they are empty the exotherm model uses a
+literature-typical heat of reaction for rigid polyurethane, and the application labels the
+resulting figures as **estimated** rather than presenting them as measurements.
+
+Stating `Peak_Exotherm_C` is enough on its own: the heat of reaction is then derived from it,
+in the same way the cure rate constants are calibrated to the stated gel time. Prefer that
+over leaving the default in place — a measured peak is real evidence, the default is not.
+
 ## Process Conditions
 - **Mix_Ratio_Weight_Polyol**: Parts by weight of polyol
 - **Mix_Ratio_Weight_Iso**: Parts by weight of isocyanate

@@ -434,3 +434,89 @@ class TestExtremeValues:
 
         assert result['success'] is False
         assert result['errors']
+
+
+class TestOptionalBlocks:
+    """The temperature and cure additions must never disturb the feed-line result."""
+
+    BASE = {
+        'pipe_length_mm': 500,
+        'pipe_diameter_mm': 12,
+        'material_key': 'genfoam_hd12',
+        'temperature_c': 25,
+        'flow_rate_lpm': 5.0,
+        'machine_type': 'low_pressure',
+    }
+
+    def test_absent_inputs_leave_the_pressure_untouched(self):
+        """The whole point: supplying nothing new must change nothing."""
+        processor = CalculationProcessor()
+
+        baseline = processor.calculate_all(dict(self.BASE))['data']
+
+        assert baseline['pressure']['pressure_with_fittings_bar'] == pytest.approx(0.1663, abs=0.0002)
+        assert 'line_temperature' not in baseline
+        assert 'cure' not in baseline
+
+    def test_cure_block_appears_only_when_a_part_thickness_is_given(self):
+        processor = CalculationProcessor()
+
+        without = processor.calculate_all(dict(self.BASE))['data']
+        with_part = processor.calculate_all({**self.BASE, 'part_thickness_mm': 40})['data']
+
+        assert 'cure' not in without
+        assert 'cure' in with_part
+        # The feed line is unaffected by asking about the part
+        assert (
+            with_part['pressure']['pressure_with_fittings_bar']
+            == without['pressure']['pressure_with_fittings_bar']
+        )
+
+    def test_cure_block_is_skipped_for_custom_materials(self):
+        """A custom material has no data sheet reaction times to calibrate against."""
+        processor = CalculationProcessor()
+
+        result = processor.calculate_all({
+            **self.BASE,
+            'material_key': 'custom',
+            'part_thickness_mm': 40,
+            'viscosity_cp': 1200,
+            'density_kg_m3': 1090,
+            'flow_index': 0.75,
+            'activation_energy_j_mol': 31000,
+        })
+
+        assert result['success'] is True
+        assert 'cure' not in result['data']
+
+    def test_ambient_temperature_changes_the_pressure_and_says_so(self):
+        processor = CalculationProcessor()
+
+        warm_line = processor.calculate_all(dict(self.BASE))['data']
+        cold_line = processor.calculate_all({
+            **self.BASE, 'ambient_temperature_c': 15, 'idle_time_s': 1800,
+        })['data']
+
+        # Colder material is more viscous, so the line needs more pressure
+        assert (
+            cold_line['pressure']['pressure_with_fittings_bar']
+            > warm_line['pressure']['pressure_with_fittings_bar']
+        )
+        # And the change is attributable rather than mysterious
+        assert cold_line['line_temperature']['effective_temperature_c'] < 25
+        assert cold_line['thermal']['set_temperature_c'] == 25
+
+    def test_volatility_block_reflects_the_material(self):
+        processor = CalculationProcessor()
+
+        water_blown = processor.calculate_all(dict(self.BASE))['data']
+        assert water_blown['volatility']['status'] == 'not_volatile'
+
+        hot_ecomate = processor.calculate_all({
+            **self.BASE, 'material_key': 'ecomate_spray', 'temperature_c': 35,
+        })['data']
+        assert hot_ecomate['volatility']['status'] == 'flash_risk'
+        assert any('boiling point' in w for w in
+                   processor.calculate_all({
+                       **self.BASE, 'material_key': 'ecomate_spray', 'temperature_c': 35,
+                   })['warnings'])

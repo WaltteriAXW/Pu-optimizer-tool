@@ -22,6 +22,19 @@ export interface ProcessParameters {
   polyol_sg?: number;                   // Polyol specific gravity
   iso_sg?: number;                      // Isocyanate specific gravity
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
+  reference_temp_c?: number;            // Temperature the viscosity was measured at
+
+  // Shop conditions — optional. Supplying an ambient temperature switches on the line
+  // thermal model, so the pressure reflects the temperature at the mix head rather than
+  // the tank set point. Omitting these leaves the calculation exactly as it was.
+  ambient_temperature_c?: number;            // °C around the hose
+  idle_time_s?: number;                      // Time the material has stood in the line
+  hose_heat_transfer_coeff_w_m2_k?: number;  // Defaults to a bare hose in still air
+
+  // Part geometry — optional. Supplying a part thickness adds the cure/exotherm block,
+  // which describes the moulded part rather than the feed line.
+  mold_temperature_c?: number;          // °C, defaults to the data sheet value
+  part_thickness_mm?: number;           // mm
 }
 
 /**
@@ -78,6 +91,70 @@ export interface CalculationResults {
     recommendation?: string;
     is_eco_friendly?: boolean;
   };
+  /**
+   * Whether the blowing agent stays dissolved at these conditions. Present whenever the
+   * material names an agent; a status of 'not_volatile' or 'no_boiling_point_data' means
+   * nothing was evaluated, and must not be shown as a pass.
+   */
+  volatility?: {
+    status:
+      | 'ok'
+      | 'marginal'
+      | 'flash_risk'
+      | 'not_volatile'
+      | 'no_boiling_point_data'
+      | 'unknown_agent';
+    agent: string;
+    is_volatile?: boolean | null;
+    boiling_point_c?: number | null;
+    temperature_margin_c?: number | null;
+    /** null when no sourced vapour-pressure constants exist — "not evaluated" */
+    vapour_pressure_bar?: number | null;
+    pressure_margin_bar?: number | null;
+    message: string;
+    warning?: string | null;
+  };
+
+  /** Present only when an ambient temperature was supplied */
+  line_temperature?: {
+    set_temperature_c: number;
+    ambient_temperature_c: number;
+    effective_temperature_c: number;
+    drift_c: number;
+    time_constant_s: number;
+    residence_time_s: number;
+    idle_time_s: number;
+    governing_regime: 'idle_soak' | 'flow_residence';
+    warning?: string | null;
+  };
+
+  /**
+   * The moulded part, not the feed line. Present only when a part thickness was supplied
+   * for a catalogued material.
+   */
+  cure?: {
+    part_thickness_mm: number;
+    mold_temperature_c?: number | null;
+    mold_temperature_source: 'user' | 'data_sheet' | 'default';
+    processing_window?: {
+      cream_time_s: number;
+      work_time_s: number;
+      gel_time_s: number;
+      demold_time_s: number;
+      temperature_c: number;
+    };
+    cream_time_s?: number | null;
+    gel_time_s?: number | null;
+    tack_free_time_s?: number | null;
+    adiabatic_rise_c?: number;
+    peak_temperature_c?: number;
+    scorch_risk?: string;
+    scorch_margin_c?: number;
+    heat_of_reaction_j_kg?: number;
+    /** True when no data sheet figure exists and a literature-typical value was used */
+    heat_of_reaction_is_estimated: boolean;
+  };
+
   machine_compatibility?: {
     is_compatible: boolean;
     status: string;

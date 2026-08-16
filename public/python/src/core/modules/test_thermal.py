@@ -149,8 +149,8 @@ class TestShearHeating:
         """Heat generated scales with flow rate; the temperature rise does not.
 
         At a fixed pressure drop the dissipated power and the mass flow both scale
-        linearly with Q, so ΔT = ΔP(1-η)/(ρ·c_p) cancels out and depends only on the
-        pressure drop. Expecting ΔT to climb with flow rate misreads the model.
+        linearly with Q, so ΔT = ΔP/(ρ·c_p) cancels out and depends only on the pressure
+        drop. Expecting ΔT to climb with flow rate misreads the model.
         """
         result_low_q = calculate_shear_heating(
             pressure_drop_pa=50000,
@@ -171,25 +171,45 @@ class TestShearHeating:
             result_low_q['temperature_rise_c'], rel=1e-9
         )
 
-    def test_efficiency_affects_heat(self):
-        """Better efficiency should reduce heat generated."""
-        result_poor_eff = calculate_shear_heating(
-            pressure_drop_pa=50000,
-            flow_rate_lpm=1.0,
+    def test_all_of_the_pressure_drop_becomes_heat(self):
+        """A pipe does no useful work, so dissipation is the full hydraulic power.
+
+        There is no efficiency term here: efficiency describes a pump converting shaft
+        power into flow work, whereas everything a pipe takes out of the flow ends up as
+        heat in the fluid.
+        """
+        pressure_drop_pa = 50000
+        flow_rate_lpm = 1.0
+
+        result = calculate_shear_heating(
+            pressure_drop_pa=pressure_drop_pa,
+            flow_rate_lpm=flow_rate_lpm,
             viscosity_cp=350,
             density_kg_m3=1120,
-            efficiency=0.7,  # 70% efficient = 30% loss
         )
 
-        result_good_eff = calculate_shear_heating(
-            pressure_drop_pa=50000,
-            flow_rate_lpm=1.0,
+        expected_w = pressure_drop_pa * (flow_rate_lpm / 60000)
+        assert result['heat_generated_w'] == pytest.approx(expected_w, rel=1e-9)
+
+    def test_temperature_rise_is_pressure_over_rho_cp(self):
+        """ΔT = ΔP / (ρ·c_p) — the flow rate cancels out."""
+        pressure_drop_pa = 7_500_000  # 75 bar
+        density = 1149.0
+        specific_heat = 2100.0
+
+        result = calculate_shear_heating(
+            pressure_drop_pa=pressure_drop_pa,
+            flow_rate_lpm=5.0,
             viscosity_cp=350,
-            density_kg_m3=1120,
-            efficiency=0.95,  # 95% efficient = 5% loss
+            density_kg_m3=density,
+            specific_heat_j_kg_k=specific_heat,
         )
 
-        assert result_poor_eff['heat_generated_w'] > result_good_eff['heat_generated_w']
+        expected_c = pressure_drop_pa / (density * specific_heat)
+        assert result['temperature_rise_c'] == pytest.approx(expected_c, rel=1e-9)
+        # Even at 75 bar this is only a few degrees, which is why it is not fed back
+        # into the viscosity calculation
+        assert 2.0 < result['temperature_rise_c'] < 4.0
 
     def test_zero_flow_no_heating(self):
         """Zero flow rate should result in no heating."""
@@ -314,7 +334,6 @@ class TestPhysicsValidation:
             flow_rate_lpm=1.0,
             viscosity_cp=350,
             density_kg_m3=1120,
-            efficiency=0.9,
         )
 
         assert result['temperature_rise_c'] >= 0

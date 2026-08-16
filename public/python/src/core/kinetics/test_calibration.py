@@ -88,6 +88,48 @@ class TestExotherm:
         # An exotherm that never exceeds the mold temperature is not an exotherm
         assert result['peak_temperature_c'] > 40
 
+    def test_peak_matches_published_rigid_foam_measurements(self):
+        """Published peaks for rigid PU are 160-164 °C; a thick part should approach that."""
+        params = CureKineticsParameters.calibrated_to_gel_time(gel_time_s=135.0)
+        result = predict_scorch_risk(part_thickness_mm=100, mold_temp_c=25, cure_params=params)
+
+        assert 130 < result['peak_temperature_c'] < 175
+
+    @pytest.mark.parametrize('gel_time_s', [5.0, 22.0, 135.0])
+    def test_hotter_mould_never_lowers_the_peak(self, gel_time_s):
+        """Monotonicity in mould temperature, at every reaction speed.
+
+        This is the guard for a numerical bug rather than a physical one. The exotherm was
+        integrated with a fixed 0.5 s step, which stepped clean over the peak of a fast
+        reaction — understating it by more than 30 °C and, because the error grew with
+        reaction speed, making a hotter mould appear to produce a cooler part.
+        """
+        params = CureKineticsParameters.calibrated_to_gel_time(gel_time_s=gel_time_s)
+
+        peaks = [
+            predict_scorch_risk(part_thickness_mm=10, mold_temp_c=mold, cure_params=params)[
+                'peak_temperature_c'
+            ]
+            for mold in (25, 35, 45, 60)
+        ]
+
+        assert peaks == sorted(peaks), f'peak temperatures not monotonic in mould temp: {peaks}'
+
+    def test_peak_is_converged_with_respect_to_the_timestep(self):
+        """The default step must resolve the peak, not merely produce a number."""
+        from .thermal_reaction import LumpedThermalModel, ThermalReactionParameters
+
+        params = CureKineticsParameters.calibrated_to_gel_time(gel_time_s=5.0)
+        thermal_params = ThermalReactionParameters(
+            mold_temperature_c=60, part_thickness_mm=10, initial_temp_c=25
+        )
+        model = LumpedThermalModel(thermal_params, params)
+
+        default_peak = max(h['temperature_c'] for h in model.simulate_cure(120))
+        fine_peak = max(h['temperature_c'] for h in model.simulate_cure(120, dt=0.001))
+
+        assert default_peak == pytest.approx(fine_peak, rel=0.02)
+
 
 class TestCellNucleation:
     """Foam nucleates heterogeneously; the homogeneous barrier is unreachable."""

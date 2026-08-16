@@ -103,6 +103,11 @@ export class CalculationService {
         thermal: result.data.thermal,
         environmental: result.data.environmental,
         machine_compatibility: result.data.machine_compatibility,
+        // Optional blocks — undefined when Python omitted them, which is how the UI
+        // tells "not asked for" apart from "evaluated and found nothing"
+        volatility: result.data.volatility,
+        line_temperature: result.data.line_temperature,
+        cure: result.data.cure,
         timestamp: result.data.timestamp,
         warnings: result.data.warnings || []
       }
@@ -223,6 +228,14 @@ export class CalculationService {
       safeValue(parameters.temperature_c),
       safeValue(parameters.flow_rate_lpm),
       safeValue(parameters.machine_type) || 'high_pressure',
+      // Optional inputs must be part of the key too. Leaving them out would serve a
+      // cached result computed at a different ambient temperature, which looks exactly
+      // like the feature silently not working.
+      safeValue(parameters.ambient_temperature_c),
+      safeValue(parameters.idle_time_s),
+      safeValue(parameters.hose_heat_transfer_coeff_w_m2_k),
+      safeValue(parameters.mold_temperature_c),
+      safeValue(parameters.part_thickness_mm),
     ]
 
     if (parameters.material_key === 'custom') {

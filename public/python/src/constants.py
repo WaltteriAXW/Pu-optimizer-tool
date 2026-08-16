@@ -48,6 +48,8 @@ class MaterialDefaults:
 # VALIDATION RANGES
 # ============================================================================
 
+# These are authoritative. src/constants.js mirrors them for the form; if you change a
+# range here, change it there too — the JS table names this file as its source.
 VALIDATION_RANGES = {
     'pipe_length': {
         'min': 50,

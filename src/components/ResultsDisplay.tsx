@@ -11,6 +11,46 @@ import {
   Timer,
 } from 'lucide-react'
 
+/** Presentation for the blowing-agent volatility states */
+const VOLATILITY_LABEL: Record<string, string> = {
+  ok: '✓ Stays in solution',
+  marginal: '⚠ Close to boiling',
+  flash_risk: '⚠ Flash-off risk',
+  not_volatile: 'No volatile agent',
+  no_boiling_point_data: 'Not evaluated',
+  unknown_agent: 'Not evaluated',
+}
+
+const VOLATILITY_TONE: Record<string, string> = {
+  ok: 'text-emerald-700',
+  marginal: 'text-amber-700',
+  flash_risk: 'text-red-700',
+  not_volatile: 'text-slate-700',
+  no_boiling_point_data: 'text-slate-500',
+  unknown_agent: 'text-slate-500',
+}
+
+const SCORCH_TONE: Record<string, string> = {
+  low: 'text-emerald-700',
+  moderate: 'text-amber-700',
+  high: 'text-orange-700',
+  critical: 'text-red-700',
+}
+
+/**
+ * Present-and-numeric guard. The Python layer sends null for values it could not
+ * evaluate, and omits keys entirely for blocks that were not requested, so a plain
+ * truthiness check would also discard legitimate zeros (0 °C drift, a 0 °C mould).
+ */
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
+
+const MOLD_SOURCE_LABEL: Record<string, string> = {
+  user: 'entered',
+  data_sheet: 'from data sheet',
+  default: 'model default',
+}
+
 export function ResultsDisplay() {
   const { results, error: calculatorError } = useCalculator()
 
@@ -247,6 +287,168 @@ export function ResultsDisplay() {
         </div>
       )}
 
+      {/* Blowing agent volatility */}
+      {results.volatility && (
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-slate-800">Blowing Agent</h4>
+          </div>
+          <div className="card-body space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">{results.volatility.agent}</p>
+                <p className={`text-lg font-bold ${VOLATILITY_TONE[results.volatility.status] ?? 'text-slate-700'}`}>
+                  {VOLATILITY_LABEL[results.volatility.status] ?? results.volatility.status}
+                </p>
+              </div>
+              {isNumber(results.volatility.boiling_point_c) && (
+                <div className="text-right">
+                  <p className="text-sm text-slate-600 mb-1">Boiling Point</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {results.volatility.boiling_point_c.toFixed(1)} °C
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <p className="text-sm text-slate-600">{results.volatility.message}</p>
+
+            {results.volatility.warning && (
+              <p className={`p-3 rounded text-sm border ${
+                results.volatility.status === 'flash_risk'
+                  ? 'bg-red-50 border-red-200 text-red-800'
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                {results.volatility.warning}
+              </p>
+            )}
+
+            {/* Absent constants must read as "not evaluated", never as a pass */}
+            {results.volatility.is_volatile && !isNumber(results.volatility.vapour_pressure_bar) && (
+              <p className="text-xs text-slate-500">
+                Vapour-pressure margin not evaluated — no vapour-pressure data on file for
+                this agent.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Line temperature — why the pressure above may differ from the set point */}
+      {results.line_temperature && (
+        <div className="card">
+          <div className="card-header">
+            <h4 className="font-bold text-slate-800">Temperature at the Mix Head</h4>
+          </div>
+          <div className="card-body space-y-3">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Set point</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {results.line_temperature.set_temperature_c.toFixed(1)} °C
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Shop</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {results.line_temperature.ambient_temperature_c.toFixed(1)} °C
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">At mix head</p>
+                <p className={`text-lg font-bold ${
+                  Math.abs(results.line_temperature.drift_c) >= 2 ? 'text-amber-700' : 'text-emerald-700'
+                }`}>
+                  {results.line_temperature.effective_temperature_c.toFixed(1)} °C
+                </p>
+              </div>
+            </div>
+            <DetailRow
+              label="Line thermal time constant"
+              value={results.line_temperature.time_constant_s / 60}
+              unit="min"
+            />
+            {results.line_temperature.warning && (
+              <p className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                {results.line_temperature.warning}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cure & Exotherm — the moulded part, not the feed line */}
+      {results.cure && (
+        <div className="card border-2 border-slate-200">
+          <div className="card-header bg-slate-50">
+            <h4 className="font-bold text-slate-800">Cure &amp; Exotherm</h4>
+            <p className="text-xs text-slate-500 mt-1">
+              Describes the moulded part after the mix head — not the feed line above.
+            </p>
+          </div>
+          <div className="card-body space-y-3">
+            <DetailRow label="Part Thickness" value={results.cure.part_thickness_mm} unit="mm" />
+            {isNumber(results.cure.mold_temperature_c) && (
+              <DetailRow
+                label={`Mould Temperature (${MOLD_SOURCE_LABEL[results.cure.mold_temperature_source]})`}
+                value={results.cure.mold_temperature_c}
+                unit="°C"
+              />
+            )}
+            {isNumber(results.cure.cream_time_s) && (
+              <DetailRow label="Cream Time" value={results.cure.cream_time_s} unit="s" />
+            )}
+            {isNumber(results.cure.gel_time_s) && (
+              <DetailRow label="Gel Time" value={results.cure.gel_time_s} unit="s" />
+            )}
+            {results.cure.processing_window && (
+              <DetailRow
+                label="Working Time"
+                value={results.cure.processing_window.work_time_s}
+                unit="s"
+              />
+            )}
+
+            <div className="pt-3 border-t border-slate-100 space-y-3">
+              {isNumber(results.cure.adiabatic_rise_c) && (
+                <DetailRow
+                  label="Reaction Heat (adiabatic rise)"
+                  value={results.cure.adiabatic_rise_c}
+                  unit="°C"
+                />
+              )}
+              {isNumber(results.cure.peak_temperature_c) && (
+                <DetailRow
+                  label="Peak Core Temperature"
+                  value={results.cure.peak_temperature_c}
+                  unit="°C"
+                />
+              )}
+              {results.cure.scorch_risk && (
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-slate-600">Scorch Risk</span>
+                  <span className={`text-sm font-bold ${SCORCH_TONE[results.cure.scorch_risk] ?? 'text-slate-700'}`}>
+                    {results.cure.scorch_risk}
+                    {isNumber(results.cure.scorch_margin_c) &&
+                      ` (${results.cure.scorch_margin_c.toFixed(0)} °C margin)`}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {results.cure.heat_of_reaction_is_estimated && (
+              <p className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600">
+                Exotherm figures are <strong>estimated</strong>. This material&rsquo;s data
+                sheet states no heat of reaction, so a literature-typical value for rigid
+                polyurethane was used. Add <code>Heat_Of_Reaction_kJ_kg</code> or{' '}
+                <code>Peak_Exotherm_C</code> to the material database to replace it with a
+                measured value.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Machine Compatibility (if available) */}
       {results.machine_compatibility && (
         <div className="card">
@@ -269,12 +471,12 @@ export function ResultsDisplay() {
                     : '⚠ Incompatible'}
                 </p>
               </div>
-              {results.machine_compatibility.required_pressure_bar !== undefined && (
+              {isNumber(results.machine_compatibility.required_pressure_bar) && (
                 <div className="text-right">
                   <p className="text-sm text-slate-600 mb-1">Required / Max Pressure</p>
                   <p className="text-lg font-bold text-slate-900">
                     {results.machine_compatibility.required_pressure_bar.toFixed(1)}
-                    {results.machine_compatibility.max_pressure_bar !== undefined &&
+                    {isNumber(results.machine_compatibility.max_pressure_bar) &&
                       ` / ${results.machine_compatibility.max_pressure_bar.toFixed(1)}`} bar
                   </p>
                 </div>

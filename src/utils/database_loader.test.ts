@@ -20,8 +20,12 @@ const header = () => csvText().trim().split('\n')[0]
 
 describe('CSV integrity', () => {
   it('rejects a row with the wrong field count, naming the product', () => {
+    // Derived from the file, not hardcoded — adding a column should not break this test
+    const columns = header().split(',').length
     const broken = `${header()}\nnew_key,Broken Product,too,few,fields`
-    expect(() => parseCSV(broken)).toThrow(/Broken Product.*5 fields.*header has 62/s)
+    expect(() => parseCSV(broken)).toThrow(
+      new RegExp(`Broken Product.*5 fields.*header has ${columns}`, 's')
+    )
   })
 
   it('rejects a row with no Material_Key', () => {

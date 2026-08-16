@@ -223,7 +223,17 @@ def derive_reaction(row: Dict[str, str]) -> Dict[str, Optional[float]]:
         parse_measurement(row.get('Free_Rise_Density_kg_m3_Max')),
     )
 
+    # Thermal properties of the reaction. None where the data sheet states nothing — the
+    # exotherm model then falls back to a literature-typical value and says so, rather
+    # than presenting an assumption as a measurement.
+    heat_of_reaction_kj_kg = parse_measurement(row.get('Heat_Of_Reaction_kJ_kg'))
+    peak_exotherm_c = parse_measurement(row.get('Peak_Exotherm_C'))
+    specific_heat = parse_measurement(row.get('Specific_Heat_J_kg_K'))
+
     return {
+        'heat_of_reaction_j_kg': heat_of_reaction_kj_kg * 1000 if heat_of_reaction_kj_kg else None,
+        'specific_heat_j_kg_k': specific_heat,
+        'peak_exotherm_c': peak_exotherm_c,
         'cream_time_s': _midpoint(cream_min, cream_max),
         'cream_time_min_s': cream_min,
         'cream_time_max_s': cream_max,

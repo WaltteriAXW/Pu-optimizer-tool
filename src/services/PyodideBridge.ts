@@ -159,9 +159,10 @@ export class PyodideBridge implements PyodideManager {
       // Core package
       'src/core/__init__.py',
 
-      // Core data — the material database reader
+      // Core data — the material database reader and blowing agent constants
       'src/core/data/__init__.py',
       'src/core/data/material_database.py',
+      'src/core/data/blowing_agents.py',
 
       // Core kinetics
       'src/core/kinetics/__init__.py',
@@ -185,6 +186,8 @@ export class PyodideBridge implements PyodideManager {
       'src/core/modules/flow.py',
       'src/core/modules/thermal.py',
       'src/core/modules/environmental.py',
+      'src/core/modules/line_thermal.py',
+      'src/core/modules/volatility.py',
 
       // Core optimizers
       'src/core/optimizers/__init__.py',

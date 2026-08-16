@@ -74,21 +74,32 @@ def calculate_shear_heating(
     viscosity_cp: float,
     density_kg_m3: float = 1120.0,
     specific_heat_j_kg_k: float = 2100.0,
-    efficiency: float = 0.8,
 ) -> Dict[str, float]:
     """
-    Calculate temperature rise due to shear heating.
+    Calculate the temperature rise from viscous dissipation in the line.
 
-    Heat generated = (ΔP * Q) / η * (1 - efficiency)
-    ΔT = Heat / (ṁ * c_p)
+    Flow through a pipe has no useful work output: every bit of mechanical energy lost to
+    friction ends up as heat in the fluid. So the heat generated is the full hydraulic
+    power, and the rise reduces to a result that depends only on the pressure drop:
+
+        Q̇ = ΔP · Q
+        ΔT = Q̇ / (ṁ · c_p) = ΔP / (ρ · c_p)
+
+    (An earlier version applied a pump efficiency here, keeping only 20% of the dissipation
+    as heat. Efficiency is a pump concept — a pump converts some shaft power into flow work
+    and wastes the rest — but a pipe does no work, so the factor understated the rise 5x.)
+
+    Note how small this is: even 75 bar gives only about 3 °C, and typical line pressures of
+    a fraction of a bar give thousandths of a degree. That is why the result is reported
+    rather than fed back into the viscosity calculation — the feedback would be far below
+    the uncertainty in the material data.
 
     Args:
         pressure_drop_pa: Pressure drop in Pascals
         flow_rate_lpm: Flow rate in liters per minute
-        viscosity_cp: Apparent viscosity in cP
+        viscosity_cp: Apparent viscosity in cP (reported for reference)
         density_kg_m3: Material density in kg/m³
         specific_heat_j_kg_k: Specific heat capacity
-        efficiency: Pump/system efficiency (0-1)
 
     Returns:
         Dict with temperature rise and heating details
@@ -107,13 +118,11 @@ def calculate_shear_heating(
             'mass_flow_kg_s': mass_flow_kg_s,
         }
 
-    # Hydraulic power
-    hydraulic_power_w = (pressure_drop_pa * flow_rate_m3_s)
+    # All of the hydraulic power is dissipated as heat in the fluid
+    hydraulic_power_w = pressure_drop_pa * flow_rate_m3_s
+    heat_generated_w = hydraulic_power_w
 
-    # Heat generated due to inefficiency
-    heat_generated_w = hydraulic_power_w * (1 - efficiency)
-
-    # Temperature rise
+    # ΔT = ΔP / (ρ · c_p); the flow rate cancels
     temperature_rise_c = heat_generated_w / (mass_flow_kg_s * specific_heat_j_kg_k)
 
     return {
@@ -121,8 +130,7 @@ def calculate_shear_heating(
         'heat_generated_w': heat_generated_w,
         'hydraulic_power_w': hydraulic_power_w,
         'mass_flow_kg_s': mass_flow_kg_s,
-        'efficiency': efficiency,
-        'lost_heat_percentage': (1 - efficiency) * 100,
+        'viscosity_cp': viscosity_cp,
     }
 
 

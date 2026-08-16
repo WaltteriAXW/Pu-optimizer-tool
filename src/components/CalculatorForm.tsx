@@ -16,6 +16,33 @@ const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
   activation_energy_j_mol: 25000,
 }
 
+/**
+ * Optional inputs. Leaving one blank sends nothing, which keeps the calculation exactly
+ * as it was before these existed — supplying an ambient temperature switches on the line
+ * thermal model, and a part thickness adds the cure prediction.
+ */
+const OPTIONAL_FIELD_RANGES: Record<
+  'ambient_temperature_c' | 'idle_time_s' | 'mold_temperature_c' | 'part_thickness_mm',
+  { min: number; max: number; label: string; unit: string; step: string; help: string }
+> = {
+  ambient_temperature_c: {
+    min: -20, max: 60, label: 'Shop Temperature', unit: '°C', step: '0.5',
+    help: 'Air around the hose. Supplying this models the material drifting toward it.',
+  },
+  idle_time_s: {
+    min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's', step: '30',
+    help: 'For single-shot work: material standing in the hose approaches shop temperature.',
+  },
+  mold_temperature_c: {
+    min: 0, max: 120, label: 'Mould Temperature', unit: '°C', step: '1',
+    help: 'Defaults to the data sheet value where one is stated.',
+  },
+  part_thickness_mm: {
+    min: 1, max: 500, label: 'Part Thickness', unit: 'mm', step: '1',
+    help: 'Thicker sections retain reaction heat and run hotter in the core.',
+  },
+}
+
 /** Validation ranges for custom material numeric fields */
 const CUSTOM_FIELD_RANGES: Record<
   'viscosity_cp' | 'density_kg_m3' | 'flow_index' | 'activation_energy_j_mol',
@@ -41,6 +68,7 @@ export function CalculatorForm() {
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showCustomHelp, setShowCustomHelp] = useState(false)
+  const [showOptional, setShowOptional] = useState(false)
 
   // Materials come from the database CSV, so adding one needs no change here.
   const [materials, setMaterials] = useState<Array<{ id: string; name: string }>>([])
@@ -117,10 +145,37 @@ export function CalculatorForm() {
         return
       }
 
+      // ── Optional inputs ───────────────────────────────────────────────────
+      // Clearing one must remove the key entirely, not leave the last value behind:
+      // an absent ambient temperature is what keeps the calculation as it was.
+      if (name in OPTIONAL_FIELD_RANGES && value.trim() === '') {
+        setInputs((prev) => {
+          const next = { ...prev }
+          delete next[name as keyof ProcessParameters]
+          return next
+        })
+        setFieldErrors((prev) => { const u = { ...prev }; delete u[name]; return u })
+        return
+      }
+
       // ── All numeric inputs ────────────────────────────────────────────────
       const numValue = parseFloat(value)
       if (!isNaN(numValue)) {
         setInputs((prev) => ({ ...prev, [name]: numValue } as ProcessParameters))
+
+        // Optional field validation
+        if (name in OPTIONAL_FIELD_RANGES) {
+          const range = OPTIONAL_FIELD_RANGES[name as keyof typeof OPTIONAL_FIELD_RANGES]
+          if (numValue < range.min || numValue > range.max) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [name]: `${range.label} must be between ${range.min} and ${range.max} ${range.unit}`.trim(),
+            }))
+          } else {
+            setFieldErrors((prev) => { const u = { ...prev }; delete u[name]; return u })
+          }
+          return
+        }
 
         // Custom material field validation
         if (name in CUSTOM_FIELD_RANGES) {
@@ -330,6 +385,50 @@ export function CalculatorForm() {
           </select>
         </div>
 
+        {/* Optional: shop conditions and part geometry */}
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+              Optional
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowOptional((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+            >
+              {showOptional ? (
+                <><ChevronUp className="w-3 h-3" /> Hide</>
+              ) : (
+                <><ChevronDown className="w-3 h-3" /> Shop conditions &amp; part</>
+              )}
+            </button>
+          </div>
+
+          {showOptional && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Leave blank to calculate from the set point alone. A shop temperature models
+                the material drifting toward ambient in the hose — which matters for
+                single-shot work — and a part thickness adds a cure prediction for the
+                moulded part.
+              </p>
+
+              {(['ambient_temperature_c', 'idle_time_s', 'mold_temperature_c', 'part_thickness_mm'] as const).map(
+                (name) => (
+                  <OptionalField
+                    key={name}
+                    name={name}
+                    value={inputs[name]}
+                    onChange={handleChange}
+                    spec={OPTIONAL_FIELD_RANGES[name]}
+                    error={fieldErrors[name]}
+                  />
+                )
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Status Messages */}
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
@@ -432,6 +531,62 @@ function InputField({
       </div>
       {error && (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
+          <AlertCircle className="w-3 h-3" />
+          <span>{error}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Optional input. An empty value is meaningful — it means "not supplied" — so this is a
+ * controlled field over `number | undefined` rather than defaulting to a number.
+ */
+function OptionalField({
+  name,
+  value,
+  onChange,
+  spec,
+  error,
+}: {
+  name: string
+  value: number | undefined
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  spec: { min: number; max: number; label: string; unit: string; step: string; help: string }
+  error?: string
+}) {
+  return (
+    <div>
+      <div className="flex justify-between items-baseline mb-1">
+        <label className="text-xs font-semibold text-slate-700">{spec.label}</label>
+        <span className="text-xs text-slate-400">
+          {spec.min}–{spec.max} {spec.unit}
+        </span>
+      </div>
+      <div className="relative">
+        <input
+          type="number"
+          name={name}
+          value={value ?? ''}
+          placeholder="not set"
+          onChange={onChange}
+          step={spec.step}
+          className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+            error
+              ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+              : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+          }`}
+        />
+        <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+          <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+            {spec.unit}
+          </span>
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-slate-500 leading-snug">{spec.help}</p>
+      {error && (
+        <div className="mt-1 flex items-center gap-1.5 text-xs text-red-600">
           <AlertCircle className="w-3 h-3" />
           <span>{error}</span>
         </div>
