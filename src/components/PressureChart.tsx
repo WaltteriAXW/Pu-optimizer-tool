@@ -1,4 +1,3 @@
-import React from 'react'
 import type { CalculationResults } from '@/calculator_types'
 
 interface PressureChartProps {

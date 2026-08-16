@@ -27,9 +27,11 @@ export class PyodideBridge implements PyodideManager {
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
       })
 
-      // eslint-disable-next-line no-console
-      console.log('Loading Python packages...')
-      await pyodideInstance.loadPackage(['numpy'])
+      // No packages are loaded here on purpose. The calculation path — src.core.processors
+      // through to the modules and the material database — is pure standard library, so
+      // fetching numpy on every boot cost several megabytes and added a failure point: a
+      // rejected loadPackage takes the whole initialisation down and the app never becomes
+      // ready. Anything that genuinely needs a package should call loadPackage() for it.
 
       // eslint-disable-next-line no-console
       console.log('Mounting Python files...')
@@ -335,19 +337,25 @@ export class PyodideBridge implements PyodideManager {
       throw new Error('Pyodide not ready. Call initialize() first.')
     }
 
+    // Pin the instance for the duration of this call. pyodideInstance is module-level and
+    // reassignable, so the guard above does not narrow it inside the callback below —
+    // and were it reassigned mid-call, the failure would surface as an opaque TypeError
+    // rather than the clear error above.
+    const pyodide = pyodideInstance
+
     try {
       // Convert JavaScript objects to Python-compatible format
       const pythonArgs = args.map(arg => {
         if (typeof arg === 'object' && arg !== null) {
           // Convert JS object to Python dict via JSON
-          return pyodideInstance.toPy(arg)
+          return pyodide.toPy(arg)
         }
         return arg
       })
 
       // Set up arguments in Python
       const argName = `_args_${Date.now()}`
-      pyodideInstance.globals.set(argName, pythonArgs)
+      pyodide.globals.set(argName, pythonArgs)
 
       // Execute Python code
       const pythonCode = `
@@ -398,9 +406,9 @@ except Exception as e:
 _result
 `
 
-      const result = await pyodideInstance.runPythonAsync(pythonCode)
+      const result = await pyodide.runPythonAsync(pythonCode)
       const jsResult = result.toJs({ dict_converter: Object.fromEntries })
-      pyodideInstance.globals.delete(argName)
+      pyodide.globals.delete(argName)
 
       return jsResult as T
     } catch (error) {

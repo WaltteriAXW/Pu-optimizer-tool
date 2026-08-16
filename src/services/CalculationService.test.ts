@@ -12,7 +12,10 @@ import type { ProcessParameters, CalculationResults } from '@/models/types'
 // Mock Pyodide Manager
 const createMockPyodideManager = () => {
   return {
-    callPython: vi.fn()
+    callPython: vi.fn(),
+    // PyodideManager requires this; a mock that omits it does not stand in for the real
+    // interface, and the gap only shows up where the mock is passed to the factory
+    isReady: vi.fn(() => true)
   }
 }
 

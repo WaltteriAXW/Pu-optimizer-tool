@@ -258,8 +258,13 @@ describe('Defaults', () => {
     expect(DEFAULTS.flowRate).toBe(5);
   });
 
-  it('should have default machine and material', () => {
-    expect(DEFAULTS.machine).toBe('low_pressure');
-    expect(DEFAULTS.material).toBe('ecofoam_standard');
+  it('should not carry a default material or machine', () => {
+    // These were removed rather than corrected. DEFAULTS.material named
+    // 'ecofoam_standard', a key absent from the material database since it became the
+    // single source of truth, and DEFAULTS.machine contradicted the form's own default.
+    // The form now takes its material from the first row of the CSV, so there is no
+    // second place for either to go stale.
+    expect(DEFAULTS.material).toBeUndefined();
+    expect(DEFAULTS.machine).toBeUndefined();
   });
 });

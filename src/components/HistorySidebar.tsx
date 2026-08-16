@@ -1,4 +1,3 @@
-import React from 'react'
 import type { CalculationResults, ProcessParameters } from '@/calculator_types'
 import { Trash2, Clock, ChevronRight } from 'lucide-react'
 

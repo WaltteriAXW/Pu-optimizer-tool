@@ -524,8 +524,12 @@ function KpiCard({
     neutral: 'bg-slate-100 text-slate-600',
   }
 
+  // Stable hook for the end-to-end tests. Titles are styled text inside nested divs, so
+  // matching on them alone selects the label element rather than the card holding the value.
+  const testId = `kpi-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+
   return (
-    <div className="card hover:shadow-md transition-shadow">
+    <div className="card hover:shadow-md transition-shadow" data-testid={testId}>
       <div className="card-body">
         <div className="flex justify-between items-start mb-2">
           <span className="text-sm font-medium text-slate-500">{title}</span>

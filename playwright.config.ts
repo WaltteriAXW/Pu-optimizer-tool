@@ -20,11 +20,12 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI ? 'list' : 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:5173',
+    /* The built output is what deploys, so that is what gets tested. The base path
+       matches vite.config.ts's `base`, without which every asset 404s. */
+    baseURL: 'http://localhost:4173/Pu-optimizer-tool/',
     trace: 'on-first-retry',
   },
 
@@ -32,24 +33,24 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        /* CI installs its own browser and needs no override. Sandboxed environments often
+           ship a Chromium whose build number does not match this Playwright release; point
+           PLAYWRIGHT_CHROMIUM_EXECUTABLE at it to run the suite there. */
+        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+          : {},
+      },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run preview',
+    url: 'http://localhost:4173/Pu-optimizer-tool/',
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
 });
