@@ -1,7 +1,9 @@
 name: CI
 
-# Gate changes before they reach main. deploy.yml runs its own checks, but it only fires
-# after a merge — by then a broken change is already deploying to GitHub Pages.
+# Every check, and the deploy, in one workflow. The deploy used to live in its own file
+# triggered on push to main, which meant it shipped without waiting for anything here — and
+# ran neither the type check, the Python suite nor the end-to-end tests itself. It is now a
+# job gated on both check jobs, so nothing reaches GitHub Pages that has not passed all of it.
 on:
   pull_request:
   push:
@@ -21,9 +23,9 @@ jobs:
     name: Frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -53,19 +55,30 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
+      # Handed to the deploy job so the bytes that ship are the bytes the suite above ran
+      # against, rather than a second build merely expected to match.
+      - name: Upload build output
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          include-hidden-files: true
+          retention-days: 1
+
   python:
     name: Physics engine
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -77,3 +90,38 @@ jobs:
 
       - name: Run tests
         run: pytest src -q
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [node, python]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download build output
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+
+      # Replaces actions/create-release@v1, which is archived and still on the Node 12
+      # runtime. gh is preinstalled on the runner, so this needs no third-party action.
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}-$(date +%s)"
+          NOTES=$(printf '%s\n\n%s\n' \
+            "Deployed from ${GITHUB_SHA} to https://waltteraxw.github.io/Pu-optimizer-tool/" \
+            "Earlier versions are on the [releases page](https://github.com/${GITHUB_REPOSITORY}/releases).")
+          gh release create "$TAG" --title "Release v${VERSION}" --notes "$NOTES"

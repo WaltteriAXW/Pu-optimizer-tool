@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
+import { PYODIDE_CDN_URL } from '../src/services/pyodideCdn'
 
 /**
  * Playwright fixtures for the end-to-end suite.
@@ -14,7 +15,9 @@ import path from 'node:path'
  * use; nothing about the shipped code changes.
  */
 
-const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/'
+/* Imported from the application rather than restated, so a dependency bump moves the URL the
+   app requests and the URL this route intercepts at the same time. */
+const PYODIDE_CDN = PYODIDE_CDN_URL
 const PYODIDE_LOCAL = path.resolve('node_modules/pyodide')
 
 const CONTENT_TYPES: Record<string, string> = {
