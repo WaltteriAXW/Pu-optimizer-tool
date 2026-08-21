@@ -1,5 +1,6 @@
 import { loadPyodide, type PyodideInterface } from 'pyodide'
 import type { PyodideManager } from './CalculationService'
+import { PYODIDE_CDN_URL } from './pyodideCdn'
 
 let pyodideInstance: PyodideInterface | null = null
 
@@ -24,7 +25,7 @@ export class PyodideBridge implements PyodideManager {
       // eslint-disable-next-line no-console
       console.log('Initializing Pyodide...')
       pyodideInstance = await loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
+        indexURL: PYODIDE_CDN_URL,
       })
 
       // No packages are loaded here on purpose. The calculation path — src.core.processors

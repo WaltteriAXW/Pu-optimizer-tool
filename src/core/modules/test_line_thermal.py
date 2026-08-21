@@ -2,7 +2,7 @@
 Tests for the line thermal model.
 
 The effect this exists to capture: for single-shot work, material standing in an unheated
-hose approaches shop temperature, so the first shot is not at the tank set point. That is a
+hose approaches ambient temperature, so the first shot is not at the tank set point. That is a
 first-order change to viscosity and pressure, unlike shear heating which is negligible.
 """
 

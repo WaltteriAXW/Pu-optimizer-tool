@@ -24,7 +24,7 @@ export interface ProcessParameters {
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
   reference_temp_c?: number;            // Temperature the viscosity was measured at
 
-  // Shop conditions — optional. Supplying an ambient temperature switches on the line
+  // Ambient conditions — optional. Supplying an ambient temperature switches on the line
   // thermal model, so the pressure reflects the temperature at the mix head rather than
   // the tank set point. Omitting these leaves the calculation exactly as it was.
   ambient_temperature_c?: number;            // °C around the hose

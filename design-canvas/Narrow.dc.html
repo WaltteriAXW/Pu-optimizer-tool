@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #f8fafc; color: #0f172a; -webkit-font-smoothing: antialiased; }
+    a { color: #4f46e5; } a:hover { color: #4338ca; }
+    .est { border-bottom: 1px dotted #94a3b8; }
+    .sec { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden; }
+    .secrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; min-height: 48px; box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; min-height: 1560px;">
+
+  <!-- Header: the wordmark drops its strapline and the nav becomes one control,
+       instead of the title and the links overlapping as they do today -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #ffffff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0;">
+    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+      <div style="width: 30px; height: 30px; border-radius: 8px; background: #4f46e5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+      </div>
+      <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;">PU Optimizer</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+    </div>
+  </div>
+
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+
+    <!-- The answer, first and largest -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden; display: flex;">
+      <div style="width: 5px; background: #4f46e5; flex-shrink: 0;"></div>
+      <div style="padding: 18px 16px; min-width: 0;">
+        <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b;">Set the machine to</div>
+        <div style="display: flex; align-items: baseline; gap: 7px; margin-top: 5px;">
+          <div style="font-size: 42px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums;">100</div>
+          <div style="font-size: 17px; font-weight: 600; color: #64748b;">bar</div>
+        </div>
+        <div style="font-size: 12.5px; color: #475569; margin-top: 9px; line-height: 1.55;">
+          The line demands <strong style="color: #0f172a;">25.3 bar</strong>, below this machine's 100 bar minimum. It will hold at the minimum.
+        </div>
+        <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #d1fae5; color: #047857; font-size: 12px; font-weight: 600;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          Compatible
+        </div>
+      </div>
+    </div>
+
+    <!-- Attention items stay open: they are the reason to look at a phone at the machine -->
+    <div class="sec">
+      <div style="padding: 13px 16px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); font-size: 13.5px; font-weight: 700; color: #1e293b;">Needs attention · 3</div>
+      <div style="display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #f8fafc;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+        <div style="min-width: 0;">
+          <div style="font-size: 13px; font-weight: 600;">Arrives 12.1 °C below set point</div>
+          <div style="font-size: 12px; color: #475569; margin-top: 3px; line-height: 1.5;">Figures below are at 12.9 °C, not 25 °C.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #f8fafc;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+        <div style="min-width: 0;">
+          <div style="font-size: 13px; font-weight: 600;">Scorch risk moderate</div>
+          <div style="font-size: 12px; color: #475569; margin-top: 3px; line-height: 1.5;">23 °C of margin on a 60 mm section.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 11px; padding: 14px 16px;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+        <div style="min-width: 0;">
+          <div style="font-size: 13px; font-weight: 600;">Exotherm rests on an assumed constant</div>
+          <div style="font-size: 12px; color: #475569; margin-top: 3px; line-height: 1.5;">No heat of reaction on this data sheet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two headline figures, not four tiles stacked into four screens -->
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 14px;">
+        <div style="font-size: 12px; color: #64748b; font-weight: 500;">Pipe drop</div>
+        <div style="display: flex; align-items: baseline; gap: 5px; margin-top: 4px;">
+          <span style="font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;">0.25</span>
+          <span style="font-size: 11.5px; color: #94a3b8; font-weight: 500;">bar</span>
+        </div>
+      </div>
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 14px;">
+        <div style="font-size: 12px; color: #64748b; font-weight: 500;">At mix head</div>
+        <div style="display: flex; align-items: baseline; gap: 5px; margin-top: 4px;">
+          <span style="font-size: 22px; font-weight: 700; color: #b45309; font-variant-numeric: tabular-nums;">12.9</span>
+          <span style="font-size: 11.5px; color: #94a3b8; font-weight: 500;">°C</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail collapses. Today all of it renders, making the page 5551px tall. -->
+    <div class="sec">
+      <div class="secrow" style="border-bottom: 1px solid #f1f5f9;">
+        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">Feed line</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </div>
+      <div class="secrow" style="border-bottom: 1px solid #f1f5f9;">
+        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">Cure &amp; exotherm</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </div>
+
+      <!-- one section open, to show the pattern -->
+      <div class="secrow" style="border-bottom: 1px solid #f8fafc;">
+        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">Flow &amp; pressure</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+      </div>
+      <div style="padding: 4px 16px 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Flow regime</span><span style="font-weight: 600;">laminar · Re 37.5</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Viscosity</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">685.7 cP</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Velocity</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">0.74 m/s</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Shear rate</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">491 s⁻¹</span></div>
+        <!-- The chart is a landscape figure; on a phone it is a link, not a squeeze -->
+        <div style="margin-top: 2px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; min-height: 44px; box-sizing: border-box;">
+          <span style="font-size: 12.5px; color: #334155; font-weight: 600;">Pressure along the line</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+        </div>
+      </div>
+
+      <div class="secrow" style="border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">Blowing agent</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </div>
+      <div class="secrow">
+        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">Machine</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </div>
+    </div>
+
+    <!-- 44px minimum targets -->
+    <div style="display: flex; gap: 10px;">
+      <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; background: #4f46e5; color: #ffffff; font-weight: 700; font-size: 14px; border-radius: 8px;">
+        New run
+      </div>
+      <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border: 1px solid #cbd5e1; color: #334155; font-weight: 600; font-size: 14px; border-radius: 8px; background: #ffffff;">
+        PDF report
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

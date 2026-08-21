@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #f8fafc; color: #0f172a; -webkit-font-smoothing: antialiased; }
+    a { color: #4f46e5; } a:hover { color: #4338ca; }
+    .field { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 14px; font-weight: 500; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+    .lab { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+    .lab b { font-size: 13px; font-weight: 600; color: #334155; }
+    .lab i { font-size: 11.5px; font-style: normal; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; min-height: 900px;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 34px; height: 34px; border-radius: 9px; background: #4f46e5; display: flex; align-items: center; justify-content: center;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+      </div>
+      <div>
+        <div style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em;">PU Optimizer</div>
+        <div style="font-size: 11px; color: #64748b; font-weight: 500;">Physics-Based Injection Engine</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #475569;">
+      <span>Documentation</span>
+      <span>History</span>
+      <span>GitHub</span>
+    </div>
+  </div>
+
+  <!-- Before a run the form uses the width instead of hiding in a 300px rail
+       beside 900px of empty panel -->
+  <div style="flex-grow: 1; display: flex; justify-content: center; padding: 36px 32px 48px 32px;">
+    <div style="width: 100%; max-width: 1000px;">
+
+      <div style="margin-bottom: 26px;">
+        <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">Set up a shot</div>
+        <div style="font-size: 14px; color: #475569; margin-top: 5px;">Four required figures. Everything else refines the prediction.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+        <!-- The line -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); font-size: 14px; font-weight: 700; color: #1e293b;">The line</div>
+          <div style="padding: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+            <div>
+              <div class="lab"><b>Pipe length</b><i>50–10000</i></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>500</span><span style="color: #94a3b8; font-weight: 500;">mm</span></div>
+            </div>
+            <div>
+              <div class="lab"><b>Pipe diameter</b><i>1–200</i></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>12</span><span style="color: #94a3b8; font-weight: 500;">mm</span></div>
+            </div>
+            <div>
+              <div class="lab"><b>Flow rate</b><i>0.1–200</i></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>5</span><span style="color: #94a3b8; font-weight: 500;">L/min</span></div>
+            </div>
+            <div>
+              <div class="lab"><b>Set temperature</b><i>5–50</i></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>25</span><span style="color: #94a3b8; font-weight: 500;">°C</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Material -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 14px; font-weight: 700; color: #1e293b;">Material</span>
+            <span style="font-size: 11.5px; color: #64748b;">4 in the database</span>
+          </div>
+          <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <div class="lab"><b>Product</b></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>Genfoam HD12</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+            </div>
+            <!-- Reading the sheet back is what tells you the CSV row is right -->
+            <div style="border: 1px solid #f1f5f9; border-radius: 8px; background: #f8fafc; padding: 13px 15px; display: flex; flex-direction: column; gap: 9px;">
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Mixed viscosity at 25 °C</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">447.6 cP</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Mixed density</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">1148.6 kg/m³</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Gel time</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">135 s</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Blowing agent</span><span style="font-weight: 600;">Water · GWP 0</span></div>
+            </div>
+            <div style="font-size: 12.5px; color: #475569; line-height: 1.5;">
+              Not listed? Choose <strong style="color: #0f172a;">Custom</strong> to type your own viscosity, density, flow index and activation energy — or add a row to the material database CSV.
+            </div>
+          </div>
+        </div>
+
+        <!-- Machine -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); font-size: 14px; font-weight: 700; color: #1e293b;">Machine</div>
+          <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <div class="lab"><b>Type</b></div>
+              <div class="field" style="display: flex; justify-content: space-between;"><span>High Pressure</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+            </div>
+            <div style="border: 1px solid #f1f5f9; border-radius: 8px; background: #f8fafc; padding: 13px 15px; display: flex; flex-direction: column; gap: 9px;">
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Operating window</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">100–200 bar</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: #64748b;">Internal process losses</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">25.0 bar</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ambient & part: open by default, not hidden behind a chevron labelled OPTIONAL -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 14px; font-weight: 700; color: #1e293b;">Ambient &amp; part</span>
+            <span style="font-size: 11.5px; color: #64748b;">leave blank to skip</span>
+          </div>
+          <div style="padding: 20px;">
+            <div style="font-size: 12.5px; color: #475569; line-height: 1.55; margin-bottom: 16px;">
+              Each pair switches on a prediction: ambient temperature and standing time give the temperature at the mix head; mould temperature and thickness give cure and exotherm.
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+              <div>
+                <div class="lab"><b>Ambient temperature</b><i>−20–60</i></div>
+                <div class="field" style="display: flex; justify-content: space-between;"><span>8</span><span style="color: #94a3b8; font-weight: 500;">°C</span></div>
+              </div>
+              <div>
+                <div class="lab"><b>Since last shot</b><i>0–86400</i></div>
+                <div class="field" style="display: flex; justify-content: space-between;"><span>900</span><span style="color: #94a3b8; font-weight: 500;">s</span></div>
+              </div>
+              <div>
+                <div class="lab"><b>Mould temperature</b><i>0–120</i></div>
+                <div class="field" style="display: flex; justify-content: space-between; color: #94a3b8;"><span>from data sheet</span><span style="font-weight: 500;">°C</span></div>
+              </div>
+              <div>
+                <div class="lab"><b>Part thickness</b><i>1–500</i></div>
+                <div class="field" style="display: flex; justify-content: space-between;"><span>60</span><span style="color: #94a3b8; font-weight: 500;">mm</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+        <div style="font-size: 12.5px; color: #64748b; line-height: 1.5;">
+          Runs entirely in this browser — the physics engine is Python compiled to WebAssembly. Nothing leaves the machine.
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 9px; padding: 13px 26px; background: #4f46e5; color: #ffffff; font-weight: 700; font-size: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex-shrink: 0;">
+          Run Simulation
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#ffffff"><path d="M8 5v14l11-7z"></path></svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

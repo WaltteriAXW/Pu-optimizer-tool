@@ -26,6 +26,10 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  /* e2e and the Playwright config are checked too. Playwright only transpiles them, so
+     without this they are invisible to `npm run type-check` — and e2e/fixtures.ts imports
+     PYODIDE_CDN_URL from src, where a breaking change would otherwise fail at run time
+     rather than at build time. */
+  "include": ["src", "e2e", "playwright.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
