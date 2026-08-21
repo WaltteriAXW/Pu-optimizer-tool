@@ -2,7 +2,8 @@
 Temperature of the material by the time it reaches the mix head.
 
 The tank set point is not necessarily what arrives at the mix head. Material standing in an
-unheated hose exchanges heat with the shop, and for single-shot work that is a first-order
+unheated hose exchanges heat with the surrounding air, and for single-shot work that is a
+first-order
 effect rather than a rounding error: the thermal time constant of material in a hose is
 about twelve minutes, so a machine idling twenty minutes delivers its first shot at ambient
 temperature, not at the set point. At 15 °C instead of 25 °C that is roughly a quarter more
@@ -29,7 +30,7 @@ import math
 from typing import Any, Dict, Optional
 
 # Bare hose in still air. A heated or insulated hose is much lower; forced convection in a
-# draughty shop is higher. Overridable per calculation.
+# draughty hall is higher. Overridable per calculation.
 DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K = 10.0
 
 # Drift beyond this is worth telling the user about (°C)
@@ -93,7 +94,7 @@ def calculate_line_temperature(
 
     Args:
         set_temperature_c: Tank / conditioning set point
-        ambient_temperature_c: Shop temperature around the hose
+        ambient_temperature_c: Temperature of the air around the hose
         diameter_mm: Line inside diameter
         length_mm: Line length
         flow_rate_lpm: Flow rate while shooting
