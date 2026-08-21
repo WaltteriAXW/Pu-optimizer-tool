@@ -26,12 +26,12 @@ const OPTIONAL_FIELD_RANGES: Record<
   { min: number; max: number; label: string; unit: string; step: string; help: string }
 > = {
   ambient_temperature_c: {
-    min: -20, max: 60, label: 'Shop Temperature', unit: '°C', step: '0.5',
-    help: 'Air around the hose. Supplying this models the material drifting toward it.',
+    min: -20, max: 60, label: 'Ambient Temperature', unit: '°C', step: '0.5',
+    help: 'Air around the hose and machine. Supplying this models the material drifting toward it.',
   },
   idle_time_s: {
     min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's', step: '30',
-    help: 'For single-shot work: material standing in the hose approaches shop temperature.',
+    help: 'For single-shot work: material standing in the hose approaches ambient temperature.',
   },
   mold_temperature_c: {
     min: 0, max: 120, label: 'Mould Temperature', unit: '°C', step: '1',
@@ -385,7 +385,7 @@ export function CalculatorForm() {
           </select>
         </div>
 
-        {/* Optional: shop conditions and part geometry */}
+        {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
@@ -399,7 +399,7 @@ export function CalculatorForm() {
               {showOptional ? (
                 <><ChevronUp className="w-3 h-3" /> Hide</>
               ) : (
-                <><ChevronDown className="w-3 h-3" /> Shop conditions &amp; part</>
+                <><ChevronDown className="w-3 h-3" /> Ambient conditions &amp; part</>
               )}
             </button>
           </div>
@@ -407,9 +407,9 @@ export function CalculatorForm() {
           {showOptional && (
             <div className="space-y-4">
               <p className="text-xs text-slate-500 leading-relaxed">
-                Leave blank to calculate from the set point alone. A shop temperature models
-                the material drifting toward ambient in the hose — which matters for
-                single-shot work — and a part thickness adds a cure prediction for the
+                Leave blank to calculate from the set point alone. An ambient temperature models
+                the material drifting toward the surrounding air in the hose — which matters
+                for single-shot work — and a part thickness adds a cure prediction for the
                 moulded part.
               </p>
 

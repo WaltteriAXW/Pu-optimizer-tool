@@ -46,3 +46,7 @@ models/
 /blob-report/
 /playwright/.cache/
 ui-audit/
+
+# Seeded design-canvas payload — 2 MB of editor code, rebuilt from the .dc.html sources
+design-canvas/*.html
+!design-canvas/*.dc.html

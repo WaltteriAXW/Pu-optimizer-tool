@@ -1,0 +1,330 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #f8fafc; color: #0f172a; -webkit-font-smoothing: antialiased; }
+    a { color: #4f46e5; } a:hover { color: #4338ca; }
+    .est { border-bottom: 1px dotted #94a3b8; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; min-height: 1560px;">
+
+  <!-- App bar — unchanged from the shipped header -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 34px; height: 34px; border-radius: 9px; background: #4f46e5; display: flex; align-items: center; justify-content: center;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+      </div>
+      <div>
+        <div style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em;">PU Optimizer</div>
+        <div style="font-size: 11px; color: #64748b; font-weight: 500;">Physics-Based Injection Engine</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 22px; font-size: 14px; color: #475569;">
+      <span>Documentation</span>
+      <span>History</span>
+      <span>GitHub</span>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; padding: 24px 32px 40px 32px; align-items: flex-start;">
+
+    <!-- Left rail: unchanged in this artboard, shown for context -->
+    <div style="width: 300px; flex-shrink: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+      <div style="padding: 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5);">
+        <div style="font-size: 15px; font-weight: 700; color: #1e293b;">Process Parameters</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Genfoam HD12 · High Pressure</div>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Pipe length</span><span style="font-weight: 600;">500 mm</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Pipe diameter</span><span style="font-weight: 600;">12 mm</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Set temperature</span><span style="font-weight: 600;">25.0 °C</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Flow rate</span><span style="font-weight: 600;">5 L/min</span></div>
+        <div style="height: 1px; background: #f1f5f9;"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Ambient temperature</span><span style="font-weight: 600;">8.0 °C</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Time since last shot</span><span style="font-weight: 600;">900 s</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Mould temperature</span><span style="font-weight: 600;">45.0 °C</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Part thickness</span><span style="font-weight: 600;">60 mm</span></div>
+        <div style="margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 16px; background: #4f46e5; color: #ffffff; font-weight: 700; font-size: 14px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+          Run Simulation
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff"><path d="M8 5v14l11-7z"></path></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0;">
+
+      <!-- 1. THE ANSWER. One number, named for the action it drives. -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+        <div style="display: flex; align-items: stretch;">
+          <div style="width: 5px; background: #4f46e5; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px;">
+            <div style="min-width: 0;">
+              <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b;">Set the machine to</div>
+              <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
+                <div style="font-size: 46px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums;">100</div>
+                <div style="font-size: 18px; font-weight: 600; color: #64748b;">bar</div>
+              </div>
+              <div style="font-size: 13px; color: #475569; margin-top: 10px; max-width: 460px; line-height: 1.55;">
+                Your line demands <strong style="color: #0f172a;">25.3&nbsp;bar</strong> — 0.25&nbsp;bar of pipe drop plus 25.0&nbsp;bar of machine losses. That is below this machine's 100&nbsp;bar minimum, so it will hold at its minimum. There is ample pressure available.
+              </div>
+            </div>
+            <div style="flex-shrink: 0; width: 300px;">
+              <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 10px;">Machine operating window</div>
+              <div style="position: relative; height: 10px; border-radius: 999px; background: #f1f5f9; overflow: hidden;">
+                <div style="position: absolute; left: 0; width: 50%; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, #e2e8f0 0 5px, #f1f5f9 5px 10px);"></div>
+                <div style="position: absolute; left: 50%; right: 0; top: 0; bottom: 0; background: #c7d2fe;"></div>
+                <div style="position: absolute; left: 50%; top: -3px; width: 3px; height: 16px; border-radius: 2px; background: #4f46e5;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-top: 7px; font-variant-numeric: tabular-nums;">
+                <span>0</span><span style="color: #4f46e5; font-weight: 700;">100 min</span><span>200 max</span>
+              </div>
+              <div style="margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #d1fae5; color: #047857; font-size: 12px; font-weight: 600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                Machine is compatible
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. WHAT NEEDS ATTENTION. Worst first. Replaces "Process Optimized". -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+        <div style="padding: 14px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Needs attention</div>
+          <div style="font-size: 12px; color: #64748b;">3 of 7 checks flagged</div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+
+          <div style="display: flex; gap: 13px; padding: 14px 20px; border-bottom: 1px solid #f8fafc;">
+            <svg style="flex-shrink: 0; margin-top: 1px;" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            <div style="min-width: 0;">
+              <div style="font-size: 13.5px; font-weight: 600; color: #0f172a;">Material arrives 12.1 °C below your set point</div>
+              <div style="font-size: 12.5px; color: #475569; margin-top: 3px; line-height: 1.5;">Standing 15 min in 8 °C ambient air against a 12 min time constant. Every pressure and viscosity figure below is at <strong style="color:#0f172a;">12.9 °C</strong>, not 25 °C.</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 13px; padding: 14px 20px; border-bottom: 1px solid #f8fafc;">
+            <svg style="flex-shrink: 0; margin-top: 1px;" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            <div style="min-width: 0;">
+              <div style="font-size: 13.5px; font-weight: 600; color: #0f172a;">Scorch risk moderate — 23 °C of margin</div>
+              <div style="font-size: 12.5px; color: #475569; margin-top: 3px; line-height: 1.5;">A 60 mm section peaks near <span class="est">157 °C</span> in the core against a 180 °C limit.</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 13px; padding: 14px 20px;">
+            <svg style="flex-shrink: 0; margin-top: 1px;" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+            <div style="min-width: 0;">
+              <div style="font-size: 13.5px; font-weight: 600; color: #0f172a;">Exotherm figures rest on an assumed heat of reaction</div>
+              <div style="font-size: 12.5px; color: #475569; margin-top: 3px; line-height: 1.5;">This data sheet states none, so a literature value for rigid polyurethane stands in. Add <code style="font-family: ui-monospace, monospace; font-size: 11.5px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px;">Heat_Of_Reaction_kJ_kg</code> to the material database to replace it.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3. The four measured headline figures, named unambiguously -->
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 18px 18px 16px 18px;">
+          <div style="font-size: 12.5px; color: #64748b; font-weight: 500; line-height: 1.35; min-height: 34px;">Pipe pressure drop</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
+            <span style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">0.25</span>
+            <span style="font-size: 12px; font-weight: 500; color: #94a3b8;">bar</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 5px;">0.22 base + 0.03 fittings</div>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 18px 18px 16px 18px;">
+          <div style="font-size: 12.5px; color: #64748b; font-weight: 500; line-height: 1.35; min-height: 34px;">Flow regime</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
+            <span style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">laminar</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 5px;">Re 37.5 · well under 2300</div>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 18px 18px 16px 18px;">
+          <div style="font-size: 12.5px; color: #64748b; font-weight: 500; line-height: 1.35; min-height: 34px;">Shear rate</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
+            <span style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">491</span>
+            <span style="font-size: 12px; font-weight: 500; color: #94a3b8;">s⁻¹</span>
+          </div>
+          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 5px;">Half the 1000 s⁻¹ threshold</div>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 18px 18px 16px 18px;">
+          <div style="font-size: 12.5px; color: #64748b; font-weight: 500; line-height: 1.35; min-height: 34px;">Viscosity at the mix head</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
+            <span style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">685.7</span>
+            <span style="font-size: 12px; font-weight: 500; color: #94a3b8;">cP</span>
+          </div>
+          <div style="font-size: 11.5px; color: #b45309; margin-top: 5px;">1.5× the 447.6 cP at 25 °C</div>
+        </div>
+
+      </div>
+
+      <!-- 4. Pressure along the line. One statement of these numbers, not three. -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Pressure along the line</div>
+          <div style="display: flex; align-items: center; gap: 18px; font-size: 12px; color: #475569;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 2px; background: #4f46e5; display: inline-block;"></span>Pipe only</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 16px; height: 0; border-top: 2px dashed #dc2626; display: inline-block;"></span>With fittings</span>
+          </div>
+        </div>
+        <div style="padding: 20px 24px 16px 24px;">
+          <svg viewBox="0 0 1000 260" preserveAspectRatio="none" style="display: block; width: 100%; height: 240px;">
+            <line x1="60" y1="20" x2="960" y2="20" stroke="#f1f5f9" stroke-width="1"></line>
+            <line x1="60" y1="75" x2="960" y2="75" stroke="#f1f5f9" stroke-width="1"></line>
+            <line x1="60" y1="130" x2="960" y2="130" stroke="#f1f5f9" stroke-width="1"></line>
+            <line x1="60" y1="185" x2="960" y2="185" stroke="#f1f5f9" stroke-width="1"></line>
+            <line x1="60" y1="215" x2="960" y2="215" stroke="#cbd5e1" stroke-width="1.5"></line>
+            <text x="52" y="24" text-anchor="end" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0.25</text>
+            <text x="52" y="79" text-anchor="end" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0.19</text>
+            <text x="52" y="134" text-anchor="end" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0.13</text>
+            <text x="52" y="189" text-anchor="end" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0.06</text>
+            <text x="52" y="219" text-anchor="end" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0</text>
+            <polygon points="60,215 960,20 960,215" fill="#eef2ff"></polygon>
+            <line x1="60" y1="215" x2="960" y2="42" stroke="#4f46e5" stroke-width="2.5"></line>
+            <line x1="60" y1="215" x2="960" y2="20" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 5"></line>
+            <text x="60" y="243" text-anchor="middle" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">0</text>
+            <text x="285" y="243" text-anchor="middle" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">125</text>
+            <text x="510" y="243" text-anchor="middle" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">250</text>
+            <text x="735" y="243" text-anchor="middle" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">375</text>
+            <text x="960" y="243" text-anchor="middle" font-size="13" fill="#94a3b8" font-family="Inter, sans-serif">500 mm</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 5. The modelled sections. Fixed slots: an unfilled one still holds its place. -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+
+        <!-- Feed line -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; gap: 9px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"></path></svg>
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Feed line</div>
+          </div>
+          <div style="padding: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="text-align: center; flex-grow: 1;">
+                <div style="font-size: 11.5px; color: #64748b;">Set point</div>
+                <div style="font-size: 19px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums;">25.0 °C</div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+              <div style="text-align: center; flex-grow: 1;">
+                <div style="font-size: 11.5px; color: #64748b;">Ambient</div>
+                <div style="font-size: 19px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums;">8.0 °C</div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+              <div style="text-align: center; flex-grow: 1;">
+                <div style="font-size: 11.5px; color: #b45309;">At mix head</div>
+                <div style="font-size: 19px; font-weight: 800; color: #b45309; margin-top: 3px; font-variant-numeric: tabular-nums;">12.9 °C</div>
+              </div>
+            </div>
+            <div style="margin-top: 18px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 11px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Thermal time constant</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">12.1 min</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Standing time</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">15.0 min</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Heat from shear</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">1.85 W</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cure -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 0-9 9c0 4 3 7 5 9h8c2-2 5-5 5-9a9 9 0 0 0-9-9Z"></path><path d="M9 22h6"></path></svg>
+              <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Cure &amp; exotherm</div>
+            </div>
+            <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 999px;">in the mould</span>
+          </div>
+          <div style="padding: 20px;">
+            <!-- Timeline: cream / gel / working, drawn to scale -->
+            <div style="position: relative; height: 8px; border-radius: 999px; background: #f1f5f9; overflow: hidden;">
+              <div style="position: absolute; left: 0; width: 36%; top: 0; bottom: 0; background: #c7d2fe;"></div>
+              <div style="position: absolute; left: 36%; width: 53%; top: 0; bottom: 0; background: #a5b4fc;"></div>
+              <div style="position: absolute; left: 89%; right: 0; top: 0; bottom: 0; background: #fde68a;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 9px; font-size: 11.5px; color: #64748b;">
+              <span>cream 55 s</span><span>gel 135 s</span><span>working 152 s</span>
+            </div>
+            <div style="margin-top: 18px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 11px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Section thickness</span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">60 mm</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Mould temperature <span style="color: #94a3b8;">(entered)</span></span><span style="font-weight: 600; font-variant-numeric: tabular-nums;">45.0 °C</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Adiabatic rise</span><span class="est" style="font-weight: 600; font-variant-numeric: tabular-nums;">133.3 °C</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: #475569;">Peak core temperature</span><span class="est" style="font-weight: 600; font-variant-numeric: tabular-nums;">157.3 °C</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Blowing agent -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px solid #f1f5f9; background: rgba(248,250,252,0.5); display: flex; align-items: center; gap: 9px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="13" r="5"></circle><circle cx="17" cy="8" r="3"></circle></svg>
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b;">Blowing agent</div>
+          </div>
+          <div style="padding: 20px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div>
+                <div style="font-size: 13px; color: #475569;">Water (CO₂ generated in situ)</div>
+                <div style="font-size: 16px; font-weight: 700; color: #047857; margin-top: 4px;">No volatile agent</div>
+              </div>
+              <div style="text-align: right; flex-shrink: 0;">
+                <div style="font-size: 11.5px; color: #64748b;">GWP</div>
+                <div style="font-size: 19px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums;">0</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #f1f5f9; font-size: 12.5px; color: #475569; line-height: 1.55;">
+              Chemically blown, so there is no dissolved volatile agent and no flash-off limit on temperature.
+            </div>
+          </div>
+        </div>
+
+        <!-- An unfilled slot keeps its place rather than collapsing the column -->
+        <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; overflow: hidden;">
+          <div style="padding: 15px 20px; border-bottom: 1px dashed #e2e8f0; display: flex; align-items: center; gap: 9px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"></path><path d="M12 2v20"></path></svg>
+            <div style="font-size: 14px; font-weight: 700; color: #94a3b8;">Mould fill</div>
+          </div>
+          <div style="padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+            <div style="font-size: 12.5px; color: #64748b; line-height: 1.55;">
+              Not modelled. Enter a shot volume to compare fill time against the 135 s gel time.
+            </div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #4f46e5;">Add shot volume</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 6. Legend for the estimation mark -->
+      <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);">
+        <span class="est" style="font-size: 13px; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums;">157.3 °C</span>
+        <span style="font-size: 12.5px; color: #475569;">A dotted underline marks a figure that rests on an assumed constant rather than a measured data-sheet value. Everything else comes from the material database.</span>
+      </div>
+
+      <!-- 7. Export, at the end where the work is finished -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);">
+        <div style="font-size: 13px; color: #475569;">Save this run for the machine operator or the job file</div>
+        <div style="display: flex; gap: 10px;">
+          <div style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #334155;">PDF report</div>
+          <div style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #334155;">CSV</div>
+          <div style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #334155;">JSON</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

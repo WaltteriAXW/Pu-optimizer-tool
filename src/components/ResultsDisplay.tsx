@@ -2,6 +2,7 @@ import React from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
+import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -36,14 +37,6 @@ const SCORCH_TONE: Record<string, string> = {
   high: 'text-orange-700',
   critical: 'text-red-700',
 }
-
-/**
- * Present-and-numeric guard. The Python layer sends null for values it could not
- * evaluate, and omits keys entirely for blocks that were not requested, so a plain
- * truthiness check would also discard legitimate zeros (0 °C drift, a 0 °C mould).
- */
-const isNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value)
 
 const MOLD_SOURCE_LABEL: Record<string, string> = {
   user: 'entered',
@@ -229,19 +222,26 @@ export function ResultsDisplay() {
                 />
                 <DetailRow
                   label={
-                    results.thermal.reference_temp_c !== undefined
-                      ? `Viscosity at ${results.thermal.reference_temp_c} °C`
+                    isNumber(results.thermal.reference_temp_c)
+                      ? `Viscosity at ${formatTemperature(results.thermal.reference_temp_c)}`
                       : 'Reference Viscosity'
                   }
                   value={results.thermal.reference_viscosity_cp}
                   unit="cP"
                 />
-                <DetailRow
-                  label={`Viscosity at ${results.thermal.temperature_c} °C`}
-                  value={results.thermal.current_viscosity_cp}
-                  unit="cP"
-                />
-                {results.thermal.heat_generated_w && (
+                {/* Only when the material is not at its reference temperature. Otherwise
+                    this row is character-for-character the row above it. */}
+                {!isSameTemperature(
+                  results.thermal.temperature_c,
+                  results.thermal.reference_temp_c
+                ) && (
+                  <DetailRow
+                    label={`Viscosity at ${formatTemperature(results.thermal.temperature_c)}`}
+                    value={results.thermal.current_viscosity_cp}
+                    unit="cP"
+                  />
+                )}
+                {isNumber(results.thermal.heat_generated_w) && (
                   <DetailRow
                     label="Heat Generated"
                     value={results.thermal.heat_generated_w}
@@ -266,7 +266,7 @@ export function ResultsDisplay() {
                     unit=""
                   />
                 )}
-                {results.environmental.gwp_per_kg && (
+                {isNumber(results.environmental.gwp_per_kg) && (
                   <DetailRow
                     label="GWP"
                     value={results.environmental.gwp_per_kg}
@@ -349,7 +349,7 @@ export function ResultsDisplay() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">Shop</p>
+                <p className="text-xs text-slate-500 mb-1">Ambient</p>
                 <p className="text-lg font-bold text-slate-900">
                   {results.line_temperature.ambient_temperature_c.toFixed(1)} °C
                 </p>
