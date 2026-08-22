@@ -299,3 +299,41 @@ class TestPhysicsValidation:
         )
 
         assert result_high['velocity_m_s'] > result_low['velocity_m_s']
+
+
+class TestSetPressure:
+    """
+    The pressure the operator dials in, as distinct from the pressure the line demands.
+    These are different numbers and the tool used to give both the same name.
+    """
+
+    HIGH_PRESSURE = {
+        'max_pressure': 200.0,
+        'min_operating_pressure': 100.0,
+        'process_loss': {'total': 25.0},
+    }
+
+    def test_machine_minimum_governs_when_the_line_asks_for_less(self):
+        """
+        A 12 mm line at 5 L/min demands a fraction of a bar. The machine still holds 100 bar,
+        because impingement mixing needs it — so that, not the demand, is what gets set.
+        """
+        result = pressure.calculate_machine_compatibility(0.25, self.HIGH_PRESSURE)
+
+        assert result['required_pressure_bar'] == pytest.approx(25.25)
+        assert result['set_pressure_bar'] == pytest.approx(100.0)
+        assert result['set_pressure_governed_by'] == 'machine_minimum'
+
+    def test_line_demand_governs_once_it_exceeds_the_minimum(self):
+        result = pressure.calculate_machine_compatibility(120.0, self.HIGH_PRESSURE)
+
+        assert result['required_pressure_bar'] == pytest.approx(145.0)
+        assert result['set_pressure_bar'] == pytest.approx(145.0)
+        assert result['set_pressure_governed_by'] == 'line_demand'
+
+    def test_the_set_point_is_never_below_what_the_line_needs(self):
+        """The one property that must hold whichever side governs."""
+        for demand in (0.0, 1.0, 50.0, 74.9, 75.1, 150.0):
+            result = pressure.calculate_machine_compatibility(demand, self.HIGH_PRESSURE)
+            assert result['set_pressure_bar'] >= result['required_pressure_bar']
+            assert result['set_pressure_bar'] >= self.HIGH_PRESSURE['min_operating_pressure']

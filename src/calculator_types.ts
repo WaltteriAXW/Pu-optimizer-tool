@@ -45,6 +45,29 @@ export interface PressurePoint {
   pressure: number;        // kPa
 }
 
+/** Flow regimes the Reynolds calculation distinguishes */
+export type FlowRegime = 'laminar' | 'transitional' | 'turbulent' | 'unknown';
+
+/**
+ * How far the current settings sit from turbulence, and what to change if they have crossed
+ * it. Avoiding turbulent flow in the feed line is what the tool is for, so the regime label
+ * alone answers only half the question.
+ */
+export interface LaminarEnvelope {
+  reynolds_number: number;
+  flow_regime: FlowRegime;
+  is_laminar: boolean;
+  laminar_limit?: number;
+  /** Flow rate at which this line turns turbulent, or null if it cannot within range */
+  max_laminar_flow_lpm: number | null;
+  /** Critical flow rate as a multiple of the present one */
+  flow_headroom_ratio: number | null;
+  /** Narrowest pipe that stays laminar at the present flow rate */
+  min_laminar_diameter_mm: number | null;
+  /** One sentence naming the dial to move, or the margin available */
+  recommendation: string | null;
+}
+
 /**
  * Calculation results from Python backend
  * Comprehensive structure with input parameters and calculated metrics
@@ -63,9 +86,11 @@ export interface CalculationResults {
     shear_rate_s_inv: number;        // s⁻¹
     apparent_viscosity_cp: number;   // cP
     reynolds_number: number;         // dimensionless
-    flow_regime: 'laminar' | 'turbulent';
+    flow_regime: FlowRegime;
     velocity_m_s: number;            // m/s
     is_shear_thinning?: boolean;
+    /** How much room is left before the line turns turbulent, and which dial to move */
+    laminar_envelope?: LaminarEnvelope;
   };
   pressure: {
     base_pressure_drop_bar: number;  // bar
@@ -73,7 +98,7 @@ export interface CalculationResults {
     pressure_with_fittings_bar: number; // bar
     fitting_loss_bar: number;        // bar
     reynolds_number: number;         // dimensionless
-    flow_regime: 'laminar' | 'turbulent';
+    flow_regime: FlowRegime;
   };
   thermal?: {
     temperature_c: number;
@@ -160,6 +185,14 @@ export interface CalculationResults {
     status: string;
     /** Pressure the line demands, including the machine's internal losses (bar) */
     required_pressure_bar?: number;
+    /**
+     * The pressure the operator actually sets (bar) — the line demand, or the machine's
+     * minimum where that is higher. A high-pressure machine holds its minimum regardless of
+     * what the line asks for, because impingement mixing needs it.
+     */
+    set_pressure_bar?: number;
+    set_pressure_governed_by?: 'line_demand' | 'machine_minimum';
+    min_pressure_bar?: number;
     max_pressure_bar?: number;
     /** Set only when the combination genuinely will not work */
     warning?: string | null;

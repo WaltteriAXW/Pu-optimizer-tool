@@ -152,11 +152,9 @@ export class PyodideBridge implements PyodideManager {
       'src/__init__.py',
       'src/constants.py',
       'src/conftest.py',
-      'src/model_evaluator.py',
 
       // App modules
       'src/app/__init__.py',
-      'src/app/optimizer.py',
       'src/app/reporter.py',
 
       // Core package
@@ -174,14 +172,13 @@ export class PyodideBridge implements PyodideManager {
       'src/core/kinetics/thermal_reaction.py',
       'src/core/kinetics/foam_kinetics.py',
 
+      // Core learning — reads recorded shots; scikit-learn is loaded on demand, not here
+      'src/core/learning/__init__.py',
+      'src/core/learning/residual_model.py',
+
       // Core machines
       'src/core/machines/__init__.py',
       'src/core/machines/machine_definitions.py',
-
-      // Core ML
-      'src/core/ml/__init__.py',
-      'src/core/ml/nn_surrogate.py',
-      'src/core/ml/ml_ensemble.py',
 
       // Core modules
       'src/core/modules/__init__.py',
@@ -330,7 +327,9 @@ export class PyodideBridge implements PyodideManager {
 
   /**
    * Call a Python function from the browser
-   * @param functionPath - Path like 'core.processors.calculation_processor.calculate_all'
+   * @param functionPath - Dotted path from the virtual filesystem root, e.g.
+   *   'src.core.processors.calculation_processor.calculate_all'. The leading 'src.' is
+   *   required — sys.path is '/' and the package is mounted at /src.
    * @param args - Arguments to pass to the Python function
    */
   async callPython<T = unknown>(functionPath: string, args: unknown[]): Promise<T> {

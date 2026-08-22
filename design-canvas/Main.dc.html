@@ -69,13 +69,13 @@
           <div style="width: 5px; background: #4f46e5; flex-shrink: 0;"></div>
           <div style="flex-grow: 1; padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px;">
             <div style="min-width: 0;">
-              <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b;">Set the machine to</div>
+              <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b;">Required Pressure</div>
               <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
                 <div style="font-size: 46px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums;">100</div>
                 <div style="font-size: 18px; font-weight: 600; color: #64748b;">bar</div>
               </div>
               <div style="font-size: 13px; color: #475569; margin-top: 10px; max-width: 460px; line-height: 1.55;">
-                Your line demands <strong style="color: #0f172a;">25.3&nbsp;bar</strong> — 0.25&nbsp;bar of pipe drop plus 25.0&nbsp;bar of machine losses. That is below this machine's 100&nbsp;bar minimum, so it will hold at its minimum. There is ample pressure available.
+                The machine minimum governs. Impingement mixing needs <strong style="color: #0f172a;">100&nbsp;bar</strong> whatever the line asks for — and this line asks for only <strong style="color: #0f172a;">25.2&nbsp;bar</strong> (0.17&nbsp;bar of pipe drop plus machine losses).
               </div>
             </div>
             <div style="flex-shrink: 0; width: 300px;">
@@ -93,6 +93,22 @@
                 Machine is compatible
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 1b. THE MARGIN. Avoiding turbulence is the point of the tool, so how much room
+           is left is a headline, not a detail — and when it has run out, this names the dial. -->
+      <div style="border-radius: 12px; border: 1px solid #d1fae5; background: #ecfdf5; padding: 18px 20px; display: flex; gap: 12px; align-items: flex-start;">
+        <svg style="flex-shrink: 0; margin-top: 1px;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+        <div style="min-width: 0;">
+          <div style="font-size: 15px; font-weight: 700; color: #065f46;">Laminar flow</div>
+          <div style="font-size: 13px; color: #047857; margin-top: 3px; line-height: 1.55;">
+            Laminar with room to spare — turbulence would not begin until 123.6&nbsp;L/min, 24.7× the present flow rate.
+          </div>
+          <div style="font-size: 11.5px; color: #475569; margin-top: 8px; font-variant-numeric: tabular-nums;">
+            Re 57 now · turbulence at Re 2300
           </div>
         </div>
       </div>
@@ -149,7 +165,7 @@
           <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
             <span style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">laminar</span>
           </div>
-          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 5px;">Re 37.5 · well under 2300</div>
+          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 5px;">Re 57 · turbulent at 124 L/min</div>
         </div>
 
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 18px 18px 16px 18px;">
