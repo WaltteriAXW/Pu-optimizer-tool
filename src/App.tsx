@@ -6,7 +6,7 @@ import { HistorySidebar } from './components/HistorySidebar'
 import { Activity, History } from 'lucide-react'
 
 function AppContent() {
-  const { history, deleteHistory, loadFromHistory } = useCalculator()
+  const { history, deleteHistory, loadFromHistory, recordOutcome } = useCalculator()
   const [historyOpen, setHistoryOpen] = useState(false)
 
   return (
@@ -88,6 +88,7 @@ function AppContent() {
           setHistoryOpen(false)
         }}
         onDeleteEntry={deleteHistory}
+        onRecordOutcome={recordOutcome}
       />
 
       {/* Sidebar Backdrop */}
