@@ -10,14 +10,14 @@
       "x": 0,
       "y": -230,
       "w": 460,
-      "text": "The change that matters most.\n\nToday \"Required Pressure\" names two different quantities: the 0.25 bar headline tile (pipe drop) and the 25.3 bar figure at the bottom of the page (pipe drop + machine losses). They differ by 100x and share a label.\n\nHere the headline is the number you act on — what to set the machine to — with the line demand shown as its supporting arithmetic."
+      "text": "BUILT. \"Required Pressure\" now means the pressure the operator sets, and nothing else. The pipe drop has its own name.\n\nIt had been attached to both the 0.17 bar pipe drop and the 25.2 bar line demand — two numbers a hundredfold apart sharing one label, neither of them a figure anyone sets on a machine.\n\nThe card says which constraint governs, so the headline is never a number you cannot trace."
     },
     {
       "id": "attention-strip",
       "x": 500,
       "y": -230,
       "w": 440,
-      "text": "Today the panel says \"Process Optimized — no critical warnings detected\" while, further down, scorch risk reads moderate and the material is arriving 12 C below the set point.\n\nOne strip, worst first, replaces the standing reassurance."
+      "text": "BUILT, in part. The laminar envelope now sits at the top and states the margin as a flow rate — and when the line is turbulent it names the flow rate or diameter to move to, rather than printing the word \"turbulent\".\n\nStill to do: the \"Process Optimized\" box, which reassures while scorch risk reads moderate further down."
     },
     {
       "id": "estimated-mark",
