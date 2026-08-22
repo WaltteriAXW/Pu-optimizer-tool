@@ -24,6 +24,10 @@ const pythonSyncPlugin = () => {
           const srcPath = path.join(src, entry.name)
           const destPath = path.join(dest, entry.name)
           if (entry.isDirectory()) {
+            // __pycache__ holds compiled bytecode from running the tests locally. It is
+            // gitignored, so it shipped whatever happened to be on the machine that built —
+            // and it kept deleted modules alive in the output after their sources were gone.
+            if (entry.name === '__pycache__') continue
             copyRecursive(srcPath, destPath)
           } else if (isSyncedAsset(entry.name)) {
             fs.copyFileSync(srcPath, destPath)
@@ -76,6 +80,10 @@ collections:
           const destPath = path.join(dest, entry.name)
 
           if (entry.isDirectory()) {
+            // __pycache__ holds compiled bytecode from running the tests locally. It is
+            // gitignored, so it shipped whatever happened to be on the machine that built —
+            // and it kept deleted modules alive in the output after their sources were gone.
+            if (entry.name === '__pycache__') continue
             copyRecursive(srcPath, destPath)
           } else if (isSyncedAsset(entry.name)) {
             fs.copyFileSync(srcPath, destPath)

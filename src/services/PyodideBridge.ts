@@ -152,11 +152,9 @@ export class PyodideBridge implements PyodideManager {
       'src/__init__.py',
       'src/constants.py',
       'src/conftest.py',
-      'src/model_evaluator.py',
 
       // App modules
       'src/app/__init__.py',
-      'src/app/optimizer.py',
       'src/app/reporter.py',
 
       // Core package
@@ -177,11 +175,6 @@ export class PyodideBridge implements PyodideManager {
       // Core machines
       'src/core/machines/__init__.py',
       'src/core/machines/machine_definitions.py',
-
-      // Core ML
-      'src/core/ml/__init__.py',
-      'src/core/ml/nn_surrogate.py',
-      'src/core/ml/ml_ensemble.py',
 
       // Core modules
       'src/core/modules/__init__.py',

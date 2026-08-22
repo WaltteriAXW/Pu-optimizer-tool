@@ -50,3 +50,8 @@ ui-audit/
 # Seeded design-canvas payload — 2 MB of editor code, rebuilt from the .dc.html sources
 design-canvas/*.html
 !design-canvas/*.dc.html
+
+# Generated mirror of src/ for the dev server. The build writes dist/python from src
+# directly, so this is derived output — tracking it is what kept deleted Python modules
+# alive in the bundle after their sources were removed.
+public/python/
