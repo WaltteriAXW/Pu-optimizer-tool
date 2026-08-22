@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { Download, Upload, Database } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Download, Upload, Database, Brain } from 'lucide-react'
 import { useCalculator } from '../context/CalculatorContext'
 import {
   exportRecords,
@@ -7,6 +7,10 @@ import {
   getLabelledRecords,
   type ImportSummary,
 } from '../services/ShotRecordStore'
+import type {
+  ModelReadiness,
+  TrainingResult,
+} from '../services/ResidualModelService'
 
 /**
  * Moving the recorded dataset between browsers.
@@ -17,17 +21,36 @@ import {
  * of running entirely offline.
  */
 
-/** Labelled shots needed before a model could say anything worth hearing. */
-export const MIN_LABELLED_FOR_MODEL = 50
-
 export function DatasetPanel() {
-  const { history, refreshHistory } = useCalculator()
+  const { history, refreshHistory, isReady, checkModelReadiness, trainModel } =
+    useCalculator()
   const fileInput = useRef<HTMLInputElement>(null)
   const [summary, setSummary] = useState<ImportSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [training, setTraining] = useState(false)
+  const [trained, setTrained] = useState<TrainingResult | null>(null)
+  const [trainError, setTrainError] = useState<string | null>(null)
+  const [readiness, setReadiness] = useState<ModelReadiness | null>(null)
+
+  // The threshold lives in core/learning/residual_model.py and is asked for rather than
+  // restated here. A second copy in TypeScript would be one more number to keep in step,
+  // which is how the material tables and the validation ranges went wrong.
+  useEffect(() => {
+    if (!isReady) return
+    let cancelled = false
+    checkModelReadiness()
+      .then(result => {
+        if (!cancelled) setReadiness(result)
+      })
+      .catch(() => {
+        // Readiness is a nicety; failing to fetch it must not break the panel
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isReady, checkModelReadiness, history])
 
   const labelled = getLabelledRecords().length
-  const shortfall = Math.max(0, MIN_LABELLED_FOR_MODEL - labelled)
 
   const handleExport = () => {
     const payload = exportRecords()
@@ -55,6 +78,21 @@ export function DatasetPanel() {
     }
   }
 
+  const handleTrain = async () => {
+    setTraining(true)
+    setTrainError(null)
+    setTrained(null)
+    try {
+      setTrained(await trainModel())
+    } catch (err) {
+      // The expected outcome for a long time: not enough labelled shots. Shown as the
+      // shortfall it is, rather than as a failure.
+      setTrainError(err instanceof Error ? err.message : 'Training failed')
+    } finally {
+      setTraining(false)
+    }
+  }
+
   return (
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
@@ -74,18 +112,21 @@ export function DatasetPanel() {
         {/* The honest statement of where this stands. Saying anything more confident with
             a handful of shots is exactly the failure the removed neural network embodied. */}
         <div className="rounded-lg bg-slate-50 border border-slate-100 p-3">
-          {shortfall > 0 ? (
+          {readiness?.ready ? (
             <p className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-900">No model yet.</strong> A prediction would
-              need at least {MIN_LABELLED_FOR_MODEL} shots with recorded outcomes —{' '}
-              {shortfall} more than there are now. Until then the physics is the only thing
-              answering, which is the honest state of affairs rather than a limitation to
-              work around.
+              <strong className="text-slate-900">
+                {readiness.labelled} labelled shots.
+              </strong>{' '}
+              Enough to start checking where the physics and the parts disagree.
             </p>
           ) : (
             <p className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-900">{labelled} labelled shots.</strong> Enough
-              to start checking where the physics and the parts disagree.
+              <strong className="text-slate-900">No model yet.</strong>{' '}
+              {readiness
+                ? `${readiness.reasons.join('; ')}.`
+                : `A prediction needs shots whose outcome someone has recorded.`}{' '}
+              Until then the physics is the only thing answering, which is the honest state
+              of affairs rather than a limitation to work around.
             </p>
           )}
         </div>
@@ -120,6 +161,32 @@ export function DatasetPanel() {
             }}
           />
         </div>
+
+        {/* Training is only offered once it could do anything. Loading several megabytes
+            of scikit-learn to be told there are four shots would be a poor trade. */}
+        {readiness?.ready && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => void handleTrain()}
+              disabled={training}
+              className="button-primary w-full text-sm disabled:opacity-50"
+              data-testid="train-model"
+            >
+              <Brain className="w-4 h-4 mr-1.5" />
+              {training ? 'Training…' : 'Train on recorded shots'}
+            </button>
+            {trained && (
+              <div className="mt-2 text-xs text-slate-600 space-y-1">
+                <p className="font-semibold text-slate-900">
+                  {(trained.accuracy * 100).toFixed(0)}% on {trained.held_out} held-out shots
+                </p>
+                <p className="leading-relaxed">{trained.caveat}</p>
+              </div>
+            )}
+            {trainError && <p className="mt-2 text-xs text-amber-800">{trainError}</p>}
+          </div>
+        )}
 
         {summary && (
           <p className="text-xs text-slate-600" data-testid="import-summary">

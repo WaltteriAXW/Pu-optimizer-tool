@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { PyodideBridge } from '../services/PyodideBridge'
 import { CalculationService } from '../services/CalculationService'
 import {
+  ResidualModelService,
+  type ModelReadiness,
+  type TrainingResult,
+} from '../services/ResidualModelService'
+import {
   getRecords,
   saveRecord,
   setOutcome as persistOutcome,
@@ -37,6 +42,10 @@ interface CalculatorContextType {
   recordOutcome: (id: string, outcome: ShotOutcome, notes?: string) => void
   /** Re-read from storage, after an import for instance */
   refreshHistory: () => void
+  /** Whether the recorded shots could support a model, and what is missing if not */
+  checkModelReadiness: () => Promise<ModelReadiness>
+  /** Fit a model on the recorded outcomes. Rejects with the shortfall when it cannot. */
+  trainModel: () => Promise<TrainingResult>
 }
 
 const CalculatorContext = createContext<CalculatorContextType | undefined>(undefined)
@@ -54,13 +63,16 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     setHistory(getRecords())
   }, [])
 
-  const [calculationService] = useState(() => {
+  const [{ calculationService, residualModelService }] = useState(() => {
     const bridge = new PyodideBridge()
     bridge.initialize().then(() => setIsReady(true)).catch(err => {
       console.error('Failed to initialize Pyodide:', err)
       setError('Failed to initialize calculation engine')
     })
-    return new CalculationService(bridge)
+    return {
+      calculationService: new CalculationService(bridge),
+      residualModelService: new ResidualModelService(bridge),
+    }
   })
 
   const calculate = useCallback(async (params: ProcessParameters) => {
@@ -114,6 +126,16 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     setHistory(getRecords())
   }, [])
 
+  const checkModelReadiness = useCallback(
+    () => residualModelService.checkReadiness(),
+    [residualModelService]
+  )
+
+  const trainModel = useCallback(
+    () => residualModelService.train(),
+    [residualModelService]
+  )
+
   const loadFromHistory = useCallback((entry: HistoryEntry) => {
     setResults(entry.results)
     setLastParams(entry.parameters)
@@ -135,6 +157,8 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         loadFromHistory,
         recordOutcome,
         refreshHistory,
+        checkModelReadiness,
+        trainModel,
       }}
     >
       {children}

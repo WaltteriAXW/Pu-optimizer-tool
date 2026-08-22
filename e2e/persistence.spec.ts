@@ -68,6 +68,12 @@ test.describe('shot records', () => {
     // rather than showing a confident-looking number.
     const panel = page.getByTestId('dataset-panel')
     await expect(panel).toContainText('No model yet')
-    await expect(panel).toContainText(/\d+ more than there are now/)
+    // The shortfall comes from the Python side, so this also proves the learning package
+    // reached the virtual filesystem rather than being another module nothing can reach.
+    await expect(panel).toContainText(/\d+ more labelled shots needed \(\d+ of \d+\)/, {
+      timeout: 30_000,
+    })
+    // And no training is offered while it could only produce noise
+    await expect(page.getByTestId('train-model')).toHaveCount(0)
   })
 })
