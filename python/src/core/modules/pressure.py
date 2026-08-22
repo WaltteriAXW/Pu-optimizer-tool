@@ -177,10 +177,20 @@ def calculate_machine_compatibility(
             f'minimum — there is ample pressure available.'
         )
 
+    # The figure the operator actually dials in. The line demand is a lower bound on what is
+    # needed, but a high-pressure machine cannot run below its minimum — impingement mixing
+    # requires that pressure regardless of how little the line asks for — so whichever is
+    # higher governs. Reporting the demand alone would have someone set a pressure the
+    # machine will not hold.
+    set_pressure = max(required_pressure, min_pressure)
+    governed_by = 'machine_minimum' if min_pressure > required_pressure else 'line_demand'
+
     return {
         'is_compatible': is_compatible,
         'status': status,
         'required_pressure_bar': required_pressure,
+        'set_pressure_bar': set_pressure,
+        'set_pressure_governed_by': governed_by,
         'max_pressure_bar': max_pressure,
         'min_pressure_bar': min_pressure,
         'process_loss_bar': process_loss,

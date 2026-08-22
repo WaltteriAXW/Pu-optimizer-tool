@@ -1,10 +1,9 @@
 """
 Core Calculation Engine for Polyurethane Injection Optimizer
 
-Provides all core physics calculations, ML models, and optimization:
+Provides all core physics calculations and optimization:
 - core.kinetics - Reaction kinetics and cure modeling
 - core.machines - Machine specifications and compatibility
-- core.ml - Machine learning models and ensemble
 - core.modules - Core physics calculations (pressure, flow, thermal, environmental)
 - core.optimizers - Optimization algorithms (pressure, inverse)
 - core.processors - Main calculation orchestrator
