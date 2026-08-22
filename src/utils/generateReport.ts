@@ -99,7 +99,7 @@ export const generateReport = async (
   doc.setTextColor(0, 0, 0)
 
   const summaryText = [
-    `Required Pressure: ${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`,
+    `Pipe pressure drop: ${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`,
     `Flow Regime: ${results.flowRegime || 'N/A'}`,
     `Machine Compatibility: ${results.compatible ? '✓ Compatible' : '✗ Not Compatible'}`,
     `Flow Velocity: ${results.velocity?.toFixed(3) || 'N/A'} m/s`
@@ -289,7 +289,7 @@ export const generateReport = async (
       ['Machine Name', results.machine.name || 'N/A'],
       ['Manufacturer', results.machine.manufacturer || 'N/A'],
       ['Max Pressure', `${results.machine.maxPressure || 'N/A'} bar`],
-      ['Required Pressure', `${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`],
+      ['Pipe pressure drop', `${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`],
       ['Headroom', `${Math.max(0, (results.machine.maxPressure || 0) - (results.optimalPressureBar || 0)).toFixed(2)} bar`]
     ]
 

@@ -231,6 +231,17 @@ class CalculationProcessor:
                 )
                 if not flow_result or 'apparent_viscosity_cp' not in flow_result:
                     raise ValueError("Flow calculation returned invalid result")
+
+                # How much room is left before the line turns turbulent, and which dial to
+                # move if there is none. Avoiding turbulence is the point of the tool, so
+                # the regime label on its own only answers half the question.
+                flow_result['laminar_envelope'] = flow.calculate_laminar_envelope(
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    consistency_cp=temperature_corrected_viscosity_cp,
+                    flow_index=material['flow_index'],
+                    density_kg_m3=material['density'],
+                )
             except Exception as e:
                 logger.error(f"Flow calculation failed: {e}")
                 return {
@@ -411,6 +422,9 @@ class CalculationProcessor:
                     'is_compatible': machine_compat['is_compatible'],
                     'status': machine_compat['status'],
                     'required_pressure_bar': machine_compat['required_pressure_bar'],
+                    'set_pressure_bar': machine_compat['set_pressure_bar'],
+                    'set_pressure_governed_by': machine_compat['set_pressure_governed_by'],
+                    'min_pressure_bar': machine_compat['min_pressure_bar'],
                     'max_pressure_bar': machine_compat['max_pressure_bar'],
                     'warning': machine_compat['warning'],
                     'note': machine_compat.get('note'),

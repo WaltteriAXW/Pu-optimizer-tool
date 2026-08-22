@@ -118,7 +118,10 @@ export class ExportService {
       rows.push('--- MACHINE COMPATIBILITY ---,')
       rows.push(`Compatible,${compatibility.is_compatible ? 'Yes' : 'No'},`)
       rows.push(`Status,${compatibility.status},`)
-      rows.push(`Required Pressure,${compatibility.required_pressure_bar},bar`)
+      rows.push(`Line Demand,${compatibility.required_pressure_bar},bar`)
+      rows.push(`Required Pressure (set point),${compatibility.set_pressure_bar},bar`)
+      rows.push(`Set Point Governed By,${compatibility.set_pressure_governed_by},`)
+      rows.push(`Min Pressure,${compatibility.min_pressure_bar},bar`)
       rows.push(`Max Pressure,${compatibility.max_pressure_bar},bar`)
       if (compatibility.warning) {
         rows.push(`Warning,${compatibility.warning},`)
@@ -224,8 +227,10 @@ export class ExportService {
       lines.push('─'.repeat(63))
       lines.push(`Compatible:         ${compatibility.is_compatible ? 'YES' : 'NO'}`)
       lines.push(`Status:             ${compatibility.status}`)
-      lines.push(`Required Pressure:  ${compatibility.required_pressure_bar} bar`)
-      lines.push(`Max Pressure:       ${compatibility.max_pressure_bar} bar`)
+      lines.push(`Line demand:        ${compatibility.required_pressure_bar} bar`)
+      lines.push(`REQUIRED PRESSURE:  ${compatibility.set_pressure_bar} bar  (set this)`)
+      lines.push(`  governed by:      ${compatibility.set_pressure_governed_by}`)
+      lines.push(`Machine window:     ${compatibility.min_pressure_bar}-${compatibility.max_pressure_bar} bar`)
       if (compatibility.warning) {
         lines.push(`⚠️  WARNING:          ${compatibility.warning}`)
       }

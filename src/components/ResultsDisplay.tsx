@@ -3,6 +3,7 @@ import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
 import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
+import type { CalculationResults, LaminarEnvelope } from '../calculator_types'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -83,10 +84,14 @@ export function ResultsDisplay() {
         <ExportButtons results={results} params={useCalculator().lastParams!} />
       </div>
 
+      {/* The number the operator sets, and the margin before the line turns turbulent */}
+      <SetPressureCard results={results} />
+      <LaminarEnvelopeCard envelope={results.flow?.laminar_envelope} />
+
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title="Required Pressure"
+          title="Pipe Pressure Drop"
           value={results.pressure?.pressure_with_fittings_bar?.toFixed(2) || 'N/A'}
           unit="bar"
           icon={<Gauge className="w-5 h-5" />}
@@ -502,6 +507,184 @@ export function ResultsDisplay() {
 // ============================================================================
 // HELPER COMPONENTS
 // ============================================================================
+
+/**
+ * The pressure the operator dials in.
+ *
+ * This used to be called "Required Pressure" and showed the pipe drop — 0.25 bar on the
+ * default line, which is not a number anyone sets on a machine. The two were also given the
+ * same name in two places, differing by a factor of a hundred. The set point is whichever
+ * binds: what the line demands, or the machine's minimum. Which one governs is stated,
+ * because a headline figure nobody can trace back is worse than no headline at all.
+ */
+function SetPressureCard({ results }: { results: CalculationResults }) {
+  const machine = results.machine_compatibility
+  if (!machine || !isNumber(machine.set_pressure_bar)) return null
+
+  const governedByMachine = machine.set_pressure_governed_by === 'machine_minimum'
+  const demand = machine.required_pressure_bar
+  const pipeDrop = results.pressure?.pressure_with_fittings_bar
+
+  return (
+    <div className="card overflow-hidden" data-testid="set-pressure">
+      <div className="flex items-stretch">
+        <div className="w-1.5 bg-indigo-600 flex-shrink-0" />
+        <div className="card-body flex-grow flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Required Pressure
+            </p>
+            <div className="flex items-baseline gap-2 mt-1.5">
+              <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
+                {machine.set_pressure_bar.toFixed(machine.set_pressure_bar >= 10 ? 0 : 2)}
+              </span>
+              <span className="text-lg font-semibold text-slate-500">bar</span>
+            </div>
+            <p className="text-sm text-slate-600 mt-2.5 max-w-lg leading-relaxed">
+              {governedByMachine ? (
+                <>
+                  The machine minimum governs. Impingement mixing needs{' '}
+                  {isNumber(machine.min_pressure_bar) && (
+                    <strong className="text-slate-900">
+                      {machine.min_pressure_bar.toFixed(0)} bar
+                    </strong>
+                  )}{' '}
+                  whatever the line asks for — and this line asks for only{' '}
+                  {isNumber(demand) && <strong className="text-slate-900">{demand.toFixed(1)} bar</strong>}
+                  {isNumber(pipeDrop) && <> ({pipeDrop.toFixed(2)} bar of pipe drop plus machine losses)</>}.
+                </>
+              ) : (
+                <>
+                  The line demand governs:{' '}
+                  {isNumber(pipeDrop) && <strong className="text-slate-900">{pipeDrop.toFixed(2)} bar</strong>}{' '}
+                  of pipe drop plus the machine's own internal losses.
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="flex-shrink-0 md:w-72">
+            <p className="text-xs font-semibold text-slate-500 mb-2">Machine operating window</p>
+            <MachineWindow
+              min={machine.min_pressure_bar}
+              max={machine.max_pressure_bar}
+              setPoint={machine.set_pressure_bar}
+            />
+            <div
+              className={`mt-3 badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}
+            >
+              {machine.is_compatible ? (
+                <><CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
+              ) : (
+                <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Where the set point falls inside the machine's pressure range. */
+function MachineWindow({
+  min,
+  max,
+  setPoint,
+}: {
+  min?: number
+  max?: number
+  setPoint: number
+}) {
+  if (!isNumber(min) || !isNumber(max) || max <= 0) return null
+
+  const clamp = (v: number) => Math.max(0, Math.min(100, v))
+  const minPct = clamp((min / max) * 100)
+  const setPct = clamp((setPoint / max) * 100)
+
+  return (
+    <>
+      <div className="relative h-2.5 rounded-full bg-slate-100 overflow-hidden">
+        {/* Below the minimum the machine cannot hold — hatched rather than coloured */}
+        <div
+          className="absolute inset-y-0 left-0 bg-slate-200"
+          style={{ width: `${minPct}%` }}
+        />
+        <div
+          className="absolute inset-y-0 bg-indigo-200"
+          style={{ left: `${minPct}%`, right: 0 }}
+        />
+        <div
+          className="absolute -top-1 w-1 h-4.5 rounded bg-indigo-600"
+          style={{ left: `calc(${setPct}% - 2px)`, height: '1.125rem' }}
+        />
+      </div>
+      <div className="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
+        <span>0</span>
+        <span className="text-indigo-700 font-bold">{min.toFixed(0)} min</span>
+        <span>{max.toFixed(0)} max</span>
+      </div>
+    </>
+  )
+}
+
+/**
+ * How much room is left before the line turns turbulent.
+ *
+ * Reporting "laminar" and stopping tells an operator the state they are in but not how close
+ * to the edge it is, nor which dial to move if they have crossed it. Avoiding turbulence is
+ * the reason this tool exists, so the margin is a headline, not a detail.
+ */
+function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
+  if (!envelope || !envelope.recommendation) return null
+
+  const laminar = envelope.is_laminar
+  const ratio = envelope.flow_headroom_ratio
+  const tight = laminar && isNumber(ratio) && ratio < 1.25
+
+  const tone = !laminar
+    ? 'bg-red-50 border-red-100'
+    : tight
+      ? 'bg-amber-50 border-amber-100'
+      : 'bg-emerald-50 border-emerald-100'
+
+  const textTone = !laminar
+    ? 'text-red-800'
+    : tight
+      ? 'text-amber-800'
+      : 'text-emerald-800'
+
+  return (
+    <div className={`rounded-xl border p-5 ${tone}`} data-testid="laminar-envelope">
+      <div className="flex items-start gap-3">
+        {laminar && !tight ? (
+          <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+        ) : (
+          <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+        )}
+        <div className="min-w-0">
+          <h4 className={`font-bold ${textTone}`}>
+            {laminar ? (tight ? 'Laminar, with little margin' : 'Laminar flow') : 'Turbulent flow'}
+          </h4>
+          <p className={`text-sm mt-1 leading-relaxed ${textTone}`}>
+            {envelope.recommendation}
+          </p>
+          {isNumber(envelope.max_laminar_flow_lpm) && (
+            <p className="text-xs text-slate-600 mt-2 tabular-nums">
+              Re {envelope.reynolds_number.toFixed(0)} now · turbulence at Re{' '}
+              {envelope.laminar_limit?.toFixed(0) ?? '2300'}
+              {isNumber(envelope.min_laminar_diameter_mm) &&
+                envelope.min_laminar_diameter_mm > 1 && (
+                  <> · needs a line of at least {envelope.min_laminar_diameter_mm.toFixed(1)} mm
+                  at this flow rate</>
+                )}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function KpiCard({
   title,
