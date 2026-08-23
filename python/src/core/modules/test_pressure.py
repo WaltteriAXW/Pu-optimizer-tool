@@ -337,3 +337,68 @@ class TestSetPressure:
             result = pressure.calculate_machine_compatibility(demand, self.HIGH_PRESSURE)
             assert result['set_pressure_bar'] >= result['required_pressure_bar']
             assert result['set_pressure_bar'] >= self.HIGH_PRESSURE['min_operating_pressure']
+
+
+class TestRegimeAgreesWithFlowModule:
+    """
+    The pressure block and the flow block must name the same regime for the same line.
+
+    They did not: this module collapsed the transitional band into 'turbulent' while
+    flow.py reported three regimes, so a line at Re 3000 was described two different ways
+    inside one result — and both descriptions were written into the same exported file.
+    """
+
+    def test_transitional_is_not_reported_as_turbulent(self):
+        """A line in the transitional band must say so, not claim to be turbulent."""
+        # Tuned to land between the two thresholds rather than outside them: in this
+        # configuration Re rises by roughly 1980 per L/min, so 1.5 L/min sits near Re 2970.
+        result = calculate_pressure_drop(
+            diameter_mm=12,
+            length_mm=500,
+            flow_rate_lpm=1.5,
+            viscosity_cp=1.0,
+            density_kg_m3=1120,
+        )
+
+        assert 2300 <= result['reynolds_number'] < 4000, (
+            'test needs a Reynolds number inside the transitional band'
+        )
+        assert result['flow_regime'] == 'transitional'
+
+    def test_both_modules_agree_across_the_regimes(self):
+        """
+        Whatever the conditions, the two modules must return the same word. This is the
+        property that was broken; asserting it directly is what keeps it fixed.
+        """
+        from . import flow
+
+        # At 12 mm and 1 cP the Reynolds number rises by roughly 1980 per L/min, which
+        # places the laminar limit near 1.16 L/min and the turbulent limit near 2.02.
+        for flow_rate_lpm, viscosity_cp in (
+            (0.5, 350.0),   # deep laminar, a real polyurethane
+            (5.0, 350.0),   # faster, still laminar
+            (1.15, 1.0),    # just below the laminar limit
+            (1.5, 1.0),     # transitional
+            (2.0, 1.0),     # top of the transitional band
+            (2.5, 1.0),     # just into turbulent
+            (50.0, 1.0),    # far into turbulent
+        ):
+            pressure_result = calculate_pressure_drop(
+                diameter_mm=12,
+                length_mm=500,
+                flow_rate_lpm=flow_rate_lpm,
+                viscosity_cp=viscosity_cp,
+                density_kg_m3=1120,
+            )
+            flow_result = flow.calculate_reynolds_number(
+                flow_rate_lpm=flow_rate_lpm,
+                diameter_mm=12,
+                density_kg_m3=1120,
+                viscosity_cp=viscosity_cp,
+            )
+
+            assert pressure_result['flow_regime'] == flow_result['flow_regime'], (
+                f'disagreement at Q={flow_rate_lpm} L/min, eta={viscosity_cp} cP: '
+                f'pressure says {pressure_result["flow_regime"]}, '
+                f'flow says {flow_result["flow_regime"]}'
+            )

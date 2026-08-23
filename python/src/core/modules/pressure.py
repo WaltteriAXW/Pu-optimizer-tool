@@ -6,6 +6,11 @@ Handles both laminar and turbulent flow regimes.
 import math
 from typing import Any, Dict
 
+# The regime thresholds and their naming live in flow.py, which owns Reynolds number.
+# Importing them keeps this module's reported regime identical to the one the flow block
+# reports for the same line — they used to disagree across the transitional band.
+from .flow import TURBULENT_REYNOLDS_LIMIT, classify_flow_regime
+
 # Darcy friction factor constant (Swamee-Jain approximation)
 SWAMEE_JAIN_COEFFICIENT = 0.25
 
@@ -50,12 +55,11 @@ def calculate_pressure_drop(
     # Calculate Reynolds number
     reynolds = (density_kg_m3 * velocity_m_s * diameter_m) / viscosity_pa_s if viscosity_pa_s > 0 else 0
 
-    # Determine flow regime and calculate friction factor
-    if reynolds < 2300:
-        # Laminar flow: f = 64 / Re
-        friction_factor = 64 / reynolds if reynolds > 0 else 64
-    elif reynolds < 4000:
-        # Transitional - use Hagen-Poiseuille approximation
+    # Determine flow regime and calculate friction factor.
+    # Laminar and transitional both use f = 64/Re: below the laminar limit that is exact
+    # (Hagen-Poiseuille), and across the transitional band it is an approximation, since no
+    # correlation is reliable there.
+    if reynolds < TURBULENT_REYNOLDS_LIMIT:
         friction_factor = 64 / reynolds if reynolds > 0 else 64
     else:
         # Turbulent flow: Swamee-Jain equation
@@ -80,7 +84,7 @@ def calculate_pressure_drop(
         'pressure_drop_kpa': pressure_drop_pa / 1000,
         'velocity_m_s': velocity_m_s,
         'reynolds_number': reynolds,
-        'flow_regime': 'laminar' if reynolds < 2300 else 'turbulent',
+        'flow_regime': classify_flow_regime(reynolds),
         'friction_factor': friction_factor,
         'diameter_m': diameter_m,
         'length_m': length_m,
