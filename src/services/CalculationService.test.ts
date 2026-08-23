@@ -6,8 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { CalculationService, createCalculationService } from './CalculationService'
-import type { ProcessParameters, CalculationResults } from '@/models/types'
+import { CalculationService } from './CalculationService'
+import type { ProcessParameters, CalculationResults } from '@/calculator_types'
 
 // Mock Pyodide Manager
 const createMockPyodideManager = () => {
@@ -212,25 +212,6 @@ describe('CalculationService', () => {
       expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(2)
     })
 
-    it('should clear cache on clearCache()', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        success: true,
-        data: mockCalculationResults,
-        errors: []
-      })
-
-      // Add to cache
-      await service.calculate(mockParameters)
-      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(1)
-
-      // Clear cache
-      service.clearCache()
-
-      // Next call should go to Python again
-      await service.calculate(mockParameters)
-      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(2)
-    })
-
     it('should distinguish cache keys by all parameters', async () => {
       mockPyodideManager.callPython.mockResolvedValue({
         success: true,
@@ -251,274 +232,6 @@ describe('CalculationService', () => {
     })
   })
 
-  describe('validateParameters()', () => {
-    it('should return no errors for valid parameters', async () => {
-      const errors = await service.validateParameters(mockParameters)
-      expect(errors).toHaveLength(0)
-    })
-
-    it('should validate pipe_length_mm is positive', async () => {
-      const invalidParams: ProcessParameters = {
-        ...mockParameters,
-        pipe_length_mm: 0
-      }
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Pipe length must be a positive number')
-    })
-
-    it('should validate pipe_length_mm is a number', async () => {
-      const invalidParams = {
-        ...mockParameters,
-        pipe_length_mm: 'not a number'
-      } as any
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Pipe length must be a positive number')
-    })
-
-    it('should validate pipe_diameter_mm is positive', async () => {
-      const invalidParams: ProcessParameters = {
-        ...mockParameters,
-        pipe_diameter_mm: -5
-      }
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Pipe diameter must be a positive number')
-    })
-
-    it('should validate pipe_diameter_mm is a number', async () => {
-      const invalidParams = {
-        ...mockParameters,
-        pipe_diameter_mm: 'big'
-      } as any
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Pipe diameter must be a positive number')
-    })
-
-    it('should validate temperature_c is a number', async () => {
-      const invalidParams = {
-        ...mockParameters,
-        temperature_c: 'hot'
-      } as any
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Temperature must be a number')
-    })
-
-    it('should validate flow_rate_lpm is positive', async () => {
-      const invalidParams: ProcessParameters = {
-        ...mockParameters,
-        flow_rate_lpm: 0
-      }
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Flow rate must be a positive number')
-    })
-
-    it('should validate material_key is a string', async () => {
-      const invalidParams = {
-        ...mockParameters,
-        material_key: null
-      } as any
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Material must be selected')
-    })
-
-    it('should validate material_key is present', async () => {
-      const invalidParams = {
-        ...mockParameters,
-        material_key: ''
-      }
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors).toContain('Material must be selected')
-    })
-
-    it('should collect all validation errors', async () => {
-      const invalidParams = {
-        pipe_length_mm: -1,
-        pipe_diameter_mm: 0,
-        temperature_c: 'invalid',
-        flow_rate_lpm: -10,
-        material_key: ''
-      } as any
-      const errors = await service.validateParameters(invalidParams)
-      expect(errors.length).toBe(5)
-    })
-  })
-
-  describe('checkMachineCompatibility()', () => {
-    it('should return compatible status for compatible pressure', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        is_compatible: true,
-        warning: undefined
-      })
-
-      const result = await service.checkMachineCompatibility(
-        100,
-        'high_pressure'
-      )
-
-      expect(result.compatible).toBe(true)
-      expect(result.message).toBe('Compatible')
-    })
-
-    it('should return incompatible status with warning message', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        is_compatible: false,
-        warning: 'Pressure exceeds machine limit'
-      })
-
-      const result = await service.checkMachineCompatibility(
-        500,
-        'low_pressure'
-      )
-
-      expect(result.compatible).toBe(false)
-      expect(result.message).toBe('Pressure exceeds machine limit')
-    })
-
-    it('should handle Pyodide call with correct parameters', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        is_compatible: true,
-        warning: undefined
-      })
-
-      await service.checkMachineCompatibility(150, 'high_pressure')
-
-      expect(mockPyodideManager.callPython).toHaveBeenCalledWith(
-        'src.core.modules.pressure.calculate_machine_compatibility',
-        [150, { type: 'high_pressure' }]
-      )
-    })
-
-    it('should handle Pyodide errors gracefully', async () => {
-      mockPyodideManager.callPython.mockRejectedValue(
-        new Error('Pyodide failed')
-      )
-
-      const result = await service.checkMachineCompatibility(100, 'low_pressure')
-
-      expect(result.compatible).toBe(false)
-      expect(result.message).toBe('Pyodide failed')
-    })
-
-    it('should handle unexpected error objects', async () => {
-      mockPyodideManager.callPython.mockRejectedValue('String error')
-
-      const result = await service.checkMachineCompatibility(100, 'low_pressure')
-
-      expect(result.compatible).toBe(false)
-      expect(result.message).toBe('Check failed')
-    })
-
-    it('should test different machine types', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        is_compatible: true,
-        warning: undefined
-      })
-
-      await service.checkMachineCompatibility(100, 'low_pressure')
-      await service.checkMachineCompatibility(100, 'high_pressure')
-
-      expect(mockPyodideManager.callPython).toHaveBeenNthCalledWith(1,
-        'src.core.modules.pressure.calculate_machine_compatibility',
-        [100, { type: 'low_pressure' }]
-      )
-      expect(mockPyodideManager.callPython).toHaveBeenNthCalledWith(2,
-        'src.core.modules.pressure.calculate_machine_compatibility',
-        [100, { type: 'high_pressure' }]
-      )
-    })
-  })
-
-  describe('getLastCalculation()', () => {
-    it('should return null when no calculations have been made', () => {
-      const result = service.getLastCalculation()
-      expect(result).toBeNull()
-    })
-
-    it('should return last successful calculation', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        success: true,
-        data: mockCalculationResults,
-        errors: []
-      })
-
-      await service.calculate(mockParameters)
-      const last = service.getLastCalculation()
-
-      expect(last).toBeDefined()
-      expect(last?.pressure.base_pressure_drop_bar).toBe(3.45)
-    })
-
-    it('should return most recent calculation when multiple exist', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        success: true,
-        data: mockCalculationResults,
-        errors: []
-      })
-
-      const params1 = mockParameters
-      await service.calculate(params1)
-
-      const params2: ProcessParameters = {
-        ...mockParameters,
-        flow_rate_lpm: 20
-      }
-      const results2: CalculationResults = {
-        ...mockCalculationResults,
-        input: {
-          ...mockCalculationResults.input,
-          flow_rate_lpm: 20
-        }
-      }
-
-      mockPyodideManager.callPython.mockResolvedValue({
-        success: true,
-        data: results2,
-        errors: []
-      })
-
-      await service.calculate(params2)
-      const last = service.getLastCalculation()
-
-      expect(last?.input.flow_rate_lpm).toBe(20)
-    })
-
-    it('should clear last calculation when cache is cleared', async () => {
-      mockPyodideManager.callPython.mockResolvedValue({
-        success: true,
-        data: mockCalculationResults,
-        errors: []
-      })
-
-      await service.calculate(mockParameters)
-      expect(service.getLastCalculation()).toBeDefined()
-
-      service.clearCache()
-      expect(service.getLastCalculation()).toBeNull()
-    })
-  })
-
-  describe('createCalculationService factory', () => {
-    it('should create a new CalculationService instance', () => {
-      const mock = createMockPyodideManager()
-      const newService = createCalculationService(mock)
-
-      expect(newService).toBeInstanceOf(CalculationService)
-    })
-
-    it('should use provided pyodideManager', async () => {
-      const mock = createMockPyodideManager()
-      mock.callPython.mockResolvedValue({
-        success: true,
-        data: mockCalculationResults,
-        errors: []
-      })
-
-      const newService = createCalculationService(mock)
-      await newService.calculate(mockParameters)
-
-      expect(mock.callPython).toHaveBeenCalled()
-    })
-  })
-
   describe('Integration scenarios', () => {
     it('should handle typical user workflow', async () => {
       mockPyodideManager.callPython.mockResolvedValue({
@@ -527,27 +240,15 @@ describe('CalculationService', () => {
         errors: []
       })
 
-      // 1. Validate parameters
-      const errors = await service.validateParameters(mockParameters)
-      expect(errors).toHaveLength(0)
-
-      // 2. Calculate
+      // Calculate, then repeat the same request as the UI does when nothing changed
       const result1 = await service.calculate(mockParameters)
       expect(result1).toBeDefined()
 
-      // 3. Get last calculation (cached)
-      const last = service.getLastCalculation()
-      expect(last).toEqual(result1)
+      const result2 = await service.calculate(mockParameters)
+      expect(result2).toEqual(result1)
 
-      // 4. Check machine compatibility
-      const compatible = await service.checkMachineCompatibility(
-        result1.pressure.pressure_with_fittings_bar,
-        'high_pressure'
-      )
-      expect(compatible).toBeDefined()
-
-      // Verify Python was called minimal times (caching worked)
-      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(2) // 1 calculate + 1 checkMachineCompatibility
+      // The second one was served from cache rather than crossing into Python again
+      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(1)
     })
 
     it('should handle parameter modification workflow', async () => {

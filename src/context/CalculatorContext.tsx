@@ -34,7 +34,6 @@ interface CalculatorContextType {
   history: HistoryEntry[]
   lastParams: ProcessParameters | null
   calculate: (params: ProcessParameters) => Promise<void>
-  reset: () => void
   deleteHistory: (id: string) => void
   clearHistory: () => void
   loadFromHistory: (entry: HistoryEntry) => void
@@ -97,11 +96,6 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [calculationService])
 
-  const reset = useCallback(() => {
-    setResults(null)
-    setError(null)
-  }, [])
-
   const deleteHistory = useCallback((id: string) => {
     deleteRecord(id)
     setHistory(prev => prev.filter(entry => entry.id !== id))
@@ -151,7 +145,6 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         history,
         lastParams,
         calculate,
-        reset,
         deleteHistory,
         clearHistory,
         loadFromHistory,

@@ -7,7 +7,7 @@
  * Single responsibility: coordinate all calculations and return results
  */
 
-import type { ProcessParameters, CalculationResults } from '@/models/types'
+import type { ProcessParameters, CalculationResults } from '@/calculator_types'
 
 /**
  * Interface for PyodideManager to provide proper typing
@@ -26,15 +26,6 @@ interface PythonCalculationResult {
   errors?: string[]
   warnings?: string[]
   data?: CalculationResults
-}
-
-/**
- * Result from machine compatibility check
- */
-interface MachineCompatibilityResult {
-  is_compatible: boolean
-  warning?: string
-  max_pressure?: number
 }
 
 /** Maximum number of cached calculations to prevent memory leaks */
@@ -123,79 +114,6 @@ export class CalculationService {
   }
 
   /**
-   * Validate parameters before sending to Python.
-   * Quick client-side validation to catch obvious errors early.
-   */
-  async validateParameters(parameters: ProcessParameters): Promise<string[]> {
-    const errors: string[] = []
-
-    // Basic type checks
-    if (typeof parameters.pipe_length_mm !== 'number' || parameters.pipe_length_mm <= 0) {
-      errors.push('Pipe length must be a positive number')
-    }
-
-    if (typeof parameters.pipe_diameter_mm !== 'number' || parameters.pipe_diameter_mm <= 0) {
-      errors.push('Pipe diameter must be a positive number')
-    }
-
-    if (typeof parameters.temperature_c !== 'number') {
-      errors.push('Temperature must be a number')
-    }
-
-    if (typeof parameters.flow_rate_lpm !== 'number' || parameters.flow_rate_lpm <= 0) {
-      errors.push('Flow rate must be a positive number')
-    }
-
-    if (!parameters.material_key || typeof parameters.material_key !== 'string') {
-      errors.push('Material must be selected')
-    }
-
-    return errors
-  }
-
-  /**
-   * Get pressure compatibility for a machine.
-   * Used for quick machine selection feedback.
-   */
-  async checkMachineCompatibility(
-    pressureBar: number,
-    machineType: string
-  ): Promise<{ compatible: boolean; message: string; maxPressure?: number }> {
-    try {
-      // Call Python to check compatibility with full module path
-      const result = await this.pyodideManager.callPython<MachineCompatibilityResult>(
-        'src.core.modules.pressure.calculate_machine_compatibility',
-        [pressureBar, { type: machineType }]
-      )
-
-      // Ensure result is properly typed
-      if (!result || typeof result !== 'object') {
-        throw new Error('Invalid response from machine compatibility check')
-      }
-
-      return {
-        compatible: result.is_compatible ?? false,
-        message: result.warning || 'Compatible',
-        maxPressure: result.max_pressure
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Check failed'
-      return {
-        compatible: false,
-        message
-      }
-    }
-  }
-
-  /**
-   * Clear calculation cache (useful after preferences change).
-   */
-  clearCache(): void {
-    this.calculationCache.clear()
-    this.cacheOrder = []
-  }
-
-  /**
    * Add item to cache with LRU eviction when cache exceeds MAX_CACHE_SIZE.
    */
   private addToCache(key: string, value: CalculationResults): void {
@@ -251,24 +169,6 @@ export class CalculationService {
   }
 
   /**
-   * Get last successful calculation (for referencing in UI).
-   */
-  getLastCalculation(): CalculationResults | null {
-    if (this.cacheOrder.length === 0) {
-      return null
-    }
-    const lastKey = this.cacheOrder[this.cacheOrder.length - 1]
-    return this.calculationCache.get(lastKey) || null
-  }
-
-  /**
-   * Get current cache size (useful for debugging/monitoring).
-   */
-  getCacheSize(): number {
-    return this.calculationCache.size
-  }
-
-  /**
    * Prepare the parameters sent to Python.
    *
    * Catalogued materials travel as a material_key alone: Python reads the same material
@@ -303,12 +203,4 @@ export class CalculationService {
 
     return prepared
   }
-}
-
-/**
- * Export a singleton instance factory.
- * The reducer/hooks will create an instance via this.
- */
-export function createCalculationService(pyodideManager: PyodideManager): CalculationService {
-  return new CalculationService(pyodideManager)
 }

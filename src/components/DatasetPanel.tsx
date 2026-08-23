@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Upload, Database, Brain } from 'lucide-react'
+import { Download, Upload, Database, Brain, Trash2 } from 'lucide-react'
 import { useCalculator } from '../context/CalculatorContext'
 import {
   exportRecords,
@@ -22,7 +22,7 @@ import type {
  */
 
 export function DatasetPanel() {
-  const { history, refreshHistory, isReady, checkModelReadiness, trainModel } =
+  const { history, refreshHistory, clearHistory, isReady, checkModelReadiness, trainModel } =
     useCalculator()
   const fileInput = useRef<HTMLInputElement>(null)
   const [summary, setSummary] = useState<ImportSummary | null>(null)
@@ -31,6 +31,10 @@ export function DatasetPanel() {
   const [trained, setTrained] = useState<TrainingResult | null>(null)
   const [trainError, setTrainError] = useState<string | null>(null)
   const [readiness, setReadiness] = useState<ModelReadiness | null>(null)
+  // Two-step, because this is the one irreversible action in the application and the data
+  // it destroys cannot be recalculated — an outcome someone recorded by looking at a part
+  // exists nowhere else.
+  const [confirmingClear, setConfirmingClear] = useState(false)
 
   // The threshold lives in core/learning/residual_model.py and is asked for rather than
   // restated here. A second copy in TypeScript would be one more number to keep in step,
@@ -185,6 +189,55 @@ export function DatasetPanel() {
               </div>
             )}
             {trainError && <p className="mt-2 text-xs text-amber-800">{trainError}</p>}
+          </div>
+        )}
+
+        {/* Clearing the browser's saved runs. The store could always do this; there was
+            simply no way to ask for it, so a dataset once recorded could not be discarded
+            from inside the application at all. */}
+        {history.length > 0 && (
+          <div className="pt-1 border-t border-slate-100">
+            {confirmingClear ? (
+              <div className="space-y-2" data-testid="clear-confirm">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Delete all {history.length} saved run
+                  {history.length === 1 ? '' : 's'}
+                  {labelled > 0 && <>, including {labelled} with a recorded outcome</>}? This
+                  cannot be undone — export first if you want to keep them.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearHistory()
+                      setConfirmingClear(false)
+                      setSummary(null)
+                      setTrained(null)
+                    }}
+                    className="flex-1 text-xs px-3 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                  >
+                    Delete everything
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingClear(false)}
+                    className="flex-1 button-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                data-testid="clear-dataset"
+                className="w-full text-xs px-3 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
+                Clear saved runs
+              </button>
+            )}
           </div>
         )}
 

@@ -110,9 +110,6 @@ export function ResultsDisplay() {
           value={results.pressure?.pressure_with_fittings_bar?.toFixed(2) || 'N/A'}
           unit="bar"
           icon={<Gauge className="w-5 h-5" />}
-          trend={
-            (results.pressure?.pressure_with_fittings_bar || 0) > 150 ? 'high' : 'normal'
-          }
         />
         <KpiCard
           title="Flow Regime"
@@ -707,14 +704,12 @@ function KpiCard({
   unit,
   icon,
   status = 'neutral',
-  trend: _trend,
 }: {
   title: string
   value: string | number
   unit: string
   icon: React.ReactNode
   status?: 'success' | 'warning' | 'neutral'
-  trend?: 'high' | 'normal' | 'low'
 }) {
   const statusColors = {
     success: 'bg-emerald-100 text-emerald-600',

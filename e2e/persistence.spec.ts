@@ -76,4 +76,43 @@ test.describe('shot records', () => {
     // And no training is offered while it could only produce noise
     await expect(page.getByTestId('train-model')).toHaveCount(0)
   })
+
+  test('saved runs can be cleared, and the clearing survives a reload', async ({ page }) => {
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+
+    // Two steps on purpose: this is the one irreversible action in the application
+    await page.getByTestId('clear-dataset').click()
+    await expect(page.getByTestId('clear-confirm')).toBeVisible()
+    await page.getByRole('button', { name: /delete everything/i }).click()
+
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
+
+    // It must have reached storage, not just component state — the whole point of the
+    // control is to get rid of data that would otherwise come back on the next visit
+    await page.reload()
+    await waitForEngine(page)
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
+    await expect(page.getByRole('dialog')).toContainText('No runs saved yet')
+    // …and the offer to clear is gone with nothing left to clear
+    await expect(page.getByTestId('clear-dataset')).toHaveCount(0)
+  })
+
+  test('cancelling the clear keeps the runs', async ({ page }) => {
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await openHistory(page)
+    await page.getByTestId('clear-dataset').click()
+    await page.getByRole('button', { name: /^cancel$/i }).click()
+
+    await expect(page.getByTestId('clear-confirm')).toHaveCount(0)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+  })
 })
