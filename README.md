@@ -65,7 +65,10 @@ Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pr
 1. **First time?** → Read [GETTING_STARTED.md](GETTING_STARTED.md)
 2. **Need details on inputs/outputs?** → Read [CAPABILITIES.md](CAPABILITIES.md)
 3. **Material data?** → See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) and `src/data/database_data_dictionary.md`
-4. **Architecture?** → Read [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)
+4. **Machine types?** → See [MACHINE_SYSTEM_DOCUMENTATION.md](MACHINE_SYSTEM_DOCUMENTATION.md)
+5. **Validation rules & custom materials?** → See [ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md)
+6. **Recording outcomes & the shot dataset?** → See [LOGGING_GUIDE.md](LOGGING_GUIDE.md)
+7. **Architecture?** → Read [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)
 
 ---
 
