@@ -115,13 +115,16 @@ result or make two saved runs incomparable.
 
 ## Export
 
-Exports are always in bar, independent of the display preference above.
-
 Results can be exported as:
 - **JSON** — full result object
 - **CSV** — flat parameter/value table
 - **Report** — formatted plain-text summary
-- **PDF** — a multi-page report with the pressure chart embedded (input/result tables, machine compatibility, signature lines)
+- **PDF** — a printable report carrying every section the screen shows: the pressure to set and what governs it, warnings, inputs, pressure, flow and the laminar margin, thermal, mix-head temperature, blowing agent, environmental, cure & exotherm, the pressure chart, and sign-off lines
+
+**Units in exports.** JSON, CSV and the text report are data and always quote bar, so a file
+means the same thing whenever it is opened. The PDF is the exception: it follows the unit
+chosen on screen and states which one on its first page, because it is the copy that gets
+printed and carried to the machine.
 
 ---
 

@@ -106,10 +106,12 @@ Whether the selected machine (Low Pressure: 8–20 bar, High Pressure: 100–200
 ## Pressure Units
 
 The toggle in the top bar switches every pressure on screen between **bar** and **psi**. It
-is a display preference only — the engine calculates in bar, saved runs store bar, and
-exported files stay in bar whatever the toggle says, so a file you open next week means the
-same thing regardless of how the screen was set when you saved it. Your choice is remembered
-between visits.
+is a display preference only: the engine calculates in bar and saved runs store bar, so
+switching units can never change a result. Your choice is remembered between visits.
+
+JSON, CSV and the text report always quote bar, so a data file means the same thing whenever
+it is opened. The PDF report follows your chosen unit and says which one on its first page —
+it is the copy that gets printed and taken to the machine.
 
 ---
 
@@ -147,7 +149,10 @@ Every calculation is saved to **History** (top-right). Open a saved run and use 
 
 ## Exporting Results
 
-Use the buttons above the results panel to export as **JSON**, **CSV**, a plain-text **Report**, or a **PDF**.
+Use the buttons above the results panel to export as **JSON**, **CSV**, a plain-text
+**Report**, or a **PDF**. The PDF carries every section shown on screen — including the
+optional mix-head temperature and cure blocks when you supplied the inputs for them — plus
+the pressure chart and operator/QA sign-off lines.
 
 ---
 

@@ -96,7 +96,7 @@ export function ResultsDisplay() {
           exporting a report whose inputs had to be invented is worse than not offering it. */}
       {lastParams && (
         <div className="flex justify-end">
-          <ExportButtons results={results} params={lastParams} />
+          <ExportButtons results={results} />
         </div>
       )}
 
