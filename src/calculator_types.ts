@@ -83,6 +83,11 @@ export interface CalculationResults {
     machine_type?: string;
     /** Density of the mixed liquid being pumped (kg/m³), blended from both components */
     material_density_kg_m3?: number;
+    /**
+     * The same output as throughput. This is how a metering pump is set and how machine
+     * capacity is specified, so it is the figure that maps onto a dial.
+     */
+    mass_flow_kg_min?: number;
   };
   flow: {
     shear_rate_s_inv: number;        // s⁻¹
@@ -182,24 +187,50 @@ export interface CalculationResults {
     heat_of_reaction_is_estimated: boolean;
   };
 
+  /**
+   * What the machine can do with this line and this output.
+   *
+   * Two different pressures live here and they are not interchangeable. `line_demand_bar`
+   * is hydraulic resistance — what the pump must overcome to move material.
+   * `injection_pressure_bar` is what the gauge reads at the mix head, which on a
+   * high-pressure machine is set by the mixing requirement rather than by anything
+   * resisting flow. Raising it does not move more material: output follows pump speed.
+   */
   machine_compatibility?: {
     is_compatible: boolean;
     status: string;
-    /** Pressure the line demands, including the machine's internal losses (bar) */
-    required_pressure_bar?: number;
-    /**
-     * The pressure the operator actually sets (bar) — the line demand, or the machine's
-     * minimum where that is higher. A high-pressure machine holds its minimum regardless of
-     * what the line asks for, because impingement mixing needs it.
-     */
-    set_pressure_bar?: number;
-    set_pressure_governed_by?: 'line_demand' | 'machine_minimum';
+
+    /** Feed-line drop plus the machine's internal losses (bar) */
+    line_demand_bar?: number;
+    /** What the gauge reads: the line demand, or the mix head minimum where that is higher */
+    injection_pressure_bar?: number;
+    injection_pressure_governed_by?: 'line_demand' | 'mix_head_minimum';
     min_pressure_bar?: number;
     max_pressure_bar?: number;
+
+    /** The setting the operator actually makes (kg/min) */
+    output_kg_min?: number;
+    output_min_kg_min?: number;
+    output_max_kg_min?: number;
+    /** null when no density was available to convert the flow rate */
+    output_in_range?: boolean | null;
+
+    /**
+     * Shear rate of the mixing element, NOT a feed-line limit — a mechanical rotor runs
+     * around 100–1500 1/s and impingement around 2000–10000, by design.
+     */
+    mix_head_shear_range?: { min: number; max: number } | null;
+    mix_head_type?: string | null;
+
     /** Set only when the combination genuinely will not work */
     warning?: string | null;
-    /** Informational — e.g. the demand sits below the machine's minimum operating pressure */
+    /** Informational — e.g. the mix head, not the line, is setting the pressure */
     note?: string | null;
+
+    /** @deprecated Runs recorded before the pressure model was split still carry these */
+    required_pressure_bar?: number;
+    set_pressure_bar?: number;
+    set_pressure_governed_by?: 'line_demand' | 'machine_minimum';
   };
   timestamp?: string;
   warnings?: string[];

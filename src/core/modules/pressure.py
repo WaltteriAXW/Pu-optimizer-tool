@@ -4,7 +4,7 @@ Handles both laminar and turbulent flow regimes.
 """
 
 import math
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # The regime thresholds and their naming live in flow.py, which owns Reynolds number.
 # Importing them keeps this module's reported regime identical to the one the flow block
@@ -142,62 +142,125 @@ def calculate_pressure_with_fittings(
 def calculate_machine_compatibility(
     total_pressure_bar: float,
     machine_specs: Dict,
+    mass_flow_kg_min: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
-    Check whether the pressure this line demands is within the machine's capability.
+    Check this line and this output against what the machine can do.
 
-    The figure being checked is a *demand*: the line pressure drop plus the machine's own
-    internal losses. Only exceeding the machine's maximum makes the combination unworkable.
-    A demand below the machine's minimum operating pressure is normal and expected — a
-    high-pressure machine holds at least 100 bar regardless of how little the line needs —
-    so it is reported as an informational note rather than an incompatibility.
+    Two different quantities are reported here, and conflating them was the fault this
+    function used to have:
 
-    Returns compatibility status and recommendations.
+    LINE DEMAND is hydraulic resistance — the feed-line pressure drop plus the machine's
+    own internal losses. It is what the pump must overcome to move material at the set
+    output.
+
+    INJECTION PRESSURE is what the gauge reads at the mix head. On a high-pressure machine
+    it is 100 bar or more not because anything resists that hard, but because impingement
+    mixing needs that jet velocity to mix at all; the pressure is developed by forcing the
+    metered flow through small injector orifices. The old code added the machine minimum
+    into a single "required pressure" and called the result what the operator should dial
+    in, which implies raising pressure pushes more material down the hose. It does not:
+    both machine classes here meter with positive-displacement pumps, so the flow rate
+    follows pump speed and is very nearly independent of discharge pressure. The extra
+    pressure is dissipated across the mix head, downstream of the line being modelled.
+
+    The consequence for the operator is that OUTPUT, not pressure, is the setting that
+    moves the process — so it is checked against the machine's own output range here.
+
+    Args:
+        total_pressure_bar: Feed-line pressure drop including fitting losses
+        machine_specs: One entry from MACHINE_SPECS
+        mass_flow_kg_min: Output being run, where the caller knows the mixed density
+
+    Returns:
+        Dict describing the line demand, the expected injection pressure and whether the
+        output is inside the machine's range.
     """
     max_pressure = machine_specs.get('max_pressure', 200)
     min_pressure = machine_specs.get('min_operating_pressure', 8)
     process_loss = machine_specs.get('process_loss', {}).get('total', 10)
 
-    # Pressure the line requires, including the machine's internal losses
-    required_pressure = total_pressure_bar + process_loss
+    # What the pump must overcome to move material through the line
+    line_demand = total_pressure_bar + process_loss
 
-    is_compatible = required_pressure <= max_pressure
+    # What the gauge will read. The mix head minimum governs whenever the line asks for
+    # less, which for a short feed line is essentially always on a high-pressure machine.
+    injection_pressure = max(line_demand, min_pressure)
+    governed_by = 'mix_head_minimum' if min_pressure > line_demand else 'line_demand'
+
+    # ── Output against the machine's range ────────────────────────────────────────────
+    output_range = machine_specs.get('output_range') or {}
+    output_min = output_range.get('min')
+    output_max = output_range.get('max')
+
+    output_in_range: Optional[bool] = None
+    output_warning = None
+    if mass_flow_kg_min is not None and output_min is not None and output_max is not None:
+        output_in_range = output_min <= mass_flow_kg_min <= output_max
+        if mass_flow_kg_min < output_min:
+            output_warning = (
+                f'Output {mass_flow_kg_min:.1f} kg/min is below the machine minimum of '
+                f'{output_min} kg/min. Metering is least accurate at the bottom of the '
+                f'range, and the ratio is what suffers first.'
+            )
+        elif mass_flow_kg_min > output_max:
+            output_warning = (
+                f'Output {mass_flow_kg_min:.1f} kg/min exceeds the machine maximum of '
+                f'{output_max} kg/min. This machine cannot meter this shot.'
+            )
+
+    # Only the line demand exceeding the machine's ceiling makes the combination
+    # unworkable on pressure; an output the machine cannot meter does too.
+    pressure_ok = line_demand <= max_pressure
+    is_compatible = pressure_ok and (output_in_range is not False)
 
     status = 'compatible'
     warning = None
     note = None
 
-    if required_pressure > max_pressure:
+    if not pressure_ok:
         status = 'incompatible_high'
         warning = (
-            f'Required pressure {required_pressure:.1f} bar exceeds the machine maximum '
-            f'of {max_pressure} bar'
+            f'The line demands {line_demand:.1f} bar, beyond the machine maximum of '
+            f'{max_pressure} bar'
         )
-    elif required_pressure < min_pressure:
-        status = 'below_machine_minimum'
+    elif output_in_range is False:
+        status = 'output_out_of_range'
+        warning = output_warning
+    elif governed_by == 'mix_head_minimum':
+        status = 'mix_head_governs'
         note = (
-            f'This line needs {required_pressure:.1f} bar, below the machine minimum '
-            f'operating pressure of {min_pressure} bar. The machine will run at its '
-            f'minimum — there is ample pressure available.'
+            f'The feed line needs only {line_demand:.1f} bar, so the mix head sets the '
+            f'pressure: this machine injects at {min_pressure} bar or more because '
+            f'impingement mixing requires it. Raising the pressure does not increase '
+            f'flow — output follows pump speed.'
         )
-
-    # The figure the operator actually dials in. The line demand is a lower bound on what is
-    # needed, but a high-pressure machine cannot run below its minimum — impingement mixing
-    # requires that pressure regardless of how little the line asks for — so whichever is
-    # higher governs. Reporting the demand alone would have someone set a pressure the
-    # machine will not hold.
-    set_pressure = max(required_pressure, min_pressure)
-    governed_by = 'machine_minimum' if min_pressure > required_pressure else 'line_demand'
 
     return {
         'is_compatible': is_compatible,
         'status': status,
-        'required_pressure_bar': required_pressure,
-        'set_pressure_bar': set_pressure,
-        'set_pressure_governed_by': governed_by,
-        'max_pressure_bar': max_pressure,
-        'min_pressure_bar': min_pressure,
+
+        # Hydraulic resistance of line plus machine plumbing
+        'line_demand_bar': line_demand,
         'process_loss_bar': process_loss,
+
+        # What the gauge reads at the mix head
+        'injection_pressure_bar': injection_pressure,
+        'injection_pressure_governed_by': governed_by,
+        'min_pressure_bar': min_pressure,
+        'max_pressure_bar': max_pressure,
+
+        # The setting that actually moves the process
+        'output_kg_min': mass_flow_kg_min,
+        'output_min_kg_min': output_min,
+        'output_max_kg_min': output_max,
+        'output_in_range': output_in_range,
+
+        # Mix head shear, which is a property of the mixing element and NOT a feed-line
+        # limit — a mechanical rotor runs at 100-1500 1/s, impingement at 2000-10000
+        'mix_head_shear_range': machine_specs.get('shear_rate_range'),
+        'mix_head_type': machine_specs.get('mix_head_type'),
+
         'warning': warning,
         'note': note,
     }

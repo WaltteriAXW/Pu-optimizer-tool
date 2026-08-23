@@ -60,6 +60,12 @@ export function PressureChart({ results, unit }: PressureChartProps) {
   // Scales. The vertical span falls back to 1 bar when the pressure is zero — dividing by
   // it produced NaN for every coordinate and an SVG that rendered as blank space.
   const yAxisMax = totalPressure > 0 ? totalPressure * 1.2 : 1
+
+  // Decimals enough to tell one tick from the next. Fixed at one, a 0.2 bar axis labelled
+  // itself "0.2, 0.2, 0.1, 0.1, 0.0, 0.0" — six ticks showing three values, which reads as
+  // a broken chart rather than a finely divided one.
+  const axisTop = toPressureUnit(yAxisMax, unit)
+  const tickDecimals = axisTop >= 100 ? 0 : axisTop >= 10 ? 1 : axisTop >= 1 ? 2 : 3
   const xScale = (val: number) =>
     padding.left + (pipeLength > 0 ? (val / pipeLength) * chartWidth : 0)
   const yScale = (val: number) =>
@@ -168,7 +174,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
           {/* Y-axis labels */}
           <g fontSize="12" fill="#64748b" textAnchor="end">
             {Array.from({ length: 6 }).map((_, i) => {
-              const value = toPressureUnit((i * yAxisMax) / 5, unit).toFixed(1)
+              const value = toPressureUnit((i * yAxisMax) / 5, unit).toFixed(tickDecimals)
               const y = padding.top + ((5 - i) * chartHeight) / 5 + 4
               return (
                 <text key={`label-y-${i}`} x={padding.left - 10} y={y}>
