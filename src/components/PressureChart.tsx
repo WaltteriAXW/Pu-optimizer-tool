@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { CalculationResults } from '@/calculator_types'
 
 interface PressureChartProps {
@@ -9,6 +10,8 @@ interface PressureChartProps {
  * Shows base pressure drop and pressure with fittings over pipe length
  */
 export function PressureChart({ results }: PressureChartProps) {
+  const chartId = useId()
+
   if (!results.pressure || !results.input) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
@@ -47,10 +50,13 @@ export function PressureChart({ results }: PressureChartProps) {
     5
   )
 
-  // Scales
-  const xScale = (val: number) => padding.left + (val / pipeLength) * chartWidth
+  // Scales. The vertical span falls back to 1 bar when the pressure is zero — dividing by
+  // it produced NaN for every coordinate and an SVG that rendered as blank space.
+  const yAxisMax = totalPressure > 0 ? totalPressure * 1.2 : 1
+  const xScale = (val: number) =>
+    padding.left + (pipeLength > 0 ? (val / pipeLength) * chartWidth : 0)
   const yScale = (val: number) =>
-    padding.top + chartHeight - (val / (totalPressure * 1.2)) * chartHeight
+    padding.top + chartHeight - (val / yAxisMax) * chartHeight
 
   // Convert points to path
   const basePressurePath = basePressurePoints
@@ -71,7 +77,30 @@ export function PressureChart({ results }: PressureChartProps) {
       </h3>
 
       <div className="overflow-x-auto">
-        <svg width={width} height={height} className="mx-auto">
+        {/* viewBox rather than fixed width/height, so the chart scales down to the
+            container instead of forcing a horizontal scrollbar on a narrow screen. */}
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          width="100%"
+          height="auto"
+          preserveAspectRatio="xMidYMid meet"
+          className="mx-auto block max-w-full"
+          style={{ maxWidth: width }}
+          role="img"
+          aria-labelledby={`${chartId}-title ${chartId}-desc`}
+        >
+          {/* The chart is the only place these figures appear as a shape rather than a
+              number, so the description carries the same information as prose. */}
+          <title id={`${chartId}-title`}>
+            Pressure profile along the pipe
+          </title>
+          <desc id={`${chartId}-desc`}>
+            {`Pressure builds linearly over ${pipeLength.toFixed(0)} mm of pipe, reaching `
+              + `${basePressure.toFixed(2)} bar from pipe friction alone and `
+              + `${totalPressure.toFixed(2)} bar once ${fittingLoss.toFixed(2)} bar of `
+              + 'fitting losses are included.'}
+          </desc>
+
           {/* Background */}
           <rect width={width} height={height} fill="white" />
 
@@ -132,7 +161,7 @@ export function PressureChart({ results }: PressureChartProps) {
           {/* Y-axis labels */}
           <g fontSize="12" fill="#64748b" textAnchor="end">
             {Array.from({ length: 6 }).map((_, i) => {
-              const value = ((i * totalPressure * 1.2) / 5).toFixed(1)
+              const value = ((i * yAxisMax) / 5).toFixed(1)
               const y = padding.top + ((5 - i) * chartHeight) / 5 + 4
               return (
                 <text key={`label-y-${i}`} x={padding.left - 10} y={y}>

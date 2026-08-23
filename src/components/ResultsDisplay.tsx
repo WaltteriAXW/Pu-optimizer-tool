@@ -50,9 +50,12 @@ export function ResultsDisplay() {
 
   if (calculatorError) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center">
+      <div
+        role="alert"
+        className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center"
+      >
         <div className="bg-red-50 p-4 rounded-full mb-4">
-          <AlertTriangle className="w-8 h-8 text-red-600" />
+          <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
         </div>
         <h3 className="text-lg font-bold text-slate-800">Calculation Failed</h3>
         <p className="text-slate-500 mt-2 max-w-sm">{calculatorError}</p>
@@ -64,7 +67,7 @@ export function ResultsDisplay() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
-          <Info className="w-8 h-8 text-indigo-600" />
+          <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
         <h3 className="text-lg font-bold text-slate-800">Ready to Simulate</h3>
         <p className="text-slate-500 mt-2 max-w-xs">
@@ -78,7 +81,16 @@ export function ResultsDisplay() {
   const isLaminar = results.flow?.flow_regime === 'laminar'
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    // Results replace the panel in place with no navigation, so without a live region a
+    // screen reader user gets no indication that pressing Run produced anything. The
+    // headline figures are announced; the detail below is there to be read at leisure.
+    <div
+      className="space-y-6 animate-fadeIn"
+      aria-live="polite"
+      aria-atomic="false"
+      role="region"
+      aria-label="Calculation results"
+    >
       {/* Export Buttons. Offered only once the parameters behind these results are known —
           exporting a report whose inputs had to be invented is worse than not offering it. */}
       {lastParams && (
@@ -163,7 +175,7 @@ export function ResultsDisplay() {
           {results.warnings && results.warnings.length > 0 ? (
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
               <h4 className="text-amber-900 font-bold flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-4 h-4" /> Attention Needed
+                <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
               <ul className="space-y-2">
                 {results.warnings.map((warn, i) => (
@@ -177,7 +189,7 @@ export function ResultsDisplay() {
           ) : (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
               <h4 className="text-emerald-900 font-bold flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-4 h-4" /> Process Optimized
+                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Process Optimized
               </h4>
               <p className="text-sm text-emerald-700">No critical warnings detected.</p>
             </div>
@@ -577,9 +589,9 @@ function SetPressureCard({ results }: { results: CalculationResults }) {
               className={`mt-3 badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}
             >
               {machine.is_compatible ? (
-                <><CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
+                <><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
               ) : (
-                <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
+                <><AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
               )}
             </div>
           </div>
@@ -661,9 +673,9 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
     <div className={`rounded-xl border p-5 ${tone}`} data-testid="laminar-envelope">
       <div className="flex items-start gap-3">
         {laminar && !tight ? (
-          <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+          <CheckCircle2 aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         ) : (
-          <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+          <AlertTriangle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         )}
         <div className="min-w-0">
           <h4 className={`font-bold ${textTone}`}>
@@ -719,7 +731,10 @@ function KpiCard({
       <div className="card-body">
         <div className="flex justify-between items-start mb-2">
           <span className="text-sm font-medium text-slate-500">{title}</span>
-          <div className={`p-2 rounded-lg ${statusColors[status]}`}>{icon}</div>
+          {/* Decorative: every icon here restates the title beside it */}
+          <div aria-hidden="true" className={`p-2 rounded-lg ${statusColors[status]}`}>
+            {icon}
+          </div>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>

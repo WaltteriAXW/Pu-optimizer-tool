@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useId } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
-import { VALIDATION_RANGES, DEFAULTS, validateInput } from '../constants'
+import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import type { ProcessParameters } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
@@ -43,6 +43,27 @@ const OPTIONAL_FIELD_RANGES: Record<
   },
 }
 
+/**
+ * The four standard fields, keyed by the input `name` they carry.
+ *
+ * This table exists because there was no mapping between the two: the change handler called
+ * `validateInput(name, …)` with 'pipe_length_mm', while VALIDATION_RANGES is keyed
+ * 'pipeLength', and `validateInput` treats a field it does not recognise as valid. The four
+ * main inputs therefore accepted anything — 1 mm of pipe, 900 °C — with no inline error and
+ * no disabled submit, and the value was only rejected later by the Python layer. The custom
+ * and optional fields never had the fault because they already validate against tables keyed
+ * this way; these now do the same.
+ */
+const STANDARD_FIELD_RANGES: Record<
+  'pipe_length_mm' | 'pipe_diameter_mm' | 'temperature_c' | 'flow_rate_lpm',
+  RangeSpec
+> = {
+  pipe_length_mm: VALIDATION_RANGES.pipeLength,
+  pipe_diameter_mm: VALIDATION_RANGES.pipeDiameter,
+  temperature_c: VALIDATION_RANGES.temperature,
+  flow_rate_lpm: VALIDATION_RANGES.flowRate,
+}
+
 /** Validation ranges for custom material numeric fields */
 const CUSTOM_FIELD_RANGES: Record<
   'viscosity_cp' | 'density_kg_m3' | 'flow_index' | 'activation_energy_j_mol',
@@ -69,6 +90,14 @@ export function CalculatorForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showCustomHelp, setShowCustomHelp] = useState(false)
   const [showOptional, setShowOptional] = useState(false)
+
+  // Ids for the controls this component renders directly. The reusable field components
+  // generate their own.
+  const materialSelectId = useId()
+  const materialErrorId = `${materialSelectId}-error`
+  const machineSelectId = useId()
+  const customPanelId = useId()
+  const optionalPanelId = useId()
 
   // Materials come from the database CSV, so adding one needs no change here.
   const [materials, setMaterials] = useState<Array<{ id: string; name: string }>>([])
@@ -191,12 +220,23 @@ export function CalculatorForm() {
           return
         }
 
-        // Standard field validation
-        const validation = validateInput(name, numValue)
-        if (!validation.valid) {
-          setFieldErrors((prev) => ({ ...prev, [name]: validation.error || 'Invalid' }))
-        } else {
-          setFieldErrors((prev) => { const updated = { ...prev }; delete updated[name]; return updated })
+        // Standard field validation, against the range this field is actually displayed
+        // with rather than a key that never matched
+        const standard = STANDARD_FIELD_RANGES[name as keyof typeof STANDARD_FIELD_RANGES]
+        if (standard) {
+          if (numValue < standard.min) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [name]: `${standard.name} must be at least ${standard.min} ${standard.unit}`,
+            }))
+          } else if (numValue > standard.max) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [name]: `${standard.name} must not exceed ${standard.max} ${standard.unit}`,
+            }))
+          } else {
+            setFieldErrors((prev) => { const u = { ...prev }; delete u[name]; return u })
+          }
         }
       }
     },
@@ -271,13 +311,19 @@ export function CalculatorForm() {
 
         {/* Material Selection */}
         <div className="mb-5">
-          <label className="text-sm font-semibold text-slate-700 block mb-1.5">
+          <label
+            htmlFor={materialSelectId}
+            className="text-sm font-semibold text-slate-700 block mb-1.5"
+          >
             Material Type
           </label>
           <select
+            id={materialSelectId}
             name="material_key"
             value={inputs.material_key}
             onChange={handleChange}
+            aria-invalid={materialError ? true : undefined}
+            aria-describedby={materialError ? materialErrorId : undefined}
             className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
           >
             {materials.length === 0 && !materialError && (
@@ -291,8 +337,12 @@ export function CalculatorForm() {
             <option value="custom">Custom Material…</option>
           </select>
           {materialError && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
-              <AlertCircle className="w-3 h-3" />
+            <p
+              id={materialErrorId}
+              role="alert"
+              className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600"
+            >
+              <AlertCircle aria-hidden="true" className="w-3 h-3" />
               <span>{materialError}</span>
             </p>
           )}
@@ -308,18 +358,23 @@ export function CalculatorForm() {
               <button
                 type="button"
                 onClick={() => setShowCustomHelp((v) => !v)}
+                aria-expanded={showCustomHelp}
+                aria-controls={customPanelId}
                 className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
               >
                 {showCustomHelp ? (
-                  <><ChevronUp className="w-3 h-3" /> Hide help</>
+                  <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide help</>
                 ) : (
-                  <><ChevronDown className="w-3 h-3" /> What are these?</>
+                  <><ChevronDown aria-hidden="true" className="w-3 h-3" /> What are these?</>
                 )}
               </button>
             </div>
 
             {showCustomHelp && (
-              <div className="text-xs text-indigo-600 bg-indigo-100 rounded-md p-3 space-y-1 leading-relaxed">
+              <div
+                id={customPanelId}
+                className="text-xs text-indigo-600 bg-indigo-100 rounded-md p-3 space-y-1 leading-relaxed"
+              >
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
                 <p><strong>Flow Index (0–1):</strong> Power-law exponent for non-Newtonian behaviour. 1.0 = Newtonian; typical PU foams: 0.8–0.9.</p>
@@ -371,10 +426,14 @@ export function CalculatorForm() {
 
         {/* Machine Type */}
         <div className="mb-5">
-          <label className="text-sm font-semibold text-slate-700 block mb-1.5">
+          <label
+            htmlFor={machineSelectId}
+            className="text-sm font-semibold text-slate-700 block mb-1.5"
+          >
             Machine Type
           </label>
           <select
+            id={machineSelectId}
             name="machine_type"
             value={inputs.machine_type}
             onChange={handleChange}
@@ -394,18 +453,20 @@ export function CalculatorForm() {
             <button
               type="button"
               onClick={() => setShowOptional((v) => !v)}
+              aria-expanded={showOptional}
+              aria-controls={optionalPanelId}
               className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
             >
               {showOptional ? (
-                <><ChevronUp className="w-3 h-3" /> Hide</>
+                <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide</>
               ) : (
-                <><ChevronDown className="w-3 h-3" /> Ambient conditions &amp; part</>
+                <><ChevronDown aria-hidden="true" className="w-3 h-3" /> Ambient conditions &amp; part</>
               )}
             </button>
           </div>
 
           {showOptional && (
-            <div className="space-y-4">
+            <div id={optionalPanelId} className="space-y-4">
               <p className="text-xs text-slate-500 leading-relaxed">
                 Leave blank to calculate from the set point alone. An ambient temperature models
                 the material drifting toward the surrounding air in the hose — which matters
@@ -431,8 +492,11 @@ export function CalculatorForm() {
 
         {/* Status Messages */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div
+            role="alert"
+            className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3"
+          >
+            <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-red-900">Error</h4>
               <p className="text-sm text-red-800 mt-0.5">{error}</p>
@@ -440,9 +504,18 @@ export function CalculatorForm() {
           </div>
         )}
 
+        {/* Announced rather than merely shown: the engine takes several seconds to boot on
+            a first visit, and until it does the submit button is disabled for a reason a
+            screen reader user would otherwise have no way to learn. */}
         {!isReady && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-            <div className="w-5 h-5 border-2 border-amber-400 border-t-amber-600 rounded-full animate-spin flex-shrink-0 mt-0.5" />
+          <div
+            role="status"
+            className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3"
+          >
+            <div
+              aria-hidden="true"
+              className="w-5 h-5 border-2 border-amber-400 border-t-amber-600 rounded-full animate-spin flex-shrink-0 mt-0.5"
+            />
             <div>
               <h4 className="text-sm font-semibold text-amber-900">Initializing Engine</h4>
               <p className="text-sm text-amber-800 mt-0.5">
@@ -465,14 +538,17 @@ export function CalculatorForm() {
           >
             {isLoading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div
+                  aria-hidden="true"
+                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                />
                 Calculating...
               </>
             ) : !isReady ? (
               'Loading Engine...'
             ) : (
               <>
-                Run Simulation <Play className="w-4 h-4 fill-current" />
+                Run Simulation <Play aria-hidden="true" className="w-4 h-4 fill-current" />
               </>
             )}
           </button>
@@ -483,7 +559,11 @@ export function CalculatorForm() {
 }
 
 /**
- * Reusable input field component with unit badge
+ * Reusable input field component with unit badge.
+ *
+ * The label is tied to the input by id rather than merely sitting above it: without that
+ * association a screen reader announces "edit, blank" with no indication of which field it
+ * is, and clicking the label does not focus the input.
  */
 function InputField({
   label,
@@ -502,36 +582,55 @@ function InputField({
   range: any
   error?: string
 }) {
+  const id = useId()
+  const rangeId = `${id}-range`
+  const errorId = `${id}-error`
+
   return (
     <div className="mb-5 group">
       <div className="flex justify-between items-baseline mb-1.5">
-        <label className="text-sm font-semibold text-slate-700">{label}</label>
-        <span className="text-xs text-slate-400">
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+          {label}
+        </label>
+        <span id={rangeId} className="text-xs text-slate-400">
           {range.min}-{range.max} {unit}
         </span>
       </div>
       <div className="relative">
         <input
+          id={id}
           type="number"
           name={name}
           value={value}
           onChange={onChange}
           step="any"
+          aria-invalid={error ? true : undefined}
+          // The accepted range is read out with the field, and the error too once there is
+          // one — otherwise the reason a value was rejected is visible only to sighted users
+          aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
           className={`block w-full pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+        {/* Repeats the unit already announced with the range, so it is decorative here */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+        >
           <span className={`text-sm font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
             {unit}
           </span>
         </div>
       </div>
       {error && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3 h-3" />
+        <div
+          id={errorId}
+          role="alert"
+          className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600"
+        >
+          <AlertCircle aria-hidden="true" className="w-3 h-3" />
           <span>{error}</span>
         </div>
       )}
@@ -556,38 +655,61 @@ function OptionalField({
   spec: { min: number; max: number; label: string; unit: string; step: string; help: string }
   error?: string
 }) {
+  const id = useId()
+  const rangeId = `${id}-range`
+  const helpId = `${id}-help`
+  const errorId = `${id}-error`
+
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">
-        <label className="text-xs font-semibold text-slate-700">{spec.label}</label>
-        <span className="text-xs text-slate-400">
+        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+          {spec.label}
+        </label>
+        <span id={rangeId} className="text-xs text-slate-400">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
       <div className="relative">
         <input
+          id={id}
           type="number"
           name={name}
           value={value ?? ''}
           placeholder="not set"
           onChange={onChange}
           step={spec.step}
+          aria-invalid={error ? true : undefined}
+          // The help text explains what supplying this field switches on, which is the
+          // whole point of an optional input — it belongs in the announcement
+          aria-describedby={
+            error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
+          }
           className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
-        <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
+        >
           <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
             {spec.unit}
           </span>
         </div>
       </div>
-      <p className="mt-1 text-xs text-slate-500 leading-snug">{spec.help}</p>
+      <p id={helpId} className="mt-1 text-xs text-slate-500 leading-snug">
+        {spec.help}
+      </p>
       {error && (
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3 h-3" />
+        <div
+          id={errorId}
+          role="alert"
+          className="mt-1 flex items-center gap-1.5 text-xs text-red-600"
+        >
+          <AlertCircle aria-hidden="true" className="w-3 h-3" />
           <span>{error}</span>
         </div>
       )}
@@ -615,16 +737,23 @@ function CustomMaterialField({
   range: { min: number; max: number; step: string }
   error?: string
 }) {
+  const id = useId()
+  const rangeId = `${id}-range`
+  const errorId = `${id}-error`
+
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">
-        <label className="text-xs font-semibold text-slate-700">{label}</label>
-        <span className="text-xs text-slate-400">
+        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+          {label}
+        </label>
+        <span id={rangeId} className="text-xs text-slate-400">
           {range.min}–{range.max} {unit}
         </span>
       </div>
       <div className="relative">
         <input
+          id={id}
           type="number"
           name={name}
           value={value}
@@ -632,21 +761,30 @@ function CustomMaterialField({
           step={range.step}
           min={range.min}
           max={range.max}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
           className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
-        <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
+        >
           <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
             {unit}
           </span>
         </div>
       </div>
       {error && (
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3 h-3" />
+        <div
+          id={errorId}
+          role="alert"
+          className="mt-1 flex items-center gap-1.5 text-xs text-red-600"
+        >
+          <AlertCircle aria-hidden="true" className="w-3 h-3" />
           <span>{error}</span>
         </div>
       )}

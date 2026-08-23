@@ -49,6 +49,12 @@ function AppContent() {
               </a>
               <button
                 onClick={() => setHistoryOpen(!historyOpen)}
+                aria-expanded={historyOpen}
+                // The word "History" is hidden below the sm breakpoint, leaving an icon
+                // and a bare count; the label carries the meaning at every width
+                aria-label={`Calculation history, ${history.length} ${
+                  history.length === 1 ? 'run' : 'runs'
+                } saved`}
                 className={`relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   historyOpen
                     ? 'bg-indigo-100 text-indigo-700'
@@ -56,10 +62,13 @@ function AppContent() {
                 }`}
                 title={`Calculation History (${history.length})`}
               >
-                <History className="w-4 h-4" />
+                <History aria-hidden="true" className="w-4 h-4" />
                 <span className="hidden sm:inline">History</span>
                 {history.length > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+                  >
                     {history.length}
                   </span>
                 )}
@@ -98,6 +107,7 @@ function AppContent() {
       <HistorySidebar
         history={history}
         isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
         onSelectEntry={(entry) => {
           loadFromHistory(entry)
           setHistoryOpen(false)
@@ -106,10 +116,13 @@ function AppContent() {
         onRecordOutcome={recordOutcome}
       />
 
-      {/* Sidebar Backdrop */}
+      {/* Sidebar backdrop. Shown at every width: the panel overlays the page on a wide
+          screen too, and hiding the backdrop above lg left no way to dismiss it by
+          clicking away — the only exit was finding the toggle again. */}
       {historyOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          aria-hidden="true"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={() => setHistoryOpen(false)}
         />
       )}

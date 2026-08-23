@@ -96,7 +96,7 @@ export function DatasetPanel() {
   return (
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
-        <Database className="w-4 h-4 text-slate-600" />
+        <Database aria-hidden="true" className="w-4 h-4 text-slate-600" />
         <h4 className="font-bold text-slate-800">Shot dataset</h4>
       </div>
       <div className="card-body space-y-4">
@@ -138,7 +138,7 @@ export function DatasetPanel() {
             disabled={history.length === 0}
             className="button-secondary flex-1 text-sm disabled:opacity-50"
           >
-            <Download className="w-4 h-4 mr-1.5" />
+            <Download aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Export
           </button>
           <button
@@ -146,7 +146,7 @@ export function DatasetPanel() {
             onClick={() => fileInput.current?.click()}
             className="button-secondary flex-1 text-sm"
           >
-            <Upload className="w-4 h-4 mr-1.5" />
+            <Upload aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Import
           </button>
           <input
@@ -173,7 +173,7 @@ export function DatasetPanel() {
               className="button-primary w-full text-sm disabled:opacity-50"
               data-testid="train-model"
             >
-              <Brain className="w-4 h-4 mr-1.5" />
+              <Brain aria-hidden="true" className="w-4 h-4 mr-1.5" />
               {training ? 'Training…' : 'Train on recorded shots'}
             </button>
             {trained && (
