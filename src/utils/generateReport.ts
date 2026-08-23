@@ -86,8 +86,8 @@ export const generateReport = async (
     }
   }
 
-  const heading = (text: string) => {
-    need(18)
+  const heading = (text: string, reserveForContent = 26) => {
+    need(18 + reserveForContent)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(11)
     setColor(INK)
@@ -180,9 +180,15 @@ export const generateReport = async (
   doc.text(`All pressures in ${unit}.`, MARGIN, y)
   y += 9
 
-  // ── The number the operator sets ───────────────────────────────────────────────
+  // ── What to set, and what the gauge will read ──────────────────────────────────
   const mc = results.machine_compatibility
-  if (mc && typeof mc.set_pressure_bar === 'number') {
+  const injectionPressure = mc?.injection_pressure_bar ?? mc?.set_pressure_bar
+  const lineDemand = mc?.line_demand_bar ?? mc?.required_pressure_bar
+  const governedByMixHead =
+    (mc?.injection_pressure_governed_by ?? mc?.set_pressure_governed_by) === 'mix_head_minimum' ||
+    mc?.set_pressure_governed_by === 'machine_minimum'
+
+  if (mc && typeof injectionPressure === 'number') {
     const boxHeight = 34
     need(boxHeight + 4)
     doc.setFillColor(ACCENT_SOFT[0], ACCENT_SOFT[1], ACCENT_SOFT[2])
@@ -190,50 +196,71 @@ export const generateReport = async (
     doc.setFillColor(ACCENT[0], ACCENT[1], ACCENT[2])
     doc.rect(MARGIN, y, 1.6, boxHeight, 'F')
 
+    // Left: the setting. Output is what the operator dials in, because a metering pump
+    // delivers by pump speed — the pressure follows from it and cannot be dialled up to
+    // move more material.
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
     setColor(MUTED)
-    doc.text('PRESSURE TO SET', MARGIN + 7, y + 8)
+    doc.text('MACHINE OUTPUT - SET THIS', MARGIN + 7, y + 8)
 
     doc.setFontSize(26)
     setColor(INK)
-    doc.text(p(mc.set_pressure_bar), MARGIN + 7, y + 20)
-    const width = doc.getTextWidth(p(mc.set_pressure_bar))
+    const outputText =
+      typeof mc.output_kg_min === 'number'
+        ? mc.output_kg_min.toFixed(mc.output_kg_min >= 10 ? 0 : 1)
+        : '-'
+    doc.text(outputText, MARGIN + 7, y + 20)
+    const outputWidth = doc.getTextWidth(outputText)
     doc.setFontSize(12)
     setColor(MUTED)
-    doc.text(unit, MARGIN + 9 + width, y + 20)
+    doc.text('kg/min', MARGIN + 9 + outputWidth, y + 20)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    const outOfRange = mc.output_in_range === false
+    setColor(outOfRange ? BAD : MUTED)
+    const outputNote =
+      typeof mc.output_min_kg_min === 'number' && typeof mc.output_max_kg_min === 'number'
+        ? `Machine range ${mc.output_min_kg_min}-${mc.output_max_kg_min} kg/min`
+          + (outOfRange ? ' - this shot is outside it.' : '.')
+        : ''
+    doc.text(pdfSafe(outputNote), MARGIN + 7, y + 27)
+
+    // Right: the reading that follows from it
+    const midX = MARGIN + contentWidth / 2 + 4
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    setColor(MUTED)
+    doc.text('INJECTION PRESSURE - EXPECTED', midX, y + 8)
+
+    doc.setFontSize(26)
+    setColor(INK)
+    doc.text(p(injectionPressure), midX, y + 20)
+    const pressureWidth = doc.getTextWidth(p(injectionPressure))
+    doc.setFontSize(12)
+    setColor(MUTED)
+    doc.text(unit, midX + 3 + pressureWidth, y + 20)
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8.5)
     setColor(MUTED)
-    const governed =
-      mc.set_pressure_governed_by === 'machine_minimum'
-        ? `The machine minimum governs: impingement mixing needs ${p(mc.min_pressure_bar)} ${unit} whatever the line asks for, and this line asks for ${p(mc.required_pressure_bar)} ${unit}.`
-        : `The line demand governs: ${p(results.pressure?.pressure_with_fittings_bar)} ${unit} of pipe drop plus the machine's own internal losses.`
-    doc.text(doc.splitTextToSize(pdfSafe(governed), contentWidth - 14), MARGIN + 7, y + 27)
+    const governed = governedByMixHead
+      ? `Set by the mix head, not the line: impingement mixing needs ${p(mc.min_pressure_bar)} ${unit}. The line asks for only ${p(lineDemand)} ${unit}.`
+      : `Set by the feed line: ${p(results.pressure?.pressure_with_fittings_bar)} ${unit} of pipe drop plus machine losses.`
+    doc.text(doc.splitTextToSize(pdfSafe(governed), contentWidth / 2 - 10), midX, y + 27)
 
-    // Compatibility, stated on the right of the same box
-    const compatible = mc.is_compatible
+    y += boxHeight + 5
+
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(9)
-    setColor(compatible ? GOOD : BAD)
+    setColor(mc.is_compatible ? GOOD : BAD)
     doc.text(
-      compatible ? 'Within machine range' : 'Outside machine range',
-      pageWidth - MARGIN - 6,
-      y + 8,
-      { align: 'right' }
+      mc.is_compatible ? 'Machine can run this shot' : "Outside the machine's range",
+      MARGIN,
+      y + 4
     )
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8.5)
-    setColor(MUTED)
-    doc.text(
-      `Window ${p(mc.min_pressure_bar)}–${p(mc.max_pressure_bar)} ${unit}`,
-      pageWidth - MARGIN - 6,
-      y + 13,
-      { align: 'right' }
-    )
-
-    y += boxHeight + 9
+    y += 11
   }
 
   // ── Warnings, where the engine raised any ──────────────────────────────────────
@@ -252,7 +279,7 @@ export const generateReport = async (
   }
 
   // ── Inputs ────────────────────────────────────────────────────────────────────
-  heading('Inputs')
+  heading('Inputs', 68)
   const input = results.input
   table(
     [
@@ -260,6 +287,12 @@ export const generateReport = async (
       ['Pipe diameter', `${fmt(input?.pipe_diameter_mm, 1)} mm`],
       ['Material temperature', `${fmt(input?.temperature_c, 1)} °C`],
       ['Flow rate', `${fmt(input?.flow_rate_lpm, 2)} L/min`],
+      [
+        'Output',
+        typeof input?.mass_flow_kg_min === 'number'
+          ? `${fmt(input.mass_flow_kg_min, 2)} kg/min`
+          : '-',
+      ],
       ['Material', material],
       [
         'Mixed liquid density',
@@ -271,22 +304,56 @@ export const generateReport = async (
   )
 
   // ── Pressure ──────────────────────────────────────────────────────────────────
-  heading('Pressure')
+  heading('Pressure', 61)
   const pr = results.pressure
   table([
     ['Base pipe pressure drop', `${p(pr?.base_pressure_drop_bar)} ${unit}`],
     ['Fitting loss', `${p(pr?.fitting_loss_bar)} ${unit}`],
     ['Pipe drop with fittings', `${p(pr?.pressure_with_fittings_bar)} ${unit}`],
-    ['Line demand incl. machine losses', `${p(mc?.required_pressure_bar)} ${unit}`],
-    ['Pressure to set', `${p(mc?.set_pressure_bar)} ${unit}`],
-    [
-      'Set point governed by',
-      mc?.set_pressure_governed_by === 'machine_minimum' ? 'Machine minimum' : 'Line demand',
-    ],
+    ['Line demand incl. machine losses', `${p(lineDemand)} ${unit}`],
+    ['Injection pressure at the mix head', `${p(injectionPressure)} ${unit}`],
+    ['Injection pressure set by', governedByMixHead ? 'Mix head minimum' : 'Feed line'],
   ])
 
+  // ── Machine and output ────────────────────────────────────────────────────────
+  if (mc) {
+    const machineRows: string[][] = [['Machine', machine]]
+    if (typeof mc.output_kg_min === 'number') {
+      machineRows.push(['Output (the setting)', `${mc.output_kg_min.toFixed(2)} kg/min`])
+    }
+    if (typeof mc.output_min_kg_min === 'number' && typeof mc.output_max_kg_min === 'number') {
+      machineRows.push([
+        'Machine output range',
+        `${mc.output_min_kg_min}-${mc.output_max_kg_min} kg/min`,
+      ])
+      machineRows.push(['Output within range', mc.output_in_range === false ? 'NO' : 'Yes'])
+    }
+    machineRows.push([
+      'Machine pressure window',
+      `${p(mc.min_pressure_bar)}-${p(mc.max_pressure_bar)} ${unit}`,
+    ])
+    if (mc.mix_head_type) machineRows.push(['Mix head', mc.mix_head_type])
+    if (mc.mix_head_shear_range) {
+      machineRows.push([
+        'Mix head design shear',
+        `${mc.mix_head_shear_range.min}-${mc.mix_head_shear_range.max} 1/s`,
+      ])
+    }
+    heading('Machine & output', machineRows.length * 7 + 12)
+    table(machineRows)
+
+    if (mc.mix_head_shear_range) {
+      note(
+        'Mix head shear is a property of the mixing element and is unrelated to the shear '
+          + 'rate in the feed line above - impingement mixing runs an order of magnitude '
+          + 'higher than a mechanical rotor, by design.'
+      )
+    }
+    if (mc.note) note(mc.note)
+  }
+
   // ── Flow ──────────────────────────────────────────────────────────────────────
-  heading('Flow')
+  heading('Flow', 54)
   const flow = results.flow
 
   // The margin before turbulence leads this section rather than trailing it: a page break

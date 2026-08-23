@@ -67,7 +67,9 @@ test.describe('PDF report', () => {
     // and one that quietly drops half of it.
     const raw = pdf.toString('latin1')
     for (const heading of [
-      'PRESSURE TO SET',
+      'MACHINE OUTPUT - SET THIS',
+      'INJECTION PRESSURE - EXPECTED',
+      'MACHINE & OUTPUT',
       'INPUTS',
       'PRESSURE',
       'FLOW',

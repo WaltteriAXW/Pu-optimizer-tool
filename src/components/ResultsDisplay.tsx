@@ -101,7 +101,7 @@ export function ResultsDisplay() {
       )}
 
       {/* The number the operator sets, and the margin before the line turns turbulent */}
-      <SetPressureCard results={results} unit={pressureUnit} />
+      <MachineSettingsCard results={results} unit={pressureUnit} />
       <LaminarEnvelopeCard envelope={results.flow?.laminar_envelope} />
 
       {/* KPI Grid */}
@@ -489,12 +489,12 @@ export function ResultsDisplay() {
                     : '⚠ Incompatible'}
                 </p>
               </div>
-              {isNumber(results.machine_compatibility.required_pressure_bar) && (
+              {isNumber(results.machine_compatibility.line_demand_bar) && (
                 <div className="text-right">
-                  <p className="text-sm text-slate-600 mb-1">Required / Max Pressure</p>
+                  <p className="text-sm text-slate-600 mb-1">Line demand / Machine max</p>
                   <p className="text-lg font-bold text-slate-900">
                     {formatPressure(
-                      results.machine_compatibility.required_pressure_bar,
+                      results.machine_compatibility.line_demand_bar,
                       pressureUnit
                     )}
                     {isNumber(results.machine_compatibility.max_pressure_bar) &&
@@ -517,6 +517,18 @@ export function ResultsDisplay() {
                 {results.machine_compatibility.note}
               </p>
             )}
+            {/* Named as the mixing element's own shear, so it is not mistaken for a limit
+                on the feed line — impingement runs an order of magnitude above a rotor. */}
+            {results.machine_compatibility.mix_head_shear_range && (
+              <p className="mt-3 text-xs text-slate-500 leading-relaxed">
+                Mix head: {results.machine_compatibility.mix_head_type ?? 'mixing element'} —
+                designed to run at{' '}
+                {results.machine_compatibility.mix_head_shear_range.min.toLocaleString()}–
+                {results.machine_compatibility.mix_head_shear_range.max.toLocaleString()} 1/s.
+                That is the mixing element itself and is unrelated to the shear rate in the
+                feed line above.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -537,7 +549,20 @@ export function ResultsDisplay() {
  * binds: what the line demands, or the machine's minimum. Which one governs is stated,
  * because a headline figure nobody can trace back is worse than no headline at all.
  */
-function SetPressureCard({
+/**
+ * What to set, and what the gauge will read.
+ *
+ * These are two different things and the card used to present them as one. It headlined a
+ * "Required Pressure" of 100 bar — the mix head minimum — as though that were a number the
+ * operator dials in to overcome resistance. On a positive-displacement metering machine it
+ * is not: throughput follows pump speed, and the injection pressure is developed by forcing
+ * that metered flow through the mix head orifices. Raising the pressure moves no more
+ * material.
+ *
+ * So the output leads, because that is the setting that changes the process, and the
+ * injection pressure sits beside it as the reading to expect.
+ */
+function MachineSettingsCard({
   results,
   unit,
 }: {
@@ -545,48 +570,92 @@ function SetPressureCard({
   unit: PressureUnit
 }) {
   const machine = results.machine_compatibility
-  if (!machine || !isNumber(machine.set_pressure_bar)) return null
+  if (!machine) return null
 
-  const governedByMachine = machine.set_pressure_governed_by === 'machine_minimum'
-  const demand = machine.required_pressure_bar
+  // Runs recorded before the pressure model was split carry the old field names
+  const injection = machine.injection_pressure_bar ?? machine.set_pressure_bar
+  const lineDemand = machine.line_demand_bar ?? machine.required_pressure_bar
+  const governedByMixHead =
+    (machine.injection_pressure_governed_by ?? machine.set_pressure_governed_by) ===
+      'mix_head_minimum' ||
+    machine.set_pressure_governed_by === 'machine_minimum'
+
+  if (!isNumber(injection)) return null
+
+  const output = machine.output_kg_min
   const pipeDrop = results.pressure?.pressure_with_fittings_bar
   const p = (bar: number | undefined) => formatPressure(bar, unit)
 
   return (
-    <div className="card overflow-hidden" data-testid="set-pressure">
+    <div className="card overflow-hidden" data-testid="machine-settings">
       <div className="flex items-stretch">
         <div className="w-1.5 bg-indigo-600 flex-shrink-0" />
-        <div className="card-body flex-grow flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+        <div className="card-body flex-grow grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* The setting */}
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Required Pressure
+              Machine output
+            </p>
+            {isNumber(output) ? (
+              <>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
+                    {output.toFixed(output >= 10 ? 0 : 1)}
+                  </span>
+                  <span className="text-lg font-semibold text-slate-500">kg/min</span>
+                </div>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  {results.input?.flow_rate_lpm?.toFixed(2)} L/min of a{' '}
+                  {results.input?.material_density_kg_m3?.toFixed(0)} kg/m³ blend. This is the
+                  dial that moves the process — pressure follows from it.
+                </p>
+                {isNumber(machine.output_min_kg_min) && isNumber(machine.output_max_kg_min) && (
+                  <div className="mt-3">
+                    <RangeBar
+                      min={machine.output_min_kg_min}
+                      max={machine.output_max_kg_min}
+                      value={output}
+                      // Matches the headline's precision: rounding 5.7 to "6" on the
+                      // marker made the bar disagree with the figure above it
+                      formatValue={(v) => v.toFixed(v >= 10 ? 0 : 1)}
+                      suffix="kg/min"
+                      inRange={machine.output_in_range !== false}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-600 mt-2">
+                Not available — this run recorded no mixed density.
+              </p>
+            )}
+          </div>
+
+          {/* The reading */}
+          <div className="min-w-0 md:border-l md:border-slate-100 md:pl-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Injection pressure
             </p>
             <div className="flex items-baseline gap-2 mt-1.5">
               <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
-                {p(machine.set_pressure_bar)}
+                {p(injection)}
               </span>
               <span className="text-lg font-semibold text-slate-500">{unit}</span>
             </div>
-            <p className="text-sm text-slate-600 mt-2.5 max-w-lg leading-relaxed">
-              {governedByMachine ? (
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              {governedByMixHead ? (
                 <>
-                  The machine minimum governs. Impingement mixing needs{' '}
-                  {isNumber(machine.min_pressure_bar) && (
-                    <strong className="text-slate-900">
-                      {p(machine.min_pressure_bar)} {unit}
-                    </strong>
-                  )}{' '}
-                  whatever the line asks for — and this line asks for only{' '}
-                  {isNumber(demand) && (
-                    <strong className="text-slate-900">{p(demand)} {unit}</strong>
+                  Set by the <strong className="text-slate-900">mix head</strong>, not the
+                  feed line: impingement mixing needs this pressure to mix at all. The line
+                  itself only asks for{' '}
+                  {isNumber(lineDemand) && (
+                    <strong className="text-slate-900">{p(lineDemand)} {unit}</strong>
                   )}
-                  {isNumber(pipeDrop) && (
-                    <> ({p(pipeDrop)} {unit} of pipe drop plus machine losses)</>
-                  )}.
+                  {isNumber(pipeDrop) && <> ({p(pipeDrop)} {unit} of pipe drop plus machine losses)</>}.
                 </>
               ) : (
                 <>
-                  The line demand governs:{' '}
+                  Set by the <strong className="text-slate-900">feed line</strong>:{' '}
                   {isNumber(pipeDrop) && (
                     <strong className="text-slate-900">{p(pipeDrop)} {unit}</strong>
                   )}{' '}
@@ -594,71 +663,84 @@ function SetPressureCard({
                 </>
               )}
             </p>
-          </div>
-
-          <div className="flex-shrink-0 md:w-72">
-            <p className="text-xs font-semibold text-slate-500 mb-2">Machine operating window</p>
-            <MachineWindow
-              min={machine.min_pressure_bar}
-              max={machine.max_pressure_bar}
-              setPoint={machine.set_pressure_bar}
-              unit={unit}
-            />
-            <div
-              className={`mt-3 badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}
-            >
-              {machine.is_compatible ? (
-                <><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
-              ) : (
-                <><AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
-              )}
-            </div>
+            {isNumber(machine.min_pressure_bar) && isNumber(machine.max_pressure_bar) && (
+              <div className="mt-3">
+                <RangeBar
+                  min={machine.min_pressure_bar}
+                  max={machine.max_pressure_bar}
+                  value={injection}
+                  formatValue={(v) => formatPressure(v, unit)}
+                  suffix={unit}
+                  inRange
+                />
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      <div className="px-5 pb-4 -mt-1">
+        <div className={`badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}>
+          {machine.is_compatible ? (
+            <><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Machine can run this shot</>
+          ) : (
+            <><AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
+          )}
+        </div>
+        {machine.note && (
+          <p className="mt-3 text-xs text-slate-500 leading-relaxed">{machine.note}</p>
+        )}
       </div>
     </div>
   )
 }
 
-/** Where the set point falls inside the machine's pressure range. */
-function MachineWindow({
+/**
+ * Where a value sits inside a machine's range, for output or for pressure.
+ *
+ * Replaces a bar that could only draw pressure and assumed the range started at zero.
+ */
+function RangeBar({
   min,
   max,
-  setPoint,
-  unit,
+  value,
+  formatValue,
+  suffix,
+  inRange,
 }: {
-  min?: number
-  max?: number
-  setPoint: number
-  unit: PressureUnit
+  min: number
+  max: number
+  value: number
+  formatValue: (v: number) => string
+  suffix: string
+  inRange: boolean
 }) {
-  if (!isNumber(min) || !isNumber(max) || max <= 0) return null
+  if (max <= min) return null
 
-  const clamp = (v: number) => Math.max(0, Math.min(100, v))
-  const minPct = clamp((min / max) * 100)
-  const setPct = clamp((setPoint / max) * 100)
+  // A value outside the range still has to be visible, so the track is padded either side
+  const low = Math.min(min, value)
+  const high = Math.max(max, value)
+  const span = high - low || 1
+  const pct = (v: number) => Math.max(0, Math.min(100, ((v - low) / span) * 100))
 
   return (
     <>
       <div className="relative h-2.5 rounded-full bg-slate-100 overflow-hidden">
-        {/* Below the minimum the machine cannot hold — hatched rather than coloured */}
         <div
-          className="absolute inset-y-0 left-0 bg-slate-200"
-          style={{ width: `${minPct}%` }}
+          className={inRange ? 'absolute inset-y-0 bg-indigo-200' : 'absolute inset-y-0 bg-red-200'}
+          style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
         />
         <div
-          className="absolute inset-y-0 bg-indigo-200"
-          style={{ left: `${minPct}%`, right: 0 }}
-        />
-        <div
-          className="absolute -top-1 w-1 h-4.5 rounded bg-indigo-600"
-          style={{ left: `calc(${setPct}% - 2px)`, height: '1.125rem' }}
+          className={`absolute -top-1 w-1 rounded ${inRange ? 'bg-indigo-600' : 'bg-red-600'}`}
+          style={{ left: `calc(${pct(value)}% - 2px)`, height: '1.125rem' }}
         />
       </div>
       <div className="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
-        <span>0</span>
-        <span className="text-indigo-700 font-bold">{formatPressure(min, unit)} min</span>
-        <span>{formatPressure(max, unit)} max</span>
+        <span>{formatValue(min)} min</span>
+        <span className={inRange ? 'text-indigo-700 font-bold' : 'text-red-700 font-bold'}>
+          {formatValue(value)} {suffix}
+        </span>
+        <span>{formatValue(max)} max</span>
       </div>
     </>
   )

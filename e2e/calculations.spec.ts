@@ -18,11 +18,14 @@ import { test, expect, waitForEngine } from './fixtures'
 const EXPECTED_DEFAULT_PRESSURE = '0.17'
 
 /**
- * The pressure the operator sets. The line demands only 25.2 bar, so the machine's 100 bar
- * minimum governs — these are two different numbers and the panel used to give both the same
- * name.
+ * The injection pressure the gauge will read. The line demands only 25.2 bar, so the mix
+ * head's 100 bar minimum governs — two different numbers that the panel used to give the
+ * same name.
  */
-const EXPECTED_SET_PRESSURE = '100'
+const EXPECTED_INJECTION_PRESSURE = '100'
+
+/** The setting itself: 5 L/min of a ~1149 kg/m³ blend is 5.7 kg/min of throughput. */
+const EXPECTED_OUTPUT = '5.7'
 
 test.describe('Polyurethane Optimizer - full calculation flow', () => {
   test.beforeEach(async ({ page, pyodideRequests }) => {
@@ -45,21 +48,44 @@ test.describe('Polyurethane Optimizer - full calculation flow', () => {
     await expect(pressureCard).toContainText(EXPECTED_DEFAULT_PRESSURE)
   })
 
-  test('separates the pressure to set from the pipe pressure drop', async ({ page }) => {
+  test('leads with the setting, and separates it from the pressure it produces', async ({
+    page,
+  }) => {
     await waitForEngine(page)
     await page.click('button[type=submit]')
 
-    const setPressure = page.getByTestId('set-pressure')
-    await expect(setPressure).toBeVisible({ timeout: 30_000 })
-    await expect(setPressure).toContainText('Required Pressure')
-    await expect(setPressure).toContainText(EXPECTED_SET_PRESSURE)
-    // Which constraint governs must be visible, or the headline is untraceable
-    await expect(setPressure).toContainText(/machine minimum governs/i)
+    const card = page.getByTestId('machine-settings')
+    await expect(card).toBeVisible({ timeout: 30_000 })
 
-    // …and the pipe drop is a different, smaller number under its own name
+    // The output is the dial the operator turns: a metering pump delivers by pump speed,
+    // so this is what moves the process
+    await expect(card).toContainText('Machine output')
+    await expect(card).toContainText(EXPECTED_OUTPUT)
+    await expect(card).toContainText('kg/min')
+
+    // The injection pressure is a consequence, and the card says what sets it
+    await expect(card).toContainText('Injection pressure')
+    await expect(card).toContainText(EXPECTED_INJECTION_PRESSURE)
+    await expect(card).toContainText(/mix head/i)
+
+    // …and the pipe drop is a third, much smaller number under its own name
     const drop = page.getByTestId('kpi-pipe-pressure-drop')
     await expect(drop).toContainText('Pipe Pressure Drop')
     await expect(drop).toContainText(EXPECTED_DEFAULT_PRESSURE)
+  })
+
+  test('flags an output the machine cannot meter', async ({ page }) => {
+    await waitForEngine(page)
+
+    // 1 L/min of a ~1149 kg/m³ blend is 1.1 kg/min, under the HP machine's 5 kg/min floor.
+    // The pressure check alone could never catch this: the line demand is tiny either way.
+    await page.fill('input[name=flow_rate_lpm]', '1')
+    await page.click('button[type=submit]')
+
+    const card = page.getByTestId('machine-settings')
+    await expect(card).toBeVisible({ timeout: 30_000 })
+    await expect(card).toContainText(/outside the machine/i)
+    await expect(page.getByText(/below the machine minimum of 5 kg\/min/i)).toBeVisible()
   })
 
   test('states how much room there is before the flow turns turbulent', async ({ page }) => {

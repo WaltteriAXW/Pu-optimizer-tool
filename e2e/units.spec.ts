@@ -21,7 +21,7 @@ test.describe('pressure units', () => {
     await waitForEngine(page)
     await page.click('button[type=submit]')
 
-    const setPressure = page.getByTestId('set-pressure')
+    const setPressure = page.getByTestId('machine-settings')
     await expect(setPressure).toBeVisible({ timeout: 30_000 })
     await expect(setPressure).toContainText('100')
     await expect(setPressure).toContainText('bar')
@@ -63,7 +63,7 @@ test.describe('pressure units', () => {
     await page.getByTestId('unit-bar').click()
 
     await expect(page.getByTestId('kpi-pipe-pressure-drop')).toContainText('0.17')
-    await expect(page.getByTestId('set-pressure')).toContainText('100')
+    await expect(page.getByTestId('machine-settings')).toContainText('100')
   })
 
   test('exports stay in bar whatever the display shows', async ({ page }) => {
@@ -85,7 +85,9 @@ test.describe('pressure units', () => {
     for await (const chunk of stream) chunks.push(chunk as Buffer)
     const payload = JSON.parse(Buffer.concat(chunks).toString('utf-8'))
 
-    expect(payload.machine_compatibility.set_pressure_bar).toBeCloseTo(100, 5)
+    expect(payload.machine_compatibility.injection_pressure_bar).toBeCloseTo(100, 5)
     expect(payload.pressure.pressure_with_fittings_bar).toBeLessThan(1)
+    // Output is a mass rate, so it is unaffected by the pressure unit either way
+    expect(payload.machine_compatibility.output_kg_min).toBeCloseTo(5.74, 1)
   })
 })

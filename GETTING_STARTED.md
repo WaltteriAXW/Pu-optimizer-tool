@@ -71,8 +71,18 @@ Click **Run Simulation**.
 
 ## Reading the Results
 
-### Required Pressure (top card)
-The number to actually set on the machine — whichever governs: what the line demands, or the machine's own minimum (a high-pressure machine holds its minimum regardless of what the line asks for, because impingement mixing needs it). The card states which one is governing and shows the machine's operating window.
+### Machine Output & Injection Pressure (top card)
+Two different things, side by side.
+
+**Machine output (kg/min)** is the setting — the dial you turn. A metering pump delivers by
+pump speed, so this is what moves the process. It is shown against the machine's own output
+range, and flagged if the shot falls outside it.
+
+**Injection pressure** is the reading to expect, not a setting. On a high-pressure machine it
+sits at the mix-head minimum (100 bar) whenever the feed line asks for less — impingement
+mixing needs that pressure to mix at all. Turning the pressure up does **not** push more
+material through the line, and will not make the flow turbulent: output follows pump speed.
+The card says which constraint sets the pressure.
 
 ### Laminar Flow Margin
 Not just "laminar" or "turbulent" — how much headroom is left before the line crosses into turbulence, and which input to change if it hasn't (or has).
