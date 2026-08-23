@@ -391,6 +391,10 @@ class CalculationProcessor:
                     'temperature_c': temperature_c,
                     'flow_rate_lpm': flow_rate_lpm,
                     'machine_type': machine_type,
+                    # Density of the mixed liquid actually being pumped, blended from the
+                    # two components. Reported because the exports quote it: the PDF used
+                    # to print a hardcoded 1000 kg/m³ for every material.
+                    'material_density_kg_m3': material['density'],
                 },
                 'flow': flow_result,
                 'pressure': {

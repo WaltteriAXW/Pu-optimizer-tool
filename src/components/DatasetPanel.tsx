@@ -124,7 +124,7 @@ export function DatasetPanel() {
               <strong className="text-slate-900">No model yet.</strong>{' '}
               {readiness
                 ? `${readiness.reasons.join('; ')}.`
-                : `A prediction needs shots whose outcome someone has recorded.`}{' '}
+                : 'A prediction needs shots whose outcome someone has recorded.'}{' '}
               Until then the physics is the only thing answering, which is the honest state
               of affairs rather than a limitation to work around.
             </p>

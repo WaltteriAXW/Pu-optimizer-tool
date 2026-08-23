@@ -341,10 +341,10 @@ Where:
 
 ## Related Documentation
 
-- [LOGGING_GUIDE.md](/LOGGING_GUIDE.md) - Production logging
-- [CONSTANTS_USAGE_EXAMPLES.md](/CONSTANTS_USAGE_EXAMPLES.md) - Constants usage
-- [QUICK_REFERENCE.md](/Dimensions%20database/QUICK_REFERENCE.md) - Database usage
-- [IMPROVEMENTS.md](/IMPROVEMENTS.md) - Recent improvements
+- [LOGGING_GUIDE.md](LOGGING_GUIDE.md) - Recording outcomes and the shot dataset
+- [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) - The material database
+- [ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md) - Validation and custom materials
+- [reference-data/dimensions](reference-data/dimensions/) - Pipe and mould dimension reference tables (not used by the app)
 
 ---
 

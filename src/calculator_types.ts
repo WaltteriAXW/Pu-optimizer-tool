@@ -81,6 +81,8 @@ export interface CalculationResults {
     temperature_c: number;
     flow_rate_lpm: number;
     machine_type?: string;
+    /** Density of the mixed liquid being pumped (kg/m³), blended from both components */
+    material_density_kg_m3?: number;
   };
   flow: {
     shear_rate_s_inv: number;        // s⁻¹

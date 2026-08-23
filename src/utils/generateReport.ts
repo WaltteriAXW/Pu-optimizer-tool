@@ -14,22 +14,32 @@ interface InputData {
   selectedMaterial?: string
 }
 
+/**
+ * Results as the report prints them.
+ *
+ * Every pressure here is in bar and named for what it actually is. The previous shape had
+ * `pressureDropBar` fed from the Pascal value and printed under a "bar" column — a figure
+ * a hundred thousand times too large — and an "Optimal Pressure" that was really the pipe
+ * drop, so a report could tell an operator to set 0.25 bar on a machine whose minimum is
+ * 100. The set point and the line demand are separate fields for that reason.
+ */
 interface ResultData {
-  optimalPressureBar?: number
-  pressureDropBar?: number
+  /** What the operator dials in: the line demand, or the machine minimum where higher */
+  setPressureBar?: number
+  setPressureGovernedBy?: 'line_demand' | 'machine_minimum'
+  /** Line demand — pipe drop plus the machine's internal losses */
+  requiredPressureBar?: number
+  basePressureDropBar?: number
+  pressureWithFittingsBar?: number
+  fittingLossBar?: number
+  minPressureBar?: number
+  maxPressureBar?: number
   reynoldsNumber?: number
   flowRegime?: string
   velocity?: number
   shearRate?: number
-  injectionTime?: number
-  moldVolume?: number
-  moldShape?: string
   compatible?: boolean
-  machine?: {
-    name?: string
-    manufacturer?: string
-    maxPressure?: number
-  }
+  machineType?: string
 }
 
 /**
@@ -79,7 +89,7 @@ export const generateReport = async (
   yPos += 6
   doc.text(`Generated: ${new Date().toLocaleString()}`, margin, yPos)
   yPos += 6
-  doc.text(`Tool Version: v2.1.0-alpha`, margin, yPos)
+  doc.text(`Tool Version: v${__APP_VERSION__}`, margin, yPos)
   yPos += 15
 
   // Executive Summary Box
@@ -98,11 +108,20 @@ export const generateReport = async (
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
 
+  // Led by the number the operator acts on, with the reason it is that number. The pipe
+  // drop alone is not a machine setting and heading the summary with it was misleading.
+  const governedBy =
+    results.setPressureGovernedBy === 'machine_minimum'
+      ? 'machine minimum governs'
+      : 'line demand governs'
+
   const summaryText = [
-    `Pipe pressure drop: ${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`,
-    `Flow Regime: ${results.flowRegime || 'N/A'}`,
-    `Machine Compatibility: ${results.compatible ? '✓ Compatible' : '✗ Not Compatible'}`,
-    `Flow Velocity: ${results.velocity?.toFixed(3) || 'N/A'} m/s`
+    `SET PRESSURE: ${results.setPressureBar?.toFixed(2) ?? 'N/A'} bar  (${governedBy})`,
+    `Line demand: ${results.requiredPressureBar?.toFixed(2) ?? 'N/A'} bar` +
+      ` | Pipe drop: ${results.pressureWithFittingsBar?.toFixed(2) ?? 'N/A'} bar`,
+    `Flow Regime: ${results.flowRegime || 'N/A'}` +
+      ` (Re ${results.reynoldsNumber?.toFixed(0) ?? 'N/A'})`,
+    `Machine Compatibility: ${results.compatible ? 'Compatible' : 'NOT compatible'}`
   ]
 
   summaryText.forEach((text, idx) => {
@@ -125,7 +144,9 @@ export const generateReport = async (
     ['Temperature', inputs.temperature.toFixed(1), '°C'],
     ['Flow Rate', inputs.flowRate.toFixed(2), 'L/min'],
     ['Viscosity', inputs.viscosity.toFixed(1), 'cP'],
-    ['Density', inputs.density.toFixed(1), 'kg/m³'],
+    // A run recorded before the engine reported density carries none; say so rather than
+    // printing a confident 0.0
+    ['Density', inputs.density > 0 ? inputs.density.toFixed(1) : 'not recorded', 'kg/m³'],
     ...(inputs.selectedMaterial ? [['Material', inputs.selectedMaterial, '']] : []),
     ...(inputs.selectedMachine ? [['Machine', inputs.selectedMachine, '']] : [])
   ]
@@ -173,13 +194,16 @@ export const generateReport = async (
 
   const resultTableData = [
     ['Metric', 'Value', 'Unit'],
-    ['Base Pressure Drop', results.pressureDropBar?.toFixed(2) || 'N/A', 'bar'],
-    ['Optimal Pressure', results.optimalPressureBar?.toFixed(2) || 'N/A', 'bar'],
-    ['Reynolds Number', results.reynoldsNumber?.toFixed(1) || 'N/A', '—'],
-    ['Flow Velocity', results.velocity?.toFixed(4) || 'N/A', 'm/s'],
-    ['Shear Rate', results.shearRate?.toFixed(1) || 'N/A', 's⁻¹'],
-    ['Injection Time', results.injectionTime?.toFixed(2) || 'N/A', 's'],
-    ['Flow Classification', results.flowRegime || 'N/A', '—']
+    ['Pressure to set', results.setPressureBar?.toFixed(2) ?? 'N/A', 'bar'],
+    ['  governed by', governedBy, '—'],
+    ['Line demand (incl. machine losses)', results.requiredPressureBar?.toFixed(2) ?? 'N/A', 'bar'],
+    ['Base pipe pressure drop', results.basePressureDropBar?.toFixed(2) ?? 'N/A', 'bar'],
+    ['Pipe drop with fittings', results.pressureWithFittingsBar?.toFixed(2) ?? 'N/A', 'bar'],
+    ['Fitting loss', results.fittingLossBar?.toFixed(2) ?? 'N/A', 'bar'],
+    ['Reynolds Number', results.reynoldsNumber?.toFixed(1) ?? 'N/A', '—'],
+    ['Flow Classification', results.flowRegime || 'N/A', '—'],
+    ['Flow Velocity', results.velocity?.toFixed(4) ?? 'N/A', 'm/s'],
+    ['Shear Rate', results.shearRate?.toFixed(1) ?? 'N/A', 's⁻¹']
   ]
 
   autoTable(doc, {
@@ -283,14 +307,25 @@ export const generateReport = async (
   doc.setFontSize(10)
   yPos += 15
 
-  if (results.machine) {
+  {
+    const headroom =
+      results.maxPressureBar !== undefined && results.setPressureBar !== undefined
+        ? `${(results.maxPressureBar - results.setPressureBar).toFixed(2)} bar`
+        : 'N/A'
+
     const machineTableData = [
       ['Specification', 'Value'],
-      ['Machine Name', results.machine.name || 'N/A'],
-      ['Manufacturer', results.machine.manufacturer || 'N/A'],
-      ['Max Pressure', `${results.machine.maxPressure || 'N/A'} bar`],
-      ['Pipe pressure drop', `${results.optimalPressureBar?.toFixed(2) || 'N/A'} bar`],
-      ['Headroom', `${Math.max(0, (results.machine.maxPressure || 0) - (results.optimalPressureBar || 0)).toFixed(2)} bar`]
+      ['Machine Type', results.machineType || 'N/A'],
+      [
+        'Operating window',
+        results.minPressureBar !== undefined && results.maxPressureBar !== undefined
+          ? `${results.minPressureBar.toFixed(0)} - ${results.maxPressureBar.toFixed(0)} bar`
+          : 'N/A'
+      ],
+      ['Pressure to set', `${results.setPressureBar?.toFixed(2) ?? 'N/A'} bar`],
+      // Headroom against the set point, which is the pressure the machine will actually
+      // hold — measuring it from the pipe drop overstated it by the machine's minimum.
+      ['Headroom to maximum', headroom]
     ]
 
     autoTable(doc, {
@@ -344,7 +379,7 @@ export const generateReport = async (
   doc.setTextColor(150, 150, 150)
   doc.text('This report is computer-generated and provided for reference only.', margin, pageHeight - 15)
   doc.text('Results are based on input parameters and material properties. Professional verification is recommended.', margin, pageHeight - 10)
-  doc.text(`PU-Optimizer Tool v2.1.0 | Report ID: ${reportId}`, margin, pageHeight - 5)
+  doc.text(`PU-Optimizer Tool v${__APP_VERSION__} | Report ID: ${reportId}`, margin, pageHeight - 5)
 
   // ============================================
   // SAVE PDF

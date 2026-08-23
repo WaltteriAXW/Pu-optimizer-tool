@@ -46,7 +46,7 @@ const MOLD_SOURCE_LABEL: Record<string, string> = {
 }
 
 export function ResultsDisplay() {
-  const { results, error: calculatorError } = useCalculator()
+  const { results, lastParams, error: calculatorError } = useCalculator()
 
   if (calculatorError) {
     return (
@@ -79,10 +79,13 @@ export function ResultsDisplay() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Export Buttons */}
-      <div className="flex justify-end">
-        <ExportButtons results={results} params={useCalculator().lastParams!} />
-      </div>
+      {/* Export Buttons. Offered only once the parameters behind these results are known —
+          exporting a report whose inputs had to be invented is worse than not offering it. */}
+      {lastParams && (
+        <div className="flex justify-end">
+          <ExportButtons results={results} params={lastParams} />
+        </div>
+      )}
 
       {/* The number the operator sets, and the margin before the line turns turbulent */}
       <SetPressureCard results={results} />

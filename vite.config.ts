@@ -115,10 +115,21 @@ collections:
   }
 }
 
+// The version shown in generated reports. Read from package.json so there is one number
+// rather than three: the PDF used to print "v2.1.0-alpha" in its header and "v2.1.0" in
+// its footer while package.json said 2.0.0, and nothing kept the three in step.
+const packageVersion = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')
+).version
+
 export default defineConfig({
   // Set base URL for GitHub Pages deployment
   // Change '/Pu-optimizer-tool/' if your repository has a different name
   base: '/Pu-optimizer-tool/',
+
+  define: {
+    __APP_VERSION__: JSON.stringify(packageVersion),
+  },
 
   plugins: [react(), pythonSyncPlugin()],
   resolve: {

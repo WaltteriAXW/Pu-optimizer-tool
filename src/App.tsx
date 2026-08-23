@@ -5,6 +5,16 @@ import { ResultsDisplay } from './components/ResultsDisplay'
 import { HistorySidebar } from './components/HistorySidebar'
 import { Activity, History } from 'lucide-react'
 
+/** Where the repository lives. Both header and footer link here rather than to '#'. */
+const REPO_URL = 'https://github.com/WaltteriAXW/Pu-optimizer-tool'
+
+/**
+ * The user guide. Points at the rendered guide in the repository — the two "Documentation"
+ * links previously went nowhere at all: one was a <button> with no handler, the other an
+ * anchor to '#'. Both looked clickable and did nothing.
+ */
+const DOCS_URL = `${REPO_URL}/blob/main/GETTING_STARTED.md`
+
 function AppContent() {
   const { history, deleteHistory, loadFromHistory, recordOutcome } = useCalculator()
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -29,9 +39,14 @@ function AppContent() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+              <a
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+              >
                 Documentation
-              </button>
+              </a>
               <button
                 onClick={() => setHistoryOpen(!historyOpen)}
                 className={`relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -50,7 +65,7 @@ function AppContent() {
                 )}
               </button>
               <a
-                href="https://github.com/WaltteriAXW/Pu-optimizer-tool"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
@@ -104,17 +119,20 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500">
-              © 2024 PU Optimizer. Polyurethane injection molding physics engine.
+              © {new Date().getFullYear()} PU Optimizer. Polyurethane injection molding
+              physics engine.
             </div>
             <div className="flex items-center gap-4">
               <a
-                href="#"
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 Documentation
               </a>
               <a
-                href="https://github.com/WaltteriAXW/Pu-optimizer-tool"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
