@@ -122,6 +122,6 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}-$(date +%s)"
           NOTES=$(printf '%s\n\n%s\n' \
-            "Deployed from ${GITHUB_SHA} to https://waltteraxw.github.io/Pu-optimizer-tool/" \
+            "Deployed from ${GITHUB_SHA} to https://waltteriaxw.github.io/Pu-optimizer-tool/" \
             "Earlier versions are on the [releases page](https://github.com/${GITHUB_REPOSITORY}/releases).")
           gh release create "$TAG" --title "Release v${VERSION}" --notes "$NOTES"
