@@ -342,18 +342,25 @@ class CalculationProcessor:
                 logger.error(f"Volatility check failed: {e}")
                 volatility_result = None
 
+            # Step 10c: Output, in the units the machine is actually set in.
+            # A metering pump is set by throughput, not by pressure, so this is the number
+            # the operator dials in — and the one the machine's own range is specified
+            # against. 1 L = 0.001 m³, so L/min × kg/m³ ÷ 1000 = kg/min.
+            mass_flow_kg_min = flow_rate_lpm * material['density'] / 1000.0
+
             # Step 11: Check machine compatibility
             try:
                 machine_compat = pressure.calculate_machine_compatibility(
                     total_pressure_bar=pressure_with_fittings['total_pressure_bar'],
                     machine_specs=machine,
+                    mass_flow_kg_min=mass_flow_kg_min,
                 )
             except Exception as e:
                 logger.error(f"Machine compatibility check failed: {e}")
                 machine_compat = {
                     'is_compatible': False,
                     'status': 'Check failed',
-                    'required_pressure_bar': 0,
+                    'line_demand_bar': 0,
                     'max_pressure_bar': 0,
                     'warning': str(e),
                     'note': None,
@@ -372,7 +379,11 @@ class CalculationProcessor:
 
             # Step 12: Generate warnings
             warnings = self._generate_warnings(
-                flow_result, pressure_result, thermal_result, machine_compat
+                flow_result,
+                pressure_result,
+                thermal_result,
+                machine_compat,
+                shear_heating_c=shear_heating.get('temperature_rise_c', 0) or 0,
             )
             for extra in (
                 (line_temperature or {}).get('warning'),
@@ -390,6 +401,9 @@ class CalculationProcessor:
                     'material_name': material.get('name') or material_key,
                     'temperature_c': temperature_c,
                     'flow_rate_lpm': flow_rate_lpm,
+                    # The same output expressed as throughput, which is how a metering
+                    # pump is actually set and how machine capacity is specified
+                    'mass_flow_kg_min': mass_flow_kg_min,
                     'machine_type': machine_type,
                     # Density of the mixed liquid actually being pumped, blended from the
                     # two components. Reported because the exports quote it: the PDF used
@@ -425,11 +439,19 @@ class CalculationProcessor:
                 'machine_compatibility': {
                     'is_compatible': machine_compat['is_compatible'],
                     'status': machine_compat['status'],
-                    'required_pressure_bar': machine_compat['required_pressure_bar'],
-                    'set_pressure_bar': machine_compat['set_pressure_bar'],
-                    'set_pressure_governed_by': machine_compat['set_pressure_governed_by'],
-                    'min_pressure_bar': machine_compat['min_pressure_bar'],
-                    'max_pressure_bar': machine_compat['max_pressure_bar'],
+                    'line_demand_bar': machine_compat.get('line_demand_bar'),
+                    'injection_pressure_bar': machine_compat.get('injection_pressure_bar'),
+                    'injection_pressure_governed_by': machine_compat.get(
+                        'injection_pressure_governed_by'
+                    ),
+                    'min_pressure_bar': machine_compat.get('min_pressure_bar'),
+                    'max_pressure_bar': machine_compat.get('max_pressure_bar'),
+                    'output_kg_min': machine_compat.get('output_kg_min'),
+                    'output_min_kg_min': machine_compat.get('output_min_kg_min'),
+                    'output_max_kg_min': machine_compat.get('output_max_kg_min'),
+                    'output_in_range': machine_compat.get('output_in_range'),
+                    'mix_head_shear_range': machine_compat.get('mix_head_shear_range'),
+                    'mix_head_type': machine_compat.get('mix_head_type'),
                     'warning': machine_compat['warning'],
                     'note': machine_compat.get('note'),
                 },
@@ -821,6 +843,7 @@ class CalculationProcessor:
         pressure_result: Dict,
         thermal_result: Dict,
         machine_compat: Dict,
+        shear_heating_c: float = 0.0,
     ) -> List[str]:
         """Generate user-friendly warnings based on calculations."""
 
@@ -833,13 +856,37 @@ class CalculationProcessor:
                 "Consider larger diameter or lower flow rate for better mix."
             )
 
-        # Shear rate warning
-        shear_rate = flow_result.get('shear_rate_s_inv', 0)
-        if shear_rate > 5000:
+        # Shear in the feed line.
+        #
+        # This used to warn above 5000 1/s that "material may degrade", which is the wrong
+        # concern in the wrong place. What travels down the feed line is unmixed polyol or
+        # isocyanate: low-molecular-weight liquids, not shear-degradable polymer melts. The
+        # mix head, meanwhile, runs at far higher shear on purpose — that is how impingement
+        # mixing works — so a bare "high shear" warning also reads as though the machine
+        # itself were misconfigured.
+        #
+        # What high feed-line shear actually does is heat the material, which shifts
+        # viscosity and eats into the processing window. That is already computed, so the
+        # warning is raised on the consequence rather than on a number standing in for it.
+        if shear_heating_c >= 2.0:
             warnings.append(
-                f"High shear rate ({shear_rate:.0f} 1/s). "
-                "Material may degrade or generate excessive heat."
+                f"Shear heating raises the material {shear_heating_c:.1f} °C in the line. "
+                "That shifts viscosity and shortens the working time — widen the line or "
+                "lower the output if the window is tight."
             )
+
+        # A very high shear rate is still worth naming for filled systems, where it is the
+        # filler rather than the resin that suffers.
+        shear_rate = flow_result.get('shear_rate_s_inv', 0)
+        if shear_rate > 10000:
+            warnings.append(
+                f"Very high shear rate in the line ({shear_rate:.0f} 1/s). "
+                "Harmless for a neat resin, but glass or mineral fillers can be broken up "
+                "at this level — widen the line if the system is filled."
+            )
+
+        # An output the machine cannot meter is an incompatibility, so it arrives through
+        # the machine check at the end of this function rather than being repeated here.
 
         # Pressure warning
         pressure_bar = pressure_result.get('pressure_drop_bar', 0)

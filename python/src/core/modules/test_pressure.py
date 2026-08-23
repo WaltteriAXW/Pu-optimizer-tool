@@ -214,7 +214,7 @@ class TestMachineCompatibility:
         assert result['status'] == 'incompatible_high'
 
     def test_below_minimum_is_compatible_with_note(self):
-        """A demand below the machine minimum is normal, not an incompatibility."""
+        """A line demand below the mix head minimum is normal, not an incompatibility."""
         machine_specs = {
             'max_pressure': 200,
             'min_operating_pressure': 100,
@@ -226,14 +226,14 @@ class TestMachineCompatibility:
             machine_specs=machine_specs,
         )
 
-        # The machine simply holds at its minimum; there is ample pressure available.
+        # The mix head sets the pressure; the line is simply not the constraint.
         assert result['is_compatible'] is True
-        assert result['status'] == 'below_machine_minimum'
+        assert result['status'] == 'mix_head_governs'
         assert result['warning'] is None
         assert result['note'] is not None
 
-    def test_required_pressure_calculation(self):
-        """Test required pressure includes process loss."""
+    def test_line_demand_includes_process_loss(self):
+        """Line demand is the feed-line drop plus the machine's internal losses."""
         machine_specs = {
             'max_pressure': 200,
             'min_operating_pressure': 100,
@@ -245,8 +245,61 @@ class TestMachineCompatibility:
             machine_specs=machine_specs,
         )
 
-        # Required = line pressure drop + machine process loss
-        assert result['required_pressure_bar'] == pytest.approx(125, abs=0.1)
+        assert result['line_demand_bar'] == pytest.approx(125, abs=0.1)
+
+
+class TestOutputRange:
+    """
+    Output is the setting the operator actually makes.
+
+    A metering pump delivers a volume per revolution, so throughput follows pump speed
+    rather than discharge pressure. That makes the machine's output range a real
+    constraint the pressure comparison cannot express.
+    """
+
+    MACHINE = {
+        'max_pressure': 200,
+        'min_operating_pressure': 100,
+        'process_loss': {'total': 25},
+        'output_range': {'min': 5, 'max': 200},
+    }
+
+    def test_output_inside_the_range_is_compatible(self):
+        result = calculate_machine_compatibility(
+            total_pressure_bar=1.0, machine_specs=self.MACHINE, mass_flow_kg_min=40
+        )
+
+        assert result['output_in_range'] is True
+        assert result['is_compatible'] is True
+        assert result['output_kg_min'] == 40
+
+    def test_output_below_the_machine_floor_is_flagged(self):
+        result = calculate_machine_compatibility(
+            total_pressure_bar=1.0, machine_specs=self.MACHINE, mass_flow_kg_min=1.2
+        )
+
+        assert result['output_in_range'] is False
+        assert result['is_compatible'] is False
+        assert result['status'] == 'output_out_of_range'
+        assert 'below the machine minimum' in result['warning']
+
+    def test_output_above_the_machine_ceiling_is_flagged(self):
+        result = calculate_machine_compatibility(
+            total_pressure_bar=1.0, machine_specs=self.MACHINE, mass_flow_kg_min=250
+        )
+
+        assert result['output_in_range'] is False
+        assert result['is_compatible'] is False
+        assert 'exceeds the machine maximum' in result['warning']
+
+    def test_an_unknown_output_is_not_judged(self):
+        """Without a density the caller cannot give an output, and silence beats a guess."""
+        result = calculate_machine_compatibility(
+            total_pressure_bar=1.0, machine_specs=self.MACHINE
+        )
+
+        assert result['output_in_range'] is None
+        assert result['is_compatible'] is True
 
 
 class TestPhysicsValidation:
@@ -301,7 +354,7 @@ class TestPhysicsValidation:
         assert result_high['velocity_m_s'] > result_low['velocity_m_s']
 
 
-class TestSetPressure:
+class TestInjectionPressure:
     """
     The pressure the operator dials in, as distinct from the pressure the line demands.
     These are different numbers and the tool used to give both the same name.
@@ -320,23 +373,23 @@ class TestSetPressure:
         """
         result = pressure.calculate_machine_compatibility(0.25, self.HIGH_PRESSURE)
 
-        assert result['required_pressure_bar'] == pytest.approx(25.25)
-        assert result['set_pressure_bar'] == pytest.approx(100.0)
-        assert result['set_pressure_governed_by'] == 'machine_minimum'
+        assert result['line_demand_bar'] == pytest.approx(25.25)
+        assert result['injection_pressure_bar'] == pytest.approx(100.0)
+        assert result['injection_pressure_governed_by'] == 'mix_head_minimum'
 
     def test_line_demand_governs_once_it_exceeds_the_minimum(self):
         result = pressure.calculate_machine_compatibility(120.0, self.HIGH_PRESSURE)
 
-        assert result['required_pressure_bar'] == pytest.approx(145.0)
-        assert result['set_pressure_bar'] == pytest.approx(145.0)
-        assert result['set_pressure_governed_by'] == 'line_demand'
+        assert result['line_demand_bar'] == pytest.approx(145.0)
+        assert result['injection_pressure_bar'] == pytest.approx(145.0)
+        assert result['injection_pressure_governed_by'] == 'line_demand'
 
     def test_the_set_point_is_never_below_what_the_line_needs(self):
         """The one property that must hold whichever side governs."""
         for demand in (0.0, 1.0, 50.0, 74.9, 75.1, 150.0):
             result = pressure.calculate_machine_compatibility(demand, self.HIGH_PRESSURE)
-            assert result['set_pressure_bar'] >= result['required_pressure_bar']
-            assert result['set_pressure_bar'] >= self.HIGH_PRESSURE['min_operating_pressure']
+            assert result['injection_pressure_bar'] >= result['line_demand_bar']
+            assert result['injection_pressure_bar'] >= self.HIGH_PRESSURE['min_operating_pressure']
 
 
 class TestRegimeAgreesWithFlowModule:
