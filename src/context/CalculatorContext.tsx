@@ -15,6 +15,11 @@ import {
   type ShotRecord,
   type ShotOutcome,
 } from '../services/ShotRecordStore'
+import {
+  getPreferences,
+  savePreferences,
+  type PressureUnit,
+} from '../services/displayPreferences'
 import type { ProcessParameters, CalculationResults } from '@/calculator_types'
 
 /**
@@ -45,6 +50,20 @@ interface CalculatorContextType {
   checkModelReadiness: () => Promise<ModelReadiness>
   /** Fit a model on the recorded outcomes. Rejects with the shortfall when it cannot. */
   trainModel: () => Promise<TrainingResult>
+  /** The unit pressures are shown in. Display only — the engine and the records hold bar. */
+  pressureUnit: PressureUnit
+  setPressureUnit: (unit: PressureUnit) => void
+  /** How far the Python engine has got, while it is still starting up */
+  loadProgress: EngineProgress | null
+}
+
+/** Progress reported while the Python engine boots. */
+export interface EngineProgress {
+  phase: 'runtime' | 'modules'
+  message: string
+  /** Files mounted so far, during the modules phase */
+  loaded?: number
+  total?: number
 }
 
 const CalculatorContext = createContext<CalculatorContextType | undefined>(undefined)
@@ -56,6 +75,10 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [lastParams, setLastParams] = useState<ProcessParameters | null>(null)
+  const [pressureUnit, setPressureUnitState] = useState<PressureUnit>(
+    () => getPreferences().pressureUnit
+  )
+  const [loadProgress, setLoadProgress] = useState<EngineProgress | null>(null)
 
   // Past runs come back from storage on load rather than starting empty
   useEffect(() => {
@@ -64,15 +87,27 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
 
   const [{ calculationService, residualModelService }] = useState(() => {
     const bridge = new PyodideBridge()
-    bridge.initialize().then(() => setIsReady(true)).catch(err => {
-      console.error('Failed to initialize Pyodide:', err)
-      setError('Failed to initialize calculation engine')
-    })
+    bridge
+      .initialize((progress) => setLoadProgress(progress))
+      .then(() => {
+        setIsReady(true)
+        setLoadProgress(null)
+      })
+      .catch(err => {
+        console.error('Failed to initialize Pyodide:', err)
+        setError('Failed to initialize calculation engine')
+        setLoadProgress(null)
+      })
     return {
       calculationService: new CalculationService(bridge),
       residualModelService: new ResidualModelService(bridge),
     }
   })
+
+  const setPressureUnit = useCallback((unit: PressureUnit) => {
+    setPressureUnitState(unit)
+    savePreferences({ pressureUnit: unit })
+  }, [])
 
   const calculate = useCallback(async (params: ProcessParameters) => {
     setIsLoading(true)
@@ -152,6 +187,9 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         refreshHistory,
         checkModelReadiness,
         trainModel,
+        pressureUnit,
+        setPressureUnit,
+        loadProgress,
       }}
     >
       {children}

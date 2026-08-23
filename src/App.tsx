@@ -16,7 +16,14 @@ const REPO_URL = 'https://github.com/WaltteriAXW/Pu-optimizer-tool'
 const DOCS_URL = `${REPO_URL}/blob/main/GETTING_STARTED.md`
 
 function AppContent() {
-  const { history, deleteHistory, loadFromHistory, recordOutcome } = useCalculator()
+  const {
+    history,
+    deleteHistory,
+    loadFromHistory,
+    recordOutcome,
+    pressureUnit,
+    setPressureUnit,
+  } = useCalculator()
   const [historyOpen, setHistoryOpen] = useState(false)
 
   return (
@@ -39,11 +46,36 @@ function AppContent() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {/* Display only: the engine and every saved run hold bar, and this converts
+                  at the point of display. A good deal of injection equipment is specified
+                  in psi, and converting by hand at the machine is how mistakes get made. */}
+              <div
+                role="group"
+                aria-label="Pressure unit"
+                className="hidden sm:inline-flex items-center rounded-lg bg-slate-100 p-0.5"
+              >
+                {(['bar', 'psi'] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setPressureUnit(unit)}
+                    aria-pressed={pressureUnit === unit}
+                    data-testid={`unit-${unit}`}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                      pressureUnit === unit
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
               <a
                 href={DOCS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                className="hidden sm:inline text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
               >
                 Documentation
               </a>

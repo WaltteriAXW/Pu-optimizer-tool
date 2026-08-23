@@ -103,6 +103,32 @@ test.describe('shot records', () => {
     await expect(page.getByTestId('clear-dataset')).toHaveCount(0)
   })
 
+  test('the form setup comes back after a reload', async ({ page }) => {
+    await waitForEngine(page)
+
+    // A setup that differs from the defaults in every field the form restores
+    await page.getByLabel('Pipe Length').fill('1750')
+    await page.getByLabel('Pipe Diameter').fill('18')
+    await page.getByLabel('Material Temperature').fill('32')
+    await page.getByLabel('Flow Rate').fill('7.5')
+    await page.selectOption('select[name=material_key]', 'ecomate_spray')
+    await page.selectOption('select[name=machine_type]', 'low_pressure')
+
+    // Saved on submit, not on every keystroke — a half-typed number is not worth restoring
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await page.reload()
+    await waitForEngine(page)
+
+    await expect(page.getByLabel('Pipe Length')).toHaveValue('1750')
+    await expect(page.getByLabel('Pipe Diameter')).toHaveValue('18')
+    await expect(page.getByLabel('Material Temperature')).toHaveValue('32')
+    await expect(page.getByLabel('Flow Rate')).toHaveValue('7.5')
+    await expect(page.locator('select[name=material_key]')).toHaveValue('ecomate_spray')
+    await expect(page.locator('select[name=machine_type]')).toHaveValue('low_pressure')
+  })
+
   test('cancelling the clear keeps the runs', async ({ page }) => {
     await waitForEngine(page)
     await page.click('button[type=submit]')

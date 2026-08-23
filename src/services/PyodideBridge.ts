@@ -8,22 +8,40 @@ let pyodideInstance: PyodideInterface | null = null
  * PyodideBridge - Manages Python runtime in the browser
  * Loads the actual Python backend from src/core/
  */
+/**
+ * How far the boot has got. The runtime download cannot be measured — loadPyodide reports
+ * nothing until it resolves — but mounting the Python sources is a loop over a known list,
+ * so that half is counted honestly rather than animated.
+ */
+export interface EngineProgress {
+  phase: 'runtime' | 'modules'
+  message: string
+  loaded?: number
+  total?: number
+}
+
+export type ProgressCallback = (progress: EngineProgress) => void
+
 export class PyodideBridge implements PyodideManager {
   private pyodideReady: boolean = false
   private initPromise: Promise<void> | null = null
 
-  async initialize(): Promise<void> {
+  async initialize(onProgress?: ProgressCallback): Promise<void> {
     if (this.pyodideReady && pyodideInstance) return
     if (this.initPromise) return this.initPromise
 
-    this.initPromise = this._doInitialize()
+    this.initPromise = this._doInitialize(onProgress)
     return this.initPromise
   }
 
-  private async _doInitialize(): Promise<void> {
+  private async _doInitialize(onProgress?: ProgressCallback): Promise<void> {
     try {
       // eslint-disable-next-line no-console
       console.log('Initializing Pyodide...')
+      onProgress?.({
+        phase: 'runtime',
+        message: 'Downloading the Python runtime (about 6 MB, once)',
+      })
       pyodideInstance = await loadPyodide({
         indexURL: PYODIDE_CDN_URL,
       })
@@ -36,7 +54,7 @@ export class PyodideBridge implements PyodideManager {
 
       // eslint-disable-next-line no-console
       console.log('Mounting Python files...')
-      await this.mountPythonFiles()
+      await this.mountPythonFiles(onProgress)
 
       // eslint-disable-next-line no-console
       console.log('Python backend initialized successfully')
@@ -51,7 +69,7 @@ export class PyodideBridge implements PyodideManager {
    * Mount Python source files from public/python/ into the virtual filesystem
    * Dynamically fetches and loads Python modules for production use
    */
-  private async mountPythonFiles(): Promise<void> {
+  private async mountPythonFiles(onProgress?: ProgressCallback): Promise<void> {
     if (!pyodideInstance) throw new Error('Pyodide not initialized')
 
     // Create virtual filesystem structure
@@ -75,7 +93,7 @@ export class PyodideBridge implements PyodideManager {
 
     // Try to load Python files from public/python/ directory
     try {
-      await this.loadPythonFilesFromPublic(fs)
+      await this.loadPythonFilesFromPublic(fs, onProgress)
     } catch (e) {
       console.warn('Failed to load Python files from public directory, creating placeholders:', e)
       // Fallback to placeholder modules if public/python/ is not available
@@ -134,7 +152,7 @@ export class PyodideBridge implements PyodideManager {
    * Fetches all .py files and writes them to virtual filesystem
    * Fails loudly if critical files are missing
    */
-  private async loadPythonFilesFromPublic(fs: any): Promise<void> {
+  private async loadPythonFilesFromPublic(fs: any, onProgress?: ProgressCallback): Promise<void> {
     // eslint-disable-next-line no-console
     console.log('Loading Python files from public/python/...')
 
@@ -257,6 +275,12 @@ export class PyodideBridge implements PyodideManager {
         const vfsPath = `/${modulePath}`
         fs.writeFile(vfsPath, content)
         loadedFiles.push(modulePath)
+        onProgress?.({
+          phase: 'modules',
+          message: 'Loading the physics engine',
+          loaded: loadedFiles.length,
+          total: pythonModules.length,
+        })
       } catch (e) {
         const errorDetail = e instanceof Error ? e.message : String(e)
         if (!fetchErrors.find(err => err.file === modulePath)) {

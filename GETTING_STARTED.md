@@ -103,6 +103,30 @@ Whether the selected machine (Low Pressure: 8–20 bar, High Pressure: 100–200
 
 ---
 
+## Pressure Units
+
+The toggle in the top bar switches every pressure on screen between **bar** and **psi**. It
+is a display preference only — the engine calculates in bar, saved runs store bar, and
+exported files stay in bar whatever the toggle says, so a file you open next week means the
+same thing regardless of how the screen was set when you saved it. Your choice is remembered
+between visits.
+
+---
+
+## What Is Remembered
+
+The tool has no backend; everything stays in your browser.
+
+- **Your form setup** is saved when you press Run Simulation, so reopening the tab picks up
+  where you left off rather than resetting to the defaults.
+- **Every calculation** is saved to History, along with any outcome you record.
+- **Your pressure unit** choice.
+
+The **Shot dataset** panel in the History sidebar can export all of this to a file, import a
+file from another machine, and clear everything saved in this browser.
+
+---
+
 ## Recording How the Part Came Out
 
 Every calculation is saved to **History** (top-right). Open a saved run and use the **"How did the part come out?"** dropdown to record the outcome (good, voids, short-shot, scorch, surface defect). This is the one thing the physics can't know on its own, and it's what lets the tool eventually learn where its predictions and real parts disagree — see the **Shot dataset** panel in the history sidebar for export/import and training status.

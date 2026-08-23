@@ -101,7 +101,21 @@ Datasets can be exported and imported as JSON, since the app has no server of it
 
 ---
 
+## Display Preferences
+
+Pressures can be shown in **bar** (the default, and what the engine, the material data sheets
+and the machine specifications all use) or **psi**, since a good deal of injection equipment
+is specified in psi and converting by hand at the machine is how mistakes get made.
+
+The preference is applied at the point of display and nowhere else: the calculation, the
+stored records and every export remain in bar. Switching units therefore cannot alter a
+result or make two saved runs incomparable.
+
+---
+
 ## Export
+
+Exports are always in bar, independent of the display preference above.
 
 Results can be exported as:
 - **JSON** — full result object

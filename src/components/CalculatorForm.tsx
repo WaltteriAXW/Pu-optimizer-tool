@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useId } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
+import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
 import type { ProcessParameters } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -76,15 +77,35 @@ const CUSTOM_FIELD_RANGES: Record<
 }
 
 export function CalculatorForm() {
-  const { calculate, isLoading, isReady, error } = useCalculator()
+  const { calculate, isLoading, isReady, error, loadProgress } = useCalculator()
 
-  const [inputs, setInputs] = useState<ProcessParameters>({
-    pipe_length_mm: DEFAULTS.pipeLength,
-    pipe_diameter_mm: DEFAULTS.pipeDiameter,
-    temperature_c: DEFAULTS.temperature,
-    flow_rate_lpm: DEFAULTS.flowRate,
-    material_key: '',
-    machine_type: 'high_pressure',
+  // The last setup comes back on load. Only recognised numeric fields are taken from
+  // storage, and the material is deliberately left for the effect below to resolve against
+  // the database — a key saved by an older version may no longer exist in the CSV.
+  const [inputs, setInputs] = useState<ProcessParameters>(() => {
+    const base: ProcessParameters = {
+      pipe_length_mm: DEFAULTS.pipeLength,
+      pipe_diameter_mm: DEFAULTS.pipeDiameter,
+      temperature_c: DEFAULTS.temperature,
+      flow_rate_lpm: DEFAULTS.flowRate,
+      material_key: '',
+      machine_type: 'high_pressure',
+    }
+
+    const stored = getLastInputs()
+    if (!stored) return base
+
+    const restored: ProcessParameters = { ...base }
+    for (const [key, value] of Object.entries(stored)) {
+      if (key === 'material_key' || key === 'machine_type') {
+        if (typeof value === 'string' && value) {
+          restored[key] = value
+        }
+      } else if (typeof value === 'number' && Number.isFinite(value)) {
+        (restored as unknown as Record<string, unknown>)[key] = value
+      }
+    }
+    return restored
   })
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -111,12 +132,16 @@ export function CalculatorForm() {
       .then((loaded) => {
         if (cancelled) return
         setMaterials(loaded.map(({ id, name }) => ({ id, name })))
-        // Select the first material once, without clobbering a user's choice
-        setInputs((prev) =>
-          prev.material_key === '' && loaded.length > 0
-            ? { ...prev, material_key: loaded[0].id }
-            : prev
-        )
+        setInputs((prev) => {
+          if (loaded.length === 0) return prev
+          // A restored key that is no longer in the database falls back to the first
+          // material rather than leaving the form pointing at something that cannot be
+          // calculated. 'custom' is always valid — it needs no database entry.
+          const known =
+            prev.material_key === 'custom' ||
+            loaded.some((material) => material.id === prev.material_key)
+          return known ? prev : { ...prev, material_key: loaded[0].id }
+        })
       })
       .catch((e: unknown) => {
         if (cancelled) return
@@ -243,10 +268,13 @@ export function CalculatorForm() {
     []
   )
 
+  // Saved on submit rather than on every keystroke: what is worth restoring is a setup
+  // someone actually calculated with, not a half-typed number.
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
       if (Object.keys(fieldErrors).length === 0 && isReady) {
+        saveLastInputs({ ...inputs } as unknown as Record<string, unknown>)
         calculate(inputs)
       }
     },
@@ -506,7 +534,12 @@ export function CalculatorForm() {
 
         {/* Announced rather than merely shown: the engine takes several seconds to boot on
             a first visit, and until it does the submit button is disabled for a reason a
-            screen reader user would otherwise have no way to learn. */}
+            screen reader user would otherwise have no way to learn.
+
+            The progress is real where it can be. The runtime download reports nothing until
+            it finishes, so that stage says what it is fetching and roughly how large;
+            mounting the sources is a loop over a known list, so that stage counts. An
+            animated bar standing in for both would be a decoration, not information. */}
         {!isReady && (
           <div
             role="status"
@@ -516,10 +549,35 @@ export function CalculatorForm() {
               aria-hidden="true"
               className="w-5 h-5 border-2 border-amber-400 border-t-amber-600 rounded-full animate-spin flex-shrink-0 mt-0.5"
             />
-            <div>
-              <h4 className="text-sm font-semibold text-amber-900">Initializing Engine</h4>
+            <div className="min-w-0 flex-grow">
+              <h4 className="text-sm font-semibold text-amber-900">Starting the engine</h4>
               <p className="text-sm text-amber-800 mt-0.5">
-                Loading Python physics engine...
+                {loadProgress?.message ?? 'Loading Python physics engine…'}
+              </p>
+              {loadProgress?.total ? (
+                <>
+                  <div
+                    className="mt-2 h-1.5 rounded-full bg-amber-200 overflow-hidden"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={loadProgress.total}
+                    aria-valuenow={loadProgress.loaded ?? 0}
+                    aria-label="Loading the physics engine"
+                  >
+                    <div
+                      className="h-full bg-amber-500 transition-[width] duration-150"
+                      style={{
+                        width: `${((loadProgress.loaded ?? 0) / loadProgress.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-amber-700 mt-1 tabular-nums">
+                    {loadProgress.loaded} of {loadProgress.total} modules
+                  </p>
+                </>
+              ) : null}
+              <p className="text-xs text-amber-700 mt-1">
+                Runs entirely in your browser; nothing is uploaded.
               </p>
             </div>
           </div>
