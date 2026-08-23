@@ -3,6 +3,7 @@ import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
 import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
+import { formatPressure, type PressureUnit } from '../services/displayPreferences'
 import type { CalculationResults, LaminarEnvelope } from '../calculator_types'
 import {
   CheckCircle2,
@@ -46,13 +47,16 @@ const MOLD_SOURCE_LABEL: Record<string, string> = {
 }
 
 export function ResultsDisplay() {
-  const { results, error: calculatorError } = useCalculator()
+  const { results, lastParams, pressureUnit, error: calculatorError } = useCalculator()
 
   if (calculatorError) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center">
+      <div
+        role="alert"
+        className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center"
+      >
         <div className="bg-red-50 p-4 rounded-full mb-4">
-          <AlertTriangle className="w-8 h-8 text-red-600" />
+          <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
         </div>
         <h3 className="text-lg font-bold text-slate-800">Calculation Failed</h3>
         <p className="text-slate-500 mt-2 max-w-sm">{calculatorError}</p>
@@ -64,7 +68,7 @@ export function ResultsDisplay() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
-          <Info className="w-8 h-8 text-indigo-600" />
+          <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
         <h3 className="text-lg font-bold text-slate-800">Ready to Simulate</h3>
         <p className="text-slate-500 mt-2 max-w-xs">
@@ -78,26 +82,35 @@ export function ResultsDisplay() {
   const isLaminar = results.flow?.flow_regime === 'laminar'
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Export Buttons */}
-      <div className="flex justify-end">
-        <ExportButtons results={results} params={useCalculator().lastParams!} />
-      </div>
+    // Results replace the panel in place with no navigation, so without a live region a
+    // screen reader user gets no indication that pressing Run produced anything. The
+    // headline figures are announced; the detail below is there to be read at leisure.
+    <div
+      className="space-y-6 animate-fadeIn"
+      aria-live="polite"
+      aria-atomic="false"
+      role="region"
+      aria-label="Calculation results"
+    >
+      {/* Export Buttons. Offered only once the parameters behind these results are known —
+          exporting a report whose inputs had to be invented is worse than not offering it. */}
+      {lastParams && (
+        <div className="flex justify-end">
+          <ExportButtons results={results} params={lastParams} />
+        </div>
+      )}
 
       {/* The number the operator sets, and the margin before the line turns turbulent */}
-      <SetPressureCard results={results} />
+      <SetPressureCard results={results} unit={pressureUnit} />
       <LaminarEnvelopeCard envelope={results.flow?.laminar_envelope} />
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Pipe Pressure Drop"
-          value={results.pressure?.pressure_with_fittings_bar?.toFixed(2) || 'N/A'}
-          unit="bar"
+          value={formatPressure(results.pressure?.pressure_with_fittings_bar, pressureUnit)}
+          unit={pressureUnit}
           icon={<Gauge className="w-5 h-5" />}
-          trend={
-            (results.pressure?.pressure_with_fittings_bar || 0) > 150 ? 'high' : 'normal'
-          }
         />
         <KpiCard
           title="Flow Regime"
@@ -130,24 +143,24 @@ export function ResultsDisplay() {
           <div className="card-body">
             <div className="space-y-6">
               {/* Pressure Chart */}
-              <PressureChart results={results} />
+              <PressureChart results={results} unit={pressureUnit} />
 
               {/* Pressure Details */}
               <div className="space-y-3">
                 <PressureDetail
                   label="Base Pressure Drop"
                   value={results.pressure?.base_pressure_drop_bar}
-                  unit="bar"
+                  unit={pressureUnit}
                 />
                 <PressureDetail
                   label="Pressure with Fittings"
                   value={results.pressure?.pressure_with_fittings_bar}
-                  unit="bar"
+                  unit={pressureUnit}
                 />
                 <PressureDetail
                   label="Fitting Loss"
                   value={results.pressure?.fitting_loss_bar}
-                  unit="bar"
+                  unit={pressureUnit}
                 />
               </div>
             </div>
@@ -160,7 +173,7 @@ export function ResultsDisplay() {
           {results.warnings && results.warnings.length > 0 ? (
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
               <h4 className="text-amber-900 font-bold flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-4 h-4" /> Attention Needed
+                <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
               <ul className="space-y-2">
                 {results.warnings.map((warn, i) => (
@@ -174,7 +187,7 @@ export function ResultsDisplay() {
           ) : (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
               <h4 className="text-emerald-900 font-bold flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-4 h-4" /> Process Optimized
+                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Process Optimized
               </h4>
               <p className="text-sm text-emerald-700">No critical warnings detected.</p>
             </div>
@@ -480,9 +493,16 @@ export function ResultsDisplay() {
                 <div className="text-right">
                   <p className="text-sm text-slate-600 mb-1">Required / Max Pressure</p>
                   <p className="text-lg font-bold text-slate-900">
-                    {results.machine_compatibility.required_pressure_bar.toFixed(1)}
+                    {formatPressure(
+                      results.machine_compatibility.required_pressure_bar,
+                      pressureUnit
+                    )}
                     {isNumber(results.machine_compatibility.max_pressure_bar) &&
-                      ` / ${results.machine_compatibility.max_pressure_bar.toFixed(1)}`} bar
+                      ` / ${formatPressure(
+                        results.machine_compatibility.max_pressure_bar,
+                        pressureUnit
+                      )}`}{' '}
+                    {pressureUnit}
                   </p>
                 </div>
               )}
@@ -517,13 +537,20 @@ export function ResultsDisplay() {
  * binds: what the line demands, or the machine's minimum. Which one governs is stated,
  * because a headline figure nobody can trace back is worse than no headline at all.
  */
-function SetPressureCard({ results }: { results: CalculationResults }) {
+function SetPressureCard({
+  results,
+  unit,
+}: {
+  results: CalculationResults
+  unit: PressureUnit
+}) {
   const machine = results.machine_compatibility
   if (!machine || !isNumber(machine.set_pressure_bar)) return null
 
   const governedByMachine = machine.set_pressure_governed_by === 'machine_minimum'
   const demand = machine.required_pressure_bar
   const pipeDrop = results.pressure?.pressure_with_fittings_bar
+  const p = (bar: number | undefined) => formatPressure(bar, unit)
 
   return (
     <div className="card overflow-hidden" data-testid="set-pressure">
@@ -536,9 +563,9 @@ function SetPressureCard({ results }: { results: CalculationResults }) {
             </p>
             <div className="flex items-baseline gap-2 mt-1.5">
               <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
-                {machine.set_pressure_bar.toFixed(machine.set_pressure_bar >= 10 ? 0 : 2)}
+                {p(machine.set_pressure_bar)}
               </span>
-              <span className="text-lg font-semibold text-slate-500">bar</span>
+              <span className="text-lg font-semibold text-slate-500">{unit}</span>
             </div>
             <p className="text-sm text-slate-600 mt-2.5 max-w-lg leading-relaxed">
               {governedByMachine ? (
@@ -546,17 +573,23 @@ function SetPressureCard({ results }: { results: CalculationResults }) {
                   The machine minimum governs. Impingement mixing needs{' '}
                   {isNumber(machine.min_pressure_bar) && (
                     <strong className="text-slate-900">
-                      {machine.min_pressure_bar.toFixed(0)} bar
+                      {p(machine.min_pressure_bar)} {unit}
                     </strong>
                   )}{' '}
                   whatever the line asks for — and this line asks for only{' '}
-                  {isNumber(demand) && <strong className="text-slate-900">{demand.toFixed(1)} bar</strong>}
-                  {isNumber(pipeDrop) && <> ({pipeDrop.toFixed(2)} bar of pipe drop plus machine losses)</>}.
+                  {isNumber(demand) && (
+                    <strong className="text-slate-900">{p(demand)} {unit}</strong>
+                  )}
+                  {isNumber(pipeDrop) && (
+                    <> ({p(pipeDrop)} {unit} of pipe drop plus machine losses)</>
+                  )}.
                 </>
               ) : (
                 <>
                   The line demand governs:{' '}
-                  {isNumber(pipeDrop) && <strong className="text-slate-900">{pipeDrop.toFixed(2)} bar</strong>}{' '}
+                  {isNumber(pipeDrop) && (
+                    <strong className="text-slate-900">{p(pipeDrop)} {unit}</strong>
+                  )}{' '}
                   of pipe drop plus the machine's own internal losses.
                 </>
               )}
@@ -569,14 +602,15 @@ function SetPressureCard({ results }: { results: CalculationResults }) {
               min={machine.min_pressure_bar}
               max={machine.max_pressure_bar}
               setPoint={machine.set_pressure_bar}
+              unit={unit}
             />
             <div
               className={`mt-3 badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}
             >
               {machine.is_compatible ? (
-                <><CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
+                <><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Machine is compatible</>
               ) : (
-                <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
+                <><AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
               )}
             </div>
           </div>
@@ -591,10 +625,12 @@ function MachineWindow({
   min,
   max,
   setPoint,
+  unit,
 }: {
   min?: number
   max?: number
   setPoint: number
+  unit: PressureUnit
 }) {
   if (!isNumber(min) || !isNumber(max) || max <= 0) return null
 
@@ -621,8 +657,8 @@ function MachineWindow({
       </div>
       <div className="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
         <span>0</span>
-        <span className="text-indigo-700 font-bold">{min.toFixed(0)} min</span>
-        <span>{max.toFixed(0)} max</span>
+        <span className="text-indigo-700 font-bold">{formatPressure(min, unit)} min</span>
+        <span>{formatPressure(max, unit)} max</span>
       </div>
     </>
   )
@@ -658,9 +694,9 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
     <div className={`rounded-xl border p-5 ${tone}`} data-testid="laminar-envelope">
       <div className="flex items-start gap-3">
         {laminar && !tight ? (
-          <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+          <CheckCircle2 aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         ) : (
-          <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+          <AlertTriangle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         )}
         <div className="min-w-0">
           <h4 className={`font-bold ${textTone}`}>
@@ -692,14 +728,12 @@ function KpiCard({
   unit,
   icon,
   status = 'neutral',
-  trend: _trend,
 }: {
   title: string
   value: string | number
   unit: string
   icon: React.ReactNode
   status?: 'success' | 'warning' | 'neutral'
-  trend?: 'high' | 'normal' | 'low'
 }) {
   const statusColors = {
     success: 'bg-emerald-100 text-emerald-600',
@@ -716,7 +750,10 @@ function KpiCard({
       <div className="card-body">
         <div className="flex justify-between items-start mb-2">
           <span className="text-sm font-medium text-slate-500">{title}</span>
-          <div className={`p-2 rounded-lg ${statusColors[status]}`}>{icon}</div>
+          {/* Decorative: every icon here restates the title beside it */}
+          <div aria-hidden="true" className={`p-2 rounded-lg ${statusColors[status]}`}>
+            {icon}
+          </div>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
@@ -750,6 +787,7 @@ function DetailRow({
   )
 }
 
+/** Always a pressure, so it converts to the chosen unit rather than taking a raw number. */
 function PressureDetail({
   label,
   value,
@@ -757,7 +795,7 @@ function PressureDetail({
 }: {
   label: string
   value?: number
-  unit: string
+  unit: PressureUnit
 }) {
   if (value === undefined || value === null) return null
 
@@ -765,7 +803,8 @@ function PressureDetail({
     <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <span className="text-2xl font-bold text-indigo-600 tabular-nums">
-        {value.toFixed(2)} <span className="text-sm font-medium text-slate-500">{unit}</span>
+        {formatPressure(value, unit)}{' '}
+        <span className="text-sm font-medium text-slate-500">{unit}</span>
       </span>
     </div>
   )

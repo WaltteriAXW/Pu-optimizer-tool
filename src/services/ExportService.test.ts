@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ExportService, createExportService } from './ExportService'
-import type { CalculationResults } from '@/models/types'
+import { ExportService } from './ExportService'
+import type { CalculationResults } from '@/calculator_types'
 
 // Named so that spreading them in the tests below preserves the required fields.
 // Spreading `mockResults.machine_compatibility` instead widens every field to optional,
@@ -277,33 +277,6 @@ describe('ExportService', () => {
     })
   })
 
-  describe('createDownloadBlob()', () => {
-    it('should create a Blob object', () => {
-      const blob = service.createDownloadBlob(mockResults)
-      expect(blob).toBeInstanceOf(Blob)
-    })
-
-    it('should set correct MIME type for JSON', () => {
-      const blob = service.createDownloadBlob(mockResults, 'json')
-      expect(blob.type).toBe('application/json')
-    })
-
-    it('should set correct MIME type for CSV', () => {
-      const blob = service.createDownloadBlob(mockResults, 'csv')
-      expect(blob.type).toBe('text/csv')
-    })
-
-    it('should set correct MIME type for report', () => {
-      const blob = service.createDownloadBlob(mockResults, 'report')
-      expect(blob.type).toBe('text/plain')
-    })
-
-    it('should create downloadable blob with content', () => {
-      const blob = service.createDownloadBlob(mockResults, 'json')
-      expect(blob.size).toBeGreaterThan(0)
-    })
-  })
-
   describe('generateFilename()', () => {
     it('should generate filename with timestamp', () => {
       const filename = service.generateFilename()
@@ -367,20 +340,6 @@ describe('ExportService', () => {
       expect(() => {
         service.export(mockResults, { format: 'pdf' as any })
       }).toThrow('Unknown export format')
-    })
-  })
-
-  describe('createExportService factory', () => {
-    it('should create a new ExportService instance', () => {
-      const newService = createExportService()
-      expect(newService).toBeInstanceOf(ExportService)
-    })
-
-    it('should export results from factory instance', () => {
-      const newService = createExportService()
-      const json = newService.export(mockResults, { format: 'json' })
-      const parsed = JSON.parse(json)
-      expect(parsed.input).toBeDefined()
     })
   })
 

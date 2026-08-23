@@ -1,14 +1,24 @@
+import { useId } from 'react'
 import type { CalculationResults } from '@/calculator_types'
+import {
+  formatPressure,
+  toPressureUnit,
+  type PressureUnit,
+} from '@/services/displayPreferences'
 
 interface PressureChartProps {
   results: CalculationResults
+  /** Unit the axis and figures are labelled in. The data itself stays in bar. */
+  unit: PressureUnit
 }
 
 /**
  * Interactive SVG pressure profile chart
  * Shows base pressure drop and pressure with fittings over pipe length
  */
-export function PressureChart({ results }: PressureChartProps) {
+export function PressureChart({ results, unit }: PressureChartProps) {
+  const chartId = useId()
+
   if (!results.pressure || !results.input) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
@@ -47,10 +57,13 @@ export function PressureChart({ results }: PressureChartProps) {
     5
   )
 
-  // Scales
-  const xScale = (val: number) => padding.left + (val / pipeLength) * chartWidth
+  // Scales. The vertical span falls back to 1 bar when the pressure is zero — dividing by
+  // it produced NaN for every coordinate and an SVG that rendered as blank space.
+  const yAxisMax = totalPressure > 0 ? totalPressure * 1.2 : 1
+  const xScale = (val: number) =>
+    padding.left + (pipeLength > 0 ? (val / pipeLength) * chartWidth : 0)
   const yScale = (val: number) =>
-    padding.top + chartHeight - (val / (totalPressure * 1.2)) * chartHeight
+    padding.top + chartHeight - (val / yAxisMax) * chartHeight
 
   // Convert points to path
   const basePressurePath = basePressurePoints
@@ -71,7 +84,30 @@ export function PressureChart({ results }: PressureChartProps) {
       </h3>
 
       <div className="overflow-x-auto">
-        <svg width={width} height={height} className="mx-auto">
+        {/* viewBox rather than fixed width/height, so the chart scales down to the
+            container instead of forcing a horizontal scrollbar on a narrow screen. */}
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          width="100%"
+          height="auto"
+          preserveAspectRatio="xMidYMid meet"
+          className="mx-auto block max-w-full"
+          style={{ maxWidth: width }}
+          role="img"
+          aria-labelledby={`${chartId}-title ${chartId}-desc`}
+        >
+          {/* The chart is the only place these figures appear as a shape rather than a
+              number, so the description carries the same information as prose. */}
+          <title id={`${chartId}-title`}>
+            Pressure profile along the pipe
+          </title>
+          <desc id={`${chartId}-desc`}>
+            {`Pressure builds linearly over ${pipeLength.toFixed(0)} mm of pipe, reaching `
+              + `${formatPressure(basePressure, unit)} ${unit} from pipe friction alone and `
+              + `${formatPressure(totalPressure, unit)} ${unit} once `
+              + `${formatPressure(fittingLoss, unit)} ${unit} of fitting losses are included.`}
+          </desc>
+
           {/* Background */}
           <rect width={width} height={height} fill="white" />
 
@@ -132,7 +168,7 @@ export function PressureChart({ results }: PressureChartProps) {
           {/* Y-axis labels */}
           <g fontSize="12" fill="#64748b" textAnchor="end">
             {Array.from({ length: 6 }).map((_, i) => {
-              const value = ((i * totalPressure * 1.2) / 5).toFixed(1)
+              const value = toPressureUnit((i * yAxisMax) / 5, unit).toFixed(1)
               const y = padding.top + ((5 - i) * chartHeight) / 5 + 4
               return (
                 <text key={`label-y-${i}`} x={padding.left - 10} y={y}>
@@ -157,7 +193,7 @@ export function PressureChart({ results }: PressureChartProps) {
 
           {/* Axis labels */}
           <text x={padding.left - 45} y={padding.top - 5} fontSize="12" fill="#64748b">
-            Pressure (bar)
+            Pressure ({unit})
           </text>
           <text x={width / 2} y={height - 5} fontSize="12" fill="#64748b" textAnchor="middle">
             Pipe Length (mm)
@@ -187,21 +223,21 @@ export function PressureChart({ results }: PressureChartProps) {
         <div className="p-4 bg-indigo-50 rounded-lg">
           <p className="text-xs text-indigo-600 font-medium">Base Pressure Drop</p>
           <p className="text-2xl font-bold text-indigo-900 mt-1">
-            {basePressure.toFixed(2)} <span className="text-sm">bar</span>
+            {formatPressure(basePressure, unit)} <span className="text-sm">{unit}</span>
           </p>
         </div>
 
         <div className="p-4 bg-red-50 rounded-lg">
           <p className="text-xs text-red-600 font-medium">Total with Fittings</p>
           <p className="text-2xl font-bold text-red-900 mt-1">
-            {totalPressure.toFixed(2)} <span className="text-sm">bar</span>
+            {formatPressure(totalPressure, unit)} <span className="text-sm">{unit}</span>
           </p>
         </div>
 
         <div className="p-4 bg-amber-50 rounded-lg">
           <p className="text-xs text-amber-600 font-medium">Fitting Loss</p>
           <p className="text-2xl font-bold text-amber-900 mt-1">
-            {fittingLoss.toFixed(2)} <span className="text-sm">bar</span>
+            {formatPressure(fittingLoss, unit)} <span className="text-sm">{unit}</span>
           </p>
         </div>
       </div>

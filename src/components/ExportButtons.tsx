@@ -46,29 +46,38 @@ export function ExportButtons({ results, params }: ExportButtonsProps) {
       // Find the chart element in the DOM
       const chartElement = document.querySelector('[data-chart="pressure-profile"]') as HTMLElement | null
 
-      // Map parameters to input data format
+      // Map parameters to input data format. Values are taken from the result rather than
+      // the form where the engine derived them — the density in particular, which used to
+      // be hardcoded to 1000 kg/m³ for every material.
       const inputData = {
-        pipeLength: params.pipe_length_mm || 0,
-        pipeDiameter: params.pipe_diameter_mm || 0,
-        temperature: params.temperature_c || 0,
-        flowRate: params.flow_rate_lpm || 0,
-        viscosity: results.flow?.apparent_viscosity_cp || 0,
-        density: 1000, // kg/m³
-        selectedMaterial: params.material_key || 'Unknown',
+        pipeLength: results.input?.pipe_length_mm ?? params.pipe_length_mm ?? 0,
+        pipeDiameter: results.input?.pipe_diameter_mm ?? params.pipe_diameter_mm ?? 0,
+        temperature: results.input?.temperature_c ?? params.temperature_c ?? 0,
+        flowRate: results.input?.flow_rate_lpm ?? params.flow_rate_lpm ?? 0,
+        viscosity: results.flow?.apparent_viscosity_cp ?? 0,
+        density: results.input?.material_density_kg_m3 ?? 0,
+        selectedMaterial: results.input?.material_name || params.material_key || 'Unknown',
         selectedMachine: params.machine_type || 'Unknown',
       }
 
-      // Map calculation results to output format
+      // Map calculation results to output format. Each pressure is passed in bar under a
+      // name matching what it is; the Pascal value is deliberately not passed at all.
+      const machine = results.machine_compatibility
       const resultData = {
-        optimalPressureBar: results.pressure?.base_pressure_drop_bar,
-        pressureDropBar: results.pressure?.pressure_drop_pa,
+        setPressureBar: machine?.set_pressure_bar,
+        setPressureGovernedBy: machine?.set_pressure_governed_by,
+        requiredPressureBar: machine?.required_pressure_bar,
+        basePressureDropBar: results.pressure?.base_pressure_drop_bar,
+        pressureWithFittingsBar: results.pressure?.pressure_with_fittings_bar,
+        fittingLossBar: results.pressure?.fitting_loss_bar,
+        minPressureBar: machine?.min_pressure_bar,
+        maxPressureBar: machine?.max_pressure_bar,
         reynoldsNumber: results.flow?.reynolds_number,
         flowRegime: results.flow?.flow_regime,
         velocity: results.flow?.velocity_m_s,
         shearRate: results.flow?.shear_rate_s_inv,
-        injectionTime: undefined, // Not available in current structure
-        compatible: results.machine_compatibility?.is_compatible || false,
-        machine: undefined,
+        compatible: machine?.is_compatible ?? false,
+        machineType: results.input?.machine_type ?? params.machine_type,
       }
 
       // Generate the PDF with chart if available
@@ -82,13 +91,13 @@ export function ExportButtons({ results, params }: ExportButtonsProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div role="group" aria-label="Export results" className="flex items-center gap-2">
       <button
         onClick={() => handleExport('json')}
         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
         title="Export as JSON"
       >
-        <FileJson className="w-4 h-4" />
+        <FileJson aria-hidden="true" className="w-4 h-4" />
         JSON
       </button>
 
@@ -97,7 +106,7 @@ export function ExportButtons({ results, params }: ExportButtonsProps) {
         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors"
         title="Export as CSV"
       >
-        <FileText className="w-4 h-4" />
+        <FileText aria-hidden="true" className="w-4 h-4" />
         CSV
       </button>
 
@@ -106,7 +115,7 @@ export function ExportButtons({ results, params }: ExportButtonsProps) {
         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors"
         title="Export as Text Report"
       >
-        <Download className="w-4 h-4" />
+        <Download aria-hidden="true" className="w-4 h-4" />
         Report
       </button>
 
@@ -117,9 +126,9 @@ export function ExportButtons({ results, params }: ExportButtonsProps) {
         title="Generate professional PDF report with charts"
       >
         {isGeneratingPDF ? (
-          <Loader className="w-4 h-4 animate-spin" />
+          <Loader aria-hidden="true" className="w-4 h-4 animate-spin" />
         ) : (
-          <Download className="w-4 h-4" />
+          <Download aria-hidden="true" className="w-4 h-4" />
         )}
         {isGeneratingPDF ? 'Generating...' : 'PDF'}
       </button>

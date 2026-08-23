@@ -4,157 +4,103 @@
 
 ## What Is This?
 
-A physics-based calculation engine that helps polyurethane injection molding manufacturers optimize:
-- **Injection pressure** - What pressure should I use?
-- **Temperature effects** - How will temperature affect my material?
-- **Machine compatibility** - Does my machine work for these conditions?
-- **Material behavior** - How will my polyurethane foam respond?
-- **Quality predictions** - Will I get good parts or defects?
+A physics-based calculation engine that helps polyurethane injection molding manufacturers understand:
+- **Injection pressure** — what pressure to set, and why (line demand vs. the machine's own minimum)
+- **How close to turbulent flow you are** — not just laminar/turbulent, but the margin and which dial to move
+- **Temperature effects** — viscosity change with process temperature, and drift toward ambient in the feed line
+- **Blowing agent behaviour** — whether it stays in solution at the process temperature and pressure
+- **Cure & exotherm** — cream/gel time, processing window, scorch risk (for catalogued materials with a data sheet)
+- **Machine compatibility** — does a low- or high-pressure machine work for these conditions?
+- **Environmental impact** — GWP of the selected material and blowing agent
 
-**Technology:** Python physics engine + React/TypeScript UI running in your browser (via Pyodide WebAssembly)
+**Technology:** Python physics engine + React/TypeScript UI running in your browser (via Pyodide WebAssembly). No backend, no server — everything runs client-side, and works offline after the first load.
 
 ---
 
 ## Quick Example
 
 **Input:**
-- Material: Ecofoam HD12
-- Pipe: 1000mm long, 20mm diameter
+- Material: Genfoam HD12
+- Pipe: 1000 mm long, 20 mm diameter
 - Flow: 10 L/min
-- Temperature: 25°C
+- Temperature: 25 °C
 
 **Output:**
-- Pressure drop: **12.3 bar**
-- Temperature rise: **2.1°C**
-- Machine needed: **High-Pressure (100-200 bar)**
-- Quality confidence: **92%** ✅
+- Pipe pressure drop, with fittings accounted for
+- Reynolds number, flow regime, and how much headroom remains before it turns turbulent
+- The pressure to actually set on the machine (line demand, or the machine's minimum — whichever governs — with the reasoning shown)
+- Machine compatibility (low-pressure / high-pressure)
 
 ---
 
 ## What Can It Do?
 
-### Physics Calculations
-✅ Pressure drop (Darcy-Weisbach equation)
-✅ Temperature rise (shear heating, thermal transport)
-✅ Flow analysis (Reynolds number, shear rate, flow regime)
-✅ Viscosity effects (temperature-dependent, shear-thinning)
+### Core Physics
+- Pressure drop (Darcy–Weisbach, Swamee–Jain friction factor)
+- Temperature-dependent viscosity (Arrhenius) and shear-thinning (power law)
+- Flow analysis (Reynolds number, shear rate, flow regime, laminar/turbulent margin)
+- Shear heating
+- Fitting losses
 
-### Advanced Features (Phase 4 - Complete)
-✅ **4 Non-Newtonian fluid models** - Power Law, Herschel-Bulkley, Cross, Carreau
-✅ **Advanced heat transfer** - Convection, radiation, insulation effects
-✅ **Pressure optimization** - Find required vs optimal operating point
-✅ **Neural network surrogate** - 100x faster predictions (<1ms)
-✅ **Polyurethane kinetics** - Cure behavior prediction (Avrami, Kamal-Sourour)
-✅ **Quality prediction** - ML-based defect risk assessment
-✅ **Production logging** - Track real runs and retrain models
+### Process Modelling (optional inputs)
+- **Line thermal drift** — supply an ambient temperature and idle time, and the tool models the material cooling/warming toward ambient in the hose before it reaches the mix head, rather than assuming the tank set point holds all the way through
+- **Blowing agent volatility** — checks whether the agent stays dissolved at the calculated line temperature and pressure
+- **Cure & exotherm** — for catalogued materials with reaction data on their sheet: cream/gel/tack-free time, processing window, adiabatic temperature rise, and scorch risk, given a part thickness and mould temperature
 
 ### Materials & Machines
-✅ **20+ polyurethane systems** - Pre-configured with real specifications
-✅ **Custom materials** - Define your own formulations
-✅ **Temperature-dependent properties** - Accurate across operating ranges
-✅ **Machine compatibility** - Auto-detect if your machine works
+- **4 catalogued polyurethane systems**, defined in a single CSV (`src/data/polyurethane_foam_database.csv`) that both the UI and the Python engine read — add a row, get a new material, no code change needed
+- **Custom materials** — enter viscosity, density, flow index and activation energy directly when your material isn't catalogued
+- **2 machine classes** — low-pressure (8–20 bar) and high-pressure (100–200 bar), with the operator's actual set point derived from whichever binds: line demand, or the machine's own minimum
 
-### ML & Optimization
-✅ **Quality classifier** - Predict good vs defective parts
-✅ **Defect prediction** - Assess risk of voids, short-shots, flash
-✅ **Parameter optimization** - Find best pressure settings
-✅ **Online learning** - Improve models from production data
+### Learning From Real Outcomes
+Every calculation is saved locally in the browser. After a part is made, you can record how it actually came out (good / voids / short-shot / scorch / …). Once there are enough labelled shots, the tool can fit a small model to the *residual* between the physics prediction and reality — it deliberately will not train or show a confidence figure before there's real labelled data to train on, and it never invents synthetic training data. Datasets can be exported/imported as JSON to pool shots across machines or people, since the app has no backend of its own.
+
+### Export
+Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pressure chart embedded).
 
 ---
 
 ## Getting Started
 
-### 👤 For Users
-1. **First time?** → Read [GETTING_STARTED.md](GETTING_STARTED.md) (5 min)
-2. **Need details?** → Read [CAPABILITIES.md](CAPABILITIES.md) (10 min)
-3. **Material specs?** → See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md)
-4. **Machine info?** → See [MACHINES_GUIDE.md](MACHINE_SYSTEM_DOCUMENTATION.md)
-
-### 👨‍💻 For Developers
-1. **Architecture?** → Read [ARCHITECTURE.md](ARCHITECTURE.md)
-2. **Setup errors?** → Read [ERROR_HANDLING.md](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md)
-3. **Production logging?** → Read [LOGGING.md](LOGGING_GUIDE.md)
-4. **Improve ML?** → See `/dev/PHASE_4_ARCHITECTURE.md` (advanced)
-
----
-
-## Documentation Overview
-
-| Document | For Whom | Time | Purpose |
-|----------|----------|------|---------|
-| [GETTING_STARTED.md](GETTING_STARTED.md) | All users | 5 min | First calculation |
-| [CAPABILITIES.md](CAPABILITIES.md) | All users | 10 min | What it can do |
-| [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) | Engineers | 10 min | Material database |
-| [MACHINE_SYSTEM_DOCUMENTATION.md](MACHINE_SYSTEM_DOCUMENTATION.md) | Engineers | 10 min | Machine types |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Developers | 20 min | How it works |
-| [ERROR_HANDLING.md](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md) | Developers | 10 min | Input validation |
-| [LOGGING.md](LOGGING_GUIDE.md) | Operations | 10 min | Production use |
+1. **First time?** → Read [GETTING_STARTED.md](GETTING_STARTED.md)
+2. **Need details on inputs/outputs?** → Read [CAPABILITIES.md](CAPABILITIES.md)
+3. **Material data?** → See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) and `src/data/database_data_dictionary.md`
+4. **Machine types?** → See [MACHINE_SYSTEM_DOCUMENTATION.md](MACHINE_SYSTEM_DOCUMENTATION.md)
+5. **Validation rules & custom materials?** → See [ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md)
+6. **Recording outcomes & the shot dataset?** → See [LOGGING_GUIDE.md](LOGGING_GUIDE.md)
+7. **Architecture?** → Read [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)
 
 ---
 
 ## Current Status
 
-**Last Updated:** December 2024
-**Phase:** 4 (Complete) ✅
+The calculation engine, custom materials, line-thermal modelling, blowing-agent volatility, cure/exotherm prediction, the laminar-flow-margin display, and the shot-record/residual-learning workflow are all implemented and covered by CI (unit tests, Python tests, and an end-to-end Playwright suite gate every deploy).
 
-### Completed Features
-- ✅ Phase 1: Core calculation engine (Python modules)
-- ✅ Phase 2: Comprehensive testing (560+ tests)
-- ✅ Phase 3: TypeScript service layer
-- ✅ Phase 4: Advanced computation & ML
-  - ✅ Tier 1: Advanced fluid models + pressure optimizer
-  - ✅ Tier 2: Advanced heat transfer
-  - ✅ Tier 3: Neural network surrogate (100x speed)
-  - ✅ Tier 4: Extended materials + machines + inverse optimization
-  - ✅ Bonus: Polyurethane reaction kinetics
+A few Python modules exist and are tested but are **not yet wired into the UI**: non-Newtonian rheology models beyond the power law (`src/core/rheology`), the standalone pressure/inverse optimizers (`src/core/optimizers`), and the advanced heat-transfer module (`src/core/thermodynamics`). They're available to build on, not features you'll find in the app today.
 
-### Production Ready
-- ✅ 100+ comprehensive tests
-- ✅ Type-safe Python + TypeScript
-- ✅ No external dependencies (pure Python)
-- ✅ Browser-based (Pyodide/WASM)
-- ✅ Real polyurethane materials database
-- ✅ ML models trained and optimized
-
----
-
-## Key Numbers
-
-| Metric | Value |
-|--------|-------|
-| **Python modules** | 12+ (modular calculation engine) |
-| **Test cases** | 100+ (all passing) |
-| **Materials** | 20+ polyurethane systems |
-| **Machines** | 10+ injection machine types |
-| **ML models** | 5 (quality, defect, pressure, classifiers) |
-| **Speed improvement** | 100x (physics → neural network) |
-| **Accuracy (standard)** | ±5% (was ±10%) |
-| **Accuracy (advanced)** | ±3-8% (varies by scenario) |
+There is no neural-network surrogate and no synthetic-data ML quality/defect classifier — an earlier version of this project had one, and it was deliberately removed in favor of the shot-record model described above, which only speaks once it has real outcomes to learn from.
 
 ---
 
 ## Technology Stack
 
-### Backend
-- **Python 3.12** - Calculation engine
-- **NumPy/SciPy** - Scientific computing
-- **scikit-learn/XGBoost** - Machine learning
-- **Pyodide** - Python in WebAssembly
+### Backend (runs in-browser via Pyodide/WASM)
+- **Python** — pure standard library for the calculation engine (no numpy/scipy required to run a calculation)
+- **scikit-learn** — loaded on demand, only when there's enough labelled shot data to train the residual model
 
 ### Frontend
-- **TypeScript 5.0** - Type-safe code
-- **React** - UI components
-- **Vitest** - Testing
+- **TypeScript** + **React**
+- **Vite**, **Tailwind CSS**
+- **Vitest** (unit) + **Playwright** (end-to-end)
 
 ### Deployment
-- **GitHub Pages** - Hosting
-- **GitHub Actions** - CI/CD pipeline
+- **GitHub Pages**, deployed via **GitHub Actions** — the deploy job is gated on lint, type-check, unit tests, the Python test suite, and the full end-to-end suite all passing, and it ships the exact build artifact that suite ran against
 
 ---
 
 ## Try It Now
 
-[🚀 Open the Polyurethane Optimizer](https://walteriaXw.github.io/Pu-optimizer-tool/)
+[Open the Polyurethane Optimizer](https://waltteriaxw.github.io/Pu-optimizer-tool/)
 
 ---
 
@@ -162,18 +108,6 @@ A physics-based calculation engine that helps polyurethane injection molding man
 
 **For usage questions:** See [GETTING_STARTED.md](GETTING_STARTED.md) or [CAPABILITIES.md](CAPABILITIES.md)
 
-**For technical questions:** See [ARCHITECTURE.md](ARCHITECTURE.md)
+**For material questions:** See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md)
 
-**For material/machine questions:** See data guides
-
-**For developers:** See `/dev/` folder for implementation details
-
----
-
-## Version
-
-- **Version:** 2.0.0
-- **Status:** Production Ready ✅
-- **Last Updated:** December 12, 2024
-- **Python:** 3.12+
-- **Node:** 18+
+**For developers:** See [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)

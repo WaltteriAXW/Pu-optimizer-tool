@@ -4,7 +4,7 @@
  * Handles exporting calculation results as JSON, CSV, and formatted reports.
  */
 
-import type { CalculationResults } from '@/models/types'
+import type { CalculationResults } from '@/calculator_types'
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'report'
@@ -279,14 +279,6 @@ export class ExportService {
   }
 
   /**
-   * Generate a downloadable blob (for browser environments)
-   */
-  createDownloadBlob(results: CalculationResults, format: 'json' | 'csv' | 'report' = 'json'): Blob {
-    const content = this.export(results, { format, includeTimestamp: true, prettyPrint: true })
-    return new Blob([content], { type: this.getMimeType(format) })
-  }
-
-  /**
    * Generate filename with timestamp
    */
   generateFilename(format: 'json' | 'csv' | 'report' = 'json'): string {
@@ -294,11 +286,4 @@ export class ExportService {
     const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '')
     return `pu-calculation-${timestamp}${this.getFileExtension(format)}`
   }
-}
-
-/**
- * Export singleton instance factory
- */
-export function createExportService(): ExportService {
-  return new ExportService()
 }

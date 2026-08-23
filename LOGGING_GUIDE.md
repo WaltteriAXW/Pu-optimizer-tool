@@ -1,267 +1,61 @@
-# Production Logging & ML Training Guide
+# Production Logging & Shot Dataset Guide
 
-This guide explains how to use the production logging and ML retraining features added to the Pu-optimizer-tool.
+This describes how the app records production runs and how the optional residual-learning model works. There's no separate Python API for this — it's entirely a browser feature, driven from the **History** sidebar and its **Shot dataset** panel.
 
-## Overview
+If you're looking for a `logging_example.py`, a `logs/` directory, or a `process_optimizer_ml.py` with `retrain_with_production_data()` — that described an earlier version of this project and was removed along with the synthetic-data ML models (see `CAPABILITIES.md` → "What Changed"). What replaced it is simpler and described below.
 
-The logging system enables:
-- **Production tracking**: Log every production run with parameters and results
-- **Quality monitoring**: Track defects and quality issues
-- **Continuous ML improvement**: Retrain models with real production data
-- **Performance analysis**: Get statistics and insights from historical data
+---
 
-## Directory Structure
+## How Runs Are Saved
 
-```
-logs/
-├── production_log.json       # Simple calculator production runs
-├── quality_issues.json        # Tracked quality problems
-└── ml_training_data.json      # ML training data with labels
+Every time you click **Run Simulation**, the result is saved automatically to `localStorage` in your browser — there's no server, so this is per-browser, per-machine storage. Nothing is sent anywhere. You'll see it appear at the top of the **History** sidebar.
 
-models/
-├── ml_models.pkl              # Base trained models
-└── models_retrained_*.pkl     # Retrained models with timestamps
-```
+At the moment it's saved, a run's outcome is `unrecorded` — the physics predicted something, but nobody has said yet whether the part it produced was actually good.
 
-## Usage Examples
+## Recording an Outcome
 
-### 1. Basic Production Run Logging
+Open **History**, find the run, and use the **"How did the part come out?"** dropdown on that entry:
 
-```python
-from polyurethane_calculator import PolyurethaneCalculator
+- Good part
+- Voids
+- Short shot
+- Scorch / burn
+- Surface defect
+- Other problem
 
-calculator = PolyurethaneCalculator("ecofoam_standard")
+This is the one piece of information the physics engine cannot supply on its own, and it's the only thing that turns a saved calculation into training data. A run left as "Not yet recorded" is just history — it's never used for training.
 
-# Run calculation
-parameters = {
-    "pipe_length": 500,
-    "pipe_diameter": 12,
-    "temperature": 25,
-    "flow_rate": 30,
-    "viscosity": 350,
-    "density": 1120
-}
+## Moving Data Between Machines
 
-results = calculator.calculate(
-    pipe_length=parameters["pipe_length"],
-    pipe_diameter=parameters["pipe_diameter"],
-    temperature=parameters["temperature"],
-    flow_rate_lpm=parameters["flow_rate"],
-    viscosity=parameters["viscosity"],
-    density=parameters["density"],
-    machine_type="low_pressure"  # Use "low_pressure" or "high_pressure"
-)
+Since the app has no backend, a shot recorded on one machine only exists in that machine's browser. The **Shot dataset** panel (top of the History sidebar) has:
 
-# Log the production run
-log_result = calculator.log_production_run(
-    parameters=parameters,
-    results=results,
-    quality_status="good",  # "good", "acceptable", "defective", "failed"
-    quality_notes="Perfect part, no defects observed",
-    machine_type="low_pressure",  # "low_pressure" or "high_pressure"
-    material_preset="ecofoam_standard"
-)
+- **Export** — downloads every saved run (recorded or not) as a JSON file
+- **Import** — merges a JSON file exported elsewhere into your local set
 
-print(f"Logged to: {log_result['log_file']}")
-print(f"Total entries: {log_result['total_entries']}")
-```
+Import is de-duplicated by record ID, so importing the same file twice is harmless. If the same run exists on both sides with different outcomes recorded, your local copy's outcome wins — an older import can't silently overwrite a verdict someone recorded locally since.
 
-### 2. Logging Quality Issues
+This is how you'd pool shots recorded by different operators or machines into one dataset for training.
 
-```python
-# Log a specific quality issue
-issue_result = calculator.log_quality_issue(
-    issue_type="surface_defect",  # void, short_shot, flash, surface_defect
-    description="Surface roughness due to low temperature",
-    parameters=problem_parameters,
-    severity="medium"  # low, medium, high, critical
-)
-```
+## Training the Residual Model
 
-### 3. ML Training Data Logging
+The **Shot dataset** panel shows how many labelled shots you have and, once there are enough, a **Train on recorded shots** button.
 
-```python
-from process_optimizer_ml import ml_optimizer
+- **Threshold:** 50 labelled shots, with at least one "good" and at least one "bad" outcome among them. Below that, the panel states the shortfall plainly (e.g. "12 labelled shots; 50 needed. Record how 38 more parts came out.") rather than training on too little data or showing a synthetic confidence number.
+- **What it trains:** not a from-scratch quality predictor — a model of the *residual*, i.e. where the physics prediction and what actually happened diverge. The idea is to let the tool learn where its own physics model is wrong for your specific materials, machines, and conditions, rather than replacing the physics with a black box.
+- **Cost:** training pulls in scikit-learn (a few megabytes), fetched only when you press Train — not on page load, and not just because you opened the panel.
+- **Result:** accuracy on a held-out split of your own labelled shots, a confusion matrix, feature importances, and a caveat string describing the model's limits — shown directly in the panel after training completes.
 
-# After a production run with known quality outcome
-log_result = ml_optimizer.log_production_data(
-    parameters=params,
-    results=results,
-    actual_quality_outcome="good",  # Actual outcome observed
-    actual_defects={"voids": False, "flash": False},  # Actual defects
-    notes="Production run #123"
-)
+There's no persistence of a trained model between sessions today, and no automatic retraining — you train on demand from whatever's currently in your local (or imported) dataset.
 
-# Check if ready for retraining
-if log_result['ready_for_retraining']:
-    print("Enough data for retraining!")
-```
+## Practical Notes
 
-### 4. Model Retraining
-
-```python
-# Check training data statistics
-stats = ml_optimizer.get_training_statistics()
-print(f"Labeled samples: {stats['labeled_entries']}")
-print(f"Ready: {stats['ready_for_training']}")
-
-# Retrain when you have 50+ labeled samples
-if stats['ready_for_training']:
-    result = ml_optimizer.retrain_with_production_data(
-        combine_with_synthetic=True,  # Mix with synthetic data
-        min_labeled_samples=50
-    )
-
-    if result['success']:
-        print(f"Retrained with {result['total_samples']} samples")
-        print(f"Accuracy: {result['metrics']['quality_accuracy']*100:.1f}%")
-```
-
-### 5. Saving and Loading Models
-
-```python
-# Save trained models
-save_result = ml_optimizer.save_models("my_models.pkl")
-
-# Later, load them back
-load_result = ml_optimizer.load_models("my_models.pkl")
-```
-
-### 6. Production Statistics
-
-```python
-# Get production performance stats
-stats = calculator.get_production_statistics()
-
-print(f"Total runs: {stats['total_runs']}")
-print(f"Success rate: {stats['success_rate']}%")
-print(f"Average pressure: {stats['averages']['pressure_bar']} bar")
-```
-
-## Workflow for Continuous Improvement
-
-1. **Initial Setup**
-   ```python
-   from process_optimizer_ml import initialize_ml_models
-   initialize_ml_models()  # Train with synthetic data
-   ```
-
-2. **During Production**
-   - Log every production run
-   - Record actual quality outcomes
-   - Track any defects or issues
-
-3. **Weekly/Monthly**
-   - Review statistics
-   - Analyze quality trends
-   - Check training data readiness
-
-4. **When Ready (50+ labeled samples)**
-   - Retrain ML models
-   - Compare performance
-   - Deploy improved models
-
-5. **Continuous**
-   - Keep logging production data
-   - Retrain periodically (monthly/quarterly)
-   - Export reports for analysis
-
-## Quality Status Codes
-
-- **good**: Perfect part, no issues
-- **acceptable**: Minor issues, part is usable
-- **defective**: Significant issues, part may not be usable
-- **failed**: Complete failure, part unusable
-
-## Defect Types
-
-- **voids**: Air bubbles or voids in the part
-- **short_shot**: Incomplete filling of the mold
-- **flash**: Material overflow/excess material
-- **surface_defects**: Surface finish problems
-
-## File Formats
-
-All logs are stored as JSON files for easy parsing and analysis:
-
-```json
-{
-  "timestamp": "2025-10-25T10:30:00",
-  "quality_status": "good",
-  "parameters": {
-    "pipe_length": 500,
-    "temperature": 25
-  },
-  "results": {
-    "optimal_pressure_bar": 3.5,
-    "reynolds_number": 1850
-  }
-}
-```
-
-## Best Practices
-
-1. **Always log production runs** - Even successful ones provide valuable data
-2. **Be specific in notes** - Detailed notes help with analysis
-3. **Record actual outcomes** - Label data enables ML improvement
-4. **Retrain regularly** - Monthly or quarterly retraining recommended
-5. **Backup logs** - Keep backups of production and training logs
-6. **Review statistics** - Weekly review helps identify trends
-7. **Version models** - Save models with timestamps for rollback
-
-## Troubleshooting
-
-**Q: Logs not saving?**
-- Check write permissions on `logs/` directory
-- Verify disk space
-
-**Q: Retraining fails?**
-- Ensure you have at least 50 labeled samples
-- Check that numpy and scikit-learn are installed
-
-**Q: Statistics show 0 runs?**
-- Check that you're using the correct log file path
-- Verify logs exist in `logs/` directory
-
-## Advanced: Exporting Data
-
-```python
-import json
-
-# Read and analyze logs
-with open('logs/production_log.json', 'r') as f:
-    logs = json.load(f)
-
-# Export to CSV for Excel analysis
-import csv
-with open('production_export.csv', 'w', newline='') as f:
-    writer = csv.DictWriter(f, fieldnames=['timestamp', 'quality_status', 'pressure'])
-    writer.writeheader()
-    for log in logs:
-        writer.writerow({
-            'timestamp': log['timestamp'],
-            'quality_status': log['quality_status'],
-            'pressure': log['results']['optimal_pressure_bar']
-        })
-```
-
-## Integration with Frontend
-
-The TypeScript frontend can call these Python functions via Pyodide:
-
-```typescript
-// After calculation
-await pyodide.runPython(`
-calculator.log_production_run(
-    parameters=${JSON.stringify(params)},
-    results=results,
-    quality_status="good"
-)
-`);
-```
+- Recording outcomes accurately matters more than recording a lot of them — a handful of carefully labelled "voids" runs is more useful than fifty runs all marked "good" by default.
+- If you're pooling data across a team, agree on what counts as each outcome (e.g. where the line is between "surface defect" and "other") before merging datasets — the model can't correct for inconsistent labelling.
+- Exported files aren't validated for physics correctness on import, only for having the right shape — an export from an older version of the app is still accepted.
 
 ## See Also
 
-- `logging_example.py` - Complete working examples
-- `polyurethane_calculator.py` - Simple model logging functions
-- `process_optimizer_ml.py` - Advanced ML logging functions
+- `src/services/ShotRecordStore.ts` — the storage and export/import logic
+- `src/services/ResidualModelService.ts` — readiness check and training call
+- `src/core/learning/residual_model.py` — the actual model (`MIN_LABELLED_SHOTS = 50`)
+- `src/components/DatasetPanel.tsx` — the UI described above

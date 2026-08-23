@@ -2,8 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Relative, so it resolves under the /Pu-optimizer-tool/ base path GitHub Pages
+         serves from. An absolute "/vite.svg" pointed at the domain root, where nothing
+         is published, and the file it named did not exist either. -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta
+      name="description"
+      content="Physics-based calculator for polyurethane injection molding: pressure to set, laminar flow margin, temperature effects, blowing agent volatility and cure prediction — running entirely in your browser."
+    />
+    <meta property="og:title" content="PU Optimizer" />
+    <meta
+      property="og:description"
+      content="Work out the injection pressure to set, how much margin remains before turbulent flow, and how temperature changes both."
+    />
+    <meta property="og:type" content="website" />
     <title>PU Optimizer - Physics-Based Injection Engine</title>
   </head>
   <body>

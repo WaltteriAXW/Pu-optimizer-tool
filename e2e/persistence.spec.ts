@@ -76,4 +76,69 @@ test.describe('shot records', () => {
     // And no training is offered while it could only produce noise
     await expect(page.getByTestId('train-model')).toHaveCount(0)
   })
+
+  test('saved runs can be cleared, and the clearing survives a reload', async ({ page }) => {
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+
+    // Two steps on purpose: this is the one irreversible action in the application
+    await page.getByTestId('clear-dataset').click()
+    await expect(page.getByTestId('clear-confirm')).toBeVisible()
+    await page.getByRole('button', { name: /delete everything/i }).click()
+
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
+
+    // It must have reached storage, not just component state — the whole point of the
+    // control is to get rid of data that would otherwise come back on the next visit
+    await page.reload()
+    await waitForEngine(page)
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
+    await expect(page.getByRole('dialog')).toContainText('No runs saved yet')
+    // …and the offer to clear is gone with nothing left to clear
+    await expect(page.getByTestId('clear-dataset')).toHaveCount(0)
+  })
+
+  test('the form setup comes back after a reload', async ({ page }) => {
+    await waitForEngine(page)
+
+    // A setup that differs from the defaults in every field the form restores
+    await page.getByLabel('Pipe Length').fill('1750')
+    await page.getByLabel('Pipe Diameter').fill('18')
+    await page.getByLabel('Material Temperature').fill('32')
+    await page.getByLabel('Flow Rate').fill('7.5')
+    await page.selectOption('select[name=material_key]', 'ecomate_spray')
+    await page.selectOption('select[name=machine_type]', 'low_pressure')
+
+    // Saved on submit, not on every keystroke — a half-typed number is not worth restoring
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await page.reload()
+    await waitForEngine(page)
+
+    await expect(page.getByLabel('Pipe Length')).toHaveValue('1750')
+    await expect(page.getByLabel('Pipe Diameter')).toHaveValue('18')
+    await expect(page.getByLabel('Material Temperature')).toHaveValue('32')
+    await expect(page.getByLabel('Flow Rate')).toHaveValue('7.5')
+    await expect(page.locator('select[name=material_key]')).toHaveValue('ecomate_spray')
+    await expect(page.locator('select[name=machine_type]')).toHaveValue('low_pressure')
+  })
+
+  test('cancelling the clear keeps the runs', async ({ page }) => {
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await openHistory(page)
+    await page.getByTestId('clear-dataset').click()
+    await page.getByRole('button', { name: /^cancel$/i }).click()
+
+    await expect(page.getByTestId('clear-confirm')).toHaveCount(0)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+  })
 })

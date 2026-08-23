@@ -6,6 +6,29 @@ Includes shear rate, apparent viscosity (Power Law model), and Reynolds number.
 import math
 from typing import Dict
 
+# Reynolds numbers bounding the flow regimes. Below the laminar limit the flow is smooth
+# and predictable; above the turbulent limit it is fully turbulent; between the two it is
+# transitional, where neither correlation strictly applies.
+LAMINAR_REYNOLDS_LIMIT = 2300.0
+TURBULENT_REYNOLDS_LIMIT = 4000.0
+
+
+def classify_flow_regime(reynolds: float) -> str:
+    """
+    Name the flow regime for a Reynolds number.
+
+    One function so that every caller gives the same answer. The pressure module used to
+    collapse the transitional band into 'turbulent' while this module reported three
+    regimes, so a line at Re 3000 came back as 'transitional' in the flow block and
+    'turbulent' in the pressure block of the same result — two answers to one question,
+    both written into the same exported file.
+    """
+    if reynolds < LAMINAR_REYNOLDS_LIMIT:
+        return 'laminar'
+    if reynolds < TURBULENT_REYNOLDS_LIMIT:
+        return 'transitional'
+    return 'turbulent'
+
 
 def calculate_shear_rate(
     diameter_mm: float,
@@ -137,17 +160,9 @@ def calculate_reynolds_number(
     # Re = (ρ * v * D) / η
     reynolds = (density_kg_m3 * velocity_m_s * diameter_m) / viscosity_pa_s
 
-    # Determine flow regime
-    if reynolds < 2300:
-        flow_regime = 'laminar'
-    elif reynolds < 4000:
-        flow_regime = 'transitional'
-    else:
-        flow_regime = 'turbulent'
-
     return {
         'reynolds_number': reynolds,
-        'flow_regime': flow_regime,
+        'flow_regime': classify_flow_regime(reynolds),
         'velocity_m_s': velocity_m_s,
         'diameter_m': diameter_m,
         'density_kg_m3': density_kg_m3,
@@ -195,10 +210,6 @@ def calculate_all_flow_properties(
         'is_shear_thinning': viscosity_data.get('is_shear_thinning', True),
     }
 
-
-# Reynolds number at which flow stops being laminar. Mirrors the threshold in
-# calculate_reynolds_number above and in src/constants.py.
-LAMINAR_REYNOLDS_LIMIT = 2300.0
 
 # Bisection settle: 80 halvings takes any starting bracket well below float precision, so
 # the answer is limited by the physics, not by the search.
@@ -325,9 +336,7 @@ def calculate_laminar_envelope(
 
     return {
         'reynolds_number': reynolds,
-        'flow_regime': 'laminar' if is_laminar else (
-            'transitional' if reynolds < 4000 else 'turbulent'
-        ),
+        'flow_regime': classify_flow_regime(reynolds),
         'is_laminar': is_laminar,
         'laminar_limit': LAMINAR_REYNOLDS_LIMIT,
         'max_laminar_flow_lpm': max_laminar_flow,

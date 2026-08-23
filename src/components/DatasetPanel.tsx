@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Upload, Database, Brain } from 'lucide-react'
+import { Download, Upload, Database, Brain, Trash2 } from 'lucide-react'
 import { useCalculator } from '../context/CalculatorContext'
 import {
   exportRecords,
@@ -22,7 +22,7 @@ import type {
  */
 
 export function DatasetPanel() {
-  const { history, refreshHistory, isReady, checkModelReadiness, trainModel } =
+  const { history, refreshHistory, clearHistory, isReady, checkModelReadiness, trainModel } =
     useCalculator()
   const fileInput = useRef<HTMLInputElement>(null)
   const [summary, setSummary] = useState<ImportSummary | null>(null)
@@ -31,6 +31,10 @@ export function DatasetPanel() {
   const [trained, setTrained] = useState<TrainingResult | null>(null)
   const [trainError, setTrainError] = useState<string | null>(null)
   const [readiness, setReadiness] = useState<ModelReadiness | null>(null)
+  // Two-step, because this is the one irreversible action in the application and the data
+  // it destroys cannot be recalculated — an outcome someone recorded by looking at a part
+  // exists nowhere else.
+  const [confirmingClear, setConfirmingClear] = useState(false)
 
   // The threshold lives in core/learning/residual_model.py and is asked for rather than
   // restated here. A second copy in TypeScript would be one more number to keep in step,
@@ -96,7 +100,7 @@ export function DatasetPanel() {
   return (
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
-        <Database className="w-4 h-4 text-slate-600" />
+        <Database aria-hidden="true" className="w-4 h-4 text-slate-600" />
         <h4 className="font-bold text-slate-800">Shot dataset</h4>
       </div>
       <div className="card-body space-y-4">
@@ -124,7 +128,7 @@ export function DatasetPanel() {
               <strong className="text-slate-900">No model yet.</strong>{' '}
               {readiness
                 ? `${readiness.reasons.join('; ')}.`
-                : `A prediction needs shots whose outcome someone has recorded.`}{' '}
+                : 'A prediction needs shots whose outcome someone has recorded.'}{' '}
               Until then the physics is the only thing answering, which is the honest state
               of affairs rather than a limitation to work around.
             </p>
@@ -138,7 +142,7 @@ export function DatasetPanel() {
             disabled={history.length === 0}
             className="button-secondary flex-1 text-sm disabled:opacity-50"
           >
-            <Download className="w-4 h-4 mr-1.5" />
+            <Download aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Export
           </button>
           <button
@@ -146,7 +150,7 @@ export function DatasetPanel() {
             onClick={() => fileInput.current?.click()}
             className="button-secondary flex-1 text-sm"
           >
-            <Upload className="w-4 h-4 mr-1.5" />
+            <Upload aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Import
           </button>
           <input
@@ -173,7 +177,7 @@ export function DatasetPanel() {
               className="button-primary w-full text-sm disabled:opacity-50"
               data-testid="train-model"
             >
-              <Brain className="w-4 h-4 mr-1.5" />
+              <Brain aria-hidden="true" className="w-4 h-4 mr-1.5" />
               {training ? 'Training…' : 'Train on recorded shots'}
             </button>
             {trained && (
@@ -185,6 +189,55 @@ export function DatasetPanel() {
               </div>
             )}
             {trainError && <p className="mt-2 text-xs text-amber-800">{trainError}</p>}
+          </div>
+        )}
+
+        {/* Clearing the browser's saved runs. The store could always do this; there was
+            simply no way to ask for it, so a dataset once recorded could not be discarded
+            from inside the application at all. */}
+        {history.length > 0 && (
+          <div className="pt-1 border-t border-slate-100">
+            {confirmingClear ? (
+              <div className="space-y-2" data-testid="clear-confirm">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Delete all {history.length} saved run
+                  {history.length === 1 ? '' : 's'}
+                  {labelled > 0 && <>, including {labelled} with a recorded outcome</>}? This
+                  cannot be undone — export first if you want to keep them.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearHistory()
+                      setConfirmingClear(false)
+                      setSummary(null)
+                      setTrained(null)
+                    }}
+                    className="flex-1 text-xs px-3 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                  >
+                    Delete everything
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingClear(false)}
+                    className="flex-1 button-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                data-testid="clear-dataset"
+                className="w-full text-xs px-3 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
+                Clear saved runs
+              </button>
+            )}
           </div>
         )}
 

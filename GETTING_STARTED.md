@@ -2,275 +2,157 @@
 
 **Time: 5 minutes**
 
-This guide walks you through your first pressure drop calculation using the Polyurethane Optimizer.
+This guide walks you through your first pressure calculation using the Polyurethane Optimizer.
 
 ---
 
 ## Step 1: Open the Tool
 
-Navigate to: [Polyurethane Optimizer](https://walteriaXw.github.io/Pu-optimizer-tool/)
+Navigate to: [Polyurethane Optimizer](https://waltteriaxw.github.io/Pu-optimizer-tool/)
 
-You should see a form with input fields for:
+The first load fetches the Python physics engine (Pyodide) — you'll see "Initializing Engine" for a few seconds. After that it works offline.
+
+You'll see a form on the left with:
+- Pipe Length (mm)
+- Pipe Diameter (mm)
+- Material Temperature (°C)
+- Flow Rate (L/min)
 - Material (dropdown)
-- Pipe length (mm)
-- Pipe diameter (mm)
-- Temperature (°C)
-- Flow rate (L/min)
+- Machine Type (Low Pressure / High Pressure)
+- An **Optional** section (collapsed by default) for ambient conditions and part geometry
 
 ---
 
 ## Step 2: Select a Material
 
-Click the **Material** dropdown and select a polyurethane system.
+Click the **Material** dropdown. The list is read live from the material database — currently:
 
-**Recommended for first test:**
-- **Ecofoam HD12** - General purpose, water-blown, zero GWP
+- **Genfoam HD12** — water-blown, general purpose, rigid, ~195–215 kg/m³
+- **Genfoam HD20** — water-blown, higher density, ~290–315 kg/m³
+- **Ecomate Spray EC** — spray foam, ultra-fast, zero-GWP blowing agent
+- **Ecofoam XHD RC** — rigid, extra-high-density, for panels and cavity filling
 
-**Other common options:**
-- **Genfoam HD20** - Higher density water-blown
-- **Ecomate Spray** - Ultra-fast spray foam
-- **Ecofoam XHD RC** - Rigid, high-density closed-cell
-
-If you don't see your material, you can create a custom one. See [Custom Materials](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md#creating-custom-materials).
+If your material isn't listed, select **Custom Material…** at the bottom of the list — it opens fields for viscosity, density, flow index and activation energy so you can enter your own values.
 
 ---
 
 ## Step 3: Enter Pipe Dimensions
 
-**Pipe Length:** 1000 mm
-- This is how long your injection system is
-- Longer pipes = more pressure drop
+**Pipe Length:** e.g. 500 mm — how long your injection line is. Longer = more pressure drop.
 
-**Pipe Diameter:** 20 mm
-- Internal diameter of your hose/pipe
-- Larger diameter = less pressure drop
+**Pipe Diameter:** e.g. 12 mm — internal diameter. Larger = less pressure drop.
 
-**Rule of thumb:** Typical injection systems are 500-2000mm with 10-30mm diameter pipes.
+Valid range: 50–10,000 mm length, 1–200 mm diameter.
 
 ---
 
-## Step 4: Enter Temperature
+## Step 4: Enter Temperature and Flow Rate
 
-**Temperature:** 25 °C
-- Ambient room temperature
-- This affects material viscosity
-- Warmer = lower viscosity = lower pressure drop
+**Material Temperature:** e.g. 25 °C (valid range 5–50 °C). This is the tank/set-point temperature — affects viscosity directly.
 
-**Range:** 5-50°C (adjust for your heating/cooling system)
+**Flow Rate:** e.g. 5 L/min (valid range 0.1–200 L/min).
 
 ---
 
-## Step 5: Enter Flow Rate
+## Step 5 (optional): Ambient Conditions & Part Geometry
 
-**Flow Rate:** 10 L/min
-- How fast the material flows (liters per minute)
-- Higher flow = higher pressure drop
-- Typical range: 0.5-50 L/min
+Expand **Optional** to model two things the basic calculation leaves out:
 
-**For your machine type:**
-- Low-pressure machines: 0.5-30 L/min typical
-- High-pressure machines: 5-200 L/min typical
+- **Ambient Temperature + Time Since Last Shot** — models material sitting in the hose drifting toward the surrounding air, so the pressure reflects the temperature at the mix head rather than the tank set point. Useful for single-shot or intermittent work. Leave blank and the calculation behaves exactly as if this section didn't exist.
+- **Mould Temperature + Part Thickness** — adds a cure/exotherm prediction for the moulded part (cream time, gel time, processing window, scorch risk). Only available for catalogued materials whose data sheet states reaction times.
 
 ---
 
-## Step 6: Click Calculate
+## Step 6: Run Simulation
 
-Click the **Calculate** button.
-
-The system will:
-1. ✅ Validate your inputs
-2. ✅ Load material properties
-3. ✅ Run calculations (pressure, temperature, flow, etc.)
-4. ✅ Display results
+Click **Run Simulation**.
 
 ---
 
 ## Reading the Results
 
-### Pressure Results
-```
-Pressure Drop: 12.3 bar
-├─ Base pressure: 10.8 bar
-└─ With fittings: 12.3 bar (15% loss)
+### Required Pressure (top card)
+The number to actually set on the machine — whichever governs: what the line demands, or the machine's own minimum (a high-pressure machine holds its minimum regardless of what the line asks for, because impingement mixing needs it). The card states which one is governing and shows the machine's operating window.
 
-Machine Needed: High-Pressure (100-200 bar) ✅ Compatible
-```
+### Laminar Flow Margin
+Not just "laminar" or "turbulent" — how much headroom is left before the line crosses into turbulence, and which input to change if it hasn't (or has).
 
-**What it means:**
-- You need **at least 12.3 bar** to push material through the pipe
-- Your machine must support this pressure
-- Green checkmark = your machine works
+### KPI Row
+Pipe Pressure Drop, Flow Regime (with Reynolds number), Shear Rate, Viscosity.
 
-### Thermal Results
-```
-Temperature Rise: 2.1°C
-└─ Final temperature: 27.1°C
-```
+### Pressure Analysis
+The pressure profile chart, plus base pressure drop, pressure with fittings, and fitting loss broken out.
 
-**What it means:**
-- Material heats up slightly due to friction
-- Final temperature is still safe (27.1°C)
-- No risk of premature cure
+### Flow Properties
+Apparent viscosity, Reynolds number, velocity, shear rate.
 
-### Flow Analysis
-```
-Shear Rate: 1,234 s⁻¹
-Reynolds Number: 45.2
-Flow Regime: Laminar ✅
-```
+### Thermal & Environmental (if available)
+Process temperature, reference and current viscosity, shear heating; and the selected material's blowing agent, GWP, and eco-friendliness recommendation.
 
-**What it means:**
-- **Laminar** = smooth, controlled flow (good!)
-- **Turbulent** = chaotic flow (usually bad - causes mixing issues)
+### Blowing Agent (if the material names one)
+Whether it stays in solution at the calculated line temperature and pressure — "stays in solution," "close to boiling," or "flash-off risk."
 
-### Quality Assessment
-```
-Quality Confidence: 92% ✅
-├─ Low defect risk
-├─ Good mixing expected
-└─ Recommended action: Use suggested pressure
-```
+### Temperature at the Mix Head (only if you supplied an ambient temperature)
+Set point vs. ambient vs. the effective temperature the material actually arrives at.
+
+### Cure & Exotherm (only if you supplied a part thickness, for a catalogued material)
+Cream/gel/tack-free time, working time, adiabatic temperature rise, peak core temperature, and scorch risk.
+
+### Machine Compatibility
+Whether the selected machine (Low Pressure: 8–20 bar, High Pressure: 100–200 bar) can hold the required pressure.
+
+---
+
+## Pressure Units
+
+The toggle in the top bar switches every pressure on screen between **bar** and **psi**. It
+is a display preference only — the engine calculates in bar, saved runs store bar, and
+exported files stay in bar whatever the toggle says, so a file you open next week means the
+same thing regardless of how the screen was set when you saved it. Your choice is remembered
+between visits.
+
+---
+
+## What Is Remembered
+
+The tool has no backend; everything stays in your browser.
+
+- **Your form setup** is saved when you press Run Simulation, so reopening the tab picks up
+  where you left off rather than resetting to the defaults.
+- **Every calculation** is saved to History, along with any outcome you record.
+- **Your pressure unit** choice.
+
+The **Shot dataset** panel in the History sidebar can export all of this to a file, import a
+file from another machine, and clear everything saved in this browser.
+
+---
+
+## Recording How the Part Came Out
+
+Every calculation is saved to **History** (top-right). Open a saved run and use the **"How did the part come out?"** dropdown to record the outcome (good, voids, short-shot, scorch, surface defect). This is the one thing the physics can't know on its own, and it's what lets the tool eventually learn where its predictions and real parts disagree — see the **Shot dataset** panel in the history sidebar for export/import and training status.
 
 ---
 
 ## Common Next Steps
 
-### "I need a different pressure"
-→ Adjust **Pipe Diameter** or **Flow Rate** and recalculate
-- Larger diameter = lower pressure
-- Lower flow rate = lower pressure
+**"I need a different pressure"** → Adjust Pipe Diameter or Flow Rate and recalculate. Larger diameter or lower flow rate both reduce pressure.
 
-### "Temperature is too high"
-→ Adjust one of:
-- **Inlet Temperature** (lower = less heating)
-- **Pipe Diameter** (larger = less shear heating)
-- **Flow Rate** (lower = less heating)
+**"Temperature is too high"** → Lower Material Temperature, use a larger diameter, or reduce flow rate — all reduce shear heating.
 
-### "I need to optimize pressure"
-→ Switch to **Optimization Mode** (if available)
-- System finds the optimal pressure automatically
-- Shows required vs optimal vs alternative pressures
+**"Flow is turbulent"** → Increase pipe diameter or reduce flow rate. The Laminar Flow Margin card tells you the minimum diameter or maximum flow rate that would keep you laminar.
 
-### "I have a custom material"
-→ See [Custom Materials](ERROR_HANDLING_AND_CUSTOM_PRODUCTS.md#creating-custom-materials)
+**"I have a custom material"** → Select **Custom Material…** in the dropdown and fill in its properties directly.
 
 ---
 
-## What Each Input Does
+## Exporting Results
 
-| Input | Effect | Increase = |
-|-------|--------|-----------|
-| **Pipe Length** | Friction resistance | More pressure ↑ |
-| **Pipe Diameter** | Flow resistance | Less pressure ↓ |
-| **Flow Rate** | Velocity | More pressure ↑ |
-| **Temperature** | Viscosity | Less pressure ↓ |
-| **Material** | Base properties | Varies |
-
----
-
-## Troubleshooting
-
-### "Error: Missing required inputs"
-→ Make sure all fields are filled (Material, Length, Diameter, Temp, Flow Rate)
-
-### "Error: Material not found"
-→ Check the material name or create a custom material
-
-### "Warning: Pressure too high"
-→ Your calculated pressure exceeds your machine's capability
-→ Solution: Increase pipe diameter, reduce flow rate, or increase temperature
-
-### "Warning: Flow is turbulent"
-→ Material is flowing too chaotically
-→ Solution: Increase pipe diameter or reduce flow rate
-
----
-
-## Key Concepts
-
-### Pressure Drop
-The resistance created by pushing material through a pipe. Measured in bar.
-
-### Temperature Rise
-Material heats up due to friction while flowing. Measured in °C.
-
-### Shear Rate
-How fast the material is being pushed/twisted. Fast shear can degrade materials.
-
-### Reynolds Number
-Indicator of flow regime (laminar = smooth, turbulent = chaotic).
-
----
-
-## Ready for More?
-
-### Understand the capabilities
-→ Read [CAPABILITIES.md](CAPABILITIES.md) - Learn what else the tool can do
-
-### Dive into machine details
-→ Read [MACHINES_GUIDE.md](MACHINE_SYSTEM_DOCUMENTATION.md) - Machine types explained
-
-### Learn about materials
-→ Read [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) - Material database details
-
-### Production use
-→ Read [LOGGING.md](LOGGING_GUIDE.md) - Log runs and train ML models
-
----
-
-## Example Calculations
-
-### Example 1: Standard Low-Pressure System
-```
-Material: Ecofoam HD12
-Pipe: 500mm × 15mm
-Flow: 15 L/min
-Temp: 25°C
-
-Results:
-→ Pressure: 8.2 bar (Low-pressure OK ✅)
-→ Temp rise: 1.5°C (Good)
-→ Flow regime: Laminar (Optimal)
-→ Action: Ready to produce
-```
-
-### Example 2: High-Viscosity Material
-```
-Material: Ecofoam XHD RC (high viscosity)
-Pipe: 1000mm × 20mm
-Flow: 20 L/min
-Temp: 25°C
-
-Results:
-→ Pressure: 45.2 bar (Needs high-pressure ✅)
-→ Temp rise: 5.8°C (Acceptable)
-→ Flow regime: Laminar (Good)
-→ Action: Use high-pressure machine
-```
-
-### Example 3: Temperature-Optimized
-```
-Material: Ecofoam HD12
-Pipe: 1000mm × 20mm
-Flow: 10 L/min
-Temp: 35°C (heated) ← Higher temp!
-
-Results:
-→ Pressure: 7.4 bar (LOWER than Example 1!)
-→ Temp rise: 1.2°C
-→ Flow regime: Laminar
-→ Action: Preheat material to reduce pressure
-```
+Use the buttons above the results panel to export as **JSON**, **CSV**, a plain-text **Report**, or a **PDF**.
 
 ---
 
 ## Next: Full Documentation
 
 - **Capabilities:** [CAPABILITIES.md](CAPABILITIES.md)
-- **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md) (for developers)
+- **Architecture:** [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md) (for developers)
 - **Materials:** [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md)
-- **Machines:** [MACHINE_SYSTEM_DOCUMENTATION.md](MACHINE_SYSTEM_DOCUMENTATION.md)
-
----
-
-**Questions?** See the relevant guide above or check [ARCHITECTURE.md](ARCHITECTURE.md) for technical details.

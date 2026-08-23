@@ -5,8 +5,25 @@ import { ResultsDisplay } from './components/ResultsDisplay'
 import { HistorySidebar } from './components/HistorySidebar'
 import { Activity, History } from 'lucide-react'
 
+/** Where the repository lives. Both header and footer link here rather than to '#'. */
+const REPO_URL = 'https://github.com/WaltteriAXW/Pu-optimizer-tool'
+
+/**
+ * The user guide. Points at the rendered guide in the repository — the two "Documentation"
+ * links previously went nowhere at all: one was a <button> with no handler, the other an
+ * anchor to '#'. Both looked clickable and did nothing.
+ */
+const DOCS_URL = `${REPO_URL}/blob/main/GETTING_STARTED.md`
+
 function AppContent() {
-  const { history, deleteHistory, loadFromHistory, recordOutcome } = useCalculator()
+  const {
+    history,
+    deleteHistory,
+    loadFromHistory,
+    recordOutcome,
+    pressureUnit,
+    setPressureUnit,
+  } = useCalculator()
   const [historyOpen, setHistoryOpen] = useState(false)
 
   return (
@@ -29,11 +46,47 @@ function AppContent() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+              {/* Display only: the engine and every saved run hold bar, and this converts
+                  at the point of display. A good deal of injection equipment is specified
+                  in psi, and converting by hand at the machine is how mistakes get made. */}
+              <div
+                role="group"
+                aria-label="Pressure unit"
+                className="hidden sm:inline-flex items-center rounded-lg bg-slate-100 p-0.5"
+              >
+                {(['bar', 'psi'] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setPressureUnit(unit)}
+                    aria-pressed={pressureUnit === unit}
+                    data-testid={`unit-${unit}`}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                      pressureUnit === unit
+                        ? 'bg-white text-indigo-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+              <a
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+              >
                 Documentation
-              </button>
+              </a>
               <button
                 onClick={() => setHistoryOpen(!historyOpen)}
+                aria-expanded={historyOpen}
+                // The word "History" is hidden below the sm breakpoint, leaving an icon
+                // and a bare count; the label carries the meaning at every width
+                aria-label={`Calculation history, ${history.length} ${
+                  history.length === 1 ? 'run' : 'runs'
+                } saved`}
                 className={`relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   historyOpen
                     ? 'bg-indigo-100 text-indigo-700'
@@ -41,16 +94,19 @@ function AppContent() {
                 }`}
                 title={`Calculation History (${history.length})`}
               >
-                <History className="w-4 h-4" />
+                <History aria-hidden="true" className="w-4 h-4" />
                 <span className="hidden sm:inline">History</span>
                 {history.length > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+                  >
                     {history.length}
                   </span>
                 )}
               </button>
               <a
-                href="https://github.com/WaltteriAXW/Pu-optimizer-tool"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
@@ -83,6 +139,7 @@ function AppContent() {
       <HistorySidebar
         history={history}
         isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
         onSelectEntry={(entry) => {
           loadFromHistory(entry)
           setHistoryOpen(false)
@@ -91,10 +148,13 @@ function AppContent() {
         onRecordOutcome={recordOutcome}
       />
 
-      {/* Sidebar Backdrop */}
+      {/* Sidebar backdrop. Shown at every width: the panel overlays the page on a wide
+          screen too, and hiding the backdrop above lg left no way to dismiss it by
+          clicking away — the only exit was finding the toggle again. */}
       {historyOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          aria-hidden="true"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={() => setHistoryOpen(false)}
         />
       )}
@@ -104,17 +164,20 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500">
-              © 2024 PU Optimizer. Polyurethane injection molding physics engine.
+              © {new Date().getFullYear()} PU Optimizer. Polyurethane injection molding
+              physics engine.
             </div>
             <div className="flex items-center gap-4">
               <a
-                href="#"
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 Documentation
               </a>
               <a
-                href="https://github.com/WaltteriAXW/Pu-optimizer-tool"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
