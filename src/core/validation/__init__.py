@@ -94,6 +94,73 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
         if not isinstance(parameters['material_key'], str) or not parameters['material_key']:
             errors.append("Material key must be a non-empty string")
 
+    errors.extend(_validate_hose(parameters))
+    errors.extend(_validate_rheology(parameters))
+
+    limit = parameters.get('max_line_pressure_bar')
+    if limit is not None:
+        try:
+            limit = float(limit)
+            if not 0 < limit <= 500:
+                errors.append('Maximum line pressure must be between 0 and 500 bar')
+        except (ValueError, TypeError):
+            errors.append('Maximum line pressure must be a valid number')
+
+    return errors
+
+
+def _validate_rheology(parameters: Dict[str, Any]) -> List[str]:
+    """
+    A measured flow curve is only for a custom material: a catalogued one is defined by its
+    data sheet, and mixing the two would calculate a material nobody has.
+    """
+    from ..rheology.models import build_model
+
+    model = parameters.get('rheology_model')
+    if not model or model == 'power_law':
+        return []
+    if parameters.get('material_key') != 'custom':
+        return ['A viscosity model other than the power law needs a custom material']
+    try:
+        build_model(parameters)
+    except ValueError as e:
+        return [str(e)]
+    return []
+
+
+def _validate_hose(parameters: Dict[str, Any]) -> List[str]:
+    """
+    The hose description is optional, but a wrong one must be refused rather than ignored:
+    the line model would otherwise fall back to the bare-hose default and report a
+    temperature for a hose nobody described.
+    """
+    from ..thermodynamics.hose_heat_transfer import HOSE_MATERIALS, INSULATION_MATERIALS
+
+    errors = []
+
+    hose_material = parameters.get('hose_material')
+    if hose_material and hose_material not in HOSE_MATERIALS:
+        errors.append(f'Unknown hose material: {hose_material}')
+
+    insulation_material = parameters.get('insulation_material')
+    if insulation_material and insulation_material not in INSULATION_MATERIALS:
+        errors.append(f'Unknown insulation material: {insulation_material}')
+
+    for key, label, low, high in (
+        ('hose_wall_thickness_mm', 'Hose wall thickness', 0.1, 50),
+        ('insulation_thickness_mm', 'Insulation thickness', 0, 100),
+    ):
+        value = parameters.get(key)
+        if value is None:
+            continue
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            errors.append(f'{label} must be a valid number')
+            continue
+        if not low <= value <= high:
+            errors.append(f'{label} must be between {low} and {high} mm')
+
     return errors
 
 

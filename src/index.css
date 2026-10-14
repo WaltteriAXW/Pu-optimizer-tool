@@ -1,3 +1,5 @@
+@import './theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,8 +9,11 @@
     @apply antialiased;
   }
 
-  html {
-    @apply scroll-smooth;
+  /* Smooth scrolling only for people who have not asked for less motion */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   body {
@@ -26,15 +31,15 @@
   }
 
   .button-primary {
-    @apply inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all transform active:scale-95 hover:bg-indigo-700 hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed;
   }
 
   .button-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2.5 bg-slate-200 text-slate-900 font-bold rounded-lg shadow-sm transition-all transform active:scale-95 hover:bg-slate-300;
+    @apply inline-flex items-center justify-center px-4 py-2.5 bg-slate-200 text-slate-900 font-bold rounded-lg shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-slate-300;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden;
+    @apply bg-surface rounded-xl shadow-sm border border-slate-200 overflow-hidden;
   }
 
   .card-header {

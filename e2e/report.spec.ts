@@ -73,6 +73,7 @@ test.describe('PDF report', () => {
       'INPUTS',
       'PRESSURE',
       'FLOW',
+      'OPERATING WINDOW',
       'THERMAL',
       'TEMPERATURE AT THE MIX HEAD',
       'CURE & EXOTHERM',

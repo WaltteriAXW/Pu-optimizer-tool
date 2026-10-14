@@ -24,6 +24,18 @@ export interface ProcessParameters {
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
   reference_temp_c?: number;            // Temperature the viscosity was measured at
 
+  // Measured flow curve — custom materials only. Without one the power law above is used.
+  // Carreau: zero_shear_viscosity_cp, time_constant_s, rheology_index (n)
+  // Cross: as Carreau plus infinite_shear_viscosity_cp; rheology_index is m
+  // Herschel-Bulkley: yield_stress_pa, consistency_pa_sn, rheology_index (n)
+  rheology_model?: RheologyModelName;
+  zero_shear_viscosity_cp?: number;
+  infinite_shear_viscosity_cp?: number;
+  time_constant_s?: number;
+  rheology_index?: number;
+  yield_stress_pa?: number;
+  consistency_pa_sn?: number;
+
   // Ambient conditions — optional. Supplying an ambient temperature switches on the line
   // thermal model, so the pressure reflects the temperature at the mix head rather than
   // the tank set point. Omitting these leaves the calculation exactly as it was.
@@ -31,10 +43,95 @@ export interface ProcessParameters {
   idle_time_s?: number;                      // Time the material has stood in the line
   hose_heat_transfer_coeff_w_m2_k?: number;  // Defaults to a bare hose in still air
 
+  // How the hose is built — optional, and only acts when an ambient temperature is given.
+  // Describing it works the heat transfer coefficient out layer by layer instead of
+  // assuming a bare hose. A coefficient supplied outright still takes precedence.
+  hose_material?: HoseMaterial;
+  hose_wall_thickness_mm?: number;
+  insulation_material?: InsulationMaterial;
+  insulation_thickness_mm?: number;
+
+  // A feed-line pressure the user does not want to exceed — optional. The operating window
+  // is solved against this or the machine's own limit, whichever is tighter.
+  max_line_pressure_bar?: number;
+
   // Part geometry — optional. Supplying a part thickness adds the cure/exotherm block,
   // which describes the moulded part rather than the feed line.
   mold_temperature_c?: number;          // °C, defaults to the data sheet value
   part_thickness_mm?: number;           // mm
+}
+
+/** Viscosity models a custom material can be described with (src/core/rheology) */
+export type RheologyModelName = 'power_law' | 'carreau' | 'cross' | 'herschel_bulkley';
+
+/**
+ * The exact laminar pipe solution for a measured flow curve. The effective viscosity is the
+ * one that reproduces the exact pressure drop in Hagen-Poiseuille.
+ */
+export interface RheologyResult {
+  model: Exclude<RheologyModelName, 'power_law'>;
+  wall_shear_stress_pa: number;
+  /** True wall shear rate, with the Rabinowitsch correction */
+  wall_shear_rate_s_inv: number;
+  /** Newtonian wall shear rate 8V/D, for comparison */
+  apparent_shear_rate_s_inv: number;
+  effective_viscosity_cp: number;
+  /** Herschel-Bulkley only: the share of the bore moving as an unsheared plug */
+  plug_radius_fraction?: number;
+}
+
+/** Hose wall materials the heat transfer model knows (hose_heat_transfer.py) */
+export type HoseMaterial = 'rubber' | 'ptfe' | 'polyamide' | 'stainless_steel' | 'steel';
+
+/** Lagging the heat transfer model knows */
+export type InsulationMaterial = 'elastomeric_foam' | 'pe_foam' | 'mineral_wool';
+
+/**
+ * The hose's overall heat transfer coefficient, worked out from how it is built, with the
+ * share of the resistance each layer contributes.
+ */
+export interface HoseHeatTransfer {
+  overall_coefficient_w_m2_k: number;
+  hose_material: HoseMaterial;
+  wall_thickness_mm: number;
+  insulation_material: InsulationMaterial | null;
+  insulation_thickness_mm: number;
+  outer_diameter_mm: number;
+  resistance_share: {
+    inner_film: number;
+    hose_wall: number;
+    insulation: number;
+    outer_surface: number;
+  };
+}
+
+/** Whether a setting reaches the pressure limit within the range the form accepts */
+export type WindowStatus = 'limit' | 'unconstrained' | 'infeasible';
+
+/** What sets one end of the flow window */
+export type WindowBound = 'pressure' | 'turbulence' | 'machine_output' | 'input_range';
+
+/**
+ * How far each setting can move, others held, before the feed line needs more pressure than
+ * allowed. Every boundary is found by bisection on the same calculation as the result.
+ */
+export interface OperatingWindow {
+  /** Feed-line limit applied (bar): the machine maximum less its own losses, or the user's */
+  pressure_limit_bar: number;
+  limit_source: 'machine_max' | 'user_limit';
+  machine_max_bar: number;
+  machine_loss_bar: number;
+  max_flow_rate: { status: WindowStatus; value_lpm: number | null };
+  min_temperature: { status: WindowStatus; value_c: number | null };
+  min_diameter: { status: WindowStatus; value_mm: number | null };
+  flow_window: {
+    min_lpm: number;
+    max_lpm: number | null;
+    min_governed_by: WindowBound;
+    max_governed_by: WindowBound;
+    is_empty: boolean;
+    current_inside: boolean;
+  };
 }
 
 /**
@@ -98,6 +195,8 @@ export interface CalculationResults {
     is_shear_thinning?: boolean;
     /** How much room is left before the line turns turbulent, and which dial to move */
     laminar_envelope?: LaminarEnvelope;
+    /** Present only for a custom material described by a measured flow curve */
+    rheology?: RheologyResult;
   };
   pressure: {
     base_pressure_drop_bar: number;  // bar
@@ -157,6 +256,10 @@ export interface CalculationResults {
     residence_time_s: number;
     idle_time_s: number;
     governing_regime: 'idle_soak' | 'flow_residence';
+    /** The coefficient the line model ran with (W/m²·K) */
+    heat_transfer_coeff_w_m2_k?: number;
+    /** Present only when the hose was described rather than left at the default */
+    hose?: HoseHeatTransfer;
     warning?: string | null;
   };
 
@@ -232,6 +335,8 @@ export interface CalculationResults {
     set_pressure_bar?: number;
     set_pressure_governed_by?: 'line_demand' | 'machine_minimum';
   };
+  /** The limits of flow rate, temperature and diameter for this line on this machine */
+  operating_window?: OperatingWindow;
   timestamp?: string;
   warnings?: string[];
 }

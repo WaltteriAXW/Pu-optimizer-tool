@@ -1,10 +1,17 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
-import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
+import { isNumber, formatTemperature, isSameTemperature, describeFlowWindow } from './resultFormatting'
 import { formatPressure, type PressureUnit } from '../services/displayPreferences'
-import type { CalculationResults, LaminarEnvelope } from '../calculator_types'
+import type {
+  CalculationResults,
+  HoseHeatTransfer,
+  LaminarEnvelope,
+  OperatingWindow,
+  RheologyResult,
+  WindowStatus,
+} from '../calculator_types'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -48,12 +55,23 @@ const MOLD_SOURCE_LABEL: Record<string, string> = {
 
 export function ResultsDisplay() {
   const { results, lastParams, pressureUnit, error: calculatorError } = useCalculator()
+  const regionRef = useRef<HTMLDivElement>(null)
+
+  // On a narrow screen the results land below a long form, out of sight, and nothing said
+  // the button had done anything. Bring them up when they arrive; on a wide screen they are
+  // already beside the form and the page stays put.
+  useEffect(() => {
+    if (!results || !regionRef.current) return
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    regionRef.current.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, [results])
 
   if (calculatorError) {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-red-100 shadow-sm text-center"
       >
         <div className="bg-red-50 p-4 rounded-full mb-4">
           <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
@@ -66,14 +84,14 @@ export function ResultsDisplay() {
 
   if (!results) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed border-slate-300 text-center">
+      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
           <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
         <h3 className="text-lg font-bold text-slate-800">Ready to Simulate</h3>
         <p className="text-slate-500 mt-2 max-w-xs">
-          Enter your process parameters on the left and hit calculate to generate a pressure
-          profile.
+          Enter your process parameters and press Run Simulation to see the pressure, the
+          flow margin and the operating window.
         </p>
       </div>
     )
@@ -86,7 +104,8 @@ export function ResultsDisplay() {
     // screen reader user gets no indication that pressing Run produced anything. The
     // headline figures are announced; the detail below is there to be read at leisure.
     <div
-      className="space-y-6 animate-fadeIn"
+      ref={regionRef}
+      className="space-y-6 scroll-mt-20 motion-safe:animate-fadeIn motion-reduce:animate-fade"
       aria-live="polite"
       aria-atomic="false"
       role="region"
@@ -95,7 +114,7 @@ export function ResultsDisplay() {
       {/* Export Buttons. Offered only once the parameters behind these results are known —
           exporting a report whose inputs had to be invented is worse than not offering it. */}
       {lastParams && (
-        <div className="flex justify-end">
+        <div className="flex sm:justify-end">
           <ExportButtons results={results} />
         </div>
       )}
@@ -103,6 +122,13 @@ export function ResultsDisplay() {
       {/* The number the operator sets, and the margin before the line turns turbulent */}
       <MachineSettingsCard results={results} unit={pressureUnit} />
       <LaminarEnvelopeCard envelope={results.flow?.laminar_envelope} />
+      {results.operating_window && (
+        <OperatingWindowCard
+          window={results.operating_window}
+          current={results.input}
+          unit={pressureUnit}
+        />
+      )}
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -133,37 +159,16 @@ export function ResultsDisplay() {
         />
       </div>
 
+      {results.flow?.rheology && <FlowCurveCard rheology={results.flow.rheology} />}
+
       {/* Main Analysis Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pressure Chart Card */}
+        {/* Pressure chart. Its own heading and the three figures under it are the whole
+            card: a second title above it, and the same three figures repeated again as
+            rows below it, said everything twice. */}
         <div className="lg:col-span-2 card">
-          <div className="card-header">
-            <h3 className="text-lg font-bold text-slate-800">Pressure Analysis</h3>
-          </div>
           <div className="card-body">
-            <div className="space-y-6">
-              {/* Pressure Chart */}
-              <PressureChart results={results} unit={pressureUnit} />
-
-              {/* Pressure Details */}
-              <div className="space-y-3">
-                <PressureDetail
-                  label="Base Pressure Drop"
-                  value={results.pressure?.base_pressure_drop_bar}
-                  unit={pressureUnit}
-                />
-                <PressureDetail
-                  label="Pressure with Fittings"
-                  value={results.pressure?.pressure_with_fittings_bar}
-                  unit={pressureUnit}
-                />
-                <PressureDetail
-                  label="Fitting Loss"
-                  value={results.pressure?.fitting_loss_bar}
-                  unit={pressureUnit}
-                />
-              </div>
-            </div>
+            <PressureChart results={results} unit={pressureUnit} />
           </div>
         </div>
 
@@ -186,10 +191,11 @@ export function ResultsDisplay() {
             </div>
           ) : (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
+              {/* Says what was checked, not more: no warnings is not the same as optimised */}
               <h4 className="text-emerald-900 font-bold flex items-center gap-2 mb-1">
-                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Process Optimized
+                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
               </h4>
-              <p className="text-sm text-emerald-700">No critical warnings detected.</p>
+              <p className="text-sm text-emerald-800">Nothing in these settings needs attention.</p>
             </div>
           )}
 
@@ -386,6 +392,14 @@ export function ResultsDisplay() {
               value={results.line_temperature.time_constant_s / 60}
               unit="min"
             />
+            <DetailRow
+              label={results.line_temperature.hose ? 'Hose heat transfer (from its build)' : 'Hose heat transfer (bare hose default)'}
+              value={results.line_temperature.heat_transfer_coeff_w_m2_k}
+              unit="W/m²·K"
+            />
+            {results.line_temperature.hose && (
+              <HoseBreakdown hose={results.line_temperature.hose} />
+            )}
             {results.line_temperature.warning && (
               <p className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                 {results.line_temperature.warning}
@@ -735,7 +749,7 @@ function RangeBar({
           style={{ left: `calc(${pct(value)}% - 2px)`, height: '1.125rem' }}
         />
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
+      <div className="flex justify-between text-xs text-slate-500 mt-1.5 tabular-nums">
         <span>{formatValue(min)} min</span>
         <span className={inRange ? 'text-indigo-700 font-bold' : 'text-red-700 font-bold'}>
           {formatValue(value)} {suffix}
@@ -804,6 +818,191 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
   )
 }
 
+/**
+ * How far each setting can move before the line needs more pressure than allowed.
+ *
+ * The forward result answers "what does this setup need?"; this answers the question an
+ * operator asks next — "how far can I push it?" — for each dial on its own, others held.
+ */
+function OperatingWindowCard({
+  window,
+  current,
+  unit,
+}: {
+  window: OperatingWindow
+  current: CalculationResults['input']
+  unit: PressureUnit
+}) {
+  const flow = window.flow_window
+  const tone = flow.current_inside
+    ? 'bg-surface border-slate-200'
+    : 'bg-red-50 border-red-100'
+
+  const limitText =
+    window.limit_source === 'user_limit'
+      ? `your limit of ${formatPressure(window.pressure_limit_bar, unit)} ${unit}`
+      : `${formatPressure(window.pressure_limit_bar, unit)} ${unit} — the machine's ` +
+        `${formatPressure(window.machine_max_bar, unit)} ${unit} less ` +
+        `${formatPressure(window.machine_loss_bar, unit)} ${unit} lost in its own plumbing`
+
+  return (
+    <div className={`rounded-xl border p-5 ${tone}`} data-testid="operating-window">
+      <h4 className="font-bold text-slate-800">Operating window</h4>
+      <p className="text-sm text-slate-500 mt-1">
+        Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
+      </p>
+
+      <p
+        className={`text-sm mt-3 leading-relaxed ${flow.current_inside ? 'text-slate-700' : 'text-red-800'}`}
+      >
+        <span className="font-semibold">Flow rate: </span>
+        {describeFlowWindow(flow)}
+        {!flow.current_inside && !flow.is_empty && (
+          <> The present {current.flow_rate_lpm.toFixed(1)} L/min is outside it.</>
+        )}
+      </p>
+
+      <dl className="mt-3 text-sm divide-y divide-slate-100">
+        <WindowRow
+          label="Highest flow rate within the pressure limit"
+          status={window.max_flow_rate.status}
+          value={window.max_flow_rate.value_lpm}
+          unit="L/min"
+          present={current.flow_rate_lpm}
+          unconstrained="Not reached anywhere in range"
+        />
+        <WindowRow
+          label="Lowest set temperature within the pressure limit"
+          status={window.min_temperature.status}
+          value={window.min_temperature.value_c}
+          unit="°C"
+          present={current.temperature_c}
+          unconstrained="Any temperature in range"
+        />
+        <WindowRow
+          label="Narrowest line within the pressure limit"
+          status={window.min_diameter.status}
+          value={window.min_diameter.value_mm}
+          unit="mm"
+          present={current.pipe_diameter_mm}
+          unconstrained="Any diameter in range"
+        />
+      </dl>
+    </div>
+  )
+}
+
+function WindowRow({
+  label,
+  status,
+  value,
+  unit,
+  present,
+  unconstrained,
+}: {
+  label: string
+  status: WindowStatus
+  value: number | null
+  unit: string
+  present: number
+  unconstrained: string
+}) {
+  const text =
+    status === 'limit' && isNumber(value)
+      ? `${value.toFixed(1)} ${unit}`
+      : status === 'unconstrained'
+        ? unconstrained
+        : 'None in range'
+
+  return (
+    <div className="flex justify-between items-baseline gap-4 py-2">
+      <dt className="text-slate-600">{label}</dt>
+      <dd className={`font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
+        {text}
+        <span className="block text-xs font-normal text-slate-500">
+          now {present.toFixed(1)} {unit}
+        </span>
+      </dd>
+    </div>
+  )
+}
+
+const RHEOLOGY_MODEL_LABELS: Record<RheologyResult['model'], string> = {
+  carreau: 'Carreau',
+  cross: 'Cross',
+  herschel_bulkley: 'Herschel–Bulkley',
+}
+
+/**
+ * The exact laminar pipe solution for a measured flow curve. Shown so the viscosity in the
+ * KPI above can be traced: it is the effective viscosity that reproduces the exact pressure
+ * drop, not the flow curve read at one shear rate.
+ */
+function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
+  const plug = rheology.plug_radius_fraction
+  return (
+    <div className="card" data-testid="flow-curve">
+      <div className="card-header">
+        <h4 className="font-bold text-slate-800">
+          Flow curve: {RHEOLOGY_MODEL_LABELS[rheology.model]}
+        </h4>
+        <p className="text-xs text-slate-500 mt-1">
+          Exact laminar pipe solution (Rabinowitsch–Mooney). The viscosity above is the
+          effective one that reproduces this pressure drop.
+        </p>
+      </div>
+      <div className="card-body">
+        <DetailRow label="Wall shear stress" value={rheology.wall_shear_stress_pa} unit="Pa" />
+        <DetailRow label="True wall shear rate" value={rheology.wall_shear_rate_s_inv} unit="1/s" />
+        <DetailRow label="Newtonian wall shear rate (8V/D)" value={rheology.apparent_shear_rate_s_inv} unit="1/s" />
+        <DetailRow label="Effective viscosity" value={rheology.effective_viscosity_cp} unit="cP" />
+        {isNumber(plug) && (
+          <>
+            <DetailRow label="Unsheared plug" value={`${(plug * 100).toFixed(0)}%`} unit="of the bore" />
+            {plug > 0.5 && (
+              <p className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                More than half the bore moves as a solid plug: the wall stress is less than
+                twice the yield stress. A cold restart or a lower output could stall the line.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const RESISTANCE_LAYER_LABELS: Record<keyof HoseHeatTransfer['resistance_share'], string> = {
+  inner_film: 'material film',
+  hose_wall: 'hose wall',
+  insulation: 'insulation',
+  outer_surface: 'outer surface to air',
+}
+
+/**
+ * Where the hose's resistance to heat loss sits. The largest share is the layer worth
+ * improving: lagging a hose whose resistance is already all lagging does little more.
+ */
+function HoseBreakdown({ hose }: { hose: HoseHeatTransfer }) {
+  const layers = (Object.keys(hose.resistance_share) as Array<keyof HoseHeatTransfer['resistance_share']>)
+    .filter((layer) => hose.resistance_share[layer] > 0.005)
+    .sort((a, b) => hose.resistance_share[b] - hose.resistance_share[a])
+
+  return (
+    <div className="text-xs text-slate-600 bg-slate-50 rounded-md p-3" data-testid="hose-breakdown">
+      <p className="font-semibold text-slate-700 mb-1">Resistance to heat loss</p>
+      <ul className="space-y-0.5 tabular-nums">
+        {layers.map((layer) => (
+          <li key={layer} className="flex justify-between">
+            <span>{RESISTANCE_LAYER_LABELS[layer]}</span>
+            <span>{(hose.resistance_share[layer] * 100).toFixed(0)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function KpiCard({
   title,
   value,
@@ -818,8 +1017,8 @@ function KpiCard({
   status?: 'success' | 'warning' | 'neutral'
 }) {
   const statusColors = {
-    success: 'bg-emerald-100 text-emerald-600',
-    warning: 'bg-amber-100 text-amber-600',
+    success: 'bg-emerald-100 text-emerald-700',
+    warning: 'bg-amber-100 text-amber-700',
     neutral: 'bg-slate-100 text-slate-600',
   }
 
@@ -839,7 +1038,7 @@ function KpiCard({
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
-          {unit && <span className="text-xs font-medium text-slate-400">{unit}</span>}
+          {unit && <span className="text-xs font-medium text-slate-500">{unit}</span>}
         </div>
       </div>
     </div>
@@ -863,30 +1062,7 @@ function DetailRow({
     <div className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
       <span className="text-sm text-slate-600">{label}</span>
       <span className="text-sm font-semibold text-slate-900 tabular-nums">
-        {numValue} <span className="text-slate-400 font-normal">{unit}</span>
-      </span>
-    </div>
-  )
-}
-
-/** Always a pressure, so it converts to the chosen unit rather than taking a raw number. */
-function PressureDetail({
-  label,
-  value,
-  unit,
-}: {
-  label: string
-  value?: number
-  unit: PressureUnit
-}) {
-  if (value === undefined || value === null) return null
-
-  return (
-    <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <span className="text-2xl font-bold text-indigo-600 tabular-nums">
-        {formatPressure(value, unit)}{' '}
-        <span className="text-sm font-medium text-slate-500">{unit}</span>
+        {numValue} <span className="text-slate-500 font-normal">{unit}</span>
       </span>
     </div>
   )

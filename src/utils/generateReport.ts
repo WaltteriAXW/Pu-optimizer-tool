@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable'
 import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
+import { describeFlowWindow } from '@/components/resultFormatting'
+import { CHART_COLORS, type ChartColorRole } from '@/components/PressureChart'
 
 /**
  * The printed report.
@@ -370,7 +372,40 @@ export const generateReport = async (
     ['Velocity', `${fmt(flow?.velocity_m_s, 3)} m/s`],
     ['Shear rate', `${fmt(flow?.shear_rate_s_inv, 0)} 1/s`],
     ['Apparent viscosity', `${fmt(flow?.apparent_viscosity_cp, 1)} cP`],
+    ...(flow?.rheology
+      ? [
+          ['Viscosity model', flow.rheology.model.replace(/_/g, '-')],
+          ['Wall shear stress', `${fmt(flow.rheology.wall_shear_stress_pa, 1)} Pa`],
+          ['True wall shear rate', `${fmt(flow.rheology.wall_shear_rate_s_inv, 0)} 1/s`],
+          ...(typeof flow.rheology.plug_radius_fraction === 'number'
+            ? [['Unsheared plug', `${fmt(flow.rheology.plug_radius_fraction * 100, 0)}% of the bore`]]
+            : []),
+        ]
+      : []),
   ])
+
+  // ── Operating window ──────────────────────────────────────────────────────────
+  const window = results.operating_window
+  if (window) {
+    heading('Operating window')
+    note(describeFlowWindow(window.flow_window), window.flow_window.current_inside ? MUTED : BAD)
+    const bound = (status: string, value: number | null, unit: string, open: string) =>
+      status === 'limit' && value !== null
+        ? `${fmt(value, 1)} ${unit}`
+        : status === 'unconstrained'
+          ? open
+          : 'None in range'
+    table([
+      [
+        'Feed-line pressure limit',
+        `${p(window.pressure_limit_bar)} ${unit}` +
+          (window.limit_source === 'user_limit' ? ' (user limit)' : ' (machine max less internal losses)'),
+      ],
+      ['Highest flow rate', bound(window.max_flow_rate.status, window.max_flow_rate.value_lpm, 'L/min', 'Not reached in range')],
+      ['Lowest set temperature', bound(window.min_temperature.status, window.min_temperature.value_c, '°C', 'Any in range')],
+      ['Narrowest line', bound(window.min_diameter.status, window.min_diameter.value_mm, 'mm', 'Any in range')],
+    ])
+  }
 
   // ── Thermal ───────────────────────────────────────────────────────────────────
   const thermal = results.thermal
@@ -406,6 +441,23 @@ export const generateReport = async (
       ['Arriving at the mix head', `${fmt(line.effective_temperature_c, 1)} °C`],
       ['Drift', `${fmt(line.drift_c, 1)} °C`],
       ['Line thermal time constant', `${fmt((line.time_constant_s ?? 0) / 60, 1)} min`],
+      ...(line.hose
+        ? [
+            [
+              'Hose',
+              `${line.hose.hose_material.replace(/_/g, ' ')}, ${fmt(line.hose.wall_thickness_mm, 1)} mm wall` +
+                (line.hose.insulation_material
+                  ? `, ${fmt(line.hose.insulation_thickness_mm, 0)} mm ${line.hose.insulation_material.replace(/_/g, ' ')}`
+                  : ', unlagged'),
+            ],
+          ]
+        : []),
+      ...(typeof line.heat_transfer_coeff_w_m2_k === 'number'
+        ? [[
+            line.hose ? 'Hose heat transfer (from its build)' : 'Hose heat transfer (bare hose default)',
+            `${fmt(line.heat_transfer_coeff_w_m2_k, 1)} W/m²·K`,
+          ]]
+        : []),
     ])
     if (line.warning) note(line.warning, WARN)
   }
@@ -492,6 +544,28 @@ export const generateReport = async (
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
+        // The page is printed light whatever the screen shows. The clone is forced to the
+        // light theme, and the chart's SVG — whose colours are values, not classes — is
+        // repainted from the light palette by role.
+        //
+        // The repaint has to go into inline styles, and onto every descendant: for SVG,
+        // html2canvas copies each element's computed style from the live page into the
+        // clone, so a line inside a dark grid group arrives carrying the dark stroke as its
+        // own style, which outranks any attribute set here.
+        onclone: (clonedDocument) => {
+          clonedDocument.documentElement.setAttribute('data-theme', 'light')
+          const light = CHART_COLORS.light
+          const repaint = (selector: string, property: 'stroke' | 'fill', key: 'strokeRole' | 'fillRole') => {
+            clonedDocument.querySelectorAll<SVGElement>(selector).forEach((el) => {
+              const colour = light[el.dataset[key] as ChartColorRole]
+              for (const node of [el, ...Array.from(el.querySelectorAll<SVGElement>('*'))]) {
+                node.style.setProperty(property, colour)
+              }
+            })
+          }
+          repaint('[data-stroke-role]', 'stroke', 'strokeRole')
+          repaint('[data-fill-role]', 'fill', 'fillRole')
+        },
       })
       const image = canvas.toDataURL('image/png')
       const imageWidth = contentWidth

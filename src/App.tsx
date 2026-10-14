@@ -27,9 +27,11 @@ function AppContent() {
   const [historyOpen, setHistoryOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    // No overflow-hidden here: it clipped anything wider than a phone screen — the export
+    // row lost its PDF button — instead of letting it wrap where it could be seen.
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Navigation Bar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+      <nav className="bg-surface border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
@@ -40,19 +42,22 @@ function AppContent() {
                 <h1 className="text-xl font-bold text-slate-900 tracking-tight">
                   PU Optimizer
                 </h1>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="hidden sm:block text-xs text-slate-500 font-medium">
                   Physics-Based Injection Engine
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Display only: the engine and every saved run hold bar, and this converts
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Shown at every width: the unit is a setting, and a setting that exists on a
+                  laptop but not on the phone at the machine is a missing feature there.
+
+                  Display only: the engine and every saved run hold bar, and this converts
                   at the point of display. A good deal of injection equipment is specified
                   in psi, and converting by hand at the machine is how mistakes get made. */}
               <div
                 role="group"
                 aria-label="Pressure unit"
-                className="hidden sm:inline-flex items-center rounded-lg bg-slate-100 p-0.5"
+                className="inline-flex items-center rounded-lg bg-slate-100 p-0.5"
               >
                 {(['bar', 'psi'] as const).map((unit) => (
                   <button
@@ -61,9 +66,9 @@ function AppContent() {
                     onClick={() => setPressureUnit(unit)}
                     aria-pressed={pressureUnit === unit}
                     data-testid={`unit-${unit}`}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                    className={`min-h-[40px] min-w-[44px] px-2.5 text-sm font-bold rounded-md transition-colors ${
                       pressureUnit === unit
-                        ? 'bg-white text-indigo-700 shadow-sm'
+                        ? 'bg-surface text-indigo-700 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -87,7 +92,7 @@ function AppContent() {
                 aria-label={`Calculation history, ${history.length} ${
                   history.length === 1 ? 'run' : 'runs'
                 } saved`}
-                className={`relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-3 text-sm font-medium rounded-lg transition-colors ${
                   historyOpen
                     ? 'bg-indigo-100 text-indigo-700'
                     : 'text-slate-600 hover:text-indigo-600'
@@ -99,17 +104,20 @@ function AppContent() {
                 {history.length > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+                    // A neutral count. Red badges are for things that need attention, and a
+                    // number of saved runs never does.
+                    className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-slate-200 px-1.5 py-0.5 text-xs font-semibold leading-none text-slate-700"
                   >
                     {history.length}
                   </span>
                 )}
               </button>
+              {/* On a phone the header keeps only the settings; both links are in the footer */}
               <a
                 href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                className="hidden sm:inline text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
               >
                 GitHub
               </a>
@@ -123,7 +131,12 @@ function AppContent() {
         <div className="grid grid-cols-12 gap-8">
           {/* Left Column: Input Panel */}
           <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-            <div className="sticky top-24">
+            {/* On a wide screen the form keeps its place beside the results and scrolls on
+                its own. Plain sticky positioning pinned the TOP of a form taller than the
+                window, which kept the Run button below the fold for the first thousand
+                pixels of scrolling. The scroll padding keeps a field brought into view
+                (by Tab, say) clear of the button pinned over the bottom of the column. */}
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-xl">
               <CalculatorForm />
             </div>
           </div>
@@ -160,7 +173,7 @@ function AppContent() {
       )}
 
       {/* Footer */}
-      <footer className="mt-16 border-t border-slate-200 bg-white">
+      <footer className="mt-16 border-t border-slate-200 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500">

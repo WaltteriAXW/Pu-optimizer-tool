@@ -3,8 +3,13 @@ import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
-import type { ProcessParameters } from '@/calculator_types'
-import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
+import type {
+  ProcessParameters,
+  HoseMaterial,
+  InsulationMaterial,
+  RheologyModelName,
+} from '@/calculator_types'
+import { AlertCircle, Play, ChevronDown } from 'lucide-react'
 
 /** Default values pre-filled when the user switches to Custom Material */
 const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
@@ -24,24 +29,151 @@ const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
  */
 const OPTIONAL_FIELD_RANGES: Record<
   'ambient_temperature_c' | 'idle_time_s' | 'mold_temperature_c' | 'part_thickness_mm',
-  { min: number; max: number; label: string; unit: string; step: string; help: string }
+  { min: number; max: number; label: string; unit: string; help: string }
 > = {
   ambient_temperature_c: {
-    min: -20, max: 60, label: 'Ambient Temperature', unit: '°C', step: '0.5',
+    min: -20, max: 60, label: 'Ambient Temperature', unit: '°C',
     help: 'Air around the hose and machine. Supplying this models the material drifting toward it.',
   },
   idle_time_s: {
-    min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's', step: '30',
+    min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's',
     help: 'For single-shot work: material standing in the hose approaches ambient temperature.',
   },
   mold_temperature_c: {
-    min: 0, max: 120, label: 'Mould Temperature', unit: '°C', step: '1',
+    min: 0, max: 120, label: 'Mould Temperature', unit: '°C',
     help: 'Defaults to the data sheet value where one is stated.',
   },
   part_thickness_mm: {
-    min: 1, max: 500, label: 'Part Thickness', unit: 'mm', step: '1',
+    min: 1, max: 500, label: 'Part Thickness', unit: 'mm',
     help: 'Thicker sections retain reaction heat and run hotter in the core.',
   },
+}
+
+/**
+ * How the hose is built. Only acts when an ambient temperature is given, because it is the
+ * line thermal model it feeds. Labels match the keys in hose_heat_transfer.py.
+ */
+const HOSE_MATERIAL_OPTIONS: Array<{ value: HoseMaterial; label: string }> = [
+  { value: 'rubber', label: 'Rubber / elastomer hose' },
+  { value: 'ptfe', label: 'PTFE hose (braided)' },
+  { value: 'polyamide', label: 'Polyamide (nylon) tube' },
+  { value: 'stainless_steel', label: 'Stainless steel pipe' },
+  { value: 'steel', label: 'Carbon steel pipe' },
+]
+
+const INSULATION_OPTIONS: Array<{ value: InsulationMaterial; label: string }> = [
+  { value: 'elastomeric_foam', label: 'Elastomeric foam (Armaflex type)' },
+  { value: 'pe_foam', label: 'Polyethylene foam' },
+  { value: 'mineral_wool', label: 'Mineral wool, foil-faced' },
+]
+
+const MACHINE_OPTIONS = [
+  { value: 'low_pressure', label: 'Low pressure' },
+  { value: 'high_pressure', label: 'High pressure' },
+] as const
+
+/** A tighter feed-line limit than the machine's own. Blank means the machine's. */
+const LINE_LIMIT_RANGE = {
+  min: 0.1, max: 500, label: 'Max Feed-Line Pressure', unit: 'bar',
+  help: 'Optional. The operating window is solved against this or the machine limit, whichever is lower.',
+}
+
+const HOSE_FIELD_RANGES: Record<
+  'hose_wall_thickness_mm' | 'insulation_thickness_mm',
+  { min: number; max: number; label: string; unit: string; help: string }
+> = {
+  hose_wall_thickness_mm: {
+    min: 0.1, max: 50, label: 'Hose Wall Thickness', unit: 'mm',
+    help: 'Blank means 3 mm.',
+  },
+  insulation_thickness_mm: {
+    min: 0, max: 100, label: 'Insulation Thickness', unit: 'mm',
+    help: 'Thickness of the lagging around the hose.',
+  },
+}
+
+/**
+ * Viscosity models for a custom material. The power law is the default and needs only a
+ * viscosity and flow index; the others want parameters from a measured flow curve.
+ */
+const RHEOLOGY_MODEL_OPTIONS: Array<{ value: RheologyModelName; label: string }> = [
+  { value: 'power_law', label: 'Power law (viscosity + flow index)' },
+  { value: 'carreau', label: 'Carreau (measured flow curve)' },
+  { value: 'cross', label: 'Cross (measured flow curve)' },
+  { value: 'herschel_bulkley', label: 'Herschel–Bulkley (yield stress)' },
+]
+
+type RheologyField =
+  | 'zero_shear_viscosity_cp'
+  | 'infinite_shear_viscosity_cp'
+  | 'time_constant_s'
+  | 'rheology_index'
+  | 'yield_stress_pa'
+  | 'consistency_pa_sn'
+
+/** The fields each model takes, in display order, with the values it starts from */
+const RHEOLOGY_MODEL_FIELDS: Record<
+  Exclude<RheologyModelName, 'power_law'>,
+  Partial<Record<RheologyField, number>>
+> = {
+  carreau: { zero_shear_viscosity_cp: 1500, time_constant_s: 0.05, rheology_index: 0.7 },
+  cross: {
+    zero_shear_viscosity_cp: 1500,
+    infinite_shear_viscosity_cp: 50,
+    time_constant_s: 0.1,
+    rheology_index: 0.7,
+  },
+  herschel_bulkley: { yield_stress_pa: 10, consistency_pa_sn: 1.5, rheology_index: 0.8 },
+}
+
+const RHEOLOGY_FIELD_KEYS = Object.keys({
+  zero_shear_viscosity_cp: 0,
+  infinite_shear_viscosity_cp: 0,
+  time_constant_s: 0,
+  rheology_index: 0,
+  yield_stress_pa: 0,
+  consistency_pa_sn: 0,
+} satisfies Record<RheologyField, number>) as RheologyField[]
+
+/**
+ * Ranges for the flow-curve fields. The flow index range depends on the model: Carreau and
+ * Cross stop at 1, beyond which their stress can fall with shear rate; Herschel-Bulkley may
+ * thicken a little.
+ */
+const rheologyFieldRange = (
+  field: RheologyField,
+  model: RheologyModelName | undefined
+): { min: number; max: number; label: string; unit: string } => {
+  switch (field) {
+    case 'zero_shear_viscosity_cp':
+      return { min: 1, max: 1_000_000, label: 'Zero-Shear Viscosity η₀', unit: 'cP' }
+    case 'infinite_shear_viscosity_cp':
+      return { min: 0, max: 100_000, label: 'Infinite-Shear Viscosity η∞', unit: 'cP' }
+    case 'time_constant_s':
+      return { min: 0.0001, max: 1000, label: 'Time Constant λ', unit: 's' }
+    case 'yield_stress_pa':
+      return { min: 0, max: 10_000, label: 'Yield Stress τ₀', unit: 'Pa' }
+    case 'consistency_pa_sn':
+      return { min: 0.001, max: 10_000, label: 'Consistency K', unit: 'Pa·sⁿ' }
+    case 'rheology_index':
+      return {
+        min: 0.05,
+        max: model === 'herschel_bulkley' ? 1.5 : 1,
+        label: model === 'cross' ? 'Exponent m' : 'Flow Index n',
+        unit: '',
+      }
+  }
+}
+
+/**
+ * Text-valued optional inputs and the values each may take. Used both to restore a saved
+ * setup — an unrecognised value from an older version is dropped rather than sent — and to
+ * clear the key entirely when the blank option is chosen.
+ */
+const OPTIONAL_SELECTS: Record<string, readonly string[]> = {
+  hose_material: HOSE_MATERIAL_OPTIONS.map((o) => o.value),
+  insulation_material: INSULATION_OPTIONS.map((o) => o.value),
+  rheology_model: RHEOLOGY_MODEL_OPTIONS.map((o) => o.value),
 }
 
 /**
@@ -68,12 +200,12 @@ const STANDARD_FIELD_RANGES: Record<
 /** Validation ranges for custom material numeric fields */
 const CUSTOM_FIELD_RANGES: Record<
   'viscosity_cp' | 'density_kg_m3' | 'flow_index' | 'activation_energy_j_mol',
-  { min: number; max: number; label: string; unit: string; step: string }
+  { min: number; max: number; label: string; unit: string }
 > = {
-  viscosity_cp:             { min: 50,    max: 10000,  label: 'Viscosity',          unit: 'cP',    step: '1'     },
-  density_kg_m3:            { min: 900,   max: 1500,   label: 'Density',            unit: 'kg/m³', step: '1'     },
-  flow_index:               { min: 0.01,  max: 1.0,    label: 'Flow Index',         unit: '(0–1)', step: '0.01'  },
-  activation_energy_j_mol:  { min: 1000,  max: 100000, label: 'Activation Energy',  unit: 'J/mol', step: '100'   },
+  viscosity_cp:            { min: 50,   max: 10000,  label: 'Viscosity',         unit: 'cP' },
+  density_kg_m3:           { min: 900,  max: 1500,   label: 'Density',           unit: 'kg/m³' },
+  flow_index:              { min: 0.01, max: 1.0,    label: 'Flow Index',        unit: '(0–1)' },
+  activation_energy_j_mol: { min: 1000, max: 100000, label: 'Activation Energy', unit: 'J/mol' },
 }
 
 export function CalculatorForm() {
@@ -101,6 +233,10 @@ export function CalculatorForm() {
         if (typeof value === 'string' && value) {
           restored[key] = value
         }
+      } else if (key in OPTIONAL_SELECTS) {
+        if (typeof value === 'string' && OPTIONAL_SELECTS[key].includes(value)) {
+          (restored as unknown as Record<string, unknown>)[key] = value
+        }
       } else if (typeof value === 'number' && Number.isFinite(value)) {
         (restored as unknown as Record<string, unknown>)[key] = value
       }
@@ -116,7 +252,6 @@ export function CalculatorForm() {
   // generate their own.
   const materialSelectId = useId()
   const materialErrorId = `${materialSelectId}-error`
-  const machineSelectId = useId()
   const customPanelId = useId()
   const optionalPanelId = useId()
 
@@ -177,6 +312,13 @@ export function CalculatorForm() {
               polyol_sg,
               iso_sg,
               final_density_kg_m3,
+              rheology_model,
+              zero_shear_viscosity_cp,
+              infinite_shear_viscosity_cp,
+              time_constant_s,
+              rheology_index,
+              yield_stress_pa,
+              consistency_pa_sn,
               ...rest
             } = prev
             return { ...rest, material_key: value }
@@ -184,7 +326,7 @@ export function CalculatorForm() {
           // Clear any leftover custom-field errors
           setFieldErrors((prev) => {
             const updated = { ...prev }
-            for (const key of Object.keys(CUSTOM_FIELD_RANGES)) {
+            for (const key of [...Object.keys(CUSTOM_FIELD_RANGES), ...RHEOLOGY_FIELD_KEYS]) {
               delete updated[key]
             }
             return updated
@@ -199,10 +341,52 @@ export function CalculatorForm() {
         return
       }
 
+      // ── Viscosity model (custom materials) ────────────────────────────────
+      // Switching model replaces the flow-curve fields with the new model's own, so a
+      // Cross η∞ cannot ride along into a Carreau calculation.
+      if (name === 'rheology_model') {
+        const model = value as RheologyModelName
+        setInputs((prev) => {
+          const next = { ...prev } as unknown as Record<string, unknown>
+          for (const key of RHEOLOGY_FIELD_KEYS) delete next[key]
+          if (model === 'power_law') {
+            delete next.rheology_model
+          } else {
+            next.rheology_model = model
+            Object.assign(next, RHEOLOGY_MODEL_FIELDS[model])
+          }
+          return next as unknown as ProcessParameters
+        })
+        setFieldErrors((prev) => {
+          const updated = { ...prev }
+          for (const key of RHEOLOGY_FIELD_KEYS) delete updated[key]
+          return updated
+        })
+        return
+      }
+
+      // ── Optional choices (hose, insulation) ───────────────────────────────
+      // The blank option removes the key, so Python sees "not described" rather than an
+      // empty string it would have to interpret.
+      if (name in OPTIONAL_SELECTS) {
+        setInputs((prev) => {
+          const next = { ...prev } as unknown as Record<string, unknown>
+          if (value) next[name] = value
+          else delete next[name]
+          return next as unknown as ProcessParameters
+        })
+        return
+      }
+
       // ── Optional inputs ───────────────────────────────────────────────────
       // Clearing one must remove the key entirely, not leave the last value behind:
       // an absent ambient temperature is what keeps the calculation as it was.
-      if (name in OPTIONAL_FIELD_RANGES && value.trim() === '') {
+      const optionalRanges = {
+        ...OPTIONAL_FIELD_RANGES,
+        ...HOSE_FIELD_RANGES,
+        max_line_pressure_bar: LINE_LIMIT_RANGE,
+      }
+      if (name in optionalRanges && value.trim() === '') {
         setInputs((prev) => {
           const next = { ...prev }
           delete next[name as keyof ProcessParameters]
@@ -218,8 +402,8 @@ export function CalculatorForm() {
         setInputs((prev) => ({ ...prev, [name]: numValue } as ProcessParameters))
 
         // Optional field validation
-        if (name in OPTIONAL_FIELD_RANGES) {
-          const range = OPTIONAL_FIELD_RANGES[name as keyof typeof OPTIONAL_FIELD_RANGES]
+        if (name in optionalRanges) {
+          const range = optionalRanges[name as keyof typeof optionalRanges]
           if (numValue < range.min || numValue > range.max) {
             setFieldErrors((prev) => ({
               ...prev,
@@ -230,6 +414,10 @@ export function CalculatorForm() {
           }
           return
         }
+
+        // Flow-curve fields are validated during render (rheologyErrors below), because
+        // the flow index range depends on the model chosen, which this handler cannot see.
+        if ((RHEOLOGY_FIELD_KEYS as string[]).includes(name)) return
 
         // Custom material field validation
         if (name in CUSTOM_FIELD_RANGES) {
@@ -281,13 +469,49 @@ export function CalculatorForm() {
     [fieldErrors, isReady, inputs, calculate]
   )
 
-  const hasErrors = Object.keys(fieldErrors).length > 0
+  // Lagging chosen without a thickness would quietly mean "no lagging" in Python, so it is
+  // held back here with the reason shown on the thickness field.
+  const insulationThicknessError =
+    inputs.insulation_material && !((inputs.insulation_thickness_mm ?? 0) > 0)
+      ? 'Enter the insulation thickness, or set Insulation to None'
+      : undefined
+
+  // Errors on the flow-curve fields, derived from the inputs rather than stored: the flow
+  // index range depends on the model, so changing the model must re-judge the index.
+  const rheologyErrors: Partial<Record<RheologyField, string>> = {}
+  if (inputs.material_key === 'custom' && inputs.rheology_model && inputs.rheology_model !== 'power_law') {
+    for (const field of Object.keys(RHEOLOGY_MODEL_FIELDS[inputs.rheology_model]) as RheologyField[]) {
+      const value = inputs[field]
+      const range = rheologyFieldRange(field, inputs.rheology_model)
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        rheologyErrors[field] = `${range.label} is required`
+      } else if (value < range.min || value > range.max) {
+        rheologyErrors[field] = `${range.label} must be between ${range.min} and ${range.max} ${range.unit}`.trim()
+      }
+    }
+    if (
+      inputs.rheology_model === 'cross' &&
+      typeof inputs.infinite_shear_viscosity_cp === 'number' &&
+      typeof inputs.zero_shear_viscosity_cp === 'number' &&
+      inputs.infinite_shear_viscosity_cp >= inputs.zero_shear_viscosity_cp &&
+      !rheologyErrors.infinite_shear_viscosity_cp
+    ) {
+      rheologyErrors.infinite_shear_viscosity_cp = 'Must be below the zero-shear viscosity'
+    }
+  }
+
+  const hasErrors =
+    Object.keys(fieldErrors).length > 0 ||
+    Boolean(insulationThicknessError) ||
+    Object.keys(rheologyErrors).length > 0
   const canSubmit = !hasErrors && isReady && !isLoading && inputs.material_key !== ''
   const isCustomMaterial = inputs.material_key === 'custom'
 
   return (
-    <div className="card">
-      <div className="card-header">
+    // Not clipped on a wide screen, so the Run button can stick to the bottom of the
+    // scrolling column; the header rounds its own corners instead.
+    <div className="card lg:overflow-visible">
+      <div className="card-header rounded-t-xl">
         <h2 className="font-bold text-slate-800">Process Parameters</h2>
         <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
       </div>
@@ -352,7 +576,7 @@ export function CalculatorForm() {
             onChange={handleChange}
             aria-invalid={materialError ? true : undefined}
             aria-describedby={materialError ? materialErrorId : undefined}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
+            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
           >
             {materials.length === 0 && !materialError && (
               <option value="">Loading materials…</option>
@@ -379,46 +603,88 @@ export function CalculatorForm() {
         {/* Custom Material Properties — shown only when Custom is selected */}
         {isCustomMaterial && (
           <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
-                Custom Material Properties
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCustomHelp((v) => !v)}
-                aria-expanded={showCustomHelp}
-                aria-controls={customPanelId}
-                className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
-              >
-                {showCustomHelp ? (
-                  <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide help</>
-                ) : (
-                  <><ChevronDown aria-hidden="true" className="w-3 h-3" /> What are these?</>
-                )}
-              </button>
-            </div>
+            {/* Section title and its help as one full-width row, so the toggle is a real
+                target rather than a line of small text. The label stays the same open or
+                shut; the chevron and aria-expanded carry the state. */}
+            <button
+              type="button"
+              onClick={() => setShowCustomHelp((v) => !v)}
+              aria-expanded={showCustomHelp}
+              aria-controls={customPanelId}
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-indigo-100 transition-colors"
+            >
+              <span className="text-sm font-semibold text-indigo-900">Custom material</span>
+              <span className="flex items-center gap-1 text-sm text-indigo-700">
+                What are these?
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`w-4 h-4 motion-safe:transition-transform ${showCustomHelp ? 'rotate-180' : ''}`}
+                />
+              </span>
+            </button>
 
             {showCustomHelp && (
               <div
                 id={customPanelId}
-                className="text-xs text-indigo-600 bg-indigo-100 rounded-md p-3 space-y-1 leading-relaxed"
+                className="text-sm text-indigo-900 bg-indigo-100 rounded-md p-3 space-y-2 leading-relaxed"
               >
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
                 <p><strong>Flow Index (0–1):</strong> Power-law exponent for non-Newtonian behaviour. 1.0 = Newtonian; typical PU foams: 0.8–0.9.</p>
                 <p><strong>Activation Energy (J/mol):</strong> Arrhenius energy controlling how viscosity changes with temperature. Typical range: 20 000–35 000 J/mol.</p>
+                <p><strong>Viscosity Model:</strong> The power law suits a data sheet. If you have a measured flow curve, Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. These use the exact laminar pipe solution rather than the apparent-viscosity shortcut. Parameters are at 25 °C; temperature shifts the whole curve by the activation energy.</p>
               </div>
             )}
 
-            <CustomMaterialField
-              label="Viscosity"
-              name="viscosity_cp"
-              value={inputs.viscosity_cp ?? CUSTOM_MATERIAL_DEFAULTS.viscosity_cp}
+            <OptionalSelect
+              name="rheology_model"
+              label="Viscosity Model"
+              value={inputs.rheology_model ?? 'power_law'}
+              options={RHEOLOGY_MODEL_OPTIONS}
               onChange={handleChange}
-              unit="cP"
-              range={CUSTOM_FIELD_RANGES.viscosity_cp}
-              error={fieldErrors.viscosity_cp}
             />
+
+            {/* The flow curve: a viscosity and flow index for the power law, or the chosen
+                model's own parameters. Density and activation energy apply to every model. */}
+            {inputs.rheology_model && inputs.rheology_model !== 'power_law' ? (
+              (Object.keys(RHEOLOGY_MODEL_FIELDS[inputs.rheology_model]) as RheologyField[]).map((field) => {
+                const range = rheologyFieldRange(field, inputs.rheology_model)
+                return (
+                  <CustomMaterialField
+                    key={field}
+                    label={range.label}
+                    name={field}
+                    value={inputs[field]}
+                    onChange={handleChange}
+                    unit={range.unit}
+                    range={range}
+                    error={rheologyErrors[field]}
+                  />
+                )
+              })
+            ) : (
+              <>
+                <CustomMaterialField
+                  label="Viscosity"
+                  name="viscosity_cp"
+                  value={inputs.viscosity_cp ?? CUSTOM_MATERIAL_DEFAULTS.viscosity_cp}
+                  onChange={handleChange}
+                  unit="cP"
+                  range={CUSTOM_FIELD_RANGES.viscosity_cp}
+                  error={fieldErrors.viscosity_cp}
+                />
+
+                <CustomMaterialField
+                  label="Flow Index"
+                  name="flow_index"
+                  value={inputs.flow_index ?? CUSTOM_MATERIAL_DEFAULTS.flow_index}
+                  onChange={handleChange}
+                  unit="(0–1)"
+                  range={CUSTOM_FIELD_RANGES.flow_index}
+                  error={fieldErrors.flow_index}
+                />
+              </>
+            )}
 
             <CustomMaterialField
               label="Density"
@@ -428,16 +694,6 @@ export function CalculatorForm() {
               unit="kg/m³"
               range={CUSTOM_FIELD_RANGES.density_kg_m3}
               error={fieldErrors.density_kg_m3}
-            />
-
-            <CustomMaterialField
-              label="Flow Index"
-              name="flow_index"
-              value={inputs.flow_index ?? CUSTOM_MATERIAL_DEFAULTS.flow_index}
-              onChange={handleChange}
-              unit="(0–1)"
-              range={CUSTOM_FIELD_RANGES.flow_index}
-              error={fieldErrors.flow_index}
             />
 
             <CustomMaterialField
@@ -452,50 +708,73 @@ export function CalculatorForm() {
           </div>
         )}
 
-        {/* Machine Type */}
-        <div className="mb-5">
-          <label
-            htmlFor={machineSelectId}
-            className="text-sm font-semibold text-slate-700 block mb-1.5"
-          >
+        {/* Machine Type. Two choices, so both are shown at once as a segmented control
+            rather than hidden behind a dropdown. Native radios underneath: arrow keys move
+            between them and a screen reader announces "1 of 2". */}
+        <fieldset className="mb-5">
+          <legend className="text-sm font-semibold text-slate-700 block mb-1.5">
             Machine Type
-          </label>
-          <select
-            id={machineSelectId}
-            name="machine_type"
-            value={inputs.machine_type}
-            onChange={handleChange}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
-          >
-            <option value="low_pressure">Low Pressure</option>
-            <option value="high_pressure">High Pressure</option>
-          </select>
-        </div>
+          </legend>
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+            {MACHINE_OPTIONS.map((option) => {
+              const checked = inputs.machine_type === option.value
+              return (
+                <label
+                  key={option.value}
+                  className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
+                    checked
+                      ? 'bg-surface text-indigo-700 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="machine_type"
+                    value={option.value}
+                    checked={checked}
+                    onChange={handleChange}
+                    // Covers the whole segment, invisibly, so the radio itself is what gets
+                    // pressed and focused — not a 1 px input behind a styled label
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  {option.label}
+                </label>
+              )
+            })}
+          </div>
+          <div className="mt-3">
+            <OptionalField
+              name="max_line_pressure_bar"
+              value={inputs.max_line_pressure_bar}
+              onChange={handleChange}
+              spec={LINE_LIMIT_RANGE}
+              error={fieldErrors.max_line_pressure_bar}
+            />
+          </div>
+        </fieldset>
 
         {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-              Optional
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowOptional((v) => !v)}
-              aria-expanded={showOptional}
-              aria-controls={optionalPanelId}
-              className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
-            >
-              {showOptional ? (
-                <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide</>
-              ) : (
-                <><ChevronDown aria-hidden="true" className="w-3 h-3" /> Ambient conditions &amp; part</>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowOptional((v) => !v)}
+            aria-expanded={showOptional}
+            aria-controls={optionalPanelId}
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-slate-100 transition-colors"
+          >
+            <span>
+              <span className="block text-sm font-semibold text-slate-800">Optional inputs</span>
+              <span className="block text-sm text-slate-500">Ambient conditions, hose &amp; part</span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`w-5 h-5 flex-shrink-0 text-slate-500 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
+            />
+          </button>
 
           {showOptional && (
             <div id={optionalPanelId} className="space-y-4">
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Leave blank to calculate from the set point alone. An ambient temperature models
                 the material drifting toward the surrounding air in the hose — which matters
                 for single-shot work — and a part thickness adds a cure prediction for the
@@ -514,6 +793,57 @@ export function CalculatorForm() {
                   />
                 )
               )}
+
+              {/* How the hose is built — feeds the line thermal model */}
+              {/* The legend floats so it reads as a heading under the divider; left in
+                  place, a legend sits ON the fieldset's top border and leaves a gap below */}
+              <fieldset className="border-t border-slate-200 pt-4">
+                <legend className="float-left w-full text-sm font-semibold text-slate-800">
+                  Hose
+                </legend>
+                <div className="clear-left space-y-4 pt-1">
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Used with an ambient temperature. Leave blank for a bare hose in still air;
+                  describe it, and lagging in particular, to see how well it holds temperature.
+                </p>
+
+                <OptionalSelect
+                  name="hose_material"
+                  label="Hose Material"
+                  value={inputs.hose_material}
+                  options={HOSE_MATERIAL_OPTIONS}
+                  blankLabel="Not described (bare hose default)"
+                  onChange={handleChange}
+                />
+                {inputs.hose_material && (
+                  <OptionalField
+                    name="hose_wall_thickness_mm"
+                    value={inputs.hose_wall_thickness_mm}
+                    onChange={handleChange}
+                    spec={HOSE_FIELD_RANGES.hose_wall_thickness_mm}
+                    error={fieldErrors.hose_wall_thickness_mm}
+                  />
+                )}
+
+                <OptionalSelect
+                  name="insulation_material"
+                  label="Insulation"
+                  value={inputs.insulation_material}
+                  options={INSULATION_OPTIONS}
+                  blankLabel="None"
+                  onChange={handleChange}
+                />
+                {inputs.insulation_material && (
+                  <OptionalField
+                    name="insulation_thickness_mm"
+                    value={inputs.insulation_thickness_mm}
+                    onChange={handleChange}
+                    spec={HOSE_FIELD_RANGES.insulation_thickness_mm}
+                    error={fieldErrors.insulation_thickness_mm ?? insulationThicknessError}
+                  />
+                )}
+                </div>
+              </fieldset>
             </div>
           )}
         </div>
@@ -583,12 +913,13 @@ export function CalculatorForm() {
           </div>
         )}
 
-        {/* Submit Button */}
-        <div className="mt-8">
+        {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
+            stays in reach however far the inputs above it run. */}
+        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform active:scale-95 ${
+            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform motion-safe:active:scale-95 ${
               !canSubmit
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'
@@ -646,11 +977,11 @@ function InputField({
 
   return (
     <div className="mb-5 group">
-      <div className="flex justify-between items-baseline mb-1.5">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1.5">
         <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {range.min}-{range.max} {unit}
         </span>
       </div>
@@ -666,7 +997,7 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -677,7 +1008,7 @@ function InputField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
         >
-          <span className={`text-sm font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {unit}
           </span>
         </div>
@@ -710,7 +1041,7 @@ function OptionalField({
   name: string
   value: number | undefined
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  spec: { min: number; max: number; label: string; unit: string; step: string; help: string }
+  spec: { min: number; max: number; label: string; unit: string; help: string }
   error?: string
 }) {
   const id = useId()
@@ -720,11 +1051,11 @@ function OptionalField({
 
   return (
     <div>
-      <div className="flex justify-between items-baseline mb-1">
-        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {spec.label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
@@ -736,29 +1067,31 @@ function OptionalField({
           value={value ?? ''}
           placeholder="not set"
           onChange={onChange}
-          step={spec.step}
+          // Any value in range is accepted, as in the main fields: a numeric step makes the
+          // browser refuse values off its grid by silently blocking the submit
+          step="any"
           aria-invalid={error ? true : undefined}
           // The help text explains what supplying this field switches on, which is the
           // whole point of an optional input — it belongs in the announcement
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
             error
-              ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {spec.unit}
           </span>
         </div>
       </div>
-      <p id={helpId} className="mt-1 text-xs text-slate-500 leading-snug">
+      <p id={helpId} className="mt-1 text-sm text-slate-500 leading-snug">
         {spec.help}
       </p>
       {error && (
@@ -771,6 +1104,51 @@ function OptionalField({
           <span>{error}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Optional choice. Where there is a blank option it is meaningful — it means "not described"
+ * — and removes the key rather than sending an empty string.
+ */
+function OptionalSelect({
+  name,
+  label,
+  value,
+  options,
+  blankLabel,
+  onChange,
+}: {
+  name: string
+  label: string
+  value: string | undefined
+  options: ReadonlyArray<{ value: string; label: string }>
+  /** Omit for a choice that always has a value */
+  blankLabel?: string
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+}) {
+  const id = useId()
+
+  return (
+    <div>
+      <label htmlFor={id} className="text-sm font-semibold text-slate-700 block mb-1">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={name}
+        value={value ?? ''}
+        onChange={onChange}
+        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
+      >
+        {blankLabel !== undefined && <option value="">{blankLabel}</option>}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }
@@ -789,10 +1167,10 @@ function CustomMaterialField({
 }: {
   label: string
   name: string
-  value: number
+  value: number | undefined
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   unit: string
-  range: { min: number; max: number; step: string }
+  range: { min: number; max: number }
   error?: string
 }) {
   const id = useId()
@@ -801,11 +1179,11 @@ function CustomMaterialField({
 
   return (
     <div>
-      <div className="flex justify-between items-baseline mb-1">
-        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {range.min}–{range.max} {unit}
         </span>
       </div>
@@ -814,24 +1192,24 @@ function CustomMaterialField({
           id={id}
           type="number"
           name={name}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
-          step={range.step}
+          step="any"
           min={range.min}
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
-              ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {unit}
           </span>
         </div>

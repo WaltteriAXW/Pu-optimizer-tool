@@ -230,6 +230,69 @@ describe('CalculationService', () => {
 
       expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(2)
     })
+
+    it('should treat every optional input as part of the key', async () => {
+      // The key used to be a hand-kept list of fields; an input missing from it served a
+      // result computed for different inputs, as if the input did nothing.
+      mockPyodideManager.callPython.mockResolvedValue({
+        success: true,
+        data: mockCalculationResults,
+        errors: []
+      })
+
+      const withAmbient: ProcessParameters = { ...mockParameters, ambient_temperature_c: 10 }
+      await service.calculate(withAmbient)
+      await service.calculate({ ...withAmbient, insulation_material: 'pe_foam', insulation_thickness_mm: 10 })
+      await service.calculate({ ...withAmbient, insulation_material: 'pe_foam', insulation_thickness_mm: 20 })
+
+      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(3)
+    })
+
+    it('should not depend on the order parameters were set in', async () => {
+      mockPyodideManager.callPython.mockResolvedValue({
+        success: true,
+        data: mockCalculationResults,
+        errors: []
+      })
+
+      await service.calculate({ ...mockParameters, ambient_temperature_c: 10, idle_time_s: 60 })
+      await service.calculate({ idle_time_s: 60, ambient_temperature_c: 10, ...mockParameters })
+
+      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('Measured flow curves', () => {
+    const flowCurve = {
+      rheology_model: 'carreau' as const,
+      zero_shear_viscosity_cp: 1500,
+      time_constant_s: 0.05,
+      rheology_index: 0.7,
+    }
+
+    beforeEach(() => {
+      mockPyodideManager.callPython.mockResolvedValue({
+        success: true,
+        data: mockCalculationResults,
+        errors: []
+      })
+    })
+
+    it('are sent for a custom material', async () => {
+      await service.calculate({ ...mockParameters, material_key: 'custom', ...flowCurve })
+
+      const sent = mockPyodideManager.callPython.mock.calls[0][1][0]
+      expect(sent).toMatchObject(flowCurve)
+    })
+
+    it('are stripped from a catalogued material, which its data sheet defines', async () => {
+      await service.calculate({ ...mockParameters, ...flowCurve })
+
+      const sent = mockPyodideManager.callPython.mock.calls[0][1][0]
+      for (const key of Object.keys(flowCurve)) {
+        expect(sent).not.toHaveProperty(key)
+      }
+    })
   })
 
   describe('Integration scenarios', () => {

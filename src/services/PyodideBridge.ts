@@ -209,8 +209,7 @@ export class PyodideBridge implements PyodideManager {
 
       // Core optimizers
       'src/core/optimizers/__init__.py',
-      'src/core/optimizers/pressure_optimizer.py',
-      'src/core/optimizers/inverse_optimization.py',
+      'src/core/optimizers/operating_window.py',
 
       // Core processors
       'src/core/processors/__init__.py',
@@ -218,12 +217,12 @@ export class PyodideBridge implements PyodideManager {
 
       // Core rheology
       'src/core/rheology/__init__.py',
-      'src/core/rheology/advanced_fluid_models.py',
+      'src/core/rheology/models.py',
+      'src/core/rheology/pipe_flow.py',
 
       // Core thermodynamics
       'src/core/thermodynamics/__init__.py',
-      'src/core/thermodynamics/advanced_heat_transfer.py',
-      'src/core/thermodynamics/thermal_integration.py',
+      'src/core/thermodynamics/hose_heat_transfer.py',
 
       // Core validation
       'src/core/validation/__init__.py',

@@ -42,6 +42,16 @@ reported beside the machine and labelled as such, so it is not mistaken for a fe
 
 Supply an **ambient temperature** and, optionally, **time since the last shot**, and the tool models the material drifting toward ambient in the hose before it reaches the mix head — rather than assuming the tank set point holds the whole way through. This matters most for single-shot or intermittent work where material can sit in the line between shots. Leaving this blank keeps the calculation exactly as if the feature didn't exist.
 
+By default the hose is taken as bare, in still air (10 W/m²·K). Describe it — wall material and thickness, and any lagging — and the coefficient is worked out through each layer in turn: the material film inside, the wall, the insulation, and convection plus radiation from the outer surface. The result shows which layer holds the heat in, which is the one worth improving.
+
+---
+
+## Operating Window
+
+Every result also shows how far each setting can move, with the others held, before the feed line needs more pressure than allowed: the highest flow rate, the lowest set temperature, and the narrowest line. The limit is the machine's maximum pressure less what its own plumbing uses, or a lower figure you enter. Each boundary is found by bisection on the same calculation the result comes from, and the tests run every boundary back through it to check it lands on the limit.
+
+The flow rate window then combines the pressure limit with the onset of turbulence and the machine's output range, and says which one sets each end.
+
 ---
 
 ## Blowing Agent Volatility (when the material names one)
@@ -171,15 +181,17 @@ printed and carried to the machine.
 
 ---
 
-## What's Not (Yet) Wired In
+## Measured Flow Curves (custom materials, optional)
 
-These Python modules exist, are tested, and are loaded into the browser runtime, but nothing in the UI or the main calculation path calls them yet:
+The power law is the default for every material, and the only model the catalogued ones use, because a data sheet gives a viscosity and little else. A custom material can instead be described by a measured flow curve:
 
-- **`src/core/rheology`** — Herschel-Bulkley, Cross, and Carreau non-Newtonian fluid models (only the power-law model is used in the live calculation)
-- **`src/core/optimizers`** — standalone pressure and inverse-parameter optimizers
-- **`src/core/thermodynamics`** — advanced heat-transfer (convection/radiation/insulation modelling beyond the current shear-heating estimate)
+- **Carreau** — levels off at a zero-shear viscosity instead of growing without bound at low shear
+- **Cross** — levels off at both ends
+- **Herschel–Bulkley** — adds a yield stress, for filled or thixotropic systems
 
-They're implementation, not vaporware — but treat them as "available to build on" rather than a feature you'll find in today's app.
+These are solved with the exact laminar pipe relation (Rabinowitsch–Mooney) rather than by reading the viscosity at the Newtonian wall shear rate, which is wrong for a yield-stress fluid flowing as a plug. The result is reported as an effective viscosity that reproduces the exact pressure drop, so the Reynolds number (Metzner–Reed), the turbulence margin and the operating window all apply unchanged. Temperature shifts the whole curve by the activation energy. In turbulent flow the friction factor is still the Newtonian correlation applied to that effective viscosity, which is an approximation.
+
+These features are physics, not field data: none has yet been compared with shots on a real machine.
 
 ---
 

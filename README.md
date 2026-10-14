@@ -41,15 +41,16 @@ A physics-based calculation engine that helps polyurethane injection molding man
 - Flow analysis (Reynolds number, shear rate, flow regime, laminar/turbulent margin)
 - Shear heating
 - Fitting losses
+- **Operating window** — the highest flow rate, lowest set temperature and narrowest line that keep the feed line within the machine's pressure limit (or a lower one you set), each found by bisection on the same calculation, and the flow range left once turbulence and the machine's output range are counted too
 
 ### Process Modelling (optional inputs)
-- **Line thermal drift** — supply an ambient temperature and idle time, and the tool models the material cooling/warming toward ambient in the hose before it reaches the mix head, rather than assuming the tank set point holds all the way through
+- **Line thermal drift** — supply an ambient temperature and idle time, and the tool models the material cooling/warming toward ambient in the hose before it reaches the mix head, rather than assuming the tank set point holds all the way through. Describe the hose (wall material and thickness, lagging) and its heat loss is worked out layer by layer instead of assuming a bare hose
 - **Blowing agent volatility** — checks whether the agent stays dissolved at the calculated line temperature and pressure
 - **Cure & exotherm** — for catalogued materials with reaction data on their sheet: cream/gel/tack-free time, processing window, adiabatic temperature rise, and scorch risk, given a part thickness and mould temperature
 
 ### Materials & Machines
 - **4 catalogued polyurethane systems**, defined in a single CSV (`src/data/polyurethane_foam_database.csv`) that both the UI and the Python engine read — add a row, get a new material, no code change needed
-- **Custom materials** — enter viscosity, density, flow index and activation energy directly when your material isn't catalogued
+- **Custom materials** — enter viscosity, density, flow index and activation energy directly when your material isn't catalogued, or a measured flow curve (Carreau, Cross or Herschel–Bulkley), which is solved exactly for laminar pipe flow rather than through the apparent-viscosity shortcut
 - **2 machine classes** — low-pressure (8–20 bar) and high-pressure (100–200 bar), with the operator's actual set point derived from whichever binds: line demand, or the machine's own minimum
 
 ### Learning From Real Outcomes
@@ -57,6 +58,9 @@ Every calculation is saved locally in the browser. After a part is made, you can
 
 ### Export
 Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pressure chart embedded).
+
+### Appearance & accessibility
+The interface follows the system's light or dark appearance and Increase Contrast setting, respects Reduce Motion, and keeps every control at least 44 px and every text pairing at WCAG AA contrast in each appearance (checked by `src/theme.test.ts`). The PDF always prints light.
 
 ---
 
@@ -76,7 +80,7 @@ Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pr
 
 The calculation engine, custom materials, line-thermal modelling, blowing-agent volatility, cure/exotherm prediction, the laminar-flow-margin display, and the shot-record/residual-learning workflow are all implemented and covered by CI (unit tests, Python tests, and an end-to-end Playwright suite gate every deploy).
 
-A few Python modules exist and are tested but are **not yet wired into the UI**: non-Newtonian rheology models beyond the power law (`src/core/rheology`), the standalone pressure/inverse optimizers (`src/core/optimizers`), and the advanced heat-transfer module (`src/core/thermodynamics`). They're available to build on, not features you'll find in the app today.
+Three further pieces are wired in: describing how the hose is built (`src/core/thermodynamics`), the operating window (`src/core/optimizers`), and measured flow curves for custom materials (`src/core/rheology`). None of them changes a result unless you use it, and none has yet been checked against shots on a real machine.
 
 There is no neural-network surrogate and no synthetic-data ML quality/defect classifier — an earlier version of this project had one, and it was deliberately removed in favor of the shot-record model described above, which only speaks once it has real outcomes to learn from.
 
