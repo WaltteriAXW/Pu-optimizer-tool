@@ -71,7 +71,7 @@ export function ResultsDisplay() {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-red-100 shadow-sm text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-red-100 shadow-sm text-center"
       >
         <div className="bg-red-50 p-4 rounded-full mb-4">
           <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
@@ -84,7 +84,7 @@ export function ResultsDisplay() {
 
   if (!results) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed border-slate-300 text-center">
+      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
           <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
@@ -835,7 +835,7 @@ function OperatingWindowCard({
 }) {
   const flow = window.flow_window
   const tone = flow.current_inside
-    ? 'bg-white border-slate-200'
+    ? 'bg-surface border-slate-200'
     : 'bg-red-50 border-red-100'
 
   const limitText =

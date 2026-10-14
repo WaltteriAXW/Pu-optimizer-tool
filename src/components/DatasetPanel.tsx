@@ -224,7 +224,7 @@ export function DatasetPanel() {
                       setSummary(null)
                       setTrained(null)
                     }}
-                    className="flex-1 min-h-[44px] text-sm px-3 rounded-lg font-bold text-white bg-slate-800 hover:bg-slate-900 transition-colors"
+                    className="flex-1 min-h-[44px] text-sm px-3 rounded-lg font-bold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
                   >
                     Delete everything
                   </button>

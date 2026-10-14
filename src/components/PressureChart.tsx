@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { usePrefersDark } from '@/services/colorScheme'
 import type { CalculationResults } from '@/calculator_types'
 import {
   formatPressure,
@@ -8,16 +9,32 @@ import {
 
 /**
  * Chart colours, as values rather than classes. The PDF export rasterises this chart with
- * html2canvas, which serialises the SVG on its own: stylesheet classes inside it are lost and
- * everything comes out black. Inline values survive.
+ * html2canvas, which serialises the SVG on its own: stylesheet classes and CSS variables
+ * inside it are lost and everything comes out black. Inline values survive.
+ *
+ * Each coloured element also carries its role in data-stroke-role / data-fill-role, so the
+ * PDF capture can repaint a dark-appearance chart in the light palette for the printed page.
  */
-const CHART_COLORS = {
-  grid: '#e2e8f0', // slate-200
-  axis: '#64748b', // slate-500: axis lines are graphics and need 3:1
-  tick: '#64748b', // slate-500
-  title: '#475569', // slate-600
-  primary: '#4f46e5', // indigo-600
-  secondary: '#64748b', // slate-500
+export type ChartColorRole = 'grid' | 'axis' | 'tick' | 'title' | 'primary' | 'secondary'
+
+export const CHART_COLORS: Record<'light' | 'dark', Record<ChartColorRole, string>> = {
+  light: {
+    grid: '#e2e8f0', // slate-200
+    axis: '#64748b', // slate-500: axis lines are graphics and need 3:1
+    tick: '#64748b', // slate-500
+    title: '#475569', // slate-600
+    primary: '#4f46e5', // indigo-600
+    secondary: '#64748b', // slate-500
+  },
+  // Against the dark surface: axis 4.8:1, ticks 6.9:1, lines 5.6:1 and 6.9:1
+  dark: {
+    grid: '#2c3a50',
+    axis: '#7c8aa0',
+    tick: '#9aa8bc',
+    title: '#b4c0d0',
+    primary: '#818cf8',
+    secondary: '#9aa8bc',
+  },
 }
 
 interface PressureChartProps {
@@ -32,6 +49,7 @@ interface PressureChartProps {
  */
 export function PressureChart({ results, unit }: PressureChartProps) {
   const chartId = useId()
+  const colors = CHART_COLORS[usePrefersDark() ? 'dark' : 'light']
 
   if (!results.pressure || !results.input) {
     return (
@@ -89,7 +107,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
   return (
     // Borderless: it sits inside a results card. The white background stays because the PDF
     // captures this element as it is.
-    <div className="w-full bg-white p-1" data-chart="pressure-profile">
+    <div className="w-full bg-surface p-1" data-chart="pressure-profile">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h3 className="text-lg font-bold text-slate-800">Pressure Profile</h3>
         {/* The legend sits outside the plot. Inside it, it covered the end of the line —
@@ -97,11 +115,11 @@ export function PressureChart({ results, unit }: PressureChartProps) {
             style as well as colour, so the legend does not rely on colour alone. */}
         <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600" aria-hidden="true">
           <li className="flex items-center gap-2">
-            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={CHART_COLORS.primary} strokeWidth="3" /></svg>
+            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={colors.primary} data-stroke-role="primary" strokeWidth="3" /></svg>
             With fittings
           </li>
           <li className="flex items-center gap-2">
-            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={CHART_COLORS.secondary} strokeWidth="2" strokeDasharray="4 3" /></svg>
+            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={colors.secondary} data-stroke-role="secondary" strokeWidth="2" strokeDasharray="4 3" /></svg>
             Pipe only
           </li>
         </ul>
@@ -132,7 +150,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         </desc>
 
         {/* Grid lines */}
-        <g stroke={CHART_COLORS.grid} strokeWidth="1">
+        <g stroke={colors.grid} data-stroke-role="grid" strokeWidth="1">
           {Array.from({ length: 6 }).map((_, i) => {
             const y = padding.top + (i * chartHeight) / 5
             return <line key={`h-${i}`} x1={padding.left} y1={y} x2={width - padding.right} y2={y} />
@@ -144,19 +162,19 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         </g>
 
         {/* Axes */}
-        <g stroke={CHART_COLORS.axis} strokeWidth="1.5">
+        <g stroke={colors.axis} data-stroke-role="axis" strokeWidth="1.5">
           <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} />
           <line x1={padding.left} y1={padding.top} x2={padding.left} y2={height - padding.bottom} />
         </g>
 
         {/* Fill under the line demand */}
-        <path d={fillPath} fill={CHART_COLORS.primary} opacity="0.08" />
+        <path d={fillPath} fill={colors.primary} data-fill-role="primary" opacity="0.08" />
 
         {/* Pipe friction alone: dashed, secondary */}
         <path
           d={basePressurePath}
           fill="none"
-          stroke={CHART_COLORS.secondary}
+          stroke={colors.secondary} data-stroke-role="secondary"
           strokeWidth="2"
           strokeLinecap="round"
           strokeDasharray="6 5"
@@ -166,14 +184,14 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         <path
           d={totalPressurePath}
           fill="none"
-          stroke={CHART_COLORS.primary}
+          stroke={colors.primary} data-stroke-role="primary"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
         {/* Tick labels */}
-        <g fontSize="12" fill={CHART_COLORS.tick}>
+        <g fontSize="12" fill={colors.tick} data-fill-role="tick">
           {Array.from({ length: 6 }).map((_, i) => {
             const value = toPressureUnit((i * yAxisMax) / 5, unit).toFixed(tickDecimals)
             const y = padding.top + ((5 - i) * chartHeight) / 5 + 4
@@ -195,7 +213,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         </g>
 
         {/* Axis titles: the vertical one above its axis, clear of the tick labels */}
-        <g fontSize="12" fill={CHART_COLORS.title} fontWeight="600">
+        <g fontSize="12" fill={colors.title} data-fill-role="title" fontWeight="600">
           <text x={padding.left - 10} y={14} textAnchor="start">
             Pressure ({unit})
           </text>

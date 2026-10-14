@@ -576,7 +576,7 @@ export function CalculatorForm() {
             onChange={handleChange}
             aria-invalid={materialError ? true : undefined}
             aria-describedby={materialError ? materialErrorId : undefined}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
+            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
           >
             {materials.length === 0 && !materialError && (
               <option value="">Loading materials…</option>
@@ -723,7 +723,7 @@ export function CalculatorForm() {
                   key={option.value}
                   className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
                     checked
-                      ? 'bg-white text-indigo-700 shadow-sm'
+                      ? 'bg-surface text-indigo-700 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -915,7 +915,7 @@ export function CalculatorForm() {
 
         {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
             stays in reach however far the inputs above it run. */}
-        <div className="mt-8 bg-white lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
+        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}
@@ -977,11 +977,11 @@ function InputField({
 
   return (
     <div className="mb-5 group">
-      <div className="flex justify-between items-baseline mb-1.5">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1.5">
         <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {range.min}-{range.max} {unit}
         </span>
       </div>
@@ -997,7 +997,7 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1051,11 +1051,11 @@ function OptionalField({
 
   return (
     <div>
-      <div className="flex justify-between items-baseline mb-1">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
         <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {spec.label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
@@ -1078,8 +1078,8 @@ function OptionalField({
           }
           className={`block w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
             error
-              ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
         <div
@@ -1140,7 +1140,7 @@ function OptionalSelect({
         name={name}
         value={value ?? ''}
         onChange={onChange}
-        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
+        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
       >
         {blankLabel !== undefined && <option value="">{blankLabel}</option>}
         {options.map((option) => (
@@ -1179,11 +1179,11 @@ function CustomMaterialField({
 
   return (
     <div>
-      <div className="flex justify-between items-baseline mb-1">
+      <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
         <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
           {range.min}–{range.max} {unit}
         </span>
       </div>
@@ -1199,10 +1199,10 @@ function CustomMaterialField({
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
-              ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
           }`}
         />
         <div

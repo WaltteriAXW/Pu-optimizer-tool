@@ -59,6 +59,9 @@ Every calculation is saved locally in the browser. After a part is made, you can
 ### Export
 Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pressure chart embedded).
 
+### Appearance & accessibility
+The interface follows the system's light or dark appearance and Increase Contrast setting, respects Reduce Motion, and keeps every control at least 44 px and every text pairing at WCAG AA contrast in each appearance (checked by `src/theme.test.ts`). The PDF always prints light.
+
 ---
 
 ## Getting Started

@@ -112,10 +112,10 @@ export function HistorySidebar({
       aria-modal="true"
       aria-labelledby={titleId}
       tabIndex={-1}
-      className="fixed inset-y-0 right-0 z-40 w-80 bg-white border-l border-slate-200 shadow-lg overflow-y-auto outline-none"
+      className="fixed inset-y-0 right-0 z-40 w-80 bg-surface border-l border-slate-200 shadow-lg overflow-y-auto outline-none"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-slate-100 p-4">
+      <div className="sticky top-0 bg-surface border-b border-slate-100 p-4">
         <div className="flex items-center gap-2">
           <Clock aria-hidden="true" className="w-5 h-5 text-indigo-600" />
           <h2 id={titleId} className="text-lg font-bold text-slate-800">
@@ -235,7 +235,7 @@ function HistoryItem({
       </button>
 
       {/* Parameters preview */}
-      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-white p-2 rounded border border-slate-100">
+      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-surface p-2 rounded border border-slate-100">
         <div className="flex justify-between">
           <span>Length:</span>
           <span className="font-medium">{entry.parameters.pipe_length_mm} mm</span>
@@ -265,7 +265,7 @@ function HistoryItem({
           value={entry.outcome}
           onChange={(e) => onRecordOutcome(e.target.value as ShotOutcome)}
           onClick={(e) => e.stopPropagation()}
-          className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded bg-white"
+          className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded bg-surface"
         >
           {(Object.keys(SHOT_OUTCOME_LABEL) as ShotOutcome[]).map((value) => (
             <option key={value} value={value}>

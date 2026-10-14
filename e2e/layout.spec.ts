@@ -75,4 +75,25 @@ test.describe('layout', () => {
 
     await expect(page.getByTestId('machine-settings')).toBeInViewport({ timeout: 30_000 })
   })
+
+  test('dark appearance applies, and the PDF still comes out', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' })
+    await page.goto('./')
+    await waitForEngine(page)
+
+    // The page background follows the system appearance
+    const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+    const [r, g, b] = background.match(/\d+/g)!.map(Number)
+    expect(r + g + b).toBeLessThan(120)
+
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    // The chart is repainted light for the printed page; the export must still succeed
+    const download = await Promise.all([
+      page.waitForEvent('download', { timeout: 60_000 }),
+      page.locator('button:has-text("PDF")').click(),
+    ]).then(([d]) => d)
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/)
+  })
 })

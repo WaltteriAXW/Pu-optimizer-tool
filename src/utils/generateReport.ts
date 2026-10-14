@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
 import { describeFlowWindow } from '@/components/resultFormatting'
+import { CHART_COLORS, type ChartColorRole } from '@/components/PressureChart'
 
 /**
  * The printed report.
@@ -543,6 +544,28 @@ export const generateReport = async (
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
+        // The page is printed light whatever the screen shows. The clone is forced to the
+        // light theme, and the chart's SVG — whose colours are values, not classes — is
+        // repainted from the light palette by role.
+        //
+        // The repaint has to go into inline styles, and onto every descendant: for SVG,
+        // html2canvas copies each element's computed style from the live page into the
+        // clone, so a line inside a dark grid group arrives carrying the dark stroke as its
+        // own style, which outranks any attribute set here.
+        onclone: (clonedDocument) => {
+          clonedDocument.documentElement.setAttribute('data-theme', 'light')
+          const light = CHART_COLORS.light
+          const repaint = (selector: string, property: 'stroke' | 'fill', key: 'strokeRole' | 'fillRole') => {
+            clonedDocument.querySelectorAll<SVGElement>(selector).forEach((el) => {
+              const colour = light[el.dataset[key] as ChartColorRole]
+              for (const node of [el, ...Array.from(el.querySelectorAll<SVGElement>('*'))]) {
+                node.style.setProperty(property, colour)
+              }
+            })
+          }
+          repaint('[data-stroke-role]', 'stroke', 'strokeRole')
+          repaint('[data-fill-role]', 'fill', 'fillRole')
+        },
       })
       const image = canvas.toDataURL('image/png')
       const imageWidth = contentWidth

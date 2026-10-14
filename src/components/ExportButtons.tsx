@@ -10,7 +10,7 @@ import { AlertCircle, Download, FileJson, FileText, Loader } from 'lucide-react'
  * indigo, green, orange and teal, which suggested meanings the formats do not have.
  */
 const EXPORT_BUTTON =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors'
+  'inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-surface px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors'
 
 interface ExportButtonsProps {
   results: CalculationResults
