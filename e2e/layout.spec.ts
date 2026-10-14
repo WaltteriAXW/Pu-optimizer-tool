@@ -6,7 +6,7 @@ import { test, expect, waitForEngine } from './fixtures'
  */
 
 test.describe('layout', () => {
-  test.beforeEach(async ({ page, pyodideRequests }) => {
+  test.beforeEach(async ({ pyodideRequests }) => {
     void pyodideRequests // activates the offline Pyodide route
   })
 
@@ -50,5 +50,20 @@ test.describe('layout', () => {
     }
 
     await expect(page.getByTestId('unit-psi')).toBeVisible()
+  })
+
+  test('asking for less motion turns off smooth scrolling and the slide-in', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('./')
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    const results = page.getByRole('region', { name: /calculation results/i })
+    await expect(results).toBeVisible({ timeout: 30_000 })
+
+    expect(
+      await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)
+    ).toBe('auto')
+    // A fade is fine; movement is not
+    expect(await results.evaluate((el) => getComputedStyle(el).animationName)).toBe('fade')
   })
 })

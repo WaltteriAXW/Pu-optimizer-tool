@@ -13,7 +13,7 @@ import {
  */
 const CHART_COLORS = {
   grid: '#e2e8f0', // slate-200
-  axis: '#94a3b8', // slate-400
+  axis: '#64748b', // slate-500: axis lines are graphics and need 3:1
   tick: '#64748b', // slate-500
   title: '#475569', // slate-600
   primary: '#4f46e5', // indigo-600

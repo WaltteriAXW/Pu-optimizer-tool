@@ -11,6 +11,11 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        // For Reduce Motion: the same arrival as a fade, with no movement
+        fade: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
         spin: {
           'from': { transform: 'rotate(0deg)' },
           'to': { transform: 'rotate(360deg)' },
@@ -18,6 +23,7 @@ export default {
       },
       animation: {
         fadeIn: 'fadeIn 0.5s ease-out forwards',
+        fade: 'fade 0.2s ease-out forwards',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

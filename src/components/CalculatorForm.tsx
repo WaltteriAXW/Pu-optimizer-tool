@@ -9,7 +9,7 @@ import type {
   InsulationMaterial,
   RheologyModelName,
 } from '@/calculator_types'
-import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertCircle, Play, ChevronDown } from 'lucide-react'
 
 /** Default values pre-filled when the user switches to Custom Material */
 const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
@@ -599,29 +599,30 @@ export function CalculatorForm() {
         {/* Custom Material Properties — shown only when Custom is selected */}
         {isCustomMaterial && (
           <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
-                Custom Material Properties
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCustomHelp((v) => !v)}
-                aria-expanded={showCustomHelp}
-                aria-controls={customPanelId}
-                className="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
-              >
-                {showCustomHelp ? (
-                  <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide help</>
-                ) : (
-                  <><ChevronDown aria-hidden="true" className="w-3 h-3" /> What are these?</>
-                )}
-              </button>
-            </div>
+            {/* Section title and its help as one full-width row, so the toggle is a real
+                target rather than a line of small text. The label stays the same open or
+                shut; the chevron and aria-expanded carry the state. */}
+            <button
+              type="button"
+              onClick={() => setShowCustomHelp((v) => !v)}
+              aria-expanded={showCustomHelp}
+              aria-controls={customPanelId}
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-indigo-100 transition-colors"
+            >
+              <span className="text-sm font-semibold text-indigo-900">Custom material</span>
+              <span className="flex items-center gap-1 text-sm text-indigo-700">
+                What are these?
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`w-4 h-4 motion-safe:transition-transform ${showCustomHelp ? 'rotate-180' : ''}`}
+                />
+              </span>
+            </button>
 
             {showCustomHelp && (
               <div
                 id={customPanelId}
-                className="text-xs text-indigo-600 bg-indigo-100 rounded-md p-3 space-y-1 leading-relaxed"
+                className="text-sm text-indigo-900 bg-indigo-100 rounded-md p-3 space-y-2 leading-relaxed"
               >
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
@@ -734,28 +735,26 @@ export function CalculatorForm() {
 
         {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-              Optional
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowOptional((v) => !v)}
-              aria-expanded={showOptional}
-              aria-controls={optionalPanelId}
-              className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
-            >
-              {showOptional ? (
-                <><ChevronUp aria-hidden="true" className="w-3 h-3" /> Hide</>
-              ) : (
-                <><ChevronDown aria-hidden="true" className="w-3 h-3" /> Ambient conditions &amp; part</>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowOptional((v) => !v)}
+            aria-expanded={showOptional}
+            aria-controls={optionalPanelId}
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-slate-100 transition-colors"
+          >
+            <span>
+              <span className="block text-sm font-semibold text-slate-800">Optional inputs</span>
+              <span className="block text-sm text-slate-500">Ambient conditions, hose &amp; part</span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`w-5 h-5 flex-shrink-0 text-slate-500 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
+            />
+          </button>
 
           {showOptional && (
             <div id={optionalPanelId} className="space-y-4">
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Leave blank to calculate from the set point alone. An ambient temperature models
                 the material drifting toward the surrounding air in the hose — which matters
                 for single-shot work — and a part thickness adds a cure prediction for the
@@ -776,11 +775,14 @@ export function CalculatorForm() {
               )}
 
               {/* How the hose is built — feeds the line thermal model */}
-              <fieldset className="space-y-4 border-t border-slate-200 pt-4">
-                <legend className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+              {/* The legend floats so it reads as a heading under the divider; left in
+                  place, a legend sits ON the fieldset's top border and leaves a gap below */}
+              <fieldset className="border-t border-slate-200 pt-4">
+                <legend className="float-left w-full text-sm font-semibold text-slate-800">
                   Hose
                 </legend>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <div className="clear-left space-y-4 pt-1">
+                <p className="text-sm text-slate-600 leading-relaxed">
                   Used with an ambient temperature. Leave blank for a bare hose in still air;
                   describe it, and lagging in particular, to see how well it holds temperature.
                 </p>
@@ -820,6 +822,7 @@ export function CalculatorForm() {
                     error={fieldErrors.insulation_thickness_mm ?? insulationThicknessError}
                   />
                 )}
+                </div>
               </fieldset>
             </div>
           )}
@@ -896,7 +899,7 @@ export function CalculatorForm() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform active:scale-95 ${
+            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform motion-safe:active:scale-95 ${
               !canSubmit
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'
@@ -958,7 +961,7 @@ function InputField({
         <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="text-xs text-slate-500">
           {range.min}-{range.max} {unit}
         </span>
       </div>
@@ -985,7 +988,7 @@ function InputField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
         >
-          <span className={`text-sm font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {unit}
           </span>
         </div>
@@ -1032,7 +1035,7 @@ function OptionalField({
         <label htmlFor={id} className="text-xs font-semibold text-slate-700">
           {spec.label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="text-xs text-slate-500">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
@@ -1053,7 +1056,7 @@ function OptionalField({
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block w-full pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
             error
               ? 'border-red-300 bg-white text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1063,12 +1066,12 @@ function OptionalField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {spec.unit}
           </span>
         </div>
       </div>
-      <p id={helpId} className="mt-1 text-xs text-slate-500 leading-snug">
+      <p id={helpId} className="mt-1 text-sm text-slate-500 leading-snug">
         {spec.help}
       </p>
       {error && (
@@ -1160,7 +1163,7 @@ function CustomMaterialField({
         <label htmlFor={id} className="text-xs font-semibold text-slate-700">
           {label}
         </label>
-        <span id={rangeId} className="text-xs text-slate-400">
+        <span id={rangeId} className="text-xs text-slate-500">
           {range.min}–{range.max} {unit}
         </span>
       </div>
@@ -1186,7 +1189,7 @@ function CustomMaterialField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
             {unit}
           </span>
         </div>

@@ -93,7 +93,7 @@ export function ResultsDisplay() {
     // screen reader user gets no indication that pressing Run produced anything. The
     // headline figures are announced; the detail below is there to be read at leisure.
     <div
-      className="space-y-6 animate-fadeIn"
+      className="space-y-6 motion-safe:animate-fadeIn motion-reduce:animate-fade"
       aria-live="polite"
       aria-atomic="false"
       role="region"
@@ -759,7 +759,7 @@ function RangeBar({
           style={{ left: `calc(${pct(value)}% - 2px)`, height: '1.125rem' }}
         />
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500 mt-1.5 tabular-nums">
+      <div className="flex justify-between text-xs text-slate-500 mt-1.5 tabular-nums">
         <span>{formatValue(min)} min</span>
         <span className={inRange ? 'text-indigo-700 font-bold' : 'text-red-700 font-bold'}>
           {formatValue(value)} {suffix}
@@ -858,7 +858,7 @@ function OperatingWindowCard({
   return (
     <div className={`rounded-xl border p-5 ${tone}`} data-testid="operating-window">
       <h4 className="font-bold text-slate-800">Operating window</h4>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-sm text-slate-500 mt-1">
         Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
       </p>
 
@@ -929,7 +929,7 @@ function WindowRow({
       <dt className="text-slate-600">{label}</dt>
       <dd className={`font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
         {text}
-        <span className="block text-xs font-normal text-slate-400">
+        <span className="block text-xs font-normal text-slate-500">
           now {present.toFixed(1)} {unit}
         </span>
       </dd>
@@ -1027,8 +1027,8 @@ function KpiCard({
   status?: 'success' | 'warning' | 'neutral'
 }) {
   const statusColors = {
-    success: 'bg-emerald-100 text-emerald-600',
-    warning: 'bg-amber-100 text-amber-600',
+    success: 'bg-emerald-100 text-emerald-700',
+    warning: 'bg-amber-100 text-amber-700',
     neutral: 'bg-slate-100 text-slate-600',
   }
 
@@ -1048,7 +1048,7 @@ function KpiCard({
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
-          {unit && <span className="text-xs font-medium text-slate-400">{unit}</span>}
+          {unit && <span className="text-xs font-medium text-slate-500">{unit}</span>}
         </div>
       </div>
     </div>
@@ -1072,7 +1072,7 @@ function DetailRow({
     <div className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
       <span className="text-sm text-slate-600">{label}</span>
       <span className="text-sm font-semibold text-slate-900 tabular-nums">
-        {numValue} <span className="text-slate-400 font-normal">{unit}</span>
+        {numValue} <span className="text-slate-500 font-normal">{unit}</span>
       </span>
     </div>
   )

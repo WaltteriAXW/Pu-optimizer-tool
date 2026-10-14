@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
-import { Trash2, Clock, ChevronRight } from 'lucide-react'
+import { Trash2, Clock, ChevronRight, X } from 'lucide-react'
 import { DatasetPanel } from './DatasetPanel'
 import {
   SHOT_OUTCOME_LABEL,
@@ -121,6 +121,16 @@ export function HistorySidebar({
           <h2 id={titleId} className="text-lg font-bold text-slate-800">
             Calculation History
           </h2>
+          {/* A visible way out. Escape and the backdrop also close the panel, but neither
+              is discoverable, and a panel should not depend on a gesture alone. */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close history"
+            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+          >
+            <X aria-hidden="true" className="w-5 h-5" />
+          </button>
         </div>
         <p className="text-xs text-slate-500 mt-1">
           {history.length} run{history.length !== 1 ? 's' : ''} saved
@@ -220,7 +230,7 @@ function HistoryItem({
         {/* Chevron */}
         <ChevronRight
           aria-hidden="true"
-          className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 flex-shrink-0 mt-1 ml-2"
+          className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 flex-shrink-0 mt-1 ml-2"
         />
       </button>
 
@@ -274,9 +284,9 @@ function HistoryItem({
         // Several "Delete" buttons sit in this list; without naming the run they are
         // indistinguishable when tabbed through
         aria-label={`Delete run: ${materialName}, ${timeAgo}`}
-        className="w-full py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center gap-1"
+        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
       >
-        <Trash2 aria-hidden="true" className="w-3 h-3" />
+        <Trash2 aria-hidden="true" className="w-4 h-4" />
         Delete
       </button>
     </div>
