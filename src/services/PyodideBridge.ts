@@ -222,8 +222,7 @@ export class PyodideBridge implements PyodideManager {
 
       // Core thermodynamics
       'src/core/thermodynamics/__init__.py',
-      'src/core/thermodynamics/advanced_heat_transfer.py',
-      'src/core/thermodynamics/thermal_integration.py',
+      'src/core/thermodynamics/hose_heat_transfer.py',
 
       // Core validation
       'src/core/validation/__init__.py',

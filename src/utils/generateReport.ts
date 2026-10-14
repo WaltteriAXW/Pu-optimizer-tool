@@ -406,6 +406,23 @@ export const generateReport = async (
       ['Arriving at the mix head', `${fmt(line.effective_temperature_c, 1)} °C`],
       ['Drift', `${fmt(line.drift_c, 1)} °C`],
       ['Line thermal time constant', `${fmt((line.time_constant_s ?? 0) / 60, 1)} min`],
+      ...(line.hose
+        ? [
+            [
+              'Hose',
+              `${line.hose.hose_material.replace(/_/g, ' ')}, ${fmt(line.hose.wall_thickness_mm, 1)} mm wall` +
+                (line.hose.insulation_material
+                  ? `, ${fmt(line.hose.insulation_thickness_mm, 0)} mm ${line.hose.insulation_material.replace(/_/g, ' ')}`
+                  : ', unlagged'),
+            ],
+          ]
+        : []),
+      ...(typeof line.heat_transfer_coeff_w_m2_k === 'number'
+        ? [[
+            line.hose ? 'Hose heat transfer (from its build)' : 'Hose heat transfer (bare hose default)',
+            `${fmt(line.heat_transfer_coeff_w_m2_k, 1)} W/m²·K`,
+          ]]
+        : []),
     ])
     if (line.warning) note(line.warning, WARN)
   }

@@ -230,6 +230,36 @@ describe('CalculationService', () => {
 
       expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(2)
     })
+
+    it('should treat every optional input as part of the key', async () => {
+      // The key used to be a hand-kept list of fields; an input missing from it served a
+      // result computed for different inputs, as if the input did nothing.
+      mockPyodideManager.callPython.mockResolvedValue({
+        success: true,
+        data: mockCalculationResults,
+        errors: []
+      })
+
+      const withAmbient: ProcessParameters = { ...mockParameters, ambient_temperature_c: 10 }
+      await service.calculate(withAmbient)
+      await service.calculate({ ...withAmbient, insulation_material: 'pe_foam', insulation_thickness_mm: 10 })
+      await service.calculate({ ...withAmbient, insulation_material: 'pe_foam', insulation_thickness_mm: 20 })
+
+      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(3)
+    })
+
+    it('should not depend on the order parameters were set in', async () => {
+      mockPyodideManager.callPython.mockResolvedValue({
+        success: true,
+        data: mockCalculationResults,
+        errors: []
+      })
+
+      await service.calculate({ ...mockParameters, ambient_temperature_c: 10, idle_time_s: 60 })
+      await service.calculate({ idle_time_s: 60, ambient_temperature_c: 10, ...mockParameters })
+
+      expect(mockPyodideManager.callPython).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('Integration scenarios', () => {

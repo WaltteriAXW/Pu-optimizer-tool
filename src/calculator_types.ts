@@ -31,10 +31,43 @@ export interface ProcessParameters {
   idle_time_s?: number;                      // Time the material has stood in the line
   hose_heat_transfer_coeff_w_m2_k?: number;  // Defaults to a bare hose in still air
 
+  // How the hose is built — optional, and only acts when an ambient temperature is given.
+  // Describing it works the heat transfer coefficient out layer by layer instead of
+  // assuming a bare hose. A coefficient supplied outright still takes precedence.
+  hose_material?: HoseMaterial;
+  hose_wall_thickness_mm?: number;
+  insulation_material?: InsulationMaterial;
+  insulation_thickness_mm?: number;
+
   // Part geometry — optional. Supplying a part thickness adds the cure/exotherm block,
   // which describes the moulded part rather than the feed line.
   mold_temperature_c?: number;          // °C, defaults to the data sheet value
   part_thickness_mm?: number;           // mm
+}
+
+/** Hose wall materials the heat transfer model knows (hose_heat_transfer.py) */
+export type HoseMaterial = 'rubber' | 'ptfe' | 'polyamide' | 'stainless_steel' | 'steel';
+
+/** Lagging the heat transfer model knows */
+export type InsulationMaterial = 'elastomeric_foam' | 'pe_foam' | 'mineral_wool';
+
+/**
+ * The hose's overall heat transfer coefficient, worked out from how it is built, with the
+ * share of the resistance each layer contributes.
+ */
+export interface HoseHeatTransfer {
+  overall_coefficient_w_m2_k: number;
+  hose_material: HoseMaterial;
+  wall_thickness_mm: number;
+  insulation_material: InsulationMaterial | null;
+  insulation_thickness_mm: number;
+  outer_diameter_mm: number;
+  resistance_share: {
+    inner_film: number;
+    hose_wall: number;
+    insulation: number;
+    outer_surface: number;
+  };
 }
 
 /**
@@ -157,6 +190,10 @@ export interface CalculationResults {
     residence_time_s: number;
     idle_time_s: number;
     governing_regime: 'idle_soak' | 'flow_residence';
+    /** The coefficient the line model ran with (W/m²·K) */
+    heat_transfer_coeff_w_m2_k?: number;
+    /** Present only when the hose was described rather than left at the default */
+    hose?: HoseHeatTransfer;
     warning?: string | null;
   };
 

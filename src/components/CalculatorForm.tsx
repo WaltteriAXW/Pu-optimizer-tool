@@ -3,7 +3,7 @@ import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
-import type { ProcessParameters } from '@/calculator_types'
+import type { ProcessParameters, HoseMaterial, InsulationMaterial } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
 
 /** Default values pre-filled when the user switches to Custom Material */
@@ -42,6 +42,48 @@ const OPTIONAL_FIELD_RANGES: Record<
     min: 1, max: 500, label: 'Part Thickness', unit: 'mm', step: '1',
     help: 'Thicker sections retain reaction heat and run hotter in the core.',
   },
+}
+
+/**
+ * How the hose is built. Only acts when an ambient temperature is given, because it is the
+ * line thermal model it feeds. Labels match the keys in hose_heat_transfer.py.
+ */
+const HOSE_MATERIAL_OPTIONS: Array<{ value: HoseMaterial; label: string }> = [
+  { value: 'rubber', label: 'Rubber / elastomer hose' },
+  { value: 'ptfe', label: 'PTFE hose (braided)' },
+  { value: 'polyamide', label: 'Polyamide (nylon) tube' },
+  { value: 'stainless_steel', label: 'Stainless steel pipe' },
+  { value: 'steel', label: 'Carbon steel pipe' },
+]
+
+const INSULATION_OPTIONS: Array<{ value: InsulationMaterial; label: string }> = [
+  { value: 'elastomeric_foam', label: 'Elastomeric foam (Armaflex type)' },
+  { value: 'pe_foam', label: 'Polyethylene foam' },
+  { value: 'mineral_wool', label: 'Mineral wool, foil-faced' },
+]
+
+const HOSE_FIELD_RANGES: Record<
+  'hose_wall_thickness_mm' | 'insulation_thickness_mm',
+  { min: number; max: number; label: string; unit: string; step: string; help: string }
+> = {
+  hose_wall_thickness_mm: {
+    min: 0.1, max: 50, label: 'Hose Wall Thickness', unit: 'mm', step: '0.5',
+    help: 'Blank means 3 mm.',
+  },
+  insulation_thickness_mm: {
+    min: 0, max: 100, label: 'Insulation Thickness', unit: 'mm', step: '1',
+    help: 'Thickness of the lagging around the hose.',
+  },
+}
+
+/**
+ * Text-valued optional inputs and the values each may take. Used both to restore a saved
+ * setup — an unrecognised value from an older version is dropped rather than sent — and to
+ * clear the key entirely when the blank option is chosen.
+ */
+const OPTIONAL_SELECTS: Record<string, readonly string[]> = {
+  hose_material: HOSE_MATERIAL_OPTIONS.map((o) => o.value),
+  insulation_material: INSULATION_OPTIONS.map((o) => o.value),
 }
 
 /**
@@ -100,6 +142,10 @@ export function CalculatorForm() {
       if (key === 'material_key' || key === 'machine_type') {
         if (typeof value === 'string' && value) {
           restored[key] = value
+        }
+      } else if (key in OPTIONAL_SELECTS) {
+        if (typeof value === 'string' && OPTIONAL_SELECTS[key].includes(value)) {
+          (restored as unknown as Record<string, unknown>)[key] = value
         }
       } else if (typeof value === 'number' && Number.isFinite(value)) {
         (restored as unknown as Record<string, unknown>)[key] = value
@@ -199,10 +245,24 @@ export function CalculatorForm() {
         return
       }
 
+      // ── Optional choices (hose, insulation) ───────────────────────────────
+      // The blank option removes the key, so Python sees "not described" rather than an
+      // empty string it would have to interpret.
+      if (name in OPTIONAL_SELECTS) {
+        setInputs((prev) => {
+          const next = { ...prev } as unknown as Record<string, unknown>
+          if (value) next[name] = value
+          else delete next[name]
+          return next as unknown as ProcessParameters
+        })
+        return
+      }
+
       // ── Optional inputs ───────────────────────────────────────────────────
       // Clearing one must remove the key entirely, not leave the last value behind:
       // an absent ambient temperature is what keeps the calculation as it was.
-      if (name in OPTIONAL_FIELD_RANGES && value.trim() === '') {
+      const optionalRanges = { ...OPTIONAL_FIELD_RANGES, ...HOSE_FIELD_RANGES }
+      if (name in optionalRanges && value.trim() === '') {
         setInputs((prev) => {
           const next = { ...prev }
           delete next[name as keyof ProcessParameters]
@@ -218,8 +278,8 @@ export function CalculatorForm() {
         setInputs((prev) => ({ ...prev, [name]: numValue } as ProcessParameters))
 
         // Optional field validation
-        if (name in OPTIONAL_FIELD_RANGES) {
-          const range = OPTIONAL_FIELD_RANGES[name as keyof typeof OPTIONAL_FIELD_RANGES]
+        if (name in optionalRanges) {
+          const range = optionalRanges[name as keyof typeof optionalRanges]
           if (numValue < range.min || numValue > range.max) {
             setFieldErrors((prev) => ({
               ...prev,
@@ -281,7 +341,14 @@ export function CalculatorForm() {
     [fieldErrors, isReady, inputs, calculate]
   )
 
-  const hasErrors = Object.keys(fieldErrors).length > 0
+  // Lagging chosen without a thickness would quietly mean "no lagging" in Python, so it is
+  // held back here with the reason shown on the thickness field.
+  const insulationThicknessError =
+    inputs.insulation_material && !((inputs.insulation_thickness_mm ?? 0) > 0)
+      ? 'Enter the insulation thickness, or set Insulation to None'
+      : undefined
+
+  const hasErrors = Object.keys(fieldErrors).length > 0 || Boolean(insulationThicknessError)
   const canSubmit = !hasErrors && isReady && !isLoading && inputs.material_key !== ''
   const isCustomMaterial = inputs.material_key === 'custom'
 
@@ -514,6 +581,53 @@ export function CalculatorForm() {
                   />
                 )
               )}
+
+              {/* How the hose is built — feeds the line thermal model */}
+              <fieldset className="space-y-4 border-t border-slate-200 pt-4">
+                <legend className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  Hose
+                </legend>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Used with an ambient temperature. Leave blank for a bare hose in still air;
+                  describe it, and lagging in particular, to see how well it holds temperature.
+                </p>
+
+                <OptionalSelect
+                  name="hose_material"
+                  label="Hose Material"
+                  value={inputs.hose_material}
+                  options={HOSE_MATERIAL_OPTIONS}
+                  blankLabel="Not described (bare hose default)"
+                  onChange={handleChange}
+                />
+                {inputs.hose_material && (
+                  <OptionalField
+                    name="hose_wall_thickness_mm"
+                    value={inputs.hose_wall_thickness_mm}
+                    onChange={handleChange}
+                    spec={HOSE_FIELD_RANGES.hose_wall_thickness_mm}
+                    error={fieldErrors.hose_wall_thickness_mm}
+                  />
+                )}
+
+                <OptionalSelect
+                  name="insulation_material"
+                  label="Insulation"
+                  value={inputs.insulation_material}
+                  options={INSULATION_OPTIONS}
+                  blankLabel="None"
+                  onChange={handleChange}
+                />
+                {inputs.insulation_material && (
+                  <OptionalField
+                    name="insulation_thickness_mm"
+                    value={inputs.insulation_thickness_mm}
+                    onChange={handleChange}
+                    spec={HOSE_FIELD_RANGES.insulation_thickness_mm}
+                    error={fieldErrors.insulation_thickness_mm ?? insulationThicknessError}
+                  />
+                )}
+              </fieldset>
             </div>
           )}
         </div>
@@ -771,6 +885,50 @@ function OptionalField({
           <span>{error}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Optional choice. The blank option is meaningful — it means "not described" — and removes
+ * the key rather than sending an empty string.
+ */
+function OptionalSelect({
+  name,
+  label,
+  value,
+  options,
+  blankLabel,
+  onChange,
+}: {
+  name: string
+  label: string
+  value: string | undefined
+  options: ReadonlyArray<{ value: string; label: string }>
+  blankLabel: string
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+}) {
+  const id = useId()
+
+  return (
+    <div>
+      <label htmlFor={id} className="text-xs font-semibold text-slate-700 block mb-1">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={name}
+        value={value ?? ''}
+        onChange={onChange}
+        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
+      >
+        <option value="">{blankLabel}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

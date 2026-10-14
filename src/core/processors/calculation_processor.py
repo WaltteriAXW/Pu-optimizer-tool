@@ -27,6 +27,11 @@ from ..modules.line_thermal import (
     calculate_line_temperature,
 )
 from ..modules.volatility import check_blowing_agent_volatility
+from ..thermodynamics.hose_heat_transfer import (
+    calculate_hose_heat_transfer,
+    DEFAULT_HOSE_MATERIAL,
+    DEFAULT_WALL_THICKNESS_MM,
+)
 from ...constants import PHYSICS, VALIDATION_RANGES, MACHINE_SPECS
 from ..data.material_database import get_material, list_material_keys
 from ..validation import validate_parameters
@@ -180,6 +185,12 @@ class CalculationProcessor:
 
             if ambient_temperature_c is not None:
                 try:
+                    hose_coefficient, hose_result = self._resolve_hose_coefficient(
+                        parameters,
+                        diameter_mm=pipe_diameter_mm,
+                        set_temperature_c=temperature_c,
+                        ambient_temperature_c=float(ambient_temperature_c),
+                    )
                     line_temperature = calculate_line_temperature(
                         set_temperature_c=temperature_c,
                         ambient_temperature_c=float(ambient_temperature_c),
@@ -188,11 +199,10 @@ class CalculationProcessor:
                         flow_rate_lpm=flow_rate_lpm,
                         density_kg_m3=material['density'],
                         idle_time_s=float(parameters.get('idle_time_s', 0) or 0),
-                        heat_transfer_coeff_w_m2_k=float(
-                            parameters.get('hose_heat_transfer_coeff_w_m2_k')
-                            or DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K
-                        ),
+                        heat_transfer_coeff_w_m2_k=hose_coefficient,
                     )
+                    if hose_result is not None:
+                        line_temperature['hose'] = hose_result
                     process_temperature_c = line_temperature['effective_temperature_c']
                 except Exception as e:
                     logger.error(f"Line temperature calculation failed: {e}")
@@ -565,6 +575,48 @@ class CalculationProcessor:
             # them as measurements of this product.
             'heat_of_reaction_is_estimated': exotherm.get('heat_of_reaction_is_estimated', True),
         }
+
+    def _resolve_hose_coefficient(
+        self,
+        parameters: Dict[str, Any],
+        diameter_mm: float,
+        set_temperature_c: float,
+        ambient_temperature_c: float,
+    ) -> tuple:
+        """
+        The hose-to-air heat transfer coefficient the line thermal model runs with.
+
+        PRIORITY (highest to lowest):
+        1. A coefficient supplied outright — someone who has measured their line.
+        2. A description of the hose (its material, or its lagging), from which the
+           coefficient is worked out layer by layer.
+        3. The bare-hose default.
+
+        Returns:
+            Tuple of (coefficient_w_m2_k, hose_result) where hose_result is the layer
+            breakdown when the coefficient was worked out from the hose, otherwise None.
+        """
+        supplied = parameters.get('hose_heat_transfer_coeff_w_m2_k')
+        if supplied:
+            return float(supplied), None
+
+        hose_material = parameters.get('hose_material')
+        insulation_material = parameters.get('insulation_material')
+        if not hose_material and not insulation_material:
+            return DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K, None
+
+        hose = calculate_hose_heat_transfer(
+            inner_diameter_mm=diameter_mm,
+            hose_material=hose_material or DEFAULT_HOSE_MATERIAL,
+            wall_thickness_mm=float(
+                parameters.get('hose_wall_thickness_mm') or DEFAULT_WALL_THICKNESS_MM
+            ),
+            insulation_material=insulation_material,
+            insulation_thickness_mm=float(parameters.get('insulation_thickness_mm') or 0),
+            material_temperature_c=set_temperature_c,
+            ambient_temperature_c=ambient_temperature_c,
+        )
+        return hose['overall_coefficient_w_m2_k'], hose
 
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
         """Look a material up in the database CSV."""

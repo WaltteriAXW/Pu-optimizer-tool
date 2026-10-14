@@ -1,17 +1,18 @@
 """
-Advanced Thermodynamics Module
+Heat transfer between the feed hose and the room.
 
-Comprehensive heat transfer and thermal analysis for polyurethane systems:
-- Advanced heat transfer calculations
-- Thermal integration and coupling
-- Reactive system heating
-- Temperature-dependent properties
+- hose_heat_transfer: the overall hose-to-air coefficient, worked out from how the hose
+  is built (wall material and thickness, lagging). Feeds the line thermal model.
 """
 
-from . import advanced_heat_transfer
-from . import thermal_integration
+from .hose_heat_transfer import (
+    HOSE_MATERIALS,
+    INSULATION_MATERIALS,
+    calculate_hose_heat_transfer,
+)
 
 __all__ = [
-    'advanced_heat_transfer',
-    'thermal_integration',
+    'HOSE_MATERIALS',
+    'INSULATION_MATERIALS',
+    'calculate_hose_heat_transfer',
 ]

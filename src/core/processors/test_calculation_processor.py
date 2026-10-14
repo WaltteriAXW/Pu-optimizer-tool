@@ -520,3 +520,78 @@ class TestOptionalBlocks:
                    processor.calculate_all({
                        **self.BASE, 'material_key': 'ecomate_spray', 'temperature_c': 35,
                    })['warnings'])
+
+
+class TestHoseConstruction:
+    """Describing the hose replaces the bare-hose default in the line thermal model."""
+
+    COLD_IDLE = {
+        **TestOptionalBlocks.BASE,
+        'ambient_temperature_c': 10,
+        'idle_time_s': 1200,
+    }
+
+    def test_no_description_keeps_the_default(self):
+        result = CalculationProcessor().calculate_all(dict(self.COLD_IDLE))['data']
+
+        assert result['line_temperature']['heat_transfer_coeff_w_m2_k'] == 10.0
+        assert 'hose' not in result['line_temperature']
+
+    def test_lagged_hose_holds_temperature_better(self):
+        processor = CalculationProcessor()
+
+        bare = processor.calculate_all({**self.COLD_IDLE, 'hose_material': 'rubber'})['data']
+        lagged = processor.calculate_all({
+            **self.COLD_IDLE,
+            'hose_material': 'rubber',
+            'insulation_material': 'elastomeric_foam',
+            'insulation_thickness_mm': 19,
+        })['data']
+
+        assert (
+            lagged['line_temperature']['effective_temperature_c']
+            > bare['line_temperature']['effective_temperature_c']
+        )
+        # Warmer material is thinner, so the lagged line needs less pressure
+        assert (
+            lagged['pressure']['pressure_with_fittings_bar']
+            < bare['pressure']['pressure_with_fittings_bar']
+        )
+        assert lagged['line_temperature']['hose']['insulation_material'] == 'elastomeric_foam'
+
+    def test_a_measured_coefficient_wins_over_a_description(self):
+        result = CalculationProcessor().calculate_all({
+            **self.COLD_IDLE,
+            'hose_heat_transfer_coeff_w_m2_k': 25,
+            'insulation_material': 'pe_foam',
+            'insulation_thickness_mm': 10,
+        })['data']
+
+        assert result['line_temperature']['heat_transfer_coeff_w_m2_k'] == 25
+        assert 'hose' not in result['line_temperature']
+
+    def test_hose_description_without_ambient_changes_nothing(self):
+        """No ambient temperature means no line model, so the hose has nothing to act on."""
+        processor = CalculationProcessor()
+
+        plain = processor.calculate_all(dict(TestOptionalBlocks.BASE))['data']
+        described = processor.calculate_all({
+            **TestOptionalBlocks.BASE,
+            'insulation_material': 'pe_foam',
+            'insulation_thickness_mm': 10,
+        })['data']
+
+        assert (
+            described['pressure']['pressure_with_fittings_bar']
+            == plain['pressure']['pressure_with_fittings_bar']
+        )
+
+    @pytest.mark.parametrize('bad', [
+        {'hose_material': 'cardboard'},
+        {'insulation_material': 'straw', 'insulation_thickness_mm': 5},
+        {'insulation_thickness_mm': -1},
+    ])
+    def test_a_wrong_description_is_refused(self, bad):
+        result = CalculationProcessor().calculate_all({**self.COLD_IDLE, **bad})
+
+        assert result['success'] is False

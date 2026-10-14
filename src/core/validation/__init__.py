@@ -94,6 +94,44 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
         if not isinstance(parameters['material_key'], str) or not parameters['material_key']:
             errors.append("Material key must be a non-empty string")
 
+    errors.extend(_validate_hose(parameters))
+
+    return errors
+
+
+def _validate_hose(parameters: Dict[str, Any]) -> List[str]:
+    """
+    The hose description is optional, but a wrong one must be refused rather than ignored:
+    the line model would otherwise fall back to the bare-hose default and report a
+    temperature for a hose nobody described.
+    """
+    from ..thermodynamics.hose_heat_transfer import HOSE_MATERIALS, INSULATION_MATERIALS
+
+    errors = []
+
+    hose_material = parameters.get('hose_material')
+    if hose_material and hose_material not in HOSE_MATERIALS:
+        errors.append(f'Unknown hose material: {hose_material}')
+
+    insulation_material = parameters.get('insulation_material')
+    if insulation_material and insulation_material not in INSULATION_MATERIALS:
+        errors.append(f'Unknown insulation material: {insulation_material}')
+
+    for key, label, low, high in (
+        ('hose_wall_thickness_mm', 'Hose wall thickness', 0.1, 50),
+        ('insulation_thickness_mm', 'Insulation thickness', 0, 100),
+    ):
+        value = parameters.get(key)
+        if value is None:
+            continue
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            errors.append(f'{label} must be a valid number')
+            continue
+        if not low <= value <= high:
+            errors.append(f'{label} must be between {low} and {high} mm')
+
     return errors
 
 

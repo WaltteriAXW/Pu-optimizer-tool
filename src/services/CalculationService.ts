@@ -132,40 +132,20 @@ export class CalculationService {
 
   /**
    * Create a unique cache key from parameters.
-   * For custom materials, the key includes the user-entered property values so
-   * changing any property produces a cache miss (correct behaviour).
+   *
+   * Built from every parameter actually sent to Python, sorted by name. It used to be a
+   * hand-kept list of fields, and each new optional input had to be remembered in it —
+   * forgetting one served a cached result computed for different inputs, which looks
+   * exactly like the new input silently doing nothing.
    */
   private createCacheKey(parameters: ProcessParameters): string {
-    const safeValue = (val: unknown): string =>
-      val === undefined || val === null ? '__null__' : String(val)
-
-    const parts = [
-      safeValue(parameters.pipe_length_mm),
-      safeValue(parameters.pipe_diameter_mm),
-      safeValue(parameters.material_key),
-      safeValue(parameters.temperature_c),
-      safeValue(parameters.flow_rate_lpm),
-      safeValue(parameters.machine_type) || 'high_pressure',
-      // Optional inputs must be part of the key too. Leaving them out would serve a
-      // cached result computed at a different ambient temperature, which looks exactly
-      // like the feature silently not working.
-      safeValue(parameters.ambient_temperature_c),
-      safeValue(parameters.idle_time_s),
-      safeValue(parameters.hose_heat_transfer_coeff_w_m2_k),
-      safeValue(parameters.mold_temperature_c),
-      safeValue(parameters.part_thickness_mm),
-    ]
-
-    if (parameters.material_key === 'custom') {
-      parts.push(
-        safeValue(parameters.viscosity_cp),
-        safeValue(parameters.density_kg_m3),
-        safeValue(parameters.flow_index),
-        safeValue(parameters.activation_energy_j_mol),
-      )
-    }
-
-    return parts.join('|')
+    const prepared = this.prepareParameters(parameters)
+    return JSON.stringify(
+      Object.keys(prepared)
+        .filter((key) => prepared[key] !== undefined && prepared[key] !== null)
+        .sort()
+        .map((key) => [key, prepared[key]])
+    )
   }
 
   /**

@@ -4,7 +4,7 @@ import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
 import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
 import { formatPressure, type PressureUnit } from '../services/displayPreferences'
-import type { CalculationResults, LaminarEnvelope } from '../calculator_types'
+import type { CalculationResults, HoseHeatTransfer, LaminarEnvelope } from '../calculator_types'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -386,6 +386,14 @@ export function ResultsDisplay() {
               value={results.line_temperature.time_constant_s / 60}
               unit="min"
             />
+            <DetailRow
+              label={results.line_temperature.hose ? 'Hose heat transfer (from its build)' : 'Hose heat transfer (bare hose default)'}
+              value={results.line_temperature.heat_transfer_coeff_w_m2_k}
+              unit="W/m²·K"
+            />
+            {results.line_temperature.hose && (
+              <HoseBreakdown hose={results.line_temperature.hose} />
+            )}
             {results.line_temperature.warning && (
               <p className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                 {results.line_temperature.warning}
@@ -800,6 +808,37 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+const RESISTANCE_LAYER_LABELS: Record<keyof HoseHeatTransfer['resistance_share'], string> = {
+  inner_film: 'material film',
+  hose_wall: 'hose wall',
+  insulation: 'insulation',
+  outer_surface: 'outer surface to air',
+}
+
+/**
+ * Where the hose's resistance to heat loss sits. The largest share is the layer worth
+ * improving: lagging a hose whose resistance is already all lagging does little more.
+ */
+function HoseBreakdown({ hose }: { hose: HoseHeatTransfer }) {
+  const layers = (Object.keys(hose.resistance_share) as Array<keyof HoseHeatTransfer['resistance_share']>)
+    .filter((layer) => hose.resistance_share[layer] > 0.005)
+    .sort((a, b) => hose.resistance_share[b] - hose.resistance_share[a])
+
+  return (
+    <div className="text-xs text-slate-600 bg-slate-50 rounded-md p-3" data-testid="hose-breakdown">
+      <p className="font-semibold text-slate-700 mb-1">Resistance to heat loss</p>
+      <ul className="space-y-0.5 tabular-nums">
+        {layers.map((layer) => (
+          <li key={layer} className="flex justify-between">
+            <span>{RESISTANCE_LAYER_LABELS[layer]}</span>
+            <span>{(hose.resistance_share[layer] * 100).toFixed(0)}%</span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
