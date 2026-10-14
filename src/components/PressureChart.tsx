@@ -87,7 +87,9 @@ export function PressureChart({ results, unit }: PressureChartProps) {
   const fillPath = `${totalPressurePath} L ${xScale(pipeLength)} ${yScale(0)} Z`
 
   return (
-    <div className="w-full rounded-lg border border-slate-200 bg-white p-6" data-chart="pressure-profile">
+    // Borderless: it sits inside a results card. The white background stays because the PDF
+    // captures this element as it is.
+    <div className="w-full bg-white p-1" data-chart="pressure-profile">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h3 className="text-lg font-bold text-slate-800">Pressure Profile</h3>
         {/* The legend sits outside the plot. Inside it, it covered the end of the line —

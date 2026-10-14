@@ -26,7 +26,10 @@ test.describe('accessibility', () => {
     await expect(page.getByLabel('Material Temperature')).toBeVisible()
     await expect(page.getByLabel('Flow Rate')).toBeVisible()
     await expect(page.getByLabel('Material Type')).toBeVisible()
-    await expect(page.getByLabel('Machine Type')).toBeVisible()
+    // Two choices shown as a segmented control: the group is named, and so is each choice
+    await expect(page.getByRole('group', { name: 'Machine Type' })).toBeVisible()
+    await expect(page.getByLabel('Low pressure', { exact: true })).toBeAttached()
+    await expect(page.getByLabel('High pressure', { exact: true })).toBeAttached()
   })
 
   test('an out-of-range value is announced, not only coloured red', async ({ page }) => {

@@ -67,6 +67,11 @@ const INSULATION_OPTIONS: Array<{ value: InsulationMaterial; label: string }> = 
   { value: 'mineral_wool', label: 'Mineral wool, foil-faced' },
 ]
 
+const MACHINE_OPTIONS = [
+  { value: 'low_pressure', label: 'Low pressure' },
+  { value: 'high_pressure', label: 'High pressure' },
+] as const
+
 /** A tighter feed-line limit than the machine's own. Blank means the machine's. */
 const LINE_LIMIT_RANGE = {
   min: 0.1, max: 500, label: 'Max Feed-Line Pressure', unit: 'bar',
@@ -247,7 +252,6 @@ export function CalculatorForm() {
   // generate their own.
   const materialSelectId = useId()
   const materialErrorId = `${materialSelectId}-error`
-  const machineSelectId = useId()
   const customPanelId = useId()
   const optionalPanelId = useId()
 
@@ -704,24 +708,40 @@ export function CalculatorForm() {
           </div>
         )}
 
-        {/* Machine Type */}
-        <div className="mb-5">
-          <label
-            htmlFor={machineSelectId}
-            className="text-sm font-semibold text-slate-700 block mb-1.5"
-          >
+        {/* Machine Type. Two choices, so both are shown at once as a segmented control
+            rather than hidden behind a dropdown. Native radios underneath: arrow keys move
+            between them and a screen reader announces "1 of 2". */}
+        <fieldset className="mb-5">
+          <legend className="text-sm font-semibold text-slate-700 block mb-1.5">
             Machine Type
-          </label>
-          <select
-            id={machineSelectId}
-            name="machine_type"
-            value={inputs.machine_type}
-            onChange={handleChange}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
-          >
-            <option value="low_pressure">Low Pressure</option>
-            <option value="high_pressure">High Pressure</option>
-          </select>
+          </legend>
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+            {MACHINE_OPTIONS.map((option) => {
+              const checked = inputs.machine_type === option.value
+              return (
+                <label
+                  key={option.value}
+                  className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
+                    checked
+                      ? 'bg-white text-indigo-700 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="machine_type"
+                    value={option.value}
+                    checked={checked}
+                    onChange={handleChange}
+                    // Covers the whole segment, invisibly, so the radio itself is what gets
+                    // pressed and focused — not a 1 px input behind a styled label
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  {option.label}
+                </label>
+              )
+            })}
+          </div>
           <div className="mt-3">
             <OptionalField
               name="max_line_pressure_bar"
@@ -731,7 +751,7 @@ export function CalculatorForm() {
               error={fieldErrors.max_line_pressure_bar}
             />
           </div>
-        </div>
+        </fieldset>
 
         {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
@@ -1032,7 +1052,7 @@ function OptionalField({
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">
-        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {spec.label}
         </label>
         <span id={rangeId} className="text-xs text-slate-500">
@@ -1112,7 +1132,7 @@ function OptionalSelect({
 
   return (
     <div>
-      <label htmlFor={id} className="text-xs font-semibold text-slate-700 block mb-1">
+      <label htmlFor={id} className="text-sm font-semibold text-slate-700 block mb-1">
         {label}
       </label>
       <select
@@ -1160,7 +1180,7 @@ function CustomMaterialField({
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">
-        <label htmlFor={id} className="text-xs font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
           {label}
         </label>
         <span id={rangeId} className="text-xs text-slate-500">

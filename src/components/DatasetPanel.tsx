@@ -205,7 +205,17 @@ export function DatasetPanel() {
                   {labelled > 0 && <>, including {labelled} with a recorded outcome</>}? This
                   cannot be undone — export first if you want to keep them.
                 </p>
+                {/* Cancel leads and the action trails, as in a system alert. The person
+                    chose to clear, so the confirmation is not styled as a red alarm; the
+                    text above says what cannot be undone. */}
                 <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingClear(false)}
+                    className="flex-1 button-secondary min-h-[44px] text-sm"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -214,16 +224,9 @@ export function DatasetPanel() {
                       setSummary(null)
                       setTrained(null)
                     }}
-                    className="flex-1 text-xs px-3 py-2 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    className="flex-1 min-h-[44px] text-sm px-3 rounded-lg font-bold text-white bg-slate-800 hover:bg-slate-900 transition-colors"
                   >
                     Delete everything
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingClear(false)}
-                    className="flex-1 button-secondary text-xs"
-                  >
-                    Cancel
                   </button>
                 </div>
               </div>

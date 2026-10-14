@@ -18,7 +18,7 @@ test.describe('operating window, hose and flow curves', () => {
     await page.locator('input[name=pipe_length_mm]').fill('5000')
     await page.locator('input[name=pipe_diameter_mm]').fill('8')
     await page.locator('input[name=flow_rate_lpm]').fill('10')
-    await page.locator('select[name=machine_type]').selectOption('low_pressure')
+    await page.getByLabel('Low pressure', { exact: true }).check()
     await page.click('button[type=submit]')
 
     const card = page.getByTestId('operating-window')

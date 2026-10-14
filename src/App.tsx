@@ -104,7 +104,9 @@ function AppContent() {
                 {history.length > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+                    // A neutral count. Red badges are for things that need attention, and a
+                    // number of saved runs never does.
+                    className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-slate-200 px-1.5 py-0.5 text-xs font-semibold leading-none text-slate-700"
                   >
                     {history.length}
                   </span>
@@ -132,8 +134,9 @@ function AppContent() {
             {/* On a wide screen the form keeps its place beside the results and scrolls on
                 its own. Plain sticky positioning pinned the TOP of a form taller than the
                 window, which kept the Run button below the fold for the first thousand
-                pixels of scrolling. */}
-            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:rounded-xl">
+                pixels of scrolling. The scroll padding keeps a field brought into view
+                (by Tab, say) clear of the button pinned over the bottom of the column. */}
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-xl">
               <CalculatorForm />
             </div>
           </div>

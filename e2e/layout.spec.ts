@@ -66,4 +66,13 @@ test.describe('layout', () => {
     // A fade is fine; movement is not
     expect(await results.evaluate((el) => getComputedStyle(el).animationName)).toBe('fade')
   })
+
+  test('on a phone, running a simulation brings the result into view', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('./')
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+
+    await expect(page.getByTestId('machine-settings')).toBeInViewport({ timeout: 30_000 })
+  })
 })

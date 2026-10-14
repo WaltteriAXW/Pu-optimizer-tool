@@ -1,9 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { ExportService } from '../services/ExportService'
 import { generateReport } from '../utils/generateReport'
 import { useCalculator } from '../context/CalculatorContext'
 import type { CalculationResults } from '@/calculator_types'
 import { AlertCircle, Download, FileJson, FileText, Loader } from 'lucide-react'
+
+/**
+ * The four exports are four equal choices, so they share one neutral style. They used to be
+ * indigo, green, orange and teal, which suggested meanings the formats do not have.
+ */
+const EXPORT_BUTTON =
+  'inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors'
 
 interface ExportButtonsProps {
   results: CalculationResults
@@ -13,6 +20,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
   // One instance for the life of the component rather than a new one on every render
   const exportService = useMemo(() => new ExportService(), [])
   const { pressureUnit } = useCalculator()
+  const labelId = useId()
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -69,13 +77,18 @@ export function ExportButtons({ results }: ExportButtonsProps) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
+    <div className="flex flex-col items-start gap-1.5 sm:items-end">
       {/* Wraps rather than running off a phone screen, where the PDF button used to be cut
           off at the edge */}
-      <div role="group" aria-label="Export results" className="flex flex-wrap items-center justify-end gap-2">
+      <div role="group" aria-labelledby={labelId} className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+        {/* One visible label for the row, so each button reads as "Export JSON" without
+            repeating the verb four times */}
+        <span id={labelId} className="mr-1 text-sm font-medium text-slate-500">
+          Export
+        </span>
         <button
           onClick={() => handleExport('json')}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
+          className={EXPORT_BUTTON}
           title="Export as JSON"
         >
           <FileJson aria-hidden="true" className="w-4 h-4" />
@@ -84,7 +97,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
 
         <button
           onClick={() => handleExport('csv')}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors"
+          className={EXPORT_BUTTON}
           title="Export as CSV"
         >
           <FileText aria-hidden="true" className="w-4 h-4" />
@@ -93,7 +106,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
 
         <button
           onClick={() => handleExport('report')}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors"
+          className={EXPORT_BUTTON}
           title="Export as Text Report"
         >
           <Download aria-hidden="true" className="w-4 h-4" />
@@ -103,7 +116,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
         <button
           onClick={handleGeneratePDF}
           disabled={isGeneratingPDF}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`${EXPORT_BUTTON} disabled:opacity-50 disabled:cursor-not-allowed`}
           title="Generate professional PDF report with charts"
         >
           {isGeneratingPDF ? (

@@ -112,7 +112,7 @@ test.describe('shot records', () => {
     await page.getByLabel('Material Temperature').fill('32')
     await page.getByLabel('Flow Rate').fill('7.5')
     await page.selectOption('select[name=material_key]', 'ecomate_spray')
-    await page.selectOption('select[name=machine_type]', 'low_pressure')
+    await page.getByLabel('Low pressure', { exact: true }).check()
 
     // Saved on submit, not on every keystroke — a half-typed number is not worth restoring
     await page.click('button[type=submit]')
@@ -126,7 +126,7 @@ test.describe('shot records', () => {
     await expect(page.getByLabel('Material Temperature')).toHaveValue('32')
     await expect(page.getByLabel('Flow Rate')).toHaveValue('7.5')
     await expect(page.locator('select[name=material_key]')).toHaveValue('ecomate_spray')
-    await expect(page.locator('select[name=machine_type]')).toHaveValue('low_pressure')
+    await expect(page.getByLabel('Low pressure', { exact: true })).toBeChecked()
   })
 
   test('cancelling the clear keeps the runs', async ({ page }) => {

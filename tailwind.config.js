@@ -25,9 +25,6 @@ export default {
         fadeIn: 'fadeIn 0.5s ease-out forwards',
         fade: 'fade 0.2s ease-out forwards',
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
     },
   },
   plugins: [],

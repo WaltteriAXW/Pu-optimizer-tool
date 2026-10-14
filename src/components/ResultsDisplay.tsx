@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
@@ -55,6 +55,17 @@ const MOLD_SOURCE_LABEL: Record<string, string> = {
 
 export function ResultsDisplay() {
   const { results, lastParams, pressureUnit, error: calculatorError } = useCalculator()
+  const regionRef = useRef<HTMLDivElement>(null)
+
+  // On a narrow screen the results land below a long form, out of sight, and nothing said
+  // the button had done anything. Bring them up when they arrive; on a wide screen they are
+  // already beside the form and the page stays put.
+  useEffect(() => {
+    if (!results || !regionRef.current) return
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    regionRef.current.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, [results])
 
   if (calculatorError) {
     return (
@@ -79,8 +90,8 @@ export function ResultsDisplay() {
         </div>
         <h3 className="text-lg font-bold text-slate-800">Ready to Simulate</h3>
         <p className="text-slate-500 mt-2 max-w-xs">
-          Enter your process parameters on the left and hit calculate to generate a pressure
-          profile.
+          Enter your process parameters and press Run Simulation to see the pressure, the
+          flow margin and the operating window.
         </p>
       </div>
     )
@@ -93,7 +104,8 @@ export function ResultsDisplay() {
     // screen reader user gets no indication that pressing Run produced anything. The
     // headline figures are announced; the detail below is there to be read at leisure.
     <div
-      className="space-y-6 motion-safe:animate-fadeIn motion-reduce:animate-fade"
+      ref={regionRef}
+      className="space-y-6 scroll-mt-20 motion-safe:animate-fadeIn motion-reduce:animate-fade"
       aria-live="polite"
       aria-atomic="false"
       role="region"
@@ -102,7 +114,7 @@ export function ResultsDisplay() {
       {/* Export Buttons. Offered only once the parameters behind these results are known —
           exporting a report whose inputs had to be invented is worse than not offering it. */}
       {lastParams && (
-        <div className="flex justify-end">
+        <div className="flex sm:justify-end">
           <ExportButtons results={results} />
         </div>
       )}
@@ -151,35 +163,12 @@ export function ResultsDisplay() {
 
       {/* Main Analysis Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pressure Chart Card */}
+        {/* Pressure chart. Its own heading and the three figures under it are the whole
+            card: a second title above it, and the same three figures repeated again as
+            rows below it, said everything twice. */}
         <div className="lg:col-span-2 card">
-          <div className="card-header">
-            <h3 className="text-lg font-bold text-slate-800">Pressure Analysis</h3>
-          </div>
           <div className="card-body">
-            <div className="space-y-6">
-              {/* Pressure Chart */}
-              <PressureChart results={results} unit={pressureUnit} />
-
-              {/* Pressure Details */}
-              <div className="space-y-3">
-                <PressureDetail
-                  label="Base Pressure Drop"
-                  value={results.pressure?.base_pressure_drop_bar}
-                  unit={pressureUnit}
-                />
-                <PressureDetail
-                  label="Pressure with Fittings"
-                  value={results.pressure?.pressure_with_fittings_bar}
-                  unit={pressureUnit}
-                />
-                <PressureDetail
-                  label="Fitting Loss"
-                  value={results.pressure?.fitting_loss_bar}
-                  unit={pressureUnit}
-                />
-              </div>
-            </div>
+            <PressureChart results={results} unit={pressureUnit} />
           </div>
         </div>
 
@@ -202,10 +191,11 @@ export function ResultsDisplay() {
             </div>
           ) : (
             <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
+              {/* Says what was checked, not more: no warnings is not the same as optimised */}
               <h4 className="text-emerald-900 font-bold flex items-center gap-2 mb-1">
-                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> Process Optimized
+                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
               </h4>
-              <p className="text-sm text-emerald-700">No critical warnings detected.</p>
+              <p className="text-sm text-emerald-800">Nothing in these settings needs attention.</p>
             </div>
           )}
 
@@ -1073,29 +1063,6 @@ function DetailRow({
       <span className="text-sm text-slate-600">{label}</span>
       <span className="text-sm font-semibold text-slate-900 tabular-nums">
         {numValue} <span className="text-slate-500 font-normal">{unit}</span>
-      </span>
-    </div>
-  )
-}
-
-/** Always a pressure, so it converts to the chosen unit rather than taking a raw number. */
-function PressureDetail({
-  label,
-  value,
-  unit,
-}: {
-  label: string
-  value?: number
-  unit: PressureUnit
-}) {
-  if (value === undefined || value === null) return null
-
-  return (
-    <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <span className="text-2xl font-bold text-indigo-600 tabular-nums">
-        {formatPressure(value, unit)}{' '}
-        <span className="text-sm font-medium text-slate-500">{unit}</span>
       </span>
     </div>
   )
