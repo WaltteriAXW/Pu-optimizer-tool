@@ -4,7 +4,7 @@ Includes shear rate, apparent viscosity (Power Law model), and Reynolds number.
 """
 
 import math
-from typing import Dict
+from typing import Callable, Dict, Optional
 
 # Reynolds numbers bounding the flow regimes. Below the laminar limit the flow is smooth
 # and predictable; above the turbulent limit it is fully turbulent; between the two it is
@@ -242,6 +242,7 @@ def calculate_laminar_envelope(
     max_flow_rate_lpm: float = 200.0,
     max_diameter_mm: float = 200.0,
     min_diameter_mm: float = 1.0,
+    reynolds_at: Optional[Callable[[float, float], float]] = None,
 ) -> Dict:
     """
     How much room the current settings leave before the flow turns turbulent, and what to
@@ -267,6 +268,8 @@ def calculate_laminar_envelope(
         max_flow_rate_lpm: Upper end of the flow rate the form accepts
         max_diameter_mm: Upper end of the diameter the form accepts
         min_diameter_mm: Lower end of the diameter the form accepts
+        reynolds_at: Reynolds number as a function of (diameter_mm, flow_rate_lpm), for a
+            fluid that is not a power law. Defaults to the power-law pipeline above.
 
     Returns:
         Dict describing the envelope. `max_laminar_flow_lpm` is None when the flow rate
@@ -286,9 +289,11 @@ def calculate_laminar_envelope(
             'recommendation': None,
         }
 
-    reynolds = _reynolds_at(
-        diameter_mm, flow_rate_lpm, consistency_cp, flow_index, density_kg_m3
-    )
+    if reynolds_at is None:
+        def reynolds_at(d: float, q: float) -> float:
+            return _reynolds_at(d, q, consistency_cp, flow_index, density_kg_m3)
+
+    reynolds = reynolds_at(diameter_mm, flow_rate_lpm)
     is_laminar = reynolds < LAMINAR_REYNOLDS_LIMIT
 
     # ── The flow rate at which this line turns turbulent ──────────────────────────────
@@ -296,14 +301,11 @@ def calculate_laminar_envelope(
     # and one known not to be.
     max_laminar_flow: float | None = None
     high = max(flow_rate_lpm, max_flow_rate_lpm)
-    if _reynolds_at(diameter_mm, high, consistency_cp, flow_index, density_kg_m3) \
-            >= LAMINAR_REYNOLDS_LIMIT:
+    if reynolds_at(diameter_mm, high) >= LAMINAR_REYNOLDS_LIMIT:
         low = 0.0
         for _ in range(_BISECTION_STEPS):
             mid = (low + high) / 2
-            if _reynolds_at(
-                diameter_mm, mid, consistency_cp, flow_index, density_kg_m3
-            ) < LAMINAR_REYNOLDS_LIMIT:
+            if reynolds_at(diameter_mm, mid) < LAMINAR_REYNOLDS_LIMIT:
                 low = mid
             else:
                 high = mid
@@ -313,20 +315,15 @@ def calculate_laminar_envelope(
     # Re FALLS as diameter grows, so the bracket runs the other way.
     min_laminar_diameter: float | None = None
     wide = max(diameter_mm, max_diameter_mm)
-    if _reynolds_at(wide, flow_rate_lpm, consistency_cp, flow_index, density_kg_m3) \
-            < LAMINAR_REYNOLDS_LIMIT:
+    if reynolds_at(wide, flow_rate_lpm) < LAMINAR_REYNOLDS_LIMIT:
         narrow = min(min_diameter_mm, diameter_mm)
-        if _reynolds_at(
-            narrow, flow_rate_lpm, consistency_cp, flow_index, density_kg_m3
-        ) < LAMINAR_REYNOLDS_LIMIT:
+        if reynolds_at(narrow, flow_rate_lpm) < LAMINAR_REYNOLDS_LIMIT:
             # Laminar across the whole range — the narrowest allowed pipe is already fine.
             min_laminar_diameter = narrow
         else:
             for _ in range(_BISECTION_STEPS):
                 mid = (narrow + wide) / 2
-                if _reynolds_at(
-                    mid, flow_rate_lpm, consistency_cp, flow_index, density_kg_m3
-                ) < LAMINAR_REYNOLDS_LIMIT:
+                if reynolds_at(mid, flow_rate_lpm) < LAMINAR_REYNOLDS_LIMIT:
                     wide = mid
                 else:
                     narrow = mid

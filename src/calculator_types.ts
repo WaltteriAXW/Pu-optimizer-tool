@@ -24,6 +24,18 @@ export interface ProcessParameters {
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
   reference_temp_c?: number;            // Temperature the viscosity was measured at
 
+  // Measured flow curve — custom materials only. Without one the power law above is used.
+  // Carreau: zero_shear_viscosity_cp, time_constant_s, rheology_index (n)
+  // Cross: as Carreau plus infinite_shear_viscosity_cp; rheology_index is m
+  // Herschel-Bulkley: yield_stress_pa, consistency_pa_sn, rheology_index (n)
+  rheology_model?: RheologyModelName;
+  zero_shear_viscosity_cp?: number;
+  infinite_shear_viscosity_cp?: number;
+  time_constant_s?: number;
+  rheology_index?: number;
+  yield_stress_pa?: number;
+  consistency_pa_sn?: number;
+
   // Ambient conditions — optional. Supplying an ambient temperature switches on the line
   // thermal model, so the pressure reflects the temperature at the mix head rather than
   // the tank set point. Omitting these leaves the calculation exactly as it was.
@@ -47,6 +59,25 @@ export interface ProcessParameters {
   // which describes the moulded part rather than the feed line.
   mold_temperature_c?: number;          // °C, defaults to the data sheet value
   part_thickness_mm?: number;           // mm
+}
+
+/** Viscosity models a custom material can be described with (src/core/rheology) */
+export type RheologyModelName = 'power_law' | 'carreau' | 'cross' | 'herschel_bulkley';
+
+/**
+ * The exact laminar pipe solution for a measured flow curve. The effective viscosity is the
+ * one that reproduces the exact pressure drop in Hagen-Poiseuille.
+ */
+export interface RheologyResult {
+  model: Exclude<RheologyModelName, 'power_law'>;
+  wall_shear_stress_pa: number;
+  /** True wall shear rate, with the Rabinowitsch correction */
+  wall_shear_rate_s_inv: number;
+  /** Newtonian wall shear rate 8V/D, for comparison */
+  apparent_shear_rate_s_inv: number;
+  effective_viscosity_cp: number;
+  /** Herschel-Bulkley only: the share of the bore moving as an unsheared plug */
+  plug_radius_fraction?: number;
 }
 
 /** Hose wall materials the heat transfer model knows (hose_heat_transfer.py) */
@@ -164,6 +195,8 @@ export interface CalculationResults {
     is_shear_thinning?: boolean;
     /** How much room is left before the line turns turbulent, and which dial to move */
     laminar_envelope?: LaminarEnvelope;
+    /** Present only for a custom material described by a measured flow curve */
+    rheology?: RheologyResult;
   };
   pressure: {
     base_pressure_drop_bar: number;  // bar

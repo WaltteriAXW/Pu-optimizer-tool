@@ -81,6 +81,14 @@ export class ExportService {
     rows.push(`Flow Regime,${results.flow.flow_regime},`)
     rows.push(`Velocity,${results.flow.velocity_m_s.toFixed(3)},m/s`)
     rows.push(`Shear Thinning,${results.flow.is_shear_thinning ? 'Yes' : 'No'},`)
+    if (results.flow.rheology) {
+      rows.push(`Viscosity Model,${results.flow.rheology.model},`)
+      rows.push(`Wall Shear Stress,${results.flow.rheology.wall_shear_stress_pa.toFixed(2)},Pa`)
+      rows.push(`True Wall Shear Rate,${results.flow.rheology.wall_shear_rate_s_inv.toFixed(2)},s⁻¹`)
+      if (typeof results.flow.rheology.plug_radius_fraction === 'number') {
+        rows.push(`Unsheared Plug,${(results.flow.rheology.plug_radius_fraction * 100).toFixed(1)},% of bore`)
+      }
+    }
 
     // Pressure Data
     rows.push('--- PRESSURE DATA ---,')

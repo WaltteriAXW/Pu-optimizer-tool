@@ -95,6 +95,7 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
             errors.append("Material key must be a non-empty string")
 
     errors.extend(_validate_hose(parameters))
+    errors.extend(_validate_rheology(parameters))
 
     limit = parameters.get('max_line_pressure_bar')
     if limit is not None:
@@ -106,6 +107,25 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
             errors.append('Maximum line pressure must be a valid number')
 
     return errors
+
+
+def _validate_rheology(parameters: Dict[str, Any]) -> List[str]:
+    """
+    A measured flow curve is only for a custom material: a catalogued one is defined by its
+    data sheet, and mixing the two would calculate a material nobody has.
+    """
+    from ..rheology.models import build_model
+
+    model = parameters.get('rheology_model')
+    if not model or model == 'power_law':
+        return []
+    if parameters.get('material_key') != 'custom':
+        return ['A viscosity model other than the power law needs a custom material']
+    try:
+        build_model(parameters)
+    except ValueError as e:
+        return [str(e)]
+    return []
 
 
 def _validate_hose(parameters: Dict[str, Any]) -> List[str]:

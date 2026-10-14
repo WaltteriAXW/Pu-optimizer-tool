@@ -9,6 +9,7 @@ import type {
   HoseHeatTransfer,
   LaminarEnvelope,
   OperatingWindow,
+  RheologyResult,
   WindowStatus,
 } from '../calculator_types'
 import {
@@ -145,6 +146,8 @@ export function ResultsDisplay() {
           icon={<Timer className="w-5 h-5" />}
         />
       </div>
+
+      {results.flow?.rheology && <FlowCurveCard rheology={results.flow.rheology} />}
 
       {/* Main Analysis Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -930,6 +933,51 @@ function WindowRow({
           now {present.toFixed(1)} {unit}
         </span>
       </dd>
+    </div>
+  )
+}
+
+const RHEOLOGY_MODEL_LABELS: Record<RheologyResult['model'], string> = {
+  carreau: 'Carreau',
+  cross: 'Cross',
+  herschel_bulkley: 'Herschel–Bulkley',
+}
+
+/**
+ * The exact laminar pipe solution for a measured flow curve. Shown so the viscosity in the
+ * KPI above can be traced: it is the effective viscosity that reproduces the exact pressure
+ * drop, not the flow curve read at one shear rate.
+ */
+function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
+  const plug = rheology.plug_radius_fraction
+  return (
+    <div className="card" data-testid="flow-curve">
+      <div className="card-header">
+        <h4 className="font-bold text-slate-800">
+          Flow curve: {RHEOLOGY_MODEL_LABELS[rheology.model]}
+        </h4>
+        <p className="text-xs text-slate-500 mt-1">
+          Exact laminar pipe solution (Rabinowitsch–Mooney). The viscosity above is the
+          effective one that reproduces this pressure drop.
+        </p>
+      </div>
+      <div className="card-body">
+        <DetailRow label="Wall shear stress" value={rheology.wall_shear_stress_pa} unit="Pa" />
+        <DetailRow label="True wall shear rate" value={rheology.wall_shear_rate_s_inv} unit="1/s" />
+        <DetailRow label="Newtonian wall shear rate (8V/D)" value={rheology.apparent_shear_rate_s_inv} unit="1/s" />
+        <DetailRow label="Effective viscosity" value={rheology.effective_viscosity_cp} unit="cP" />
+        {isNumber(plug) && (
+          <>
+            <DetailRow label="Unsheared plug" value={`${(plug * 100).toFixed(0)}%`} unit="of the bore" />
+            {plug > 0.5 && (
+              <p className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                More than half the bore moves as a solid plug: the wall stress is less than
+                twice the yield stress. A cold restart or a lower output could stall the line.
+              </p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

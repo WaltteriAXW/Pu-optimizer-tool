@@ -371,6 +371,16 @@ export const generateReport = async (
     ['Velocity', `${fmt(flow?.velocity_m_s, 3)} m/s`],
     ['Shear rate', `${fmt(flow?.shear_rate_s_inv, 0)} 1/s`],
     ['Apparent viscosity', `${fmt(flow?.apparent_viscosity_cp, 1)} cP`],
+    ...(flow?.rheology
+      ? [
+          ['Viscosity model', flow.rheology.model.replace(/_/g, '-')],
+          ['Wall shear stress', `${fmt(flow.rheology.wall_shear_stress_pa, 1)} Pa`],
+          ['True wall shear rate', `${fmt(flow.rheology.wall_shear_rate_s_inv, 0)} 1/s`],
+          ...(typeof flow.rheology.plug_radius_fraction === 'number'
+            ? [['Unsheared plug', `${fmt(flow.rheology.plug_radius_fraction * 100, 0)}% of the bore`]]
+            : []),
+        ]
+      : []),
   ])
 
   // ── Operating window ──────────────────────────────────────────────────────────

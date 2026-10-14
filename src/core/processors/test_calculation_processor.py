@@ -3,6 +3,8 @@ Unit tests for calculation processor.
 Tests the main orchestrator that coordinates all calculation modules.
 """
 
+import math
+
 import pytest
 from . import calculation_processor
 from .calculation_processor import CalculationProcessor
@@ -595,3 +597,113 @@ class TestHoseConstruction:
         result = CalculationProcessor().calculate_all({**self.COLD_IDLE, **bad})
 
         assert result['success'] is False
+
+
+class TestMeasuredFlowCurve:
+    """A custom material described by Carreau, Cross or Herschel-Bulkley parameters."""
+
+    CUSTOM = {
+        'pipe_length_mm': 2000,
+        'pipe_diameter_mm': 12,
+        'material_key': 'custom',
+        'temperature_c': 25,
+        'flow_rate_lpm': 5.0,
+        'machine_type': 'low_pressure',
+        'density_kg_m3': 1100,
+        'activation_energy_j_mol': 30000,
+    }
+
+    def calc(self, **extra):
+        return CalculationProcessor().calculate_all({**self.CUSTOM, **extra})
+
+    def test_carreau_newtonian_limit_is_hagen_poiseuille(self):
+        """n = 1 is a Newtonian liquid, so ΔP must be 128·μ·L·Q/(π·D⁴) exactly."""
+        result = self.calc(
+            rheology_model='carreau', zero_shear_viscosity_cp=800,
+            time_constant_s=0.1, rheology_index=1.0,
+        )
+        assert result['success'] is True
+
+        mu, length, q, d = 0.8, 2.0, 5.0 / 60000, 0.012
+        exact_bar = 128 * mu * length * q / (math.pi * d ** 4) / 1e5
+        assert result['data']['pressure']['base_pressure_drop_bar'] == pytest.approx(exact_bar, rel=1e-8)
+
+    def test_power_law_path_is_unchanged_without_a_model(self):
+        """The field-trial baseline: no model chosen, nothing moves."""
+        plain = self.calc(viscosity_cp=1200, flow_index=0.8)
+        explicit = self.calc(viscosity_cp=1200, flow_index=0.8, rheology_model='power_law')
+
+        assert (
+            plain['data']['pressure']['pressure_with_fittings_bar']
+            == explicit['data']['pressure']['pressure_with_fittings_bar']
+        )
+        assert 'rheology' not in plain['data']['flow']
+
+    def test_flow_curve_is_reported(self):
+        result = self.calc(
+            rheology_model='herschel_bulkley', yield_stress_pa=30,
+            consistency_pa_sn=3, rheology_index=0.6,
+        )['data']['flow']
+
+        assert result['rheology']['model'] == 'herschel_bulkley'
+        assert 0 < result['rheology']['plug_radius_fraction'] < 1
+        # The true wall shear rate of a yield-stress fluid exceeds the Newtonian 8V/D
+        assert result['rheology']['wall_shear_rate_s_inv'] > result['shear_rate_s_inv']
+
+    def test_colder_material_needs_more_pressure(self):
+        model = dict(
+            rheology_model='cross', zero_shear_viscosity_cp=3000,
+            infinite_shear_viscosity_cp=50, time_constant_s=0.2, rheology_index=0.7,
+        )
+        warm = self.calc(**model)['data']['pressure']['pressure_with_fittings_bar']
+        cold = self.calc(**{**model, 'temperature_c': 12})['data']['pressure']['pressure_with_fittings_bar']
+
+        assert cold > warm
+
+    def test_operating_window_round_trips_with_a_flow_curve(self):
+        model = dict(
+            rheology_model='carreau', zero_shear_viscosity_cp=2000,
+            time_constant_s=0.05, rheology_index=0.6, pipe_length_mm=8000, pipe_diameter_mm=8,
+        )
+        window = self.calc(**model)['data']['operating_window']
+        assert window['max_flow_rate']['status'] == 'limit'
+
+        boundary = window['max_flow_rate']['value_lpm']
+        pressure = self.calc(**{**model, 'flow_rate_lpm': boundary})['data']['pressure']['pressure_with_fittings_bar']
+
+        assert pressure == pytest.approx(window['pressure_limit_bar'], rel=1e-6)
+
+    def test_laminar_envelope_uses_the_flow_curve(self):
+        """The envelope's turbulence threshold must sit where the flow block's Re crosses 2300."""
+        model = dict(
+            rheology_model='carreau', zero_shear_viscosity_cp=50,
+            time_constant_s=0.01, rheology_index=0.8, pipe_diameter_mm=25, flow_rate_lpm=20,
+        )
+        envelope = self.calc(**model)['data']['flow']['laminar_envelope']
+        threshold = envelope['max_laminar_flow_lpm']
+        assert threshold is not None
+
+        at_threshold = self.calc(**{**model, 'flow_rate_lpm': threshold})['data']['flow']['reynolds_number']
+        assert at_threshold == pytest.approx(2300, rel=1e-6)
+
+    @pytest.mark.parametrize('bad', [
+        {'rheology_model': 'carreau', 'time_constant_s': 0.1, 'rheology_index': 0.7},
+        {'rheology_model': 'cross', 'zero_shear_viscosity_cp': 100, 'time_constant_s': 1,
+         'rheology_index': 0.7},
+        {'rheology_model': 'herschel_bulkley', 'yield_stress_pa': 5, 'rheology_index': 0.5},
+    ])
+    def test_incomplete_parameters_are_refused(self, bad):
+        result = self.calc(**bad)
+
+        assert result['success'] is False
+        assert 'required' in result['errors'][0]
+
+    def test_a_catalogued_material_cannot_take_a_flow_curve(self):
+        result = CalculationProcessor().calculate_all({
+            **TestOptionalBlocks.BASE,
+            'rheology_model': 'carreau', 'zero_shear_viscosity_cp': 800,
+            'time_constant_s': 0.1, 'rheology_index': 0.7,
+        })
+
+        assert result['success'] is False
+        assert 'custom material' in result['errors'][0]

@@ -178,6 +178,15 @@ export class CalculationService {
       'iso_sg',
       'weight_ratio',
       'final_density_kg_m3',
+      // A measured flow curve belongs to a custom material only; Python refuses it on a
+      // catalogued one rather than calculating a material nobody has
+      'rheology_model',
+      'zero_shear_viscosity_cp',
+      'infinite_shear_viscosity_cp',
+      'time_constant_s',
+      'rheology_index',
+      'yield_stress_pa',
+      'consistency_pa_sn',
     ]) {
       delete prepared[key]
     }

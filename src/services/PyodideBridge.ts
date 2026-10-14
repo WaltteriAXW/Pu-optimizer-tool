@@ -217,7 +217,8 @@ export class PyodideBridge implements PyodideManager {
 
       // Core rheology
       'src/core/rheology/__init__.py',
-      'src/core/rheology/advanced_fluid_models.py',
+      'src/core/rheology/models.py',
+      'src/core/rheology/pipe_flow.py',
 
       // Core thermodynamics
       'src/core/thermodynamics/__init__.py',

@@ -3,7 +3,12 @@ import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
-import type { ProcessParameters, HoseMaterial, InsulationMaterial } from '@/calculator_types'
+import type {
+  ProcessParameters,
+  HoseMaterial,
+  InsulationMaterial,
+  RheologyModelName,
+} from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown, ChevronUp } from 'lucide-react'
 
 /** Default values pre-filled when the user switches to Custom Material */
@@ -83,6 +88,80 @@ const HOSE_FIELD_RANGES: Record<
 }
 
 /**
+ * Viscosity models for a custom material. The power law is the default and needs only a
+ * viscosity and flow index; the others want parameters from a measured flow curve.
+ */
+const RHEOLOGY_MODEL_OPTIONS: Array<{ value: RheologyModelName; label: string }> = [
+  { value: 'power_law', label: 'Power law (viscosity + flow index)' },
+  { value: 'carreau', label: 'Carreau (measured flow curve)' },
+  { value: 'cross', label: 'Cross (measured flow curve)' },
+  { value: 'herschel_bulkley', label: 'Herschel–Bulkley (yield stress)' },
+]
+
+type RheologyField =
+  | 'zero_shear_viscosity_cp'
+  | 'infinite_shear_viscosity_cp'
+  | 'time_constant_s'
+  | 'rheology_index'
+  | 'yield_stress_pa'
+  | 'consistency_pa_sn'
+
+/** The fields each model takes, in display order, with the values it starts from */
+const RHEOLOGY_MODEL_FIELDS: Record<
+  Exclude<RheologyModelName, 'power_law'>,
+  Partial<Record<RheologyField, number>>
+> = {
+  carreau: { zero_shear_viscosity_cp: 1500, time_constant_s: 0.05, rheology_index: 0.7 },
+  cross: {
+    zero_shear_viscosity_cp: 1500,
+    infinite_shear_viscosity_cp: 50,
+    time_constant_s: 0.1,
+    rheology_index: 0.7,
+  },
+  herschel_bulkley: { yield_stress_pa: 10, consistency_pa_sn: 1.5, rheology_index: 0.8 },
+}
+
+const RHEOLOGY_FIELD_KEYS = Object.keys({
+  zero_shear_viscosity_cp: 0,
+  infinite_shear_viscosity_cp: 0,
+  time_constant_s: 0,
+  rheology_index: 0,
+  yield_stress_pa: 0,
+  consistency_pa_sn: 0,
+} satisfies Record<RheologyField, number>) as RheologyField[]
+
+/**
+ * Ranges for the flow-curve fields. The flow index range depends on the model: Carreau and
+ * Cross stop at 1, beyond which their stress can fall with shear rate; Herschel-Bulkley may
+ * thicken a little.
+ */
+const rheologyFieldRange = (
+  field: RheologyField,
+  model: RheologyModelName | undefined
+): { min: number; max: number; label: string; unit: string; step: string } => {
+  switch (field) {
+    case 'zero_shear_viscosity_cp':
+      return { min: 1, max: 1_000_000, label: 'Zero-Shear Viscosity η₀', unit: 'cP', step: '10' }
+    case 'infinite_shear_viscosity_cp':
+      return { min: 0, max: 100_000, label: 'Infinite-Shear Viscosity η∞', unit: 'cP', step: '1' }
+    case 'time_constant_s':
+      return { min: 0.0001, max: 1000, label: 'Time Constant λ', unit: 's', step: '0.01' }
+    case 'yield_stress_pa':
+      return { min: 0, max: 10_000, label: 'Yield Stress τ₀', unit: 'Pa', step: '1' }
+    case 'consistency_pa_sn':
+      return { min: 0.001, max: 10_000, label: 'Consistency K', unit: 'Pa·sⁿ', step: '0.1' }
+    case 'rheology_index':
+      return {
+        min: 0.05,
+        max: model === 'herschel_bulkley' ? 1.5 : 1,
+        label: model === 'cross' ? 'Exponent m' : 'Flow Index n',
+        unit: '',
+        step: '0.01',
+      }
+  }
+}
+
+/**
  * Text-valued optional inputs and the values each may take. Used both to restore a saved
  * setup — an unrecognised value from an older version is dropped rather than sent — and to
  * clear the key entirely when the blank option is chosen.
@@ -90,6 +169,7 @@ const HOSE_FIELD_RANGES: Record<
 const OPTIONAL_SELECTS: Record<string, readonly string[]> = {
   hose_material: HOSE_MATERIAL_OPTIONS.map((o) => o.value),
   insulation_material: INSULATION_OPTIONS.map((o) => o.value),
+  rheology_model: RHEOLOGY_MODEL_OPTIONS.map((o) => o.value),
 }
 
 /**
@@ -229,6 +309,13 @@ export function CalculatorForm() {
               polyol_sg,
               iso_sg,
               final_density_kg_m3,
+              rheology_model,
+              zero_shear_viscosity_cp,
+              infinite_shear_viscosity_cp,
+              time_constant_s,
+              rheology_index,
+              yield_stress_pa,
+              consistency_pa_sn,
               ...rest
             } = prev
             return { ...rest, material_key: value }
@@ -236,7 +323,7 @@ export function CalculatorForm() {
           // Clear any leftover custom-field errors
           setFieldErrors((prev) => {
             const updated = { ...prev }
-            for (const key of Object.keys(CUSTOM_FIELD_RANGES)) {
+            for (const key of [...Object.keys(CUSTOM_FIELD_RANGES), ...RHEOLOGY_FIELD_KEYS]) {
               delete updated[key]
             }
             return updated
@@ -248,6 +335,30 @@ export function CalculatorForm() {
       // ── Machine type selector ─────────────────────────────────────────────
       if (name === 'machine_type') {
         setInputs((prev) => ({ ...prev, machine_type: value }))
+        return
+      }
+
+      // ── Viscosity model (custom materials) ────────────────────────────────
+      // Switching model replaces the flow-curve fields with the new model's own, so a
+      // Cross η∞ cannot ride along into a Carreau calculation.
+      if (name === 'rheology_model') {
+        const model = value as RheologyModelName
+        setInputs((prev) => {
+          const next = { ...prev } as unknown as Record<string, unknown>
+          for (const key of RHEOLOGY_FIELD_KEYS) delete next[key]
+          if (model === 'power_law') {
+            delete next.rheology_model
+          } else {
+            next.rheology_model = model
+            Object.assign(next, RHEOLOGY_MODEL_FIELDS[model])
+          }
+          return next as unknown as ProcessParameters
+        })
+        setFieldErrors((prev) => {
+          const updated = { ...prev }
+          for (const key of RHEOLOGY_FIELD_KEYS) delete updated[key]
+          return updated
+        })
         return
       }
 
@@ -300,6 +411,10 @@ export function CalculatorForm() {
           }
           return
         }
+
+        // Flow-curve fields are validated during render (rheologyErrors below), because
+        // the flow index range depends on the model chosen, which this handler cannot see.
+        if ((RHEOLOGY_FIELD_KEYS as string[]).includes(name)) return
 
         // Custom material field validation
         if (name in CUSTOM_FIELD_RANGES) {
@@ -358,7 +473,34 @@ export function CalculatorForm() {
       ? 'Enter the insulation thickness, or set Insulation to None'
       : undefined
 
-  const hasErrors = Object.keys(fieldErrors).length > 0 || Boolean(insulationThicknessError)
+  // Errors on the flow-curve fields, derived from the inputs rather than stored: the flow
+  // index range depends on the model, so changing the model must re-judge the index.
+  const rheologyErrors: Partial<Record<RheologyField, string>> = {}
+  if (inputs.material_key === 'custom' && inputs.rheology_model && inputs.rheology_model !== 'power_law') {
+    for (const field of Object.keys(RHEOLOGY_MODEL_FIELDS[inputs.rheology_model]) as RheologyField[]) {
+      const value = inputs[field]
+      const range = rheologyFieldRange(field, inputs.rheology_model)
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        rheologyErrors[field] = `${range.label} is required`
+      } else if (value < range.min || value > range.max) {
+        rheologyErrors[field] = `${range.label} must be between ${range.min} and ${range.max} ${range.unit}`.trim()
+      }
+    }
+    if (
+      inputs.rheology_model === 'cross' &&
+      typeof inputs.infinite_shear_viscosity_cp === 'number' &&
+      typeof inputs.zero_shear_viscosity_cp === 'number' &&
+      inputs.infinite_shear_viscosity_cp >= inputs.zero_shear_viscosity_cp &&
+      !rheologyErrors.infinite_shear_viscosity_cp
+    ) {
+      rheologyErrors.infinite_shear_viscosity_cp = 'Must be below the zero-shear viscosity'
+    }
+  }
+
+  const hasErrors =
+    Object.keys(fieldErrors).length > 0 ||
+    Boolean(insulationThicknessError) ||
+    Object.keys(rheologyErrors).length > 0
   const canSubmit = !hasErrors && isReady && !isLoading && inputs.material_key !== ''
   const isCustomMaterial = inputs.material_key === 'custom'
 
@@ -484,9 +626,36 @@ export function CalculatorForm() {
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
                 <p><strong>Flow Index (0–1):</strong> Power-law exponent for non-Newtonian behaviour. 1.0 = Newtonian; typical PU foams: 0.8–0.9.</p>
                 <p><strong>Activation Energy (J/mol):</strong> Arrhenius energy controlling how viscosity changes with temperature. Typical range: 20 000–35 000 J/mol.</p>
+                <p><strong>Viscosity Model:</strong> The power law suits a data sheet. If you have a measured flow curve, Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. These use the exact laminar pipe solution rather than the apparent-viscosity shortcut. Parameters are at 25 °C; temperature shifts the whole curve by the activation energy.</p>
               </div>
             )}
 
+            <OptionalSelect
+              name="rheology_model"
+              label="Viscosity Model"
+              value={inputs.rheology_model ?? 'power_law'}
+              options={RHEOLOGY_MODEL_OPTIONS}
+              onChange={handleChange}
+            />
+
+            {inputs.rheology_model && inputs.rheology_model !== 'power_law' ? (
+              (Object.keys(RHEOLOGY_MODEL_FIELDS[inputs.rheology_model]) as RheologyField[]).map((field) => {
+                const range = rheologyFieldRange(field, inputs.rheology_model)
+                return (
+                  <CustomMaterialField
+                    key={field}
+                    label={range.label}
+                    name={field}
+                    value={inputs[field]}
+                    onChange={handleChange}
+                    unit={range.unit}
+                    range={range}
+                    error={rheologyErrors[field]}
+                  />
+                )
+              })
+            ) : (
+            <>
             <CustomMaterialField
               label="Viscosity"
               name="viscosity_cp"
@@ -516,6 +685,8 @@ export function CalculatorForm() {
               range={CUSTOM_FIELD_RANGES.flow_index}
               error={fieldErrors.flow_index}
             />
+            </>
+            )}
 
             <CustomMaterialField
               label="Activation Energy"
@@ -909,8 +1080,8 @@ function OptionalField({
 }
 
 /**
- * Optional choice. The blank option is meaningful — it means "not described" — and removes
- * the key rather than sending an empty string.
+ * Optional choice. Where there is a blank option it is meaningful — it means "not described"
+ * — and removes the key rather than sending an empty string.
  */
 function OptionalSelect({
   name,
@@ -924,7 +1095,8 @@ function OptionalSelect({
   label: string
   value: string | undefined
   options: ReadonlyArray<{ value: string; label: string }>
-  blankLabel: string
+  /** Omit for a choice that always has a value */
+  blankLabel?: string
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
 }) {
   const id = useId()
@@ -941,7 +1113,7 @@ function OptionalSelect({
         onChange={onChange}
         className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-white"
       >
-        <option value="">{blankLabel}</option>
+        {blankLabel !== undefined && <option value="">{blankLabel}</option>}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -966,7 +1138,7 @@ function CustomMaterialField({
 }: {
   label: string
   name: string
-  value: number
+  value: number | undefined
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   unit: string
   range: { min: number; max: number; step: string }
@@ -991,7 +1163,7 @@ function CustomMaterialField({
           id={id}
           type="number"
           name={name}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           step={range.step}
           min={range.min}

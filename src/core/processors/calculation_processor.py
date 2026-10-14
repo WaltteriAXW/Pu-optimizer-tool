@@ -28,6 +28,8 @@ from ..modules.line_thermal import (
 )
 from ..modules.volatility import check_blowing_agent_volatility
 from ..optimizers.operating_window import solve_operating_window
+from ..rheology.models import build_model as build_rheology_model
+from ..rheology.pipe_flow import solve_pipe_flow
 from ..thermodynamics.hose_heat_transfer import (
     calculate_hose_heat_transfer,
     DEFAULT_HOSE_MATERIAL,
@@ -216,12 +218,22 @@ class CalculationProcessor:
             # move if there is none. Avoiding turbulence is the point of the tool, so
             # the regime label on its own only answers half the question.
             try:
+                reynolds_at = None
+                if material.get('rheology') is not None:
+                    shift = thermal_result['temperature_factor']
+
+                    def reynolds_at(diameter_mm: float, rate_lpm: float) -> float:
+                        return self._generalized_flow(
+                            material, diameter_mm, rate_lpm, shift
+                        )['reynolds_number']
+
                 flow_result['laminar_envelope'] = flow.calculate_laminar_envelope(
                     diameter_mm=pipe_diameter_mm,
                     flow_rate_lpm=flow_rate_lpm,
                     consistency_cp=thermal_result['current_viscosity_cp'],
                     flow_index=material['flow_index'],
                     density_kg_m3=material['density'],
+                    reynolds_at=reynolds_at,
                 )
             except Exception as e:
                 logger.error(f"Flow calculation failed: {e}")
@@ -598,13 +610,21 @@ class CalculationProcessor:
 
         # Flow properties at the process temperature
         try:
-            flow_result = flow.calculate_all_flow_properties(
-                diameter_mm=pipe_diameter_mm,
-                flow_rate_lpm=flow_rate_lpm,
-                consistency_cp=thermal_result['current_viscosity_cp'],
-                flow_index=material['flow_index'],
-                density_kg_m3=material['density'],
-            )
+            if material.get('rheology') is not None:
+                flow_result = self._generalized_flow(
+                    material,
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    shift=thermal_result['temperature_factor'],
+                )
+            else:
+                flow_result = flow.calculate_all_flow_properties(
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    consistency_cp=thermal_result['current_viscosity_cp'],
+                    flow_index=material['flow_index'],
+                    density_kg_m3=material['density'],
+                )
             if not flow_result or 'apparent_viscosity_cp' not in flow_result:
                 raise ValueError("Flow calculation returned invalid result")
         except Exception as e:
@@ -641,6 +661,38 @@ class CalculationProcessor:
             'flow_result': flow_result,
             'pressure_result': pressure_result,
             'pressure_with_fittings': pressure_with_fittings,
+        }
+
+    def _generalized_flow(
+        self,
+        material: Dict[str, Any],
+        diameter_mm: float,
+        flow_rate_lpm: float,
+        shift: float,
+    ) -> Dict[str, Any]:
+        """
+        Flow properties for a measured flow curve, from the exact laminar pipe solution.
+
+        Returned in the same shape as flow.calculate_all_flow_properties, with the
+        effective viscosity as the apparent one: it reproduces the exact pressure drop in
+        Hagen-Poiseuille, and ρVD/η_eff is the Metzner-Reed Reynolds number. So the
+        pressure, envelope and machine checks downstream take it unchanged.
+        """
+        model = material['rheology']
+        pipe = solve_pipe_flow(model, diameter_mm, flow_rate_lpm, shift=shift)
+        reynolds = flow.calculate_reynolds_number(
+            flow_rate_lpm, diameter_mm, material['density'], pipe['effective_viscosity_cp'],
+        )
+        return {
+            # The apparent (Newtonian) wall shear rate, 8V/D — the same quantity the power
+            # law path reports, so the two are comparable. The true one is in 'rheology'.
+            'shear_rate_s_inv': pipe['apparent_shear_rate_s_inv'],
+            'apparent_viscosity_cp': pipe['effective_viscosity_cp'],
+            'reynolds_number': reynolds.get('reynolds_number', 0),
+            'flow_regime': reynolds.get('flow_regime', 'unknown'),
+            'velocity_m_s': reynolds.get('velocity_m_s', 0),
+            'is_shear_thinning': model.model != 'herschel_bulkley' and model.index < 1,
+            'rheology': {'model': model.model, **pipe},
         }
 
     def _solve_operating_window(
@@ -777,17 +829,32 @@ class CalculationProcessor:
             - source_description: String describing where properties came from
         """
 
-        # CHECK 1: Properties supplied directly (custom materials)
-        supplied_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        # CHECK 1: Properties supplied directly (custom materials). A measured flow curve
+        # (Carreau, Cross, Herschel-Bulkley) stands in for the power-law viscosity and
+        # flow index; validation has already checked its parameters.
+        rheology = build_rheology_model(parameters)
+        supplied_keys = ['density_kg_m3', 'activation_energy_j_mol']
+        if rheology is None:
+            supplied_keys += ['viscosity_cp', 'flow_index']
         has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys)
 
         if has_supplied:
+            if rheology is None:
+                viscosity_cp = parameters.get('viscosity_cp')
+                flow_index = parameters.get('flow_index')
+            else:
+                # The same quantity the power-law consistency is: viscosity at 1 1/s at the
+                # reference temperature. Reported in the thermal block, and the base the
+                # Arrhenius factor is taken against.
+                viscosity_cp = rheology.viscosity(1.0) * 1000.0
+                flow_index = rheology.index
             material = {
                 'name': parameters.get('material_name'),
-                'viscosity': parameters.get('viscosity_cp'),
+                'viscosity': viscosity_cp,
                 'density': parameters.get('density_kg_m3'),
                 'reference_temp_c': parameters.get('reference_temp_c', 25.0),
-                'flow_index': parameters.get('flow_index'),
+                'flow_index': flow_index,
+                'rheology': rheology,
                 'activation_energy': parameters.get('activation_energy_j_mol'),
                 'polyol_sg': parameters.get('polyol_sg'),
                 'iso_sg': parameters.get('iso_sg'),
