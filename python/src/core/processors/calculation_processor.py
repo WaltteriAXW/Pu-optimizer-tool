@@ -27,6 +27,14 @@ from ..modules.line_thermal import (
     calculate_line_temperature,
 )
 from ..modules.volatility import check_blowing_agent_volatility
+from ..optimizers.operating_window import solve_operating_window
+from ..rheology.models import build_model as build_rheology_model
+from ..rheology.pipe_flow import solve_pipe_flow
+from ..thermodynamics.hose_heat_transfer import (
+    calculate_hose_heat_transfer,
+    DEFAULT_HOSE_MATERIAL,
+    DEFAULT_WALL_THICKNESS_MM,
+)
 from ...constants import PHYSICS, VALIDATION_RANGES, MACHINE_SPECS
 from ..data.material_database import get_material, list_material_keys
 from ..validation import validate_parameters
@@ -55,6 +63,13 @@ try:
     KINETICS_AVAILABLE = True
 except ImportError:
     logger.info("Kinetics module not available - core functionality still works")
+
+
+class _StageError(Exception):
+    """A pipeline stage failed. The message names the stage, as the API always has."""
+
+    def __init__(self, stage: str, cause: Exception):
+        super().__init__(f'{stage} calculation error: {cause}')
 
 
 class CalculationProcessor:
@@ -171,76 +186,54 @@ class CalculationProcessor:
             # Step 4: Get machine specifications
             machine = self.machine_specs.get(machine_type, self.machine_specs['high_pressure'])
 
-            # Step 4b: Work out the temperature the material actually arrives at.
-            # Only when an ambient temperature is supplied — without it this is skipped
-            # entirely and the set point is used, exactly as before.
-            line_temperature = None
-            process_temperature_c = temperature_c
-            ambient_temperature_c = parameters.get('ambient_temperature_c')
-
-            if ambient_temperature_c is not None:
-                try:
-                    line_temperature = calculate_line_temperature(
-                        set_temperature_c=temperature_c,
-                        ambient_temperature_c=float(ambient_temperature_c),
-                        diameter_mm=pipe_diameter_mm,
-                        length_mm=pipe_length_mm,
-                        flow_rate_lpm=flow_rate_lpm,
-                        density_kg_m3=material['density'],
-                        idle_time_s=float(parameters.get('idle_time_s', 0) or 0),
-                        heat_transfer_coeff_w_m2_k=float(
-                            parameters.get('hose_heat_transfer_coeff_w_m2_k')
-                            or DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K
-                        ),
-                    )
-                    process_temperature_c = line_temperature['effective_temperature_c']
-                except Exception as e:
-                    logger.error(f"Line temperature calculation failed: {e}")
-                    line_temperature = None
-
-            # Step 5: Correct the viscosity for process temperature.
-            # This runs before flow and pressure because everything downstream depends on
-            # it: the Arrhenius-corrected viscosity is the consistency the power-law model
-            # thins from, and the pressure drop follows from that.
+            # Steps 4b-8: temperature at the mix head, viscosity, flow and pressure drop.
+            # One method, shared with the operating window solver, so the limits it finds
+            # are the limits of exactly this calculation.
             try:
-                thermal_result = thermal.calculate_temperature_dependent_viscosity(
-                    reference_temp_c=material.get('reference_temp_c', 25.0),
-                    reference_viscosity_cp=material['viscosity'],
-                    activation_energy_j_mol=material['activation_energy'],
-                    current_temp_c=process_temperature_c,
+                hydraulics = self._line_hydraulics(
+                    parameters,
+                    material,
+                    pipe_length_mm=pipe_length_mm,
+                    pipe_diameter_mm=pipe_diameter_mm,
+                    temperature_c=temperature_c,
+                    flow_rate_lpm=flow_rate_lpm,
                 )
-            except Exception as e:
-                logger.error(f"Thermal calculation failed: {e}")
+            except _StageError as e:
+                logger.error(str(e))
                 return {
                     'success': False,
-                    'errors': [f'Thermal calculation error: {str(e)}'],
+                    'errors': [str(e)],
                     'warnings': [],
                     'data': None,
                 }
 
-            temperature_corrected_viscosity_cp = thermal_result['current_viscosity_cp']
+            line_temperature = hydraulics['line_temperature']
+            process_temperature_c = hydraulics['process_temperature_c']
+            thermal_result = hydraulics['thermal_result']
+            flow_result = hydraulics['flow_result']
+            pressure_result = hydraulics['pressure_result']
+            pressure_with_fittings = hydraulics['pressure_with_fittings']
 
-            # Step 6: Calculate all flow properties at the process temperature
+            # How much room is left before the line turns turbulent, and which dial to
+            # move if there is none. Avoiding turbulence is the point of the tool, so
+            # the regime label on its own only answers half the question.
             try:
-                flow_result = flow.calculate_all_flow_properties(
-                    diameter_mm=pipe_diameter_mm,
-                    flow_rate_lpm=flow_rate_lpm,
-                    consistency_cp=temperature_corrected_viscosity_cp,
-                    flow_index=material['flow_index'],
-                    density_kg_m3=material['density'],
-                )
-                if not flow_result or 'apparent_viscosity_cp' not in flow_result:
-                    raise ValueError("Flow calculation returned invalid result")
+                reynolds_at = None
+                if material.get('rheology') is not None:
+                    shift = thermal_result['temperature_factor']
 
-                # How much room is left before the line turns turbulent, and which dial to
-                # move if there is none. Avoiding turbulence is the point of the tool, so
-                # the regime label on its own only answers half the question.
+                    def reynolds_at(diameter_mm: float, rate_lpm: float) -> float:
+                        return self._generalized_flow(
+                            material, diameter_mm, rate_lpm, shift
+                        )['reynolds_number']
+
                 flow_result['laminar_envelope'] = flow.calculate_laminar_envelope(
                     diameter_mm=pipe_diameter_mm,
                     flow_rate_lpm=flow_rate_lpm,
-                    consistency_cp=temperature_corrected_viscosity_cp,
+                    consistency_cp=thermal_result['current_viscosity_cp'],
                     flow_index=material['flow_index'],
                     density_kg_m3=material['density'],
+                    reynolds_at=reynolds_at,
                 )
             except Exception as e:
                 logger.error(f"Flow calculation failed: {e}")
@@ -250,36 +243,6 @@ class CalculationProcessor:
                     'warnings': [],
                     'data': None
                 }
-
-            # Step 7: Calculate pressure drop
-            try:
-                pressure_result = pressure.calculate_pressure_drop(
-                    diameter_mm=pipe_diameter_mm,
-                    length_mm=pipe_length_mm,
-                    flow_rate_lpm=flow_rate_lpm,
-                    viscosity_cp=flow_result['apparent_viscosity_cp'],
-                    density_kg_m3=material['density'],
-                )
-                if not pressure_result or 'pressure_drop_bar' not in pressure_result:
-                    raise ValueError("Pressure calculation returned invalid result")
-            except Exception as e:
-                logger.error(f"Pressure calculation failed: {e}")
-                return {
-                    'success': False,
-                    'errors': [f'Pressure calculation error: {str(e)}'],
-                    'warnings': [],
-                    'data': None
-                }
-
-            # Step 8: Account for fitting losses
-            try:
-                pressure_with_fittings = pressure.calculate_pressure_with_fittings(
-                    base_pressure_bar=pressure_result['pressure_drop_bar'],
-                    fitting_loss_multiplier=0.15,
-                )
-            except Exception as e:
-                logger.error(f"Fitting loss calculation failed: {e}")
-                pressure_with_fittings = pressure_result  # Fallback without fittings
 
             # Step 9: Calculate shear heating
             try:
@@ -365,6 +328,19 @@ class CalculationProcessor:
                     'warning': str(e),
                     'note': None,
                 }  # Fallback
+
+            # Step 11a: How far flow, temperature and diameter can each move before the
+            # line runs out of pressure — the inverse of everything above.
+            operating_window = self._solve_operating_window(
+                parameters,
+                material,
+                machine,
+                pipe_length_mm=pipe_length_mm,
+                pipe_diameter_mm=pipe_diameter_mm,
+                temperature_c=temperature_c,
+                flow_rate_lpm=flow_rate_lpm,
+                max_laminar_flow_lpm=flow_result['laminar_envelope'].get('max_laminar_flow_lpm'),
+            )
 
             # Step 11b: Cure and exotherm, when the caller asked for them.
             # This describes the part after the mix head, not the feed line, and is
@@ -466,6 +442,8 @@ class CalculationProcessor:
                 result_data['line_temperature'] = line_temperature
             if cure_result is not None:
                 result_data['cure'] = cure_result
+            if operating_window is not None:
+                result_data['operating_window'] = operating_window
 
             # Step 14: Validate results sanity
             if not self._validate_results(result_data):
@@ -566,6 +544,267 @@ class CalculationProcessor:
             'heat_of_reaction_is_estimated': exotherm.get('heat_of_reaction_is_estimated', True),
         }
 
+    def _line_hydraulics(
+        self,
+        parameters: Dict[str, Any],
+        material: Dict[str, Any],
+        pipe_length_mm: float,
+        pipe_diameter_mm: float,
+        temperature_c: float,
+        flow_rate_lpm: float,
+    ) -> Dict[str, Any]:
+        """
+        The feed line from tank to mix head: arriving temperature, viscosity, flow and
+        pressure drop, for one set of line dimensions, set point and flow rate.
+
+        Separate from calculate_all so the operating window solver can ask "what if the
+        flow were X?" of the same physics, rather than of a copy that could drift from it.
+
+        Raises:
+            _StageError: naming the stage that failed
+        """
+        # Work out the temperature the material actually arrives at. Only when an ambient
+        # temperature is supplied — without it this is skipped entirely and the set point
+        # is used, exactly as before.
+        line_temperature = None
+        process_temperature_c = temperature_c
+        ambient_temperature_c = parameters.get('ambient_temperature_c')
+
+        if ambient_temperature_c is not None:
+            try:
+                hose_coefficient, hose_result = self._resolve_hose_coefficient(
+                    parameters,
+                    diameter_mm=pipe_diameter_mm,
+                    set_temperature_c=temperature_c,
+                    ambient_temperature_c=float(ambient_temperature_c),
+                )
+                line_temperature = calculate_line_temperature(
+                    set_temperature_c=temperature_c,
+                    ambient_temperature_c=float(ambient_temperature_c),
+                    diameter_mm=pipe_diameter_mm,
+                    length_mm=pipe_length_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    density_kg_m3=material['density'],
+                    idle_time_s=float(parameters.get('idle_time_s', 0) or 0),
+                    heat_transfer_coeff_w_m2_k=hose_coefficient,
+                )
+                if hose_result is not None:
+                    line_temperature['hose'] = hose_result
+                process_temperature_c = line_temperature['effective_temperature_c']
+            except Exception as e:
+                logger.error(f"Line temperature calculation failed: {e}")
+                line_temperature = None
+
+        # Correct the viscosity for process temperature. Everything downstream depends on
+        # it: the Arrhenius-corrected viscosity is the consistency the power-law model
+        # thins from, and the pressure drop follows from that.
+        try:
+            thermal_result = thermal.calculate_temperature_dependent_viscosity(
+                reference_temp_c=material.get('reference_temp_c', 25.0),
+                reference_viscosity_cp=material['viscosity'],
+                activation_energy_j_mol=material['activation_energy'],
+                current_temp_c=process_temperature_c,
+            )
+        except Exception as e:
+            raise _StageError('Thermal', e) from e
+
+        # Flow properties at the process temperature
+        try:
+            if material.get('rheology') is not None:
+                flow_result = self._generalized_flow(
+                    material,
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    shift=thermal_result['temperature_factor'],
+                )
+            else:
+                flow_result = flow.calculate_all_flow_properties(
+                    diameter_mm=pipe_diameter_mm,
+                    flow_rate_lpm=flow_rate_lpm,
+                    consistency_cp=thermal_result['current_viscosity_cp'],
+                    flow_index=material['flow_index'],
+                    density_kg_m3=material['density'],
+                )
+            if not flow_result or 'apparent_viscosity_cp' not in flow_result:
+                raise ValueError("Flow calculation returned invalid result")
+        except Exception as e:
+            raise _StageError('Flow', e) from e
+
+        # Pressure drop
+        try:
+            pressure_result = pressure.calculate_pressure_drop(
+                diameter_mm=pipe_diameter_mm,
+                length_mm=pipe_length_mm,
+                flow_rate_lpm=flow_rate_lpm,
+                viscosity_cp=flow_result['apparent_viscosity_cp'],
+                density_kg_m3=material['density'],
+            )
+            if not pressure_result or 'pressure_drop_bar' not in pressure_result:
+                raise ValueError("Pressure calculation returned invalid result")
+        except Exception as e:
+            raise _StageError('Pressure', e) from e
+
+        # Fitting losses
+        try:
+            pressure_with_fittings = pressure.calculate_pressure_with_fittings(
+                base_pressure_bar=pressure_result['pressure_drop_bar'],
+                fitting_loss_multiplier=0.15,
+            )
+        except Exception as e:
+            logger.error(f"Fitting loss calculation failed: {e}")
+            pressure_with_fittings = pressure_result  # Fallback without fittings
+
+        return {
+            'line_temperature': line_temperature,
+            'process_temperature_c': process_temperature_c,
+            'thermal_result': thermal_result,
+            'flow_result': flow_result,
+            'pressure_result': pressure_result,
+            'pressure_with_fittings': pressure_with_fittings,
+        }
+
+    def _generalized_flow(
+        self,
+        material: Dict[str, Any],
+        diameter_mm: float,
+        flow_rate_lpm: float,
+        shift: float,
+    ) -> Dict[str, Any]:
+        """
+        Flow properties for a measured flow curve, from the exact laminar pipe solution.
+
+        Returned in the same shape as flow.calculate_all_flow_properties, with the
+        effective viscosity as the apparent one: it reproduces the exact pressure drop in
+        Hagen-Poiseuille, and ρVD/η_eff is the Metzner-Reed Reynolds number. So the
+        pressure, envelope and machine checks downstream take it unchanged.
+        """
+        model = material['rheology']
+        pipe = solve_pipe_flow(model, diameter_mm, flow_rate_lpm, shift=shift)
+        reynolds = flow.calculate_reynolds_number(
+            flow_rate_lpm, diameter_mm, material['density'], pipe['effective_viscosity_cp'],
+        )
+        return {
+            # The apparent (Newtonian) wall shear rate, 8V/D — the same quantity the power
+            # law path reports, so the two are comparable. The true one is in 'rheology'.
+            'shear_rate_s_inv': pipe['apparent_shear_rate_s_inv'],
+            'apparent_viscosity_cp': pipe['effective_viscosity_cp'],
+            'reynolds_number': reynolds.get('reynolds_number', 0),
+            'flow_regime': reynolds.get('flow_regime', 'unknown'),
+            'velocity_m_s': reynolds.get('velocity_m_s', 0),
+            'is_shear_thinning': model.model != 'herschel_bulkley' and model.index < 1,
+            'rheology': {'model': model.model, **pipe},
+        }
+
+    def _solve_operating_window(
+        self,
+        parameters: Dict[str, Any],
+        material: Dict[str, Any],
+        machine: Dict[str, Any],
+        pipe_length_mm: float,
+        pipe_diameter_mm: float,
+        temperature_c: float,
+        flow_rate_lpm: float,
+        max_laminar_flow_lpm: Optional[float],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        The limits of flow rate, temperature and diameter for this line on this machine.
+
+        Asks the same _line_hydraulics the result above came from, with one setting moved
+        at a time. Returns None if the solve fails, so a fault here can never take the
+        main result down with it.
+        """
+        base = {
+            'pipe_length_mm': pipe_length_mm,
+            'pipe_diameter_mm': pipe_diameter_mm,
+            'temperature_c': temperature_c,
+            'flow_rate_lpm': flow_rate_lpm,
+        }
+
+        def feed_pressure_at(overrides: Dict[str, float]) -> float:
+            try:
+                hydraulics = self._line_hydraulics(parameters, material, **{**base, **overrides})
+            except _StageError:
+                # A setting the physics cannot evaluate is one the line cannot run at
+                return float('inf')
+            fittings = hydraulics['pressure_with_fittings']
+            return fittings.get(
+                'total_pressure_bar', hydraulics['pressure_result']['pressure_drop_bar']
+            )
+
+        def span(key: str) -> tuple:
+            spec = VALIDATION_RANGES[key]
+            return (float(spec['min']), float(spec['max']))
+
+        output_range = machine.get('output_range') or {}
+        output_range_lpm = None
+        if output_range.get('min') is not None and output_range.get('max') is not None:
+            # kg/min ÷ kg/m³ × 1000 L/m³ = L/min
+            to_lpm = 1000.0 / material['density']
+            output_range_lpm = (output_range['min'] * to_lpm, output_range['max'] * to_lpm)
+
+        user_limit = parameters.get('max_line_pressure_bar')
+
+        try:
+            return solve_operating_window(
+                feed_pressure_at=feed_pressure_at,
+                current=base,
+                ranges={
+                    'flow_rate_lpm': span('flow_rate'),
+                    'temperature_c': span('temperature'),
+                    'pipe_diameter_mm': span('pipe_diameter'),
+                },
+                machine_max_bar=float(machine.get('max_pressure', 200)),
+                machine_loss_bar=float((machine.get('process_loss') or {}).get('total', 0)),
+                user_limit_bar=float(user_limit) if user_limit is not None else None,
+                max_laminar_flow_lpm=max_laminar_flow_lpm,
+                output_range_lpm=output_range_lpm,
+            )
+        except Exception as e:
+            logger.error(f"Operating window solve failed: {e}")
+            return None
+
+    def _resolve_hose_coefficient(
+        self,
+        parameters: Dict[str, Any],
+        diameter_mm: float,
+        set_temperature_c: float,
+        ambient_temperature_c: float,
+    ) -> tuple:
+        """
+        The hose-to-air heat transfer coefficient the line thermal model runs with.
+
+        PRIORITY (highest to lowest):
+        1. A coefficient supplied outright — someone who has measured their line.
+        2. A description of the hose (its material, or its lagging), from which the
+           coefficient is worked out layer by layer.
+        3. The bare-hose default.
+
+        Returns:
+            Tuple of (coefficient_w_m2_k, hose_result) where hose_result is the layer
+            breakdown when the coefficient was worked out from the hose, otherwise None.
+        """
+        supplied = parameters.get('hose_heat_transfer_coeff_w_m2_k')
+        if supplied:
+            return float(supplied), None
+
+        hose_material = parameters.get('hose_material')
+        insulation_material = parameters.get('insulation_material')
+        if not hose_material and not insulation_material:
+            return DEFAULT_HOSE_HEAT_TRANSFER_W_M2_K, None
+
+        hose = calculate_hose_heat_transfer(
+            inner_diameter_mm=diameter_mm,
+            hose_material=hose_material or DEFAULT_HOSE_MATERIAL,
+            wall_thickness_mm=float(
+                parameters.get('hose_wall_thickness_mm') or DEFAULT_WALL_THICKNESS_MM
+            ),
+            insulation_material=insulation_material,
+            insulation_thickness_mm=float(parameters.get('insulation_thickness_mm') or 0),
+            material_temperature_c=set_temperature_c,
+            ambient_temperature_c=ambient_temperature_c,
+        )
+        return hose['overall_coefficient_w_m2_k'], hose
+
     def _get_material_properties(self, material_key: str) -> Optional[Dict]:
         """Look a material up in the database CSV."""
         try:
@@ -590,17 +829,32 @@ class CalculationProcessor:
             - source_description: String describing where properties came from
         """
 
-        # CHECK 1: Properties supplied directly (custom materials)
-        supplied_keys = ['viscosity_cp', 'density_kg_m3', 'flow_index', 'activation_energy_j_mol']
+        # CHECK 1: Properties supplied directly (custom materials). A measured flow curve
+        # (Carreau, Cross, Herschel-Bulkley) stands in for the power-law viscosity and
+        # flow index; validation has already checked its parameters.
+        rheology = build_rheology_model(parameters)
+        supplied_keys = ['density_kg_m3', 'activation_energy_j_mol']
+        if rheology is None:
+            supplied_keys += ['viscosity_cp', 'flow_index']
         has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys)
 
         if has_supplied:
+            if rheology is None:
+                viscosity_cp = parameters.get('viscosity_cp')
+                flow_index = parameters.get('flow_index')
+            else:
+                # The same quantity the power-law consistency is: viscosity at 1 1/s at the
+                # reference temperature. Reported in the thermal block, and the base the
+                # Arrhenius factor is taken against.
+                viscosity_cp = rheology.viscosity(1.0) * 1000.0
+                flow_index = rheology.index
             material = {
                 'name': parameters.get('material_name'),
-                'viscosity': parameters.get('viscosity_cp'),
+                'viscosity': viscosity_cp,
                 'density': parameters.get('density_kg_m3'),
                 'reference_temp_c': parameters.get('reference_temp_c', 25.0),
-                'flow_index': parameters.get('flow_index'),
+                'flow_index': flow_index,
+                'rheology': rheology,
                 'activation_energy': parameters.get('activation_energy_j_mol'),
                 'polyol_sg': parameters.get('polyol_sg'),
                 'iso_sg': parameters.get('iso_sg'),

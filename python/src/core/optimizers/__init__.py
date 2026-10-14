@@ -1,39 +1,10 @@
 """
-Optimization modules for polyurethane process optimization.
+Inverse questions about the feed line.
 
-- pressure_optimizer: Pressure-based optimization using scipy
-- inverse_optimization: Inverse problem solving to find optimal process parameters
+- operating_window: how far flow rate, temperature and diameter can each move before the
+  line needs more pressure than the machine (or the user) allows.
 """
 
-from .pressure_optimizer import (
-    PressureOptimizationObjective,
-    OptimizationResult as PressureOptimizationResult,
-    PressureOptimizer,
-)
+from .operating_window import solve_operating_window
 
-from .inverse_optimization import (
-    OptimizationObjective,
-    ParameterBounds,
-    TargetSpecification,
-    OptimizationResult as InverseOptimizationResult,
-    InverseOptimizer,
-    create_temperature_target_optimizer,
-    create_pressure_target_optimizer,
-    create_flow_target_optimizer,
-)
-
-__all__ = [
-    # pressure_optimizer
-    'PressureOptimizationObjective',
-    'PressureOptimizationResult',
-    'PressureOptimizer',
-    # inverse_optimization
-    'OptimizationObjective',
-    'ParameterBounds',
-    'TargetSpecification',
-    'InverseOptimizationResult',
-    'InverseOptimizer',
-    'create_temperature_target_optimizer',
-    'create_pressure_target_optimizer',
-    'create_flow_target_optimizer',
-]
+__all__ = ['solve_operating_window']
