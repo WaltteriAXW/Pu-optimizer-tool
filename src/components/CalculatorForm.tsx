@@ -29,22 +29,22 @@ const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
  */
 const OPTIONAL_FIELD_RANGES: Record<
   'ambient_temperature_c' | 'idle_time_s' | 'mold_temperature_c' | 'part_thickness_mm',
-  { min: number; max: number; label: string; unit: string; step: string; help: string }
+  { min: number; max: number; label: string; unit: string; help: string }
 > = {
   ambient_temperature_c: {
-    min: -20, max: 60, label: 'Ambient Temperature', unit: '°C', step: '0.5',
+    min: -20, max: 60, label: 'Ambient Temperature', unit: '°C',
     help: 'Air around the hose and machine. Supplying this models the material drifting toward it.',
   },
   idle_time_s: {
-    min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's', step: '30',
+    min: 0, max: 86400, label: 'Time Since Last Shot', unit: 's',
     help: 'For single-shot work: material standing in the hose approaches ambient temperature.',
   },
   mold_temperature_c: {
-    min: 0, max: 120, label: 'Mould Temperature', unit: '°C', step: '1',
+    min: 0, max: 120, label: 'Mould Temperature', unit: '°C',
     help: 'Defaults to the data sheet value where one is stated.',
   },
   part_thickness_mm: {
-    min: 1, max: 500, label: 'Part Thickness', unit: 'mm', step: '1',
+    min: 1, max: 500, label: 'Part Thickness', unit: 'mm',
     help: 'Thicker sections retain reaction heat and run hotter in the core.',
   },
 }
@@ -69,20 +69,20 @@ const INSULATION_OPTIONS: Array<{ value: InsulationMaterial; label: string }> = 
 
 /** A tighter feed-line limit than the machine's own. Blank means the machine's. */
 const LINE_LIMIT_RANGE = {
-  min: 0.1, max: 500, label: 'Max Feed-Line Pressure', unit: 'bar', step: '0.5',
+  min: 0.1, max: 500, label: 'Max Feed-Line Pressure', unit: 'bar',
   help: 'Optional. The operating window is solved against this or the machine limit, whichever is lower.',
 }
 
 const HOSE_FIELD_RANGES: Record<
   'hose_wall_thickness_mm' | 'insulation_thickness_mm',
-  { min: number; max: number; label: string; unit: string; step: string; help: string }
+  { min: number; max: number; label: string; unit: string; help: string }
 > = {
   hose_wall_thickness_mm: {
-    min: 0.1, max: 50, label: 'Hose Wall Thickness', unit: 'mm', step: '0.5',
+    min: 0.1, max: 50, label: 'Hose Wall Thickness', unit: 'mm',
     help: 'Blank means 3 mm.',
   },
   insulation_thickness_mm: {
-    min: 0, max: 100, label: 'Insulation Thickness', unit: 'mm', step: '1',
+    min: 0, max: 100, label: 'Insulation Thickness', unit: 'mm',
     help: 'Thickness of the lagging around the hose.',
   },
 }
@@ -138,25 +138,24 @@ const RHEOLOGY_FIELD_KEYS = Object.keys({
 const rheologyFieldRange = (
   field: RheologyField,
   model: RheologyModelName | undefined
-): { min: number; max: number; label: string; unit: string; step: string } => {
+): { min: number; max: number; label: string; unit: string } => {
   switch (field) {
     case 'zero_shear_viscosity_cp':
-      return { min: 1, max: 1_000_000, label: 'Zero-Shear Viscosity η₀', unit: 'cP', step: '10' }
+      return { min: 1, max: 1_000_000, label: 'Zero-Shear Viscosity η₀', unit: 'cP' }
     case 'infinite_shear_viscosity_cp':
-      return { min: 0, max: 100_000, label: 'Infinite-Shear Viscosity η∞', unit: 'cP', step: '1' }
+      return { min: 0, max: 100_000, label: 'Infinite-Shear Viscosity η∞', unit: 'cP' }
     case 'time_constant_s':
-      return { min: 0.0001, max: 1000, label: 'Time Constant λ', unit: 's', step: '0.01' }
+      return { min: 0.0001, max: 1000, label: 'Time Constant λ', unit: 's' }
     case 'yield_stress_pa':
-      return { min: 0, max: 10_000, label: 'Yield Stress τ₀', unit: 'Pa', step: '1' }
+      return { min: 0, max: 10_000, label: 'Yield Stress τ₀', unit: 'Pa' }
     case 'consistency_pa_sn':
-      return { min: 0.001, max: 10_000, label: 'Consistency K', unit: 'Pa·sⁿ', step: '0.1' }
+      return { min: 0.001, max: 10_000, label: 'Consistency K', unit: 'Pa·sⁿ' }
     case 'rheology_index':
       return {
         min: 0.05,
         max: model === 'herschel_bulkley' ? 1.5 : 1,
         label: model === 'cross' ? 'Exponent m' : 'Flow Index n',
         unit: '',
-        step: '0.01',
       }
   }
 }
@@ -196,12 +195,12 @@ const STANDARD_FIELD_RANGES: Record<
 /** Validation ranges for custom material numeric fields */
 const CUSTOM_FIELD_RANGES: Record<
   'viscosity_cp' | 'density_kg_m3' | 'flow_index' | 'activation_energy_j_mol',
-  { min: number; max: number; label: string; unit: string; step: string }
+  { min: number; max: number; label: string; unit: string }
 > = {
-  viscosity_cp:             { min: 50,    max: 10000,  label: 'Viscosity',          unit: 'cP',    step: '1'     },
-  density_kg_m3:            { min: 900,   max: 1500,   label: 'Density',            unit: 'kg/m³', step: '1'     },
-  flow_index:               { min: 0.01,  max: 1.0,    label: 'Flow Index',         unit: '(0–1)', step: '0.01'  },
-  activation_energy_j_mol:  { min: 1000,  max: 100000, label: 'Activation Energy',  unit: 'J/mol', step: '100'   },
+  viscosity_cp:            { min: 50,   max: 10000,  label: 'Viscosity',         unit: 'cP' },
+  density_kg_m3:           { min: 900,  max: 1500,   label: 'Density',           unit: 'kg/m³' },
+  flow_index:              { min: 0.01, max: 1.0,    label: 'Flow Index',        unit: '(0–1)' },
+  activation_energy_j_mol: { min: 1000, max: 100000, label: 'Activation Energy', unit: 'J/mol' },
 }
 
 export function CalculatorForm() {
@@ -638,6 +637,8 @@ export function CalculatorForm() {
               onChange={handleChange}
             />
 
+            {/* The flow curve: a viscosity and flow index for the power law, or the chosen
+                model's own parameters. Density and activation energy apply to every model. */}
             {inputs.rheology_model && inputs.rheology_model !== 'power_law' ? (
               (Object.keys(RHEOLOGY_MODEL_FIELDS[inputs.rheology_model]) as RheologyField[]).map((field) => {
                 const range = rheologyFieldRange(field, inputs.rheology_model)
@@ -655,16 +656,28 @@ export function CalculatorForm() {
                 )
               })
             ) : (
-            <>
-            <CustomMaterialField
-              label="Viscosity"
-              name="viscosity_cp"
-              value={inputs.viscosity_cp ?? CUSTOM_MATERIAL_DEFAULTS.viscosity_cp}
-              onChange={handleChange}
-              unit="cP"
-              range={CUSTOM_FIELD_RANGES.viscosity_cp}
-              error={fieldErrors.viscosity_cp}
-            />
+              <>
+                <CustomMaterialField
+                  label="Viscosity"
+                  name="viscosity_cp"
+                  value={inputs.viscosity_cp ?? CUSTOM_MATERIAL_DEFAULTS.viscosity_cp}
+                  onChange={handleChange}
+                  unit="cP"
+                  range={CUSTOM_FIELD_RANGES.viscosity_cp}
+                  error={fieldErrors.viscosity_cp}
+                />
+
+                <CustomMaterialField
+                  label="Flow Index"
+                  name="flow_index"
+                  value={inputs.flow_index ?? CUSTOM_MATERIAL_DEFAULTS.flow_index}
+                  onChange={handleChange}
+                  unit="(0–1)"
+                  range={CUSTOM_FIELD_RANGES.flow_index}
+                  error={fieldErrors.flow_index}
+                />
+              </>
+            )}
 
             <CustomMaterialField
               label="Density"
@@ -675,18 +688,6 @@ export function CalculatorForm() {
               range={CUSTOM_FIELD_RANGES.density_kg_m3}
               error={fieldErrors.density_kg_m3}
             />
-
-            <CustomMaterialField
-              label="Flow Index"
-              name="flow_index"
-              value={inputs.flow_index ?? CUSTOM_MATERIAL_DEFAULTS.flow_index}
-              onChange={handleChange}
-              unit="(0–1)"
-              range={CUSTOM_FIELD_RANGES.flow_index}
-              error={fieldErrors.flow_index}
-            />
-            </>
-            )}
 
             <CustomMaterialField
               label="Activation Energy"
@@ -1014,7 +1015,7 @@ function OptionalField({
   name: string
   value: number | undefined
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  spec: { min: number; max: number; label: string; unit: string; step: string; help: string }
+  spec: { min: number; max: number; label: string; unit: string; help: string }
   error?: string
 }) {
   const id = useId()
@@ -1040,7 +1041,9 @@ function OptionalField({
           value={value ?? ''}
           placeholder="not set"
           onChange={onChange}
-          step={spec.step}
+          // Any value in range is accepted, as in the main fields: a numeric step makes the
+          // browser refuse values off its grid by silently blocking the submit
+          step="any"
           aria-invalid={error ? true : undefined}
           // The help text explains what supplying this field switches on, which is the
           // whole point of an optional input — it belongs in the announcement
@@ -1141,7 +1144,7 @@ function CustomMaterialField({
   value: number | undefined
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   unit: string
-  range: { min: number; max: number; step: string }
+  range: { min: number; max: number }
   error?: string
 }) {
   const id = useId()
@@ -1165,7 +1168,7 @@ function CustomMaterialField({
           name={name}
           value={value ?? ''}
           onChange={onChange}
-          step={range.step}
+          step="any"
           min={range.min}
           max={range.max}
           aria-invalid={error ? true : undefined}

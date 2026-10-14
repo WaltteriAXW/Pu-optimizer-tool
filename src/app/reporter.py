@@ -74,10 +74,10 @@ class ReportGenerator:
         filename: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Generate report from PressureOptimizer output.
+        Generate report from an optimizer's output.
 
         Args:
-            optimization_result: Output from PressureOptimizer
+            optimization_result: Output from an optimizer, e.g. the operating window
             calculation_result: Optional CalculationProcessor output for context
             format: Output format ("json", "csv", "text", "html")
             filename: Optional custom filename

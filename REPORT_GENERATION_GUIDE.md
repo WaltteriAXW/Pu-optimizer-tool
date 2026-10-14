@@ -36,7 +36,7 @@ print(f"Report saved to: {result['filepath']}")
 ### Supported Report Types
 
 1. **Calculation Reports** - From `CalculationProcessor.calculate_all()`
-2. **Optimization Reports** - From `PressureOptimizer` results
+2. **Optimization Reports** - From optimizer results, such as the operating window
 3. **ML Prediction Reports** - From `ProcessOptimizerML` predictions
 4. **Model Evaluation Reports** - From `ModelEvaluator` results
 5. **Batch Reports** - From multiple calculation runs
@@ -298,21 +298,6 @@ result = calculator.calculate_all(parameters)
 # Generate report
 gen = ReportGenerator()
 report = gen.generate_calculation_report(result, format="json")
-```
-
-### From PressureOptimizer
-
-```python
-from core.optimizers.pressure_optimizer import PressureOptimizer
-from report import ReportGenerator
-
-# Run optimization
-optimizer = PressureOptimizer(calculator)
-opt_result = optimizer.optimize(...)
-
-# Generate report
-gen = ReportGenerator()
-report = gen.generate_optimization_report(opt_result, format="json")
 ```
 
 ### From ProcessOptimizerML

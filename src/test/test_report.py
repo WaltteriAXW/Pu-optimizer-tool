@@ -65,7 +65,7 @@ def sample_calculation_result():
 
 @pytest.fixture
 def sample_optimization_result():
-    """Sample optimization result from PressureOptimizer"""
+    """Sample optimization result (generic optimizer output)"""
     return {
         "success": True,
         "objective": "balanced",

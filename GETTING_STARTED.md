@@ -59,6 +59,7 @@ Valid range: 50–10,000 mm length, 1–200 mm diameter.
 Expand **Optional** to model two things the basic calculation leaves out:
 
 - **Ambient Temperature + Time Since Last Shot** — models material sitting in the hose drifting toward the surrounding air, so the pressure reflects the temperature at the mix head rather than the tank set point. Useful for single-shot or intermittent work. Leave blank and the calculation behaves exactly as if this section didn't exist.
+- **Hose** — the hose material, wall thickness and any lagging. Only acts with an ambient temperature; it replaces the bare-hose assumption with a heat loss worked out from how the hose is built.
 - **Mould Temperature + Part Thickness** — adds a cure/exotherm prediction for the moulded part (cream time, gel time, processing window, scorch risk). Only available for catalogued materials whose data sheet states reaction times.
 
 ---
@@ -102,8 +103,11 @@ Process temperature, reference and current viscosity, shear heating; and the sel
 ### Blowing Agent (if the material names one)
 Whether it stays in solution at the calculated line temperature and pressure — "stays in solution," "close to boiling," or "flash-off risk."
 
+### Operating Window
+How far each setting can move before the feed line needs more pressure than the machine allows (or the limit you entered under Machine Type): the highest flow rate, the lowest set temperature and the narrowest line, plus the range of flow rates that also stays laminar and within the machine's output.
+
 ### Temperature at the Mix Head (only if you supplied an ambient temperature)
-Set point vs. ambient vs. the effective temperature the material actually arrives at.
+Set point vs. ambient vs. the effective temperature the material actually arrives at, the hose heat transfer coefficient used, and — if you described the hose — which layer holds the heat in.
 
 ### Cure & Exotherm (only if you supplied a part thickness, for a catalogued material)
 Cream/gel/tack-free time, working time, adiabatic temperature rise, peak core temperature, and scorch risk.
