@@ -504,8 +504,10 @@ export function CalculatorForm() {
   const isCustomMaterial = inputs.material_key === 'custom'
 
   return (
-    <div className="card">
-      <div className="card-header">
+    // Not clipped on a wide screen, so the Run button can stick to the bottom of the
+    // scrolling column; the header rounds its own corners instead.
+    <div className="card lg:overflow-visible">
+      <div className="card-header rounded-t-xl">
         <h2 className="font-bold text-slate-800">Process Parameters</h2>
         <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
       </div>
@@ -888,8 +890,9 @@ export function CalculatorForm() {
           </div>
         )}
 
-        {/* Submit Button */}
-        <div className="mt-8">
+        {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
+            stays in reach however far the inputs above it run. */}
+        <div className="mt-8 bg-white lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}

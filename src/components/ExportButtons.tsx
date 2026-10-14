@@ -70,7 +70,9 @@ export function ExportButtons({ results }: ExportButtonsProps) {
 
   return (
     <div className="flex flex-col items-end gap-1.5">
-      <div role="group" aria-label="Export results" className="flex items-center gap-2">
+      {/* Wraps rather than running off a phone screen, where the PDF button used to be cut
+          off at the edge */}
+      <div role="group" aria-label="Export results" className="flex flex-wrap items-center justify-end gap-2">
         <button
           onClick={() => handleExport('json')}
           className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
