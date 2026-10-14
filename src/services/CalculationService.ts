@@ -99,6 +99,7 @@ export class CalculationService {
         volatility: result.data.volatility,
         line_temperature: result.data.line_temperature,
         cure: result.data.cure,
+        operating_window: result.data.operating_window,
         timestamp: result.data.timestamp,
         warnings: result.data.warnings || []
       }

@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable'
 import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
+import { describeFlowWindow } from '@/components/resultFormatting'
 
 /**
  * The printed report.
@@ -371,6 +372,29 @@ export const generateReport = async (
     ['Shear rate', `${fmt(flow?.shear_rate_s_inv, 0)} 1/s`],
     ['Apparent viscosity', `${fmt(flow?.apparent_viscosity_cp, 1)} cP`],
   ])
+
+  // ── Operating window ──────────────────────────────────────────────────────────
+  const window = results.operating_window
+  if (window) {
+    heading('Operating window')
+    note(describeFlowWindow(window.flow_window), window.flow_window.current_inside ? MUTED : BAD)
+    const bound = (status: string, value: number | null, unit: string, open: string) =>
+      status === 'limit' && value !== null
+        ? `${fmt(value, 1)} ${unit}`
+        : status === 'unconstrained'
+          ? open
+          : 'None in range'
+    table([
+      [
+        'Feed-line pressure limit',
+        `${p(window.pressure_limit_bar)} ${unit}` +
+          (window.limit_source === 'user_limit' ? ' (user limit)' : ' (machine max less internal losses)'),
+      ],
+      ['Highest flow rate', bound(window.max_flow_rate.status, window.max_flow_rate.value_lpm, 'L/min', 'Not reached in range')],
+      ['Lowest set temperature', bound(window.min_temperature.status, window.min_temperature.value_c, '°C', 'Any in range')],
+      ['Narrowest line', bound(window.min_diameter.status, window.min_diameter.value_mm, 'mm', 'Any in range')],
+    ])
+  }
 
   // ── Thermal ───────────────────────────────────────────────────────────────────
   const thermal = results.thermal

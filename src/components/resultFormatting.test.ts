@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
+import { isNumber, formatTemperature, isSameTemperature, describeFlowWindow } from './resultFormatting'
 
 /**
  * Each block below pins one defect found by photographing the running application. They are
@@ -69,5 +69,37 @@ describe('isSameTemperature', () => {
   it('is false when either side is missing, so the row still renders', () => {
     expect(isSameTemperature(25, undefined)).toBe(false)
     expect(isSameTemperature(undefined, undefined)).toBe(false)
+  })
+})
+
+describe('describeFlowWindow', () => {
+  const base = {
+    min_lpm: 1.74,
+    max_lpm: 13.19,
+    min_governed_by: 'machine_output',
+    max_governed_by: 'pressure',
+    is_empty: false,
+  }
+
+  it('names the range and what sets each end', () => {
+    expect(describeFlowWindow(base)).toBe(
+      "1.7 – 13.2 L/min. The top is set by the pressure limit, the bottom by the machine's output range."
+    )
+  })
+
+  it('says plainly when pressure rules out every flow rate', () => {
+    expect(describeFlowWindow({ ...base, max_lpm: null, is_empty: true })).toMatch(
+      /No flow rate in range keeps this line within the pressure limit/
+    )
+  })
+
+  it('explains a window emptied by limits that cross', () => {
+    const text = describeFlowWindow({
+      ...base,
+      min_lpm: 16,
+      max_lpm: 13.19,
+      is_empty: true,
+    })
+    expect(text).toMatch(/caps it below the 16.0 L\/min minimum/)
   })
 })

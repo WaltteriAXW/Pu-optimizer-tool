@@ -39,6 +39,10 @@ export interface ProcessParameters {
   insulation_material?: InsulationMaterial;
   insulation_thickness_mm?: number;
 
+  // A feed-line pressure the user does not want to exceed — optional. The operating window
+  // is solved against this or the machine's own limit, whichever is tighter.
+  max_line_pressure_bar?: number;
+
   // Part geometry — optional. Supplying a part thickness adds the cure/exotherm block,
   // which describes the moulded part rather than the feed line.
   mold_temperature_c?: number;          // °C, defaults to the data sheet value
@@ -67,6 +71,35 @@ export interface HoseHeatTransfer {
     hose_wall: number;
     insulation: number;
     outer_surface: number;
+  };
+}
+
+/** Whether a setting reaches the pressure limit within the range the form accepts */
+export type WindowStatus = 'limit' | 'unconstrained' | 'infeasible';
+
+/** What sets one end of the flow window */
+export type WindowBound = 'pressure' | 'turbulence' | 'machine_output' | 'input_range';
+
+/**
+ * How far each setting can move, others held, before the feed line needs more pressure than
+ * allowed. Every boundary is found by bisection on the same calculation as the result.
+ */
+export interface OperatingWindow {
+  /** Feed-line limit applied (bar): the machine maximum less its own losses, or the user's */
+  pressure_limit_bar: number;
+  limit_source: 'machine_max' | 'user_limit';
+  machine_max_bar: number;
+  machine_loss_bar: number;
+  max_flow_rate: { status: WindowStatus; value_lpm: number | null };
+  min_temperature: { status: WindowStatus; value_c: number | null };
+  min_diameter: { status: WindowStatus; value_mm: number | null };
+  flow_window: {
+    min_lpm: number;
+    max_lpm: number | null;
+    min_governed_by: WindowBound;
+    max_governed_by: WindowBound;
+    is_empty: boolean;
+    current_inside: boolean;
   };
 }
 
@@ -269,6 +302,8 @@ export interface CalculationResults {
     set_pressure_bar?: number;
     set_pressure_governed_by?: 'line_demand' | 'machine_minimum';
   };
+  /** The limits of flow rate, temperature and diameter for this line on this machine */
+  operating_window?: OperatingWindow;
   timestamp?: string;
   warnings?: string[];
 }

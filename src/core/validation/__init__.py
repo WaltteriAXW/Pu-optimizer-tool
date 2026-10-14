@@ -96,6 +96,15 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
 
     errors.extend(_validate_hose(parameters))
 
+    limit = parameters.get('max_line_pressure_bar')
+    if limit is not None:
+        try:
+            limit = float(limit)
+            if not 0 < limit <= 500:
+                errors.append('Maximum line pressure must be between 0 and 500 bar')
+        except (ValueError, TypeError):
+            errors.append('Maximum line pressure must be a valid number')
+
     return errors
 
 

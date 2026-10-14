@@ -39,3 +39,40 @@ export const formatTemperature = (value: unknown): string =>
  */
 export const isSameTemperature = (a: unknown, b: unknown): boolean =>
   isNumber(a) && isNumber(b) && a.toFixed(1) === b.toFixed(1)
+
+/** What sets an end of the flow window, as a phrase that completes "set by …" */
+const WINDOW_BOUND_TEXT: Record<string, string> = {
+  pressure: 'the pressure limit',
+  turbulence: 'the onset of turbulence',
+  machine_output: "the machine's output range",
+  input_range: 'the range this tool accepts',
+}
+
+export const describeWindowBound = (bound: string): string =>
+  WINDOW_BOUND_TEXT[bound] ?? bound
+
+/**
+ * One sentence for the flow window. The point is the reason as much as the numbers: "up to
+ * 13 L/min" tells an operator where the edge is, "set by the pressure limit" tells them
+ * which way to move to widen it.
+ */
+export const describeFlowWindow = (window: {
+  min_lpm: number
+  max_lpm: number | null
+  min_governed_by: string
+  max_governed_by: string
+  is_empty: boolean
+}): string => {
+  if (window.is_empty || !isNumber(window.max_lpm)) {
+    return window.max_governed_by === 'pressure' && !isNumber(window.max_lpm)
+      ? 'No flow rate in range keeps this line within the pressure limit.'
+      : `No flow rate satisfies every limit: ${describeWindowBound(window.max_governed_by)} ` +
+          `caps it below the ${window.min_lpm.toFixed(1)} L/min minimum set by ` +
+          `${describeWindowBound(window.min_governed_by)}.`
+  }
+  return (
+    `${window.min_lpm.toFixed(1)} – ${window.max_lpm.toFixed(1)} L/min. ` +
+    `The top is set by ${describeWindowBound(window.max_governed_by)}, ` +
+    `the bottom by ${describeWindowBound(window.min_governed_by)}.`
+  )
+}

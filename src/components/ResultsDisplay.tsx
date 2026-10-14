@@ -2,9 +2,15 @@ import React from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
-import { isNumber, formatTemperature, isSameTemperature } from './resultFormatting'
+import { isNumber, formatTemperature, isSameTemperature, describeFlowWindow } from './resultFormatting'
 import { formatPressure, type PressureUnit } from '../services/displayPreferences'
-import type { CalculationResults, HoseHeatTransfer, LaminarEnvelope } from '../calculator_types'
+import type {
+  CalculationResults,
+  HoseHeatTransfer,
+  LaminarEnvelope,
+  OperatingWindow,
+  WindowStatus,
+} from '../calculator_types'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -103,6 +109,13 @@ export function ResultsDisplay() {
       {/* The number the operator sets, and the margin before the line turns turbulent */}
       <MachineSettingsCard results={results} unit={pressureUnit} />
       <LaminarEnvelopeCard envelope={results.flow?.laminar_envelope} />
+      {results.operating_window && (
+        <OperatingWindowCard
+          window={results.operating_window}
+          current={results.input}
+          unit={pressureUnit}
+        />
+      )}
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -808,6 +821,115 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * How far each setting can move before the line needs more pressure than allowed.
+ *
+ * The forward result answers "what does this setup need?"; this answers the question an
+ * operator asks next — "how far can I push it?" — for each dial on its own, others held.
+ */
+function OperatingWindowCard({
+  window,
+  current,
+  unit,
+}: {
+  window: OperatingWindow
+  current: CalculationResults['input']
+  unit: PressureUnit
+}) {
+  const flow = window.flow_window
+  const tone = flow.current_inside
+    ? 'bg-white border-slate-200'
+    : 'bg-red-50 border-red-100'
+
+  const limitText =
+    window.limit_source === 'user_limit'
+      ? `your limit of ${formatPressure(window.pressure_limit_bar, unit)} ${unit}`
+      : `${formatPressure(window.pressure_limit_bar, unit)} ${unit} — the machine's ` +
+        `${formatPressure(window.machine_max_bar, unit)} ${unit} less ` +
+        `${formatPressure(window.machine_loss_bar, unit)} ${unit} lost in its own plumbing`
+
+  return (
+    <div className={`rounded-xl border p-5 ${tone}`} data-testid="operating-window">
+      <h4 className="font-bold text-slate-800">Operating window</h4>
+      <p className="text-xs text-slate-500 mt-1">
+        Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
+      </p>
+
+      <p
+        className={`text-sm mt-3 leading-relaxed ${flow.current_inside ? 'text-slate-700' : 'text-red-800'}`}
+      >
+        <span className="font-semibold">Flow rate: </span>
+        {describeFlowWindow(flow)}
+        {!flow.current_inside && !flow.is_empty && (
+          <> The present {current.flow_rate_lpm.toFixed(1)} L/min is outside it.</>
+        )}
+      </p>
+
+      <dl className="mt-3 text-sm divide-y divide-slate-100">
+        <WindowRow
+          label="Highest flow rate within the pressure limit"
+          status={window.max_flow_rate.status}
+          value={window.max_flow_rate.value_lpm}
+          unit="L/min"
+          present={current.flow_rate_lpm}
+          unconstrained="Not reached anywhere in range"
+        />
+        <WindowRow
+          label="Lowest set temperature within the pressure limit"
+          status={window.min_temperature.status}
+          value={window.min_temperature.value_c}
+          unit="°C"
+          present={current.temperature_c}
+          unconstrained="Any temperature in range"
+        />
+        <WindowRow
+          label="Narrowest line within the pressure limit"
+          status={window.min_diameter.status}
+          value={window.min_diameter.value_mm}
+          unit="mm"
+          present={current.pipe_diameter_mm}
+          unconstrained="Any diameter in range"
+        />
+      </dl>
+    </div>
+  )
+}
+
+function WindowRow({
+  label,
+  status,
+  value,
+  unit,
+  present,
+  unconstrained,
+}: {
+  label: string
+  status: WindowStatus
+  value: number | null
+  unit: string
+  present: number
+  unconstrained: string
+}) {
+  const text =
+    status === 'limit' && isNumber(value)
+      ? `${value.toFixed(1)} ${unit}`
+      : status === 'unconstrained'
+        ? unconstrained
+        : 'None in range'
+
+  return (
+    <div className="flex justify-between items-baseline gap-4 py-2">
+      <dt className="text-slate-600">{label}</dt>
+      <dd className={`font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
+        {text}
+        <span className="block text-xs font-normal text-slate-400">
+          now {present.toFixed(1)} {unit}
+        </span>
+      </dd>
     </div>
   )
 }

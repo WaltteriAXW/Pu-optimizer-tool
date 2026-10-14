@@ -135,6 +135,22 @@ export class ExportService {
       }
     }
 
+    // Operating window: how far each setting can move within the pressure limit
+    const window = results.operating_window
+    if (window) {
+      const cell = (status: string, value: number | null) =>
+        status === 'limit' && value !== null ? value.toFixed(2) : status
+      rows.push('--- OPERATING WINDOW ---,')
+      rows.push(`Feed-Line Pressure Limit,${window.pressure_limit_bar.toFixed(2)},bar`)
+      rows.push(`Limit Source,${window.limit_source},`)
+      rows.push(`Max Flow Rate,${cell(window.max_flow_rate.status, window.max_flow_rate.value_lpm)},LPM`)
+      rows.push(`Min Temperature,${cell(window.min_temperature.status, window.min_temperature.value_c)},°C`)
+      rows.push(`Min Diameter,${cell(window.min_diameter.status, window.min_diameter.value_mm)},mm`)
+      rows.push(`Flow Window Min,${window.flow_window.min_lpm.toFixed(2)},LPM`)
+      rows.push(`Flow Window Max,${window.flow_window.max_lpm === null ? 'none' : window.flow_window.max_lpm.toFixed(2)},LPM`)
+      rows.push(`Flow Window Top Set By,${window.flow_window.max_governed_by},`)
+    }
+
     // Metadata
     if (options.includeTimestamp) {
       rows.push('--- EXPORT METADATA ---,')

@@ -209,8 +209,7 @@ export class PyodideBridge implements PyodideManager {
 
       // Core optimizers
       'src/core/optimizers/__init__.py',
-      'src/core/optimizers/pressure_optimizer.py',
-      'src/core/optimizers/inverse_optimization.py',
+      'src/core/optimizers/operating_window.py',
 
       // Core processors
       'src/core/processors/__init__.py',

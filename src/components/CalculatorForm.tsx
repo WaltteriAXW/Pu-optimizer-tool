@@ -62,6 +62,12 @@ const INSULATION_OPTIONS: Array<{ value: InsulationMaterial; label: string }> = 
   { value: 'mineral_wool', label: 'Mineral wool, foil-faced' },
 ]
 
+/** A tighter feed-line limit than the machine's own. Blank means the machine's. */
+const LINE_LIMIT_RANGE = {
+  min: 0.1, max: 500, label: 'Max Feed-Line Pressure', unit: 'bar', step: '0.5',
+  help: 'Optional. The operating window is solved against this or the machine limit, whichever is lower.',
+}
+
 const HOSE_FIELD_RANGES: Record<
   'hose_wall_thickness_mm' | 'insulation_thickness_mm',
   { min: number; max: number; label: string; unit: string; step: string; help: string }
@@ -261,7 +267,11 @@ export function CalculatorForm() {
       // ── Optional inputs ───────────────────────────────────────────────────
       // Clearing one must remove the key entirely, not leave the last value behind:
       // an absent ambient temperature is what keeps the calculation as it was.
-      const optionalRanges = { ...OPTIONAL_FIELD_RANGES, ...HOSE_FIELD_RANGES }
+      const optionalRanges = {
+        ...OPTIONAL_FIELD_RANGES,
+        ...HOSE_FIELD_RANGES,
+        max_line_pressure_bar: LINE_LIMIT_RANGE,
+      }
       if (name in optionalRanges && value.trim() === '') {
         setInputs((prev) => {
           const next = { ...prev }
@@ -537,6 +547,15 @@ export function CalculatorForm() {
             <option value="low_pressure">Low Pressure</option>
             <option value="high_pressure">High Pressure</option>
           </select>
+          <div className="mt-3">
+            <OptionalField
+              name="max_line_pressure_bar"
+              value={inputs.max_line_pressure_bar}
+              onChange={handleChange}
+              spec={LINE_LIMIT_RANGE}
+              error={fieldErrors.max_line_pressure_bar}
+            />
+          </div>
         </div>
 
         {/* Optional: ambient conditions and part geometry */}
