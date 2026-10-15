@@ -1,4 +1,4 @@
-import { test, expect, waitForEngine } from './fixtures'
+import { test, expect, waitForEngine, choosePressureUnit } from './fixtures'
 
 /**
  * The pressure unit is a display preference and nothing more.
@@ -26,7 +26,7 @@ test.describe('pressure units', () => {
     await expect(setPressure).toContainText('100')
     await expect(setPressure).toContainText('bar')
 
-    await page.getByTestId('unit-psi').click()
+    await choosePressureUnit(page, 'psi')
 
     // 100 bar is 1450 psi. Seeing the converted figure proves the preference reached the
     // headline, and seeing the unit change proves it is not merely relabelling.
@@ -43,13 +43,14 @@ test.describe('pressure units', () => {
 
   test('the choice survives a reload', async ({ page }) => {
     await waitForEngine(page)
-    await page.getByTestId('unit-psi').click()
+    await choosePressureUnit(page, 'psi')
 
     await page.reload()
     await waitForEngine(page)
 
-    await expect(page.getByTestId('unit-psi')).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByTestId('unit-bar')).toHaveAttribute('aria-pressed', 'false')
+    await page.getByTestId('open-settings').click()
+    await expect(page.getByTestId('unit-psi')).toBeChecked()
+    await expect(page.getByTestId('unit-bar')).not.toBeChecked()
   })
 
   test('switching units does not change what was calculated', async ({ page }) => {
@@ -59,8 +60,8 @@ test.describe('pressure units', () => {
 
     // Switch away and back: the bar figure must be exactly what it was, not a value
     // round-tripped through psi and back with the rounding that would imply
-    await page.getByTestId('unit-psi').click()
-    await page.getByTestId('unit-bar').click()
+    await choosePressureUnit(page, 'psi')
+    await choosePressureUnit(page, 'bar')
 
     await expect(page.getByTestId('kpi-pipe-pressure-drop')).toContainText('0.17')
     await expect(page.getByTestId('machine-settings')).toContainText('100')
@@ -71,7 +72,7 @@ test.describe('pressure units', () => {
     await page.click('button[type=submit]')
     await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
 
-    await page.getByTestId('unit-psi').click()
+    await choosePressureUnit(page, 'psi')
 
     // The exported record is the calculation, not the view of it. A file whose units
     // depended on a toggle set at download time would be unreadable a week later.

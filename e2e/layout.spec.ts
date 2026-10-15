@@ -32,7 +32,7 @@ test.describe('layout', () => {
     }
   })
 
-  test('nothing runs off a phone screen, and the unit switch is there', async ({ page }) => {
+  test('nothing runs off a phone screen, and the unit setting is reachable', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('./')
     await waitForEngine(page)
@@ -49,7 +49,9 @@ test.describe('layout', () => {
       expect(box!.x + box!.width).toBeLessThanOrEqual(375)
     }
 
-    await expect(page.getByTestId('unit-psi')).toBeVisible()
+    // The unit is a setting, reachable at every width through Settings
+    await page.getByTestId('open-settings').click()
+    await expect(page.getByTestId('unit-psi')).toBeAttached()
   })
 
   test('asking for less motion turns off smooth scrolling and the slide-in', async ({ page }) => {

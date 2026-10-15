@@ -1,4 +1,4 @@
-import { test, expect, waitForEngine } from './fixtures'
+import { test, expect, waitForEngine, choosePressureUnit } from './fixtures'
 
 /**
  * The printed report.
@@ -84,7 +84,7 @@ test.describe('PDF report', () => {
 
   test('quotes pressures in the unit chosen on screen', async ({ page }) => {
     await waitForEngine(page)
-    await page.getByTestId('unit-psi').click()
+    await choosePressureUnit(page, 'psi')
     await page.click('button[type=submit]')
     await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
 

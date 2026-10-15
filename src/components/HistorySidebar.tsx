@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef } from 'react'
+import { useId, useRef } from 'react'
 import { Trash2, History, ChevronRight, X } from 'lucide-react'
 import { DatasetPanel } from './DatasetPanel'
+import { useModalDialog } from './useModalDialog'
 import {
   SHOT_OUTCOME_LABEL,
   isLabelled,
@@ -47,59 +48,7 @@ export function HistorySidebar({
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    // Whatever had focus when the panel opened gets it back on close
-    const previouslyFocused = document.activeElement as HTMLElement | null
-
-    const focusable = () =>
-      Array.from(
-        panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        ) ?? []
-      )
-
-    panelRef.current?.focus()
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.stopPropagation()
-        onClose()
-        return
-      }
-
-      if (event.key !== 'Tab') return
-
-      const elements = focusable()
-      if (elements.length === 0) {
-        event.preventDefault()
-        return
-      }
-
-      const first = elements[0]
-      const last = elements[elements.length - 1]
-      const active = document.activeElement
-
-      // Wrap at both ends, and pull focus back in if it has escaped the panel entirely
-      if (event.shiftKey && (active === first || active === panelRef.current)) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault()
-        first.focus()
-      } else if (active instanceof Node && !panelRef.current?.contains(active)) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      previouslyFocused?.focus?.()
-    }
-  }, [isOpen, onClose])
+  useModalDialog(panelRef, isOpen, onClose)
 
   if (!isOpen) return null
 

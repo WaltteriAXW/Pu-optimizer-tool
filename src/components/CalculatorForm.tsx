@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useId } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
-import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
+import { getLastInputs, getPreferences, saveLastInputs } from '@/services/displayPreferences'
 import type {
   ProcessParameters,
   HoseMaterial,
@@ -10,6 +10,7 @@ import type {
   RheologyModelName,
 } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown } from 'lucide-react'
+import { SegmentedControl } from './controls'
 
 /** Default values pre-filled when the user switches to Custom Material */
 const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
@@ -209,7 +210,7 @@ const CUSTOM_FIELD_RANGES: Record<
 }
 
 export function CalculatorForm() {
-  const { calculate, isLoading, isReady, error, loadProgress } = useCalculator()
+  const { calculate, isLoading, isReady, error, loadProgress, rememberSetup } = useCalculator()
 
   // The last setup comes back on load. Only recognised numeric fields are taken from
   // storage, and the material is deliberately left for the effect below to resolve against
@@ -224,7 +225,7 @@ export function CalculatorForm() {
       machine_type: 'high_pressure',
     }
 
-    const stored = getLastInputs()
+    const stored = getPreferences().rememberSetup ? getLastInputs() : null
     if (!stored) return base
 
     const restored: ProcessParameters = { ...base }
@@ -332,12 +333,6 @@ export function CalculatorForm() {
             return updated
           })
         }
-        return
-      }
-
-      // ── Machine type selector ─────────────────────────────────────────────
-      if (name === 'machine_type') {
-        setInputs((prev) => ({ ...prev, machine_type: value }))
         return
       }
 
@@ -462,11 +457,11 @@ export function CalculatorForm() {
     (e: React.FormEvent) => {
       e.preventDefault()
       if (Object.keys(fieldErrors).length === 0 && isReady) {
-        saveLastInputs({ ...inputs } as unknown as Record<string, unknown>)
+        if (rememberSetup) saveLastInputs({ ...inputs } as unknown as Record<string, unknown>)
         calculate(inputs)
       }
     },
-    [fieldErrors, isReady, inputs, calculate]
+    [fieldErrors, isReady, inputs, calculate, rememberSetup]
   )
 
   // Lagging chosen without a thickness would quietly mean "no lagging" in Python, so it is
@@ -709,35 +704,17 @@ export function CalculatorForm() {
         )}
 
         {/* Machine Type. Two choices, so both are shown at once as a segmented control
-            rather than hidden behind a dropdown. Native radios underneath: arrow keys move
-            between them and a screen reader announces "1 of 2". */}
-        <fieldset className="mb-5">
-          <legend className="text-sm font-semibold text-slate-700 block mb-1.5">
-            Machine Type
-          </legend>
-          <div className="segmented grid w-full">
-            {MACHINE_OPTIONS.map((option) => {
-              const checked = inputs.machine_type === option.value
-              return (
-                <label
-                  key={option.value}
-                  className={`segment has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${checked ? 'segment-selected' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="machine_type"
-                    value={option.value}
-                    checked={checked}
-                    onChange={handleChange}
-                    // Covers the whole segment, invisibly, so the radio itself is what gets
-                    // pressed and focused — not a 1 px input behind a styled label
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                  />
-                  {option.label}
-                </label>
-              )
-            })}
-          </div>
+            rather than hidden behind a dropdown. */}
+        <div className="mb-5">
+          <SegmentedControl
+            name="machine_type"
+            label="Machine Type"
+            labelVisible
+            fullWidth
+            options={MACHINE_OPTIONS}
+            value={(inputs.machine_type ?? 'high_pressure') as (typeof MACHINE_OPTIONS)[number]['value']}
+            onChange={(machine_type) => setInputs((prev) => ({ ...prev, machine_type }))}
+          />
           <div className="mt-3">
             <OptionalField
               name="max_line_pressure_bar"
@@ -747,7 +724,7 @@ export function CalculatorForm() {
               error={fieldErrors.max_line_pressure_bar}
             />
           </div>
-        </fieldset>
+        </div>
 
         {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">

@@ -16,8 +16,11 @@ import {
   type ShotOutcome,
 } from '../services/ShotRecordStore'
 import {
+  applyAppearance,
+  clearLastInputs,
   getPreferences,
   savePreferences,
+  type Appearance,
   type PressureUnit,
 } from '../services/displayPreferences'
 import type { ProcessParameters, CalculationResults } from '@/calculator_types'
@@ -53,6 +56,12 @@ interface CalculatorContextType {
   /** The unit pressures are shown in. Display only — the engine and the records hold bar. */
   pressureUnit: PressureUnit
   setPressureUnit: (unit: PressureUnit) => void
+  /** Light, dark, or following the device */
+  appearance: Appearance
+  setAppearance: (appearance: Appearance) => void
+  /** Whether the last setup comes back into the form on the next visit */
+  rememberSetup: boolean
+  setRememberSetup: (remember: boolean) => void
   /** How far the Python engine has got, while it is still starting up */
   loadProgress: EngineProgress | null
 }
@@ -78,6 +87,16 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
   const [pressureUnit, setPressureUnitState] = useState<PressureUnit>(
     () => getPreferences().pressureUnit
   )
+  const [appearance, setAppearanceState] = useState<Appearance>(() => getPreferences().appearance)
+  const [rememberSetup, setRememberSetupState] = useState<boolean>(
+    () => getPreferences().rememberSetup
+  )
+
+  // index.html applies the stored appearance before the first paint; this keeps it in step
+  // with changes made in Settings
+  useEffect(() => {
+    applyAppearance(appearance)
+  }, [appearance])
   const [loadProgress, setLoadProgress] = useState<EngineProgress | null>(null)
 
   // Past runs come back from storage on load rather than starting empty
@@ -107,6 +126,18 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
   const setPressureUnit = useCallback((unit: PressureUnit) => {
     setPressureUnitState(unit)
     savePreferences({ pressureUnit: unit })
+  }, [])
+
+  const setAppearance = useCallback((next: Appearance) => {
+    setAppearanceState(next)
+    savePreferences({ appearance: next })
+  }, [])
+
+  // Turning it off also forgets what was saved, so the choice means what it says
+  const setRememberSetup = useCallback((remember: boolean) => {
+    setRememberSetupState(remember)
+    savePreferences({ rememberSetup: remember })
+    if (!remember) clearLastInputs()
   }, [])
 
   const calculate = useCallback(async (params: ProcessParameters) => {
@@ -189,6 +220,10 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         trainModel,
         pressureUnit,
         setPressureUnit,
+        appearance,
+        setAppearance,
+        rememberSetup,
+        setRememberSetup,
         loadProgress,
       }}
     >

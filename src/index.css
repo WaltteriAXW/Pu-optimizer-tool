@@ -40,18 +40,18 @@
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-3 bg-surface border border-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors hover:bg-slate-50 hover:border-slate-300;
   }
 
-  /* Segmented control: a track with equal segments; the chosen one sits raised on it.
-     Shared by the unit switch and Machine Type so the two read as one kind of control. */
+  /* Segmented control: a capsule track with equal segments; the chosen one sits raised on
+     it. Shared by every segmented control (src/components/controls.tsx). */
   .segmented {
-    @apply inline-grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-slate-100 p-1;
+    @apply inline-grid auto-cols-fr grid-flow-col gap-0.5 rounded-full bg-slate-100 p-1;
   }
 
   .segment {
-    @apply relative flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md px-3 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900;
+    @apply relative flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-slate-600 transition-colors hover:bg-slate-200/70 hover:text-slate-900;
   }
 
   .segment-selected {
-    @apply bg-surface text-indigo-700 shadow-sm hover:text-indigo-700;
+    @apply bg-surface text-slate-900 shadow-sm hover:bg-surface hover:text-slate-900;
   }
 
   .card {

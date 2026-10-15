@@ -10,7 +10,8 @@
  * "surface" is the card and input background: white in light, a raised dark blue-grey in
  * dark. Text on solid accents (the Run button, the logo) stays text-white in both.
  *
- * data-theme="light" forces the light values, for the PDF capture of the chart.
+ * data-theme on the root overrides the device: "light" or "dark" from Settings, and "light"
+ * for the PDF capture of the chart. Without it, the device's appearance decides.
  */
 
 :root {
@@ -172,6 +173,86 @@
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: more) {
   :root:not([data-theme='light']) {
+    --c-slate-200: 71 85 105;
+    --c-slate-400: 154 168 188;
+    --c-slate-500: 180 192 208;
+  }
+}
+
+/* Chosen in Settings: dark whatever the device says */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --c-surface: 21 30 48;
+  --c-slate-50: 11 17 32;
+  --c-slate-100: 31 42 61;
+  --c-slate-200: 44 58 80;
+  --c-slate-300: 71 85 105;
+  --c-slate-400: 124 138 160;
+  --c-slate-500: 154 168 188;
+  --c-slate-600: 180 192 208;
+  --c-slate-700: 203 213 225;
+  --c-slate-800: 226 232 240;
+  --c-slate-900: 241 245 249;
+  --c-slate-950: 248 250 252;
+  --c-indigo-50: 32 40 75;
+  --c-indigo-100: 40 47 94;
+  --c-indigo-200: 51 57 121;
+  --c-indigo-300: 68 73 164;
+  --c-indigo-400: 129 140 248;
+  --c-indigo-500: 129 140 248;
+  --c-indigo-600: 118 126 245;
+  --c-indigo-700: 127 136 247;
+  --c-indigo-800: 199 210 254;
+  --c-indigo-900: 224 231 255;
+  --c-indigo-950: 238 242 255;
+  --c-emerald-50: 20 52 59;
+  --c-emerald-100: 20 67 67;
+  --c-emerald-200: 19 89 79;
+  --c-emerald-300: 18 123 97;
+  --c-emerald-400: 52 211 153;
+  --c-emerald-500: 52 211 153;
+  --c-emerald-600: 52 211 153;
+  --c-emerald-700: 110 231 183;
+  --c-emerald-800: 167 243 208;
+  --c-emerald-900: 209 250 229;
+  --c-emerald-950: 236 253 245;
+  --c-amber-50: 52 48 43;
+  --c-amber-100: 75 61 39;
+  --c-amber-200: 106 79 34;
+  --c-amber-300: 155 107 26;
+  --c-amber-400: 251 191 36;
+  --c-amber-500: 251 191 36;
+  --c-amber-600: 251 191 36;
+  --c-amber-700: 252 211 77;
+  --c-amber-800: 253 230 138;
+  --c-amber-900: 254 243 199;
+  --c-amber-950: 255 251 235;
+  --c-red-50: 52 35 51;
+  --c-red-100: 73 39 53;
+  --c-red-200: 104 44 56;
+  --c-red-300: 152 53 60;
+  --c-red-400: 248 113 113;
+  --c-red-500: 248 113 113;
+  --c-red-600: 248 113 113;
+  --c-red-700: 252 165 165;
+  --c-red-800: 254 202 202;
+  --c-red-900: 254 226 226;
+  --c-red-950: 254 242 242;
+  --c-orange-50: 53 42 44;
+  --c-orange-100: 76 50 42;
+  --c-orange-200: 108 62 38;
+  --c-orange-300: 158 81 32;
+  --c-orange-400: 251 146 60;
+  --c-orange-500: 251 146 60;
+  --c-orange-600: 251 146 60;
+  --c-orange-700: 253 186 116;
+  --c-orange-800: 254 215 170;
+  --c-orange-900: 255 237 213;
+  --c-orange-950: 255 247 237;
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme='dark'] {
     --c-slate-200: 71 85 105;
     --c-slate-400: 154 168 188;
     --c-slate-500: 180 192 208;

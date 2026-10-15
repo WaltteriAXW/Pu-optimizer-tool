@@ -103,3 +103,11 @@ describe.each([
     expect(contrast(resolve(fg), resolve(bg))).toBeGreaterThanOrEqual(minimum)
   })
 })
+
+describe('dark chosen in Settings', () => {
+  it('uses exactly the values the device dark appearance does', () => {
+    const forced = block(/^:root\[data-theme='dark'\] \{/m)
+    const automatic = block(/prefers-color-scheme: dark\) \{\s*:root:not/)
+    expect(forced).toEqual(automatic)
+  })
+})
