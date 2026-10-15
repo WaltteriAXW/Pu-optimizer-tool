@@ -72,7 +72,7 @@ export function ResultsDisplay() {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-red-100 shadow-sm text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-2xl border border-red-100 shadow-sm text-center"
       >
         <div className="bg-red-50 p-4 rounded-full mb-4">
           <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
@@ -85,7 +85,7 @@ export function ResultsDisplay() {
 
   if (!results) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-dashed border-slate-300 text-center">
+      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-2xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
           <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
@@ -178,7 +178,7 @@ export function ResultsDisplay() {
         <div className="lg:col-span-1 space-y-6">
           {/* Status Box */}
           {results.warnings && results.warnings.length > 0 ? (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
               <h4 className="text-amber-900 font-semibold flex items-center gap-2 mb-3">
                 <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
@@ -192,7 +192,7 @@ export function ResultsDisplay() {
               </ul>
             </div>
           ) : (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
               {/* Says what was checked, not more: no warnings is not the same as optimised */}
               <h4 className="text-emerald-900 font-semibold flex items-center gap-2 mb-1">
                 <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
@@ -789,7 +789,7 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
       : 'text-emerald-800'
 
   return (
-    <div className={`rounded-xl border p-5 ${tone}`} data-testid="laminar-envelope">
+    <div className={`rounded-2xl border p-5 ${tone}`} data-testid="laminar-envelope">
       <div className="flex items-start gap-3">
         {laminar && !tight ? (
           <CheckCircle2 aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
@@ -848,7 +848,7 @@ function OperatingWindowCard({
         `${formatPressure(window.machine_loss_bar, unit)} ${unit} lost in its own plumbing`
 
   return (
-    <div className={`rounded-xl border p-5 ${tone}`} data-testid="operating-window">
+    <div className={`rounded-2xl border p-5 ${tone}`} data-testid="operating-window">
       <h4 className="font-semibold text-slate-800">Operating window</h4>
       <p className="text-sm text-slate-500 mt-1">
         Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.

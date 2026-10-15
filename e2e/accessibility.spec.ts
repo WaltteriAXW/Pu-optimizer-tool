@@ -21,10 +21,10 @@ test.describe('accessibility', () => {
 
     // getByLabel only matches when the association actually resolves — these all used to
     // be bare <label> elements sitting next to unlabelled inputs.
-    await expect(page.getByLabel('Pipe Length')).toBeVisible()
-    await expect(page.getByLabel('Pipe Diameter')).toBeVisible()
-    await expect(page.getByLabel('Material Temperature')).toBeVisible()
-    await expect(page.getByLabel('Flow Rate')).toBeVisible()
+    await expect(page.getByLabel('Pipe Length', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Pipe Diameter', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Material Temperature', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Flow Rate', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Material Type')).toBeVisible()
     // Two choices shown as a segmented control: the group is named, and so is each choice
     await expect(page.getByRole('radiogroup', { name: 'Machine Type' })).toBeVisible()
@@ -35,7 +35,7 @@ test.describe('accessibility', () => {
   test('an out-of-range value is announced, not only coloured red', async ({ page }) => {
     await waitForEngine(page)
 
-    const pipeLength = page.getByLabel('Pipe Length')
+    const pipeLength = page.getByLabel('Pipe Length', { exact: true })
     await pipeLength.fill('10')  // below the 50 mm minimum
 
     // Marked invalid for assistive technology rather than by border colour alone

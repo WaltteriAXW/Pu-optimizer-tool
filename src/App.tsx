@@ -98,7 +98,7 @@ function AppContent() {
                 window, which kept the Run button below the fold for the first thousand
                 pixels of scrolling. The scroll padding keeps a field brought into view
                 (by Tab, say) clear of the button pinned over the bottom of the column. */}
-            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-xl">
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-2xl">
               <CalculatorForm />
             </div>
           </div>

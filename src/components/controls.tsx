@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { ChevronsUpDown } from 'lucide-react'
 
 /**
  * Small controls shared across the app, styled after their Apple counterparts. Each is built on
@@ -121,5 +122,28 @@ export function Switch({
         />
       </span>
     </button>
+  )
+}
+
+/**
+ * A pop-up button over a native select: rounded, with up-and-down chevrons, as a system
+ * pop-up button has. Native underneath, so an iPhone opens its picker wheel, a desktop its
+ * menu, and keyboard and screen reader behaviour come for free.
+ */
+export function PopUpSelect({
+  children,
+  className = '',
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className={`relative ${className}`}>
+      <select {...props} className="popup">
+        {children}
+      </select>
+      <ChevronsUpDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+      />
+    </div>
   )
 }

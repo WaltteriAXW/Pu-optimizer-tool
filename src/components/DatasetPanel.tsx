@@ -224,7 +224,7 @@ export function DatasetPanel() {
                       setSummary(null)
                       setTrained(null)
                     }}
-                    className="flex-1 min-h-[44px] text-sm px-3 rounded-lg font-semibold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
+                    className="flex-1 min-h-[44px] text-sm px-3 rounded-full font-semibold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
                   >
                     Delete everything
                   </button>
@@ -235,7 +235,7 @@ export function DatasetPanel() {
                 type="button"
                 onClick={() => setConfirmingClear(true)}
                 data-testid="clear-dataset"
-                className="w-full min-h-[44px] text-sm px-3 rounded-lg font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+                className="w-full min-h-[44px] text-sm px-3 rounded-full font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Trash2 aria-hidden="true" className="w-4 h-4" />
                 Clear saved runs

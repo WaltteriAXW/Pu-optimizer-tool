@@ -2,6 +2,7 @@ import { useId, useRef } from 'react'
 import { Trash2, History, ChevronRight, X } from 'lucide-react'
 import { DatasetPanel } from './DatasetPanel'
 import { useModalDialog } from './useModalDialog'
+import { PopUpSelect } from './controls'
 import {
   SHOT_OUTCOME_LABEL,
   isLabelled,
@@ -76,7 +77,7 @@ export function HistorySidebar({
             type="button"
             onClick={onClose}
             aria-label="Close history"
-            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
           >
             <X aria-hidden="true" className="w-5 h-5" />
           </button>
@@ -209,19 +210,18 @@ function HistoryItem({
         <label htmlFor={outcomeId} className="block text-sm font-semibold text-slate-700 mb-1">
           How did the part come out?
         </label>
-        <select
+        <PopUpSelect
           id={outcomeId}
           value={entry.outcome}
           onChange={(e) => onRecordOutcome(e.target.value as ShotOutcome)}
           onClick={(e) => e.stopPropagation()}
-          className="w-full min-h-[44px] text-sm px-3 border border-slate-300 rounded-lg bg-surface"
         >
           {(Object.keys(SHOT_OUTCOME_LABEL) as ShotOutcome[]).map((value) => (
             <option key={value} value={value}>
               {SHOT_OUTCOME_LABEL[value]}
             </option>
           ))}
-        </select>
+        </PopUpSelect>
       </div>
 
       {/* Delete button */}
@@ -233,7 +233,7 @@ function HistoryItem({
         // Several "Delete" buttons sit in this list; without naming the run they are
         // indistinguishable when tabbed through
         aria-label={`Delete run: ${materialName}, ${timeAgo}`}
-        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center gap-1.5"
       >
         <Trash2 aria-hidden="true" className="w-4 h-4" />
         Delete
