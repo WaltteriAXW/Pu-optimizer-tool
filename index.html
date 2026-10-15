@@ -7,22 +7,33 @@
          is published, and the file it named did not exist either. -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)" />
     <meta
       name="description"
       content="Physics-based calculator for polyurethane injection molding: pressure to set, laminar flow margin, temperature effects, blowing agent volatility and cure prediction — running entirely in your browser."
     />
-    <meta property="og:title" content="PU Optimizer" />
+    <meta property="og:title" content="Polyurethane Optimizer" />
     <meta
       property="og:description"
       content="Work out the injection pressure to set, how much margin remains before turbulent flow, and how temperature changes both."
     />
     <meta property="og:type" content="website" />
-    <title>PU Optimizer - Physics-Based Injection Engine</title>
-    <script type="module" crossorigin src="/Pu-optimizer-tool/assets/index-BDSUJ0M1.js"></script>
-    <link rel="modulepreload" crossorigin href="/Pu-optimizer-tool/assets/react-vendor-BQ7Np1WZ.js">
+    <title>Polyurethane Optimizer</title>
+    <!-- The appearance chosen in Settings, applied before the first paint so a dark choice
+         does not flash light while the app loads. Mirrors applyAppearance(). -->
+    <script>
+      try {
+        var stored = JSON.parse(localStorage.getItem('pu_optimizer_display_preferences') || '{}')
+        if (stored.appearance === 'light' || stored.appearance === 'dark') {
+          document.documentElement.setAttribute('data-theme', stored.appearance)
+        }
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/Pu-optimizer-tool/assets/index-wAyQwRNl.js"></script>
+    <link rel="modulepreload" crossorigin href="/Pu-optimizer-tool/assets/react-vendor-DJ1oPbzn.js">
     <link rel="modulepreload" crossorigin href="/Pu-optimizer-tool/assets/pyodide-vendor-BX4kkLZf.js">
-    <link rel="stylesheet" crossorigin href="/Pu-optimizer-tool/assets/index-But-n1Vs.css">
+    <link rel="stylesheet" crossorigin href="/Pu-optimizer-tool/assets/index-D_8uOpjT.css">
   </head>
   <body>
     <div id="root"></div>
