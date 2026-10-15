@@ -3,14 +3,13 @@ import { ExportService } from '../services/ExportService'
 import { generateReport } from '../utils/generateReport'
 import { useCalculator } from '../context/CalculatorContext'
 import type { CalculationResults } from '@/calculator_types'
-import { AlertCircle, Download, FileJson, FileText, Loader } from 'lucide-react'
+import { AlertCircle, FileDown, FileJson, FileSpreadsheet, FileText, Loader } from 'lucide-react'
 
 /**
- * The four exports are four equal choices, so they share one neutral style. They used to be
- * indigo, green, orange and teal, which suggested meanings the formats do not have.
+ * The four exports are four equal choices, so they share the one secondary style. They used
+ * to be indigo, green, orange and teal, which suggested meanings the formats do not have.
  */
-const EXPORT_BUTTON =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-surface px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors'
+const EXPORT_BUTTON = 'button-secondary'
 
 interface ExportButtonsProps {
   results: CalculationResults
@@ -100,7 +99,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as CSV"
         >
-          <FileText aria-hidden="true" className="w-4 h-4" />
+          <FileSpreadsheet aria-hidden="true" className="w-4 h-4" />
           CSV
         </button>
 
@@ -109,7 +108,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as Text Report"
         >
-          <Download aria-hidden="true" className="w-4 h-4" />
+          <FileText aria-hidden="true" className="w-4 h-4" />
           Report
         </button>
 
@@ -122,7 +121,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           {isGeneratingPDF ? (
             <Loader aria-hidden="true" className="w-4 h-4 animate-spin" />
           ) : (
-            <Download aria-hidden="true" className="w-4 h-4" />
+            <FileDown aria-hidden="true" className="w-4 h-4" />
           )}
           {isGeneratingPDF ? 'Generating...' : 'PDF'}
         </button>

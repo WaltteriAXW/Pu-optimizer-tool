@@ -40,7 +40,7 @@ function AppContent() {
                 <Activity className="h-6 w-6 text-white" strokeWidth={2.5} />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
                   PU Optimizer
                 </h1>
                 <p className="hidden sm:block text-xs text-slate-500 font-medium">
@@ -58,7 +58,7 @@ function AppContent() {
               <div
                 role="group"
                 aria-label="Pressure unit"
-                className="inline-flex items-center rounded-lg bg-slate-100 p-0.5"
+                className="segmented"
               >
                 {(['bar', 'psi'] as const).map((unit) => (
                   <button
@@ -67,11 +67,7 @@ function AppContent() {
                     onClick={() => setPressureUnit(unit)}
                     aria-pressed={pressureUnit === unit}
                     data-testid={`unit-${unit}`}
-                    className={`min-h-[44px] min-w-[44px] px-2.5 text-sm font-bold rounded-md transition-colors ${
-                      pressureUnit === unit
-                        ? 'bg-surface text-indigo-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`segment ${pressureUnit === unit ? 'segment-selected' : ''}`}
                   >
                     {unit}
                   </button>

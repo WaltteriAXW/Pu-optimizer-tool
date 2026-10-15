@@ -109,7 +109,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
     // captures this element as it is.
     <div className="w-full bg-surface p-1" data-chart="pressure-profile">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h3 className="text-lg font-bold text-slate-800">Pressure Profile</h3>
+        <h3 className="text-lg font-semibold text-slate-800">Pressure Profile</h3>
         {/* The legend sits outside the plot. Inside it, it covered the end of the line —
             the one point on the chart that matters most. The two series differ by line
             style as well as colour, so the legend does not rely on colour alone. */}

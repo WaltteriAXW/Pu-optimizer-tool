@@ -512,7 +512,7 @@ export function CalculatorForm() {
     // scrolling column; the header rounds its own corners instead.
     <div className="card lg:overflow-visible">
       <div className="card-header rounded-t-xl">
-        <h2 className="font-bold text-slate-800">Process Parameters</h2>
+        <h2 className="font-semibold text-slate-800">Process Parameters</h2>
         <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
       </div>
 
@@ -715,17 +715,13 @@ export function CalculatorForm() {
           <legend className="text-sm font-semibold text-slate-700 block mb-1.5">
             Machine Type
           </legend>
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+          <div className="segmented grid w-full">
             {MACHINE_OPTIONS.map((option) => {
               const checked = inputs.machine_type === option.value
               return (
                 <label
                   key={option.value}
-                  className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
-                    checked
-                      ? 'bg-surface text-indigo-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  className={`segment has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${checked ? 'segment-selected' : ''}`}
                 >
                   <input
                     type="radio"
@@ -919,7 +915,7 @@ export function CalculatorForm() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform motion-safe:active:scale-95 ${
+            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-white shadow-sm transition-all transform motion-safe:active:scale-95 ${
               !canSubmit
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'

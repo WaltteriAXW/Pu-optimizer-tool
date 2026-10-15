@@ -31,11 +31,27 @@
   }
 
   .button-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-[44px] items-center justify-center px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed;
   }
 
   .button-secondary {
-    @apply inline-flex min-h-[44px] items-center justify-center px-4 py-2.5 bg-slate-200 text-slate-900 font-bold rounded-lg shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-slate-300;
+    /* The one secondary style: outlined on the surface. The export row and the history
+       panel used to have two different ones. */
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-3 bg-surface border border-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors hover:bg-slate-50 hover:border-slate-300;
+  }
+
+  /* Segmented control: a track with equal segments; the chosen one sits raised on it.
+     Shared by the unit switch and Machine Type so the two read as one kind of control. */
+  .segmented {
+    @apply inline-grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-slate-100 p-1;
+  }
+
+  .segment {
+    @apply relative flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-md px-3 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900;
+  }
+
+  .segment-selected {
+    @apply bg-surface text-indigo-700 shadow-sm hover:text-indigo-700;
   }
 
   .card {
