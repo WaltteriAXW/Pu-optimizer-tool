@@ -209,7 +209,7 @@ function HistoryItem({
           {/* Summary stats */}
           <div className="flex items-center gap-2 mt-2 text-xs">
             {pressure && (
-              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded">
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded">
                 {pressure} bar
               </span>
             )}
@@ -257,7 +257,7 @@ function HistoryItem({
       {/* How the part came out. Recorded after the fact, which is the point: this is the
           one field the physics cannot supply and a model would need. */}
       <div className="mb-3" data-testid="outcome-picker">
-        <label htmlFor={outcomeId} className="block text-xs font-semibold text-slate-600 mb-1">
+        <label htmlFor={outcomeId} className="block text-sm font-semibold text-slate-700 mb-1">
           How did the part come out?
         </label>
         <select
@@ -265,7 +265,7 @@ function HistoryItem({
           value={entry.outcome}
           onChange={(e) => onRecordOutcome(e.target.value as ShotOutcome)}
           onClick={(e) => e.stopPropagation()}
-          className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded bg-surface"
+          className="w-full min-h-[44px] text-sm px-3 border border-slate-300 rounded-lg bg-surface"
         >
           {(Object.keys(SHOT_OUTCOME_LABEL) as ShotOutcome[]).map((value) => (
             <option key={value} value={value}>

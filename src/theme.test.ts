@@ -68,6 +68,9 @@ const PAIRS: Array<[string, string, number]> = [
   // ...and its hover state, which in dark must not lighten past what white text can sit on
   ['white', 'indigo-700', 3],
   ['indigo-800', 'indigo-50', 4.5],
+  // Pills and the active History button: text on the stronger tint
+  ['indigo-800', 'indigo-100', 4.5],
+  ['emerald-700', 'emerald-100', 4.5],
   ['indigo-900', 'indigo-50', 4.5],
   // Status panels: text on their own tint
   ['emerald-800', 'emerald-50', 4.5],

@@ -130,8 +130,9 @@ export function ResultsDisplay() {
         />
       )}
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Grid. Columns come from a minimum card width in rem, so text enlarged to
+          200% gets fewer, wider cards instead of four clipped ones. */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-4">
         <KpiCard
           title="Pipe Pressure Drop"
           value={formatPressure(results.pressure?.pressure_with_fittings_bar, pressureUnit)}
@@ -915,9 +916,9 @@ function WindowRow({
         : 'None in range'
 
   return (
-    <div className="flex justify-between items-baseline gap-4 py-2">
+    <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 py-2">
       <dt className="text-slate-600">{label}</dt>
-      <dd className={`font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
+      <dd className={`ml-auto font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
         {text}
         <span className="block text-xs font-normal text-slate-500">
           now {present.toFixed(1)} {unit}
@@ -1029,14 +1030,14 @@ function KpiCard({
   return (
     <div className="card hover:shadow-md transition-shadow" data-testid={testId}>
       <div className="card-body">
-        <div className="flex justify-between items-start mb-2">
-          <span className="text-sm font-medium text-slate-500">{title}</span>
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <span className="min-w-0 text-sm font-medium text-slate-500">{title}</span>
           {/* Decorative: every icon here restates the title beside it */}
           <div aria-hidden="true" className={`p-2 rounded-lg ${statusColors[status]}`}>
             {icon}
           </div>
         </div>
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
           {unit && <span className="text-xs font-medium text-slate-500">{unit}</span>}
         </div>

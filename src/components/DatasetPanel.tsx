@@ -235,9 +235,9 @@ export function DatasetPanel() {
                 type="button"
                 onClick={() => setConfirmingClear(true)}
                 data-testid="clear-dataset"
-                className="w-full text-xs px-3 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+                className="w-full min-h-[44px] text-sm px-3 rounded-lg font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
               >
-                <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
+                <Trash2 aria-hidden="true" className="w-4 h-4" />
                 Clear saved runs
               </button>
             )}

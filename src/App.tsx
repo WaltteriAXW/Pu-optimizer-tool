@@ -33,7 +33,8 @@ function AppContent() {
       {/* Navigation Bar */}
       <nav className="bg-surface border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          {/* Wraps rather than running off the screen when someone has enlarged their text */}
+          <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 min-h-16 py-2">
             <div className="flex items-center gap-3">
               <div className="bg-indigo-600 p-2 rounded-lg">
                 <Activity className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -47,7 +48,7 @@ function AppContent() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
               {/* Shown at every width: the unit is a setting, and a setting that exists on a
                   laptop but not on the phone at the machine is a missing feature there.
 
@@ -66,7 +67,7 @@ function AppContent() {
                     onClick={() => setPressureUnit(unit)}
                     aria-pressed={pressureUnit === unit}
                     data-testid={`unit-${unit}`}
-                    className={`min-h-[40px] min-w-[44px] px-2.5 text-sm font-bold rounded-md transition-colors ${
+                    className={`min-h-[44px] min-w-[44px] px-2.5 text-sm font-bold rounded-md transition-colors ${
                       pressureUnit === unit
                         ? 'bg-surface text-indigo-700 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
@@ -80,7 +81,7 @@ function AppContent() {
                 href={DOCS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:inline text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                className="hidden sm:inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
               >
                 Documentation
               </a>
@@ -94,7 +95,7 @@ function AppContent() {
                 } saved`}
                 className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-3 text-sm font-medium rounded-lg transition-colors ${
                   historyOpen
-                    ? 'bg-indigo-100 text-indigo-700'
+                    ? 'bg-indigo-100 text-indigo-800'
                     : 'text-slate-600 hover:text-indigo-600'
                 }`}
                 title={`Calculation History (${history.length})`}
@@ -117,7 +118,7 @@ function AppContent() {
                 href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:inline text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                className="hidden sm:inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
               >
                 GitHub
               </a>
@@ -128,9 +129,11 @@ function AppContent() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-12 gap-8">
+        {/* One column until there is room for two. A 12-column grid at every width carried
+            eleven rem-sized gaps, which at doubled text were wider than a phone. */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Left Column: Input Panel */}
-          <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+          <div className="min-w-0 lg:col-span-4 xl:col-span-3">
             {/* On a wide screen the form keeps its place beside the results and scrolls on
                 its own. Plain sticky positioning pinned the TOP of a form taller than the
                 window, which kept the Run button below the fold for the first thousand
@@ -142,7 +145,7 @@ function AppContent() {
           </div>
 
           {/* Right Column: Results Dashboard */}
-          <div className="col-span-12 lg:col-span-8 xl:col-span-9">
+          <div className="min-w-0 lg:col-span-8 xl:col-span-9">
             <ResultsDisplay />
           </div>
         </div>
@@ -185,7 +188,7 @@ function AppContent() {
                 href={DOCS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
+                className="inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 Documentation
               </a>
@@ -193,7 +196,7 @@ function AppContent() {
                 href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-slate-500 hover:text-indigo-600 transition-colors"
+                className="inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 GitHub
               </a>

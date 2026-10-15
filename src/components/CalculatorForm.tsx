@@ -576,7 +576,7 @@ export function CalculatorForm() {
             onChange={handleChange}
             aria-invalid={materialError ? true : undefined}
             aria-describedby={materialError ? materialErrorId : undefined}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
+            className="block min-h-[44px] w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
           >
             {materials.length === 0 && !materialError && (
               <option value="">Loading materials…</option>
@@ -997,7 +997,7 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1076,7 +1076,7 @@ function OptionalField({
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
+          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1140,7 +1140,7 @@ function OptionalSelect({
         name={name}
         value={value ?? ''}
         onChange={onChange}
-        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
+        className="block min-h-[44px] w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
       >
         {blankLabel !== undefined && <option value="">{blankLabel}</option>}
         {options.map((option) => (
@@ -1199,7 +1199,7 @@ function CustomMaterialField({
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
