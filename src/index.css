@@ -31,15 +31,98 @@
   }
 
   .button-primary {
-    @apply inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-full shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed;
   }
 
   .button-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2.5 bg-slate-200 text-slate-900 font-bold rounded-lg shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-slate-300;
+    /* The one secondary style: outlined on the surface. The export row and the history
+       panel used to have two different ones. */
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-surface border border-slate-200 text-slate-700 text-sm font-medium rounded-full transition-colors hover:bg-slate-100 hover:border-slate-300 active:bg-slate-200;
+  }
+
+  /* Segmented control: a capsule track with equal segments; the chosen one sits raised on
+     it. Shared by every segmented control (src/components/controls.tsx). */
+  .segmented {
+    @apply inline-grid auto-cols-fr grid-flow-col gap-0.5 rounded-full bg-slate-100 p-1;
+  }
+
+  .segment {
+    @apply relative flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-slate-600 transition-colors hover:bg-slate-200/70 hover:text-slate-900;
+  }
+
+  .segment-selected {
+    @apply bg-surface text-slate-900 shadow-sm hover:bg-surface hover:text-slate-900;
+  }
+
+  /* Slider, after the system one: a thin track filled in the accent colour up to a round
+     white knob. The element itself is 44 px tall so the whole band is the hit region; only
+     the track is drawn. --fill is the knob position as a percentage, set inline. */
+  .slider {
+    @apply block h-11 w-full cursor-pointer appearance-none bg-transparent;
+  }
+  .slider:focus-visible {
+    @apply outline-none;
+  }
+  .slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      rgb(var(--c-indigo-600)) var(--fill, 0%),
+      rgb(var(--c-slate-200)) var(--fill, 0%)
+    );
+  }
+  .slider::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: rgb(var(--c-slate-200));
+  }
+  .slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 9999px;
+    background: rgb(var(--c-indigo-600));
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 26px;
+    width: 26px;
+    margin-top: -11px;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 0.5px 4px rgb(0 0 0 / 0.12), 0 6px 13px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.06);
+    transition: transform 0.15s;
+  }
+  .slider::-moz-range-thumb {
+    height: 26px;
+    width: 26px;
+    border: none;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 0.5px 4px rgb(0 0 0 / 0.12), 0 6px 13px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.06);
+  }
+  .slider:hover::-webkit-slider-thumb {
+    box-shadow: 0 0.5px 4px rgb(0 0 0 / 0.16), 0 6px 13px rgb(0 0 0 / 0.18), 0 0 0 0.5px rgb(0 0 0 / 0.08);
+  }
+  .slider:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgb(var(--c-indigo-500) / 0.6), 0 6px 13px rgb(0 0 0 / 0.12);
+  }
+  .slider:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgb(var(--c-indigo-500) / 0.6);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .slider:active::-webkit-slider-thumb {
+      transform: scale(1.08);
+    }
+  }
+
+  /* Pop-up button: a native select with its own chevrons. Native underneath, so an iPhone
+     shows its picker wheel and a desktop its menu. */
+  .popup {
+    @apply block min-h-[44px] w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-surface py-2.5 pl-3 pr-10 text-sm font-medium text-slate-900 shadow-sm outline-none transition-colors hover:border-slate-400 hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500;
   }
 
   .card {
-    @apply bg-surface rounded-xl shadow-sm border border-slate-200 overflow-hidden;
+    @apply bg-surface rounded-2xl shadow-sm border border-slate-200 overflow-hidden;
   }
 
   .card-header {

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useId } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
-import { getLastInputs, saveLastInputs } from '@/services/displayPreferences'
+import { getLastInputs, getPreferences, saveLastInputs } from '@/services/displayPreferences'
 import type {
   ProcessParameters,
   HoseMaterial,
@@ -10,6 +10,13 @@ import type {
   RheologyModelName,
 } from '@/calculator_types'
 import { AlertCircle, Play, ChevronDown } from 'lucide-react'
+import { PopUpSelect, SegmentedControl } from './controls'
+import {
+  fromSliderPosition,
+  SLIDER_STEPS,
+  toSliderPosition,
+  type SliderScale,
+} from './sliderScale'
 
 /** Default values pre-filled when the user switches to Custom Material */
 const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
@@ -209,7 +216,7 @@ const CUSTOM_FIELD_RANGES: Record<
 }
 
 export function CalculatorForm() {
-  const { calculate, isLoading, isReady, error, loadProgress } = useCalculator()
+  const { calculate, isLoading, isReady, error, loadProgress, rememberSetup } = useCalculator()
 
   // The last setup comes back on load. Only recognised numeric fields are taken from
   // storage, and the material is deliberately left for the effect below to resolve against
@@ -224,7 +231,7 @@ export function CalculatorForm() {
       machine_type: 'high_pressure',
     }
 
-    const stored = getLastInputs()
+    const stored = getPreferences().rememberSetup ? getLastInputs() : null
     if (!stored) return base
 
     const restored: ProcessParameters = { ...base }
@@ -332,12 +339,6 @@ export function CalculatorForm() {
             return updated
           })
         }
-        return
-      }
-
-      // ── Machine type selector ─────────────────────────────────────────────
-      if (name === 'machine_type') {
-        setInputs((prev) => ({ ...prev, machine_type: value }))
         return
       }
 
@@ -456,17 +457,28 @@ export function CalculatorForm() {
     []
   )
 
+  // A slider always lands inside the range, so setting from one clears any error the typed
+  // value had
+  const handleSlide = useCallback((name: string, value: number) => {
+    setInputs((prev) => ({ ...prev, [name]: value } as ProcessParameters))
+    setFieldErrors((prev) => {
+      const updated = { ...prev }
+      delete updated[name]
+      return updated
+    })
+  }, [])
+
   // Saved on submit rather than on every keystroke: what is worth restoring is a setup
   // someone actually calculated with, not a half-typed number.
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
       if (Object.keys(fieldErrors).length === 0 && isReady) {
-        saveLastInputs({ ...inputs } as unknown as Record<string, unknown>)
+        if (rememberSetup) saveLastInputs({ ...inputs } as unknown as Record<string, unknown>)
         calculate(inputs)
       }
     },
-    [fieldErrors, isReady, inputs, calculate]
+    [fieldErrors, isReady, inputs, calculate, rememberSetup]
   )
 
   // Lagging chosen without a thickness would quietly mean "no lagging" in Python, so it is
@@ -511,8 +523,8 @@ export function CalculatorForm() {
     // Not clipped on a wide screen, so the Run button can stick to the bottom of the
     // scrolling column; the header rounds its own corners instead.
     <div className="card lg:overflow-visible">
-      <div className="card-header rounded-t-xl">
-        <h2 className="font-bold text-slate-800">Process Parameters</h2>
+      <div className="card-header rounded-t-2xl">
+        <h2 className="font-semibold text-slate-800">Process Parameters</h2>
         <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
       </div>
 
@@ -523,6 +535,8 @@ export function CalculatorForm() {
           name="pipe_length_mm"
           value={inputs.pipe_length_mm}
           onChange={handleChange}
+          scale="log"
+          onSlide={handleSlide}
           unit={VALIDATION_RANGES.pipeLength.unit}
           range={VALIDATION_RANGES.pipeLength}
           error={fieldErrors.pipe_length_mm}
@@ -534,6 +548,8 @@ export function CalculatorForm() {
           name="pipe_diameter_mm"
           value={inputs.pipe_diameter_mm}
           onChange={handleChange}
+          scale="log"
+          onSlide={handleSlide}
           unit={VALIDATION_RANGES.pipeDiameter.unit}
           range={VALIDATION_RANGES.pipeDiameter}
           error={fieldErrors.pipe_diameter_mm}
@@ -545,6 +561,8 @@ export function CalculatorForm() {
           name="temperature_c"
           value={inputs.temperature_c}
           onChange={handleChange}
+          scale="linear"
+          onSlide={handleSlide}
           unit={VALIDATION_RANGES.temperature.unit}
           range={VALIDATION_RANGES.temperature}
           error={fieldErrors.temperature_c}
@@ -556,6 +574,8 @@ export function CalculatorForm() {
           name="flow_rate_lpm"
           value={inputs.flow_rate_lpm}
           onChange={handleChange}
+          scale="log"
+          onSlide={handleSlide}
           unit={VALIDATION_RANGES.flowRate.unit}
           range={VALIDATION_RANGES.flowRate}
           error={fieldErrors.flow_rate_lpm}
@@ -569,14 +589,13 @@ export function CalculatorForm() {
           >
             Material Type
           </label>
-          <select
+          <PopUpSelect
             id={materialSelectId}
             name="material_key"
             value={inputs.material_key}
             onChange={handleChange}
             aria-invalid={materialError ? true : undefined}
             aria-describedby={materialError ? materialErrorId : undefined}
-            className="block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
           >
             {materials.length === 0 && !materialError && (
               <option value="">Loading materials…</option>
@@ -587,7 +606,7 @@ export function CalculatorForm() {
               </option>
             ))}
             <option value="custom">Custom Material…</option>
-          </select>
+          </PopUpSelect>
           {materialError && (
             <p
               id={materialErrorId}
@@ -611,7 +630,7 @@ export function CalculatorForm() {
               onClick={() => setShowCustomHelp((v) => !v)}
               aria-expanded={showCustomHelp}
               aria-controls={customPanelId}
-              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-indigo-100 transition-colors"
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-indigo-100 active:bg-indigo-200/60 transition-colors"
             >
               <span className="text-sm font-semibold text-indigo-900">Custom material</span>
               <span className="flex items-center gap-1 text-sm text-indigo-700">
@@ -709,39 +728,17 @@ export function CalculatorForm() {
         )}
 
         {/* Machine Type. Two choices, so both are shown at once as a segmented control
-            rather than hidden behind a dropdown. Native radios underneath: arrow keys move
-            between them and a screen reader announces "1 of 2". */}
-        <fieldset className="mb-5">
-          <legend className="text-sm font-semibold text-slate-700 block mb-1.5">
-            Machine Type
-          </legend>
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
-            {MACHINE_OPTIONS.map((option) => {
-              const checked = inputs.machine_type === option.value
-              return (
-                <label
-                  key={option.value}
-                  className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
-                    checked
-                      ? 'bg-surface text-indigo-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="machine_type"
-                    value={option.value}
-                    checked={checked}
-                    onChange={handleChange}
-                    // Covers the whole segment, invisibly, so the radio itself is what gets
-                    // pressed and focused — not a 1 px input behind a styled label
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                  />
-                  {option.label}
-                </label>
-              )
-            })}
-          </div>
+            rather than hidden behind a dropdown. */}
+        <div className="mb-5">
+          <SegmentedControl
+            name="machine_type"
+            label="Machine Type"
+            labelVisible
+            fullWidth
+            options={MACHINE_OPTIONS}
+            value={(inputs.machine_type ?? 'high_pressure') as (typeof MACHINE_OPTIONS)[number]['value']}
+            onChange={(machine_type) => setInputs((prev) => ({ ...prev, machine_type }))}
+          />
           <div className="mt-3">
             <OptionalField
               name="max_line_pressure_bar"
@@ -751,7 +748,7 @@ export function CalculatorForm() {
               error={fieldErrors.max_line_pressure_bar}
             />
           </div>
-        </fieldset>
+        </div>
 
         {/* Optional: ambient conditions and part geometry */}
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
@@ -760,7 +757,7 @@ export function CalculatorForm() {
             onClick={() => setShowOptional((v) => !v)}
             aria-expanded={showOptional}
             aria-controls={optionalPanelId}
-            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-md px-2 text-left hover:bg-slate-100 transition-colors"
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-slate-100 active:bg-slate-200 transition-colors"
           >
             <span>
               <span className="block text-sm font-semibold text-slate-800">Optional inputs</span>
@@ -915,11 +912,11 @@ export function CalculatorForm() {
 
         {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
             stays in reach however far the inputs above it run. */}
-        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
+        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-2xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-white shadow-md transition-all transform motion-safe:active:scale-95 ${
+            className={`w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full text-base font-semibold text-white shadow-sm transition-all transform motion-safe:active:scale-95 ${
               !canSubmit
                 ? 'bg-slate-400 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'
@@ -962,6 +959,8 @@ function InputField({
   unit,
   range,
   error,
+  scale,
+  onSlide,
 }: {
   label: string
   name: string
@@ -970,10 +969,15 @@ function InputField({
   unit: string
   range: any
   error?: string
+  /** Adds a slider under the field; log for ranges spanning orders of magnitude */
+  scale?: SliderScale
+  onSlide?: (name: string, value: number) => void
 }) {
   const id = useId()
   const rangeId = `${id}-range`
   const errorId = `${id}-error`
+  const spec = scale ? { min: range.min, max: range.max, scale } : null
+  const position = spec && Number.isFinite(value) ? toSliderPosition(value, spec) : 0
 
   return (
     <div className="mb-5 group">
@@ -997,7 +1001,7 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1013,6 +1017,24 @@ function InputField({
           </span>
         </div>
       </div>
+      {/* The slider sets the same value as the field: the field for an exact figure, the
+          slider for feeling out how the result moves. Named by the field's label, with the
+          value and unit spoken rather than a bare position. */}
+      {spec && onSlide && (
+        <input
+          type="range"
+          min={0}
+          max={SLIDER_STEPS}
+          step={1}
+          value={position}
+          onChange={(e) => onSlide(name, fromSliderPosition(Number(e.target.value), spec))}
+          aria-label={`${label} slider`}
+          aria-valuetext={`${Number.isFinite(value) ? value : range.min} ${unit}`}
+          className="slider mt-1"
+          style={{ '--fill': `${(position / SLIDER_STEPS) * 100}%` } as React.CSSProperties}
+          data-testid={`slider-${name}`}
+        />
+      )}
       {error && (
         <div
           id={errorId}
@@ -1076,7 +1098,7 @@ function OptionalField({
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
+          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
@@ -1135,12 +1157,11 @@ function OptionalSelect({
       <label htmlFor={id} className="text-sm font-semibold text-slate-700 block mb-1">
         {label}
       </label>
-      <select
+      <PopUpSelect
         id={id}
         name={name}
         value={value ?? ''}
         onChange={onChange}
-        className="block w-full px-3 py-2 text-sm font-medium border border-slate-300 rounded-lg shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400 bg-surface"
       >
         {blankLabel !== undefined && <option value="">{blankLabel}</option>}
         {options.map((option) => (
@@ -1148,7 +1169,7 @@ function OptionalSelect({
             {option.label}
           </option>
         ))}
-      </select>
+      </PopUpSelect>
     </div>
   )
 }
@@ -1199,7 +1220,7 @@ function CustomMaterialField({
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-lg border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
               : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'

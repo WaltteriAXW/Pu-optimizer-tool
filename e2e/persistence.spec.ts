@@ -107,10 +107,10 @@ test.describe('shot records', () => {
     await waitForEngine(page)
 
     // A setup that differs from the defaults in every field the form restores
-    await page.getByLabel('Pipe Length').fill('1750')
-    await page.getByLabel('Pipe Diameter').fill('18')
-    await page.getByLabel('Material Temperature').fill('32')
-    await page.getByLabel('Flow Rate').fill('7.5')
+    await page.getByLabel('Pipe Length', { exact: true }).fill('1750')
+    await page.getByLabel('Pipe Diameter', { exact: true }).fill('18')
+    await page.getByLabel('Material Temperature', { exact: true }).fill('32')
+    await page.getByLabel('Flow Rate', { exact: true }).fill('7.5')
     await page.selectOption('select[name=material_key]', 'ecomate_spray')
     await page.getByLabel('Low pressure', { exact: true }).check()
 
@@ -121,10 +121,10 @@ test.describe('shot records', () => {
     await page.reload()
     await waitForEngine(page)
 
-    await expect(page.getByLabel('Pipe Length')).toHaveValue('1750')
-    await expect(page.getByLabel('Pipe Diameter')).toHaveValue('18')
-    await expect(page.getByLabel('Material Temperature')).toHaveValue('32')
-    await expect(page.getByLabel('Flow Rate')).toHaveValue('7.5')
+    await expect(page.getByLabel('Pipe Length', { exact: true })).toHaveValue('1750')
+    await expect(page.getByLabel('Pipe Diameter', { exact: true })).toHaveValue('18')
+    await expect(page.getByLabel('Material Temperature', { exact: true })).toHaveValue('32')
+    await expect(page.getByLabel('Flow Rate', { exact: true })).toHaveValue('7.5')
     await expect(page.locator('select[name=material_key]')).toHaveValue('ecomate_spray')
     await expect(page.getByLabel('Low pressure', { exact: true })).toBeChecked()
   })

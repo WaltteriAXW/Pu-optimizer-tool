@@ -18,7 +18,8 @@ import {
   Info,
   Wind,
   Gauge,
-  Timer,
+  Droplet,
+  Layers,
 } from 'lucide-react'
 
 /** Presentation for the blowing-agent volatility states */
@@ -71,12 +72,12 @@ export function ResultsDisplay() {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-red-100 shadow-sm text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-2xl border border-red-100 shadow-sm text-center"
       >
         <div className="bg-red-50 p-4 rounded-full mb-4">
           <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
         </div>
-        <h3 className="text-lg font-bold text-slate-800">Calculation Failed</h3>
+        <h3 className="text-lg font-semibold text-slate-800">Calculation Failed</h3>
         <p className="text-slate-500 mt-2 max-w-sm">{calculatorError}</p>
       </div>
     )
@@ -84,11 +85,11 @@ export function ResultsDisplay() {
 
   if (!results) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-xl border border-dashed border-slate-300 text-center">
+      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-2xl border border-dashed border-slate-300 text-center">
         <div className="bg-indigo-50 p-4 rounded-full mb-4">
           <Info aria-hidden="true" className="w-8 h-8 text-indigo-600" />
         </div>
-        <h3 className="text-lg font-bold text-slate-800">Ready to Simulate</h3>
+        <h3 className="text-lg font-semibold text-slate-800">Ready to Simulate</h3>
         <p className="text-slate-500 mt-2 max-w-xs">
           Enter your process parameters and press Run Simulation to see the pressure, the
           flow margin and the operating window.
@@ -105,7 +106,7 @@ export function ResultsDisplay() {
     // headline figures are announced; the detail below is there to be read at leisure.
     <div
       ref={regionRef}
-      className="space-y-6 scroll-mt-20 motion-safe:animate-fadeIn motion-reduce:animate-fade"
+      className="space-y-6 scroll-mt-20 animate-fade"
       aria-live="polite"
       aria-atomic="false"
       role="region"
@@ -130,8 +131,9 @@ export function ResultsDisplay() {
         />
       )}
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Grid. Columns come from a minimum card width in rem, so text enlarged to
+          200% gets fewer, wider cards instead of four clipped ones. */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-4">
         <KpiCard
           title="Pipe Pressure Drop"
           value={formatPressure(results.pressure?.pressure_with_fittings_bar, pressureUnit)}
@@ -149,13 +151,13 @@ export function ResultsDisplay() {
           title="Shear Rate"
           value={results.flow?.shear_rate_s_inv?.toFixed(0) || 'N/A'}
           unit="s⁻¹"
-          icon={<ActivityIcon className="w-5 h-5" />}
+          icon={<Layers className="w-5 h-5" />}
         />
         <KpiCard
           title="Viscosity"
           value={results.flow?.apparent_viscosity_cp?.toFixed(1) || 'N/A'}
           unit="cP"
-          icon={<Timer className="w-5 h-5" />}
+          icon={<Droplet className="w-5 h-5" />}
         />
       </div>
 
@@ -176,8 +178,8 @@ export function ResultsDisplay() {
         <div className="lg:col-span-1 space-y-6">
           {/* Status Box */}
           {results.warnings && results.warnings.length > 0 ? (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
-              <h4 className="text-amber-900 font-bold flex items-center gap-2 mb-3">
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
+              <h4 className="text-amber-900 font-semibold flex items-center gap-2 mb-3">
                 <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
               <ul className="space-y-2">
@@ -190,9 +192,9 @@ export function ResultsDisplay() {
               </ul>
             </div>
           ) : (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
               {/* Says what was checked, not more: no warnings is not the same as optimised */}
-              <h4 className="text-emerald-900 font-bold flex items-center gap-2 mb-1">
+              <h4 className="text-emerald-900 font-semibold flex items-center gap-2 mb-1">
                 <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
               </h4>
               <p className="text-sm text-emerald-800">Nothing in these settings needs attention.</p>
@@ -202,7 +204,7 @@ export function ResultsDisplay() {
           {/* Detailed Stats */}
           <div className="card">
             <div className="card-header">
-              <h4 className="font-bold text-slate-800">Flow Properties</h4>
+              <h4 className="font-semibold text-slate-800">Flow Properties</h4>
             </div>
             <div className="card-body space-y-3">
               <DetailRow
@@ -236,7 +238,7 @@ export function ResultsDisplay() {
           {results.thermal && (
             <div className="card">
               <div className="card-header">
-                <h4 className="font-bold text-slate-800">Thermal Properties</h4>
+                <h4 className="font-semibold text-slate-800">Thermal Properties</h4>
               </div>
               <div className="card-body space-y-3">
                 <DetailRow
@@ -279,7 +281,7 @@ export function ResultsDisplay() {
           {results.environmental && (
             <div className="card">
               <div className="card-header">
-                <h4 className="font-bold text-slate-800">Environmental Impact</h4>
+                <h4 className="font-semibold text-slate-800">Environmental Impact</h4>
               </div>
               <div className="card-body space-y-3">
                 <DetailRow label="Material" value={results.environmental.material} unit="" />
@@ -315,7 +317,7 @@ export function ResultsDisplay() {
       {results.volatility && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-bold text-slate-800">Blowing Agent</h4>
+            <h4 className="font-semibold text-slate-800">Blowing Agent</h4>
           </div>
           <div className="card-body space-y-3">
             <div className="flex items-center justify-between">
@@ -338,7 +340,7 @@ export function ResultsDisplay() {
             <p className="text-sm text-slate-600">{results.volatility.message}</p>
 
             {results.volatility.warning && (
-              <p className={`p-3 rounded text-sm border ${
+              <p className={`p-3 rounded-lg text-sm border ${
                 results.volatility.status === 'flash_risk'
                   ? 'bg-red-50 border-red-200 text-red-800'
                   : 'bg-amber-50 border-amber-200 text-amber-800'
@@ -362,7 +364,7 @@ export function ResultsDisplay() {
       {results.line_temperature && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-bold text-slate-800">Temperature at the Mix Head</h4>
+            <h4 className="font-semibold text-slate-800">Temperature at the Mix Head</h4>
           </div>
           <div className="card-body space-y-3">
             <div className="grid grid-cols-3 gap-4">
@@ -401,7 +403,7 @@ export function ResultsDisplay() {
               <HoseBreakdown hose={results.line_temperature.hose} />
             )}
             {results.line_temperature.warning && (
-              <p className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+              <p className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                 {results.line_temperature.warning}
               </p>
             )}
@@ -413,7 +415,7 @@ export function ResultsDisplay() {
       {results.cure && (
         <div className="card border-2 border-slate-200">
           <div className="card-header bg-slate-50">
-            <h4 className="font-bold text-slate-800">Cure &amp; Exotherm</h4>
+            <h4 className="font-semibold text-slate-800">Cure &amp; Exotherm</h4>
             <p className="text-xs text-slate-500 mt-1">
               Describes the moulded part after the mix head — not the feed line above.
             </p>
@@ -459,7 +461,7 @@ export function ResultsDisplay() {
               {results.cure.scorch_risk && (
                 <div className="flex justify-between items-baseline">
                   <span className="text-sm text-slate-600">Scorch Risk</span>
-                  <span className={`text-sm font-bold ${SCORCH_TONE[results.cure.scorch_risk] ?? 'text-slate-700'}`}>
+                  <span className={`text-sm font-semibold ${SCORCH_TONE[results.cure.scorch_risk] ?? 'text-slate-700'}`}>
                     {results.cure.scorch_risk}
                     {isNumber(results.cure.scorch_margin_c) &&
                       ` (${results.cure.scorch_margin_c.toFixed(0)} °C margin)`}
@@ -469,7 +471,7 @@ export function ResultsDisplay() {
             </div>
 
             {results.cure.heat_of_reaction_is_estimated && (
-              <p className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600">
+              <p className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
                 Exotherm figures are <strong>estimated</strong>. This material&rsquo;s data
                 sheet states no heat of reaction, so a literature-typical value for rigid
                 polyurethane was used. Add <code>Heat_Of_Reaction_kJ_kg</code> or{' '}
@@ -485,7 +487,7 @@ export function ResultsDisplay() {
       {results.machine_compatibility && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-bold text-slate-800">Machine Compatibility</h4>
+            <h4 className="font-semibold text-slate-800">Machine Compatibility</h4>
           </div>
           <div className="card-body">
             <div className="flex items-center justify-between">
@@ -522,12 +524,12 @@ export function ResultsDisplay() {
               )}
             </div>
             {results.machine_compatibility.warning && (
-              <p className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+              <p className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                 {results.machine_compatibility.warning}
               </p>
             )}
             {results.machine_compatibility.note && (
-              <p className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+              <p className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
                 {results.machine_compatibility.note}
               </p>
             )}
@@ -607,13 +609,13 @@ function MachineSettingsCard({
         <div className="card-body flex-grow grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* The setting */}
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Machine output
             </p>
             {isNumber(output) ? (
               <>
                 <div className="flex items-baseline gap-2 mt-1.5">
-                  <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
+                  <span className="text-4xl font-bold tracking-tight tabular-nums text-slate-900">
                     {output.toFixed(output >= 10 ? 0 : 1)}
                   </span>
                   <span className="text-lg font-semibold text-slate-500">kg/min</span>
@@ -647,11 +649,11 @@ function MachineSettingsCard({
 
           {/* The reading */}
           <div className="min-w-0 md:border-l md:border-slate-100 md:pl-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Injection pressure
             </p>
             <div className="flex items-baseline gap-2 mt-1.5">
-              <span className="text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
+              <span className="text-4xl font-bold tracking-tight tabular-nums text-slate-900">
                 {p(injection)}
               </span>
               <span className="text-lg font-semibold text-slate-500">{unit}</span>
@@ -745,13 +747,13 @@ function RangeBar({
           style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
         />
         <div
-          className={`absolute -top-1 w-1 rounded ${inRange ? 'bg-indigo-600' : 'bg-red-600'}`}
+          className={`absolute -top-1 w-1 rounded-full ${inRange ? 'bg-indigo-600' : 'bg-red-600'}`}
           style={{ left: `calc(${pct(value)}% - 2px)`, height: '1.125rem' }}
         />
       </div>
       <div className="flex justify-between text-xs text-slate-500 mt-1.5 tabular-nums">
         <span>{formatValue(min)} min</span>
-        <span className={inRange ? 'text-indigo-700 font-bold' : 'text-red-700 font-bold'}>
+        <span className={inRange ? 'text-indigo-700 font-semibold' : 'text-red-700 font-semibold'}>
           {formatValue(value)} {suffix}
         </span>
         <span>{formatValue(max)} max</span>
@@ -787,7 +789,7 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
       : 'text-emerald-800'
 
   return (
-    <div className={`rounded-xl border p-5 ${tone}`} data-testid="laminar-envelope">
+    <div className={`rounded-2xl border p-5 ${tone}`} data-testid="laminar-envelope">
       <div className="flex items-start gap-3">
         {laminar && !tight ? (
           <CheckCircle2 aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
@@ -795,7 +797,7 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
           <AlertTriangle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         )}
         <div className="min-w-0">
-          <h4 className={`font-bold ${textTone}`}>
+          <h4 className={`font-semibold ${textTone}`}>
             {laminar ? (tight ? 'Laminar, with little margin' : 'Laminar flow') : 'Turbulent flow'}
           </h4>
           <p className={`text-sm mt-1 leading-relaxed ${textTone}`}>
@@ -846,8 +848,8 @@ function OperatingWindowCard({
         `${formatPressure(window.machine_loss_bar, unit)} ${unit} lost in its own plumbing`
 
   return (
-    <div className={`rounded-xl border p-5 ${tone}`} data-testid="operating-window">
-      <h4 className="font-bold text-slate-800">Operating window</h4>
+    <div className={`rounded-2xl border p-5 ${tone}`} data-testid="operating-window">
+      <h4 className="font-semibold text-slate-800">Operating window</h4>
       <p className="text-sm text-slate-500 mt-1">
         Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
       </p>
@@ -915,9 +917,9 @@ function WindowRow({
         : 'None in range'
 
   return (
-    <div className="flex justify-between items-baseline gap-4 py-2">
+    <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 py-2">
       <dt className="text-slate-600">{label}</dt>
-      <dd className={`font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
+      <dd className={`ml-auto font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-slate-900'}`}>
         {text}
         <span className="block text-xs font-normal text-slate-500">
           now {present.toFixed(1)} {unit}
@@ -943,7 +945,7 @@ function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
   return (
     <div className="card" data-testid="flow-curve">
       <div className="card-header">
-        <h4 className="font-bold text-slate-800">
+        <h4 className="font-semibold text-slate-800">
           Flow curve: {RHEOLOGY_MODEL_LABELS[rheology.model]}
         </h4>
         <p className="text-xs text-slate-500 mt-1">
@@ -960,7 +962,7 @@ function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
           <>
             <DetailRow label="Unsheared plug" value={`${(plug * 100).toFixed(0)}%`} unit="of the bore" />
             {plug > 0.5 && (
-              <p className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+              <p className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                 More than half the bore moves as a solid plug: the wall stress is less than
                 twice the yield stress. A cold restart or a lower output could stall the line.
               </p>
@@ -1027,16 +1029,16 @@ function KpiCard({
   const testId = `kpi-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
 
   return (
-    <div className="card hover:shadow-md transition-shadow" data-testid={testId}>
+    <div className="card" data-testid={testId}>
       <div className="card-body">
-        <div className="flex justify-between items-start mb-2">
-          <span className="text-sm font-medium text-slate-500">{title}</span>
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <span className="min-w-0 text-sm font-medium text-slate-500">{title}</span>
           {/* Decorative: every icon here restates the title beside it */}
           <div aria-hidden="true" className={`p-2 rounded-lg ${statusColors[status]}`}>
             {icon}
           </div>
         </div>
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-2">
           <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
           {unit && <span className="text-xs font-medium text-slate-500">{unit}</span>}
         </div>
@@ -1067,21 +1069,3 @@ function DetailRow({
     </div>
   )
 }
-
-// Mock icon component if needed
-const ActivityIcon = (props: any) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-  </svg>
-)

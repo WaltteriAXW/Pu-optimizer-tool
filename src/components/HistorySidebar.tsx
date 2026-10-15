@@ -1,6 +1,8 @@
-import { useEffect, useId, useRef } from 'react'
-import { Trash2, Clock, ChevronRight, X } from 'lucide-react'
+import { useId, useRef } from 'react'
+import { Trash2, History, ChevronRight, X } from 'lucide-react'
 import { DatasetPanel } from './DatasetPanel'
+import { useModalDialog } from './useModalDialog'
+import { PopUpSelect } from './controls'
 import {
   SHOT_OUTCOME_LABEL,
   isLabelled,
@@ -47,59 +49,7 @@ export function HistorySidebar({
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    // Whatever had focus when the panel opened gets it back on close
-    const previouslyFocused = document.activeElement as HTMLElement | null
-
-    const focusable = () =>
-      Array.from(
-        panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        ) ?? []
-      )
-
-    panelRef.current?.focus()
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.stopPropagation()
-        onClose()
-        return
-      }
-
-      if (event.key !== 'Tab') return
-
-      const elements = focusable()
-      if (elements.length === 0) {
-        event.preventDefault()
-        return
-      }
-
-      const first = elements[0]
-      const last = elements[elements.length - 1]
-      const active = document.activeElement
-
-      // Wrap at both ends, and pull focus back in if it has escaped the panel entirely
-      if (event.shiftKey && (active === first || active === panelRef.current)) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault()
-        first.focus()
-      } else if (active instanceof Node && !panelRef.current?.contains(active)) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      previouslyFocused?.focus?.()
-    }
-  }, [isOpen, onClose])
+  useModalDialog(panelRef, isOpen, onClose)
 
   if (!isOpen) return null
 
@@ -117,8 +67,8 @@ export function HistorySidebar({
       {/* Header */}
       <div className="sticky top-0 bg-surface border-b border-slate-100 p-4">
         <div className="flex items-center gap-2">
-          <Clock aria-hidden="true" className="w-5 h-5 text-indigo-600" />
-          <h2 id={titleId} className="text-lg font-bold text-slate-800">
+          <History aria-hidden="true" className="w-5 h-5 text-indigo-600" />
+          <h2 id={titleId} className="text-lg font-semibold text-slate-800">
             Calculation History
           </h2>
           {/* A visible way out. Escape and the backdrop also close the panel, but neither
@@ -127,7 +77,7 @@ export function HistorySidebar({
             type="button"
             onClick={onClose}
             aria-label="Close history"
-            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
           >
             <X aria-hidden="true" className="w-5 h-5" />
           </button>
@@ -148,7 +98,7 @@ export function HistorySidebar({
       {/* History list */}
       {history.length === 0 ? (
         <div className="p-6 text-center">
-          <Clock aria-hidden="true" className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <History aria-hidden="true" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
           <p className="text-sm text-slate-500">No runs saved yet</p>
         </div>
       ) : (
@@ -209,13 +159,13 @@ function HistoryItem({
           {/* Summary stats */}
           <div className="flex items-center gap-2 mt-2 text-xs">
             {pressure && (
-              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded">
+              <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full">
                 {pressure} bar
               </span>
             )}
             {flowRegime && (
               <span
-                className={`px-2 py-1 rounded capitalize ${
+                className={`px-2.5 py-1 rounded-full capitalize ${
                   flowRegime === 'laminar'
                     ? 'bg-emerald-100 text-emerald-700'
                     : 'bg-amber-100 text-amber-700'
@@ -235,7 +185,7 @@ function HistoryItem({
       </button>
 
       {/* Parameters preview */}
-      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-surface p-2 rounded border border-slate-100">
+      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-surface p-2 rounded-lg border border-slate-100">
         <div className="flex justify-between">
           <span>Length:</span>
           <span className="font-medium">{entry.parameters.pipe_length_mm} mm</span>
@@ -257,22 +207,21 @@ function HistoryItem({
       {/* How the part came out. Recorded after the fact, which is the point: this is the
           one field the physics cannot supply and a model would need. */}
       <div className="mb-3" data-testid="outcome-picker">
-        <label htmlFor={outcomeId} className="block text-xs font-semibold text-slate-600 mb-1">
+        <label htmlFor={outcomeId} className="block text-sm font-semibold text-slate-700 mb-1">
           How did the part come out?
         </label>
-        <select
+        <PopUpSelect
           id={outcomeId}
           value={entry.outcome}
           onChange={(e) => onRecordOutcome(e.target.value as ShotOutcome)}
           onClick={(e) => e.stopPropagation()}
-          className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded bg-surface"
         >
           {(Object.keys(SHOT_OUTCOME_LABEL) as ShotOutcome[]).map((value) => (
             <option key={value} value={value}>
               {SHOT_OUTCOME_LABEL[value]}
             </option>
           ))}
-        </select>
+        </PopUpSelect>
       </div>
 
       {/* Delete button */}
@@ -284,7 +233,7 @@ function HistoryItem({
         // Several "Delete" buttons sit in this list; without naming the run they are
         // indistinguishable when tabbed through
         aria-label={`Delete run: ${materialName}, ${timeAgo}`}
-        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center gap-1.5"
       >
         <Trash2 aria-hidden="true" className="w-4 h-4" />
         Delete

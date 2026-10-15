@@ -76,3 +76,13 @@ export async function waitForEngine(page: import('@playwright/test').Page) {
     timeout: 120_000,
   })
 }
+
+/**
+ * Change the pressure unit, which lives in the Settings sheet: open it, choose, close it.
+ */
+export async function choosePressureUnit(page: import('@playwright/test').Page, unit: 'bar' | 'psi') {
+  await page.getByTestId('open-settings').click()
+  await page.getByTestId(`unit-${unit}`).check()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByTestId('settings-sheet')).toHaveCount(0)
+}

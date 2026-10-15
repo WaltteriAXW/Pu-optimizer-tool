@@ -68,6 +68,9 @@ const PAIRS: Array<[string, string, number]> = [
   // ...and its hover state, which in dark must not lighten past what white text can sit on
   ['white', 'indigo-700', 3],
   ['indigo-800', 'indigo-50', 4.5],
+  // Pills and the active History button: text on the stronger tint
+  ['indigo-800', 'indigo-100', 4.5],
+  ['emerald-700', 'emerald-100', 4.5],
   ['indigo-900', 'indigo-50', 4.5],
   // Status panels: text on their own tint
   ['emerald-800', 'emerald-50', 4.5],
@@ -98,5 +101,13 @@ describe.each([
 
   it.each(PAIRS)('%s on %s reaches %s:1', (fg, bg, minimum) => {
     expect(contrast(resolve(fg), resolve(bg))).toBeGreaterThanOrEqual(minimum)
+  })
+})
+
+describe('dark chosen in Settings', () => {
+  it('uses exactly the values the device dark appearance does', () => {
+    const forced = block(/^:root\[data-theme='dark'\] \{/m)
+    const automatic = block(/prefers-color-scheme: dark\) \{\s*:root:not/)
+    expect(forced).toEqual(automatic)
   })
 })

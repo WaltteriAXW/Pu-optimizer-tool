@@ -27,12 +27,23 @@ export const PRESSURE_UNIT_LABEL: Record<PressureUnit, string> = {
 /** Exact by definition: 1 bar = 100000 Pa, 1 psi = 6894.757293168361 Pa */
 const BAR_TO_PSI = 14.503773773
 
+/**
+ * Light or dark. 'system' follows the device and changes with it; the other two hold
+ * regardless. Applied as data-theme on the root element (see src/theme.css).
+ */
+export type Appearance = 'system' | 'light' | 'dark'
+
 export interface DisplayPreferences {
   pressureUnit: PressureUnit
+  appearance: Appearance
+  /** Bring the last calculated setup back into the form on the next visit */
+  rememberSetup: boolean
 }
 
 export const DEFAULT_PREFERENCES: DisplayPreferences = {
   pressureUnit: 'bar',
+  appearance: 'system',
+  rememberSetup: true,
 }
 
 /**
@@ -49,18 +60,29 @@ export function getPreferences(): DisplayPreferences {
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return DEFAULT_PREFERENCES
 
-    const unit = (parsed as Partial<DisplayPreferences>).pressureUnit
+    const stored = parsed as Partial<DisplayPreferences>
+    const unit = stored.pressureUnit
+    const appearance = stored.appearance
     return {
       pressureUnit: unit === 'psi' || unit === 'bar' ? unit : DEFAULT_PREFERENCES.pressureUnit,
+      appearance:
+        appearance === 'light' || appearance === 'dark' || appearance === 'system'
+          ? appearance
+          : DEFAULT_PREFERENCES.appearance,
+      rememberSetup:
+        typeof stored.rememberSetup === 'boolean'
+          ? stored.rememberSetup
+          : DEFAULT_PREFERENCES.rememberSetup,
     }
   } catch {
     return DEFAULT_PREFERENCES
   }
 }
 
-export function savePreferences(preferences: DisplayPreferences): boolean {
+/** Store a change to some preferences, keeping the rest as they were. */
+export function savePreferences(changes: Partial<DisplayPreferences>): boolean {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...getPreferences(), ...changes }))
     return true
   } catch {
     return false
@@ -141,4 +163,14 @@ export function formatPressure(
   const value = toPressureUnit(bar, unit)
   const decimals = options.decimals ?? (Math.abs(value) >= 100 ? 0 : Math.abs(value) >= 10 ? 1 : 2)
   return value.toFixed(decimals)
+}
+
+/**
+ * Put an appearance into effect on the page. 'system' removes the override, so the
+ * stylesheet's prefers-color-scheme rules decide.
+ */
+export function applyAppearance(appearance: Appearance): void {
+  const root = document.documentElement
+  if (appearance === 'system') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', appearance)
 }

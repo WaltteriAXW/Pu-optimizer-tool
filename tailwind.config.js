@@ -28,11 +28,8 @@ export default {
         orange: themed('orange'),
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        // For Reduce Motion: the same arrival as a fade, with no movement
+        // Results arrive with a short fade. They used to slide up over half a second on every
+        // run, which is a lot of motion for the most frequent thing anyone does here.
         fade: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -43,7 +40,6 @@ export default {
         },
       },
       animation: {
-        fadeIn: 'fadeIn 0.5s ease-out forwards',
         fade: 'fade 0.2s ease-out forwards',
       },
     },

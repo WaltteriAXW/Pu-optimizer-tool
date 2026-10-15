@@ -1,4 +1,4 @@
-import { test, expect, waitForEngine } from './fixtures'
+import { test, expect, waitForEngine, choosePressureUnit } from './fixtures'
 
 /**
  * The printed report.
@@ -25,7 +25,7 @@ test.describe('PDF report', () => {
       page.locator('button:has-text("PDF")').click(),
     ]).then(([d]) => d)
 
-    expect(download.suggestedFilename()).toMatch(/^PU-report-.+\.pdf$/)
+    expect(download.suggestedFilename()).toMatch(/^Polyurethane-Optimizer-report-.+\.pdf$/)
 
     const stream = await download.createReadStream()
     const chunks: Buffer[] = []
@@ -63,20 +63,20 @@ test.describe('PDF report', () => {
     const pdf = Buffer.concat(chunks)
 
     // jsPDF writes its text uncompressed, so the section headings are greppable in the
-    // raw bytes. Crude, but it is the difference between a report that matches the screen
+    // raw bytes, in the sentence case the screen uses. Crude, but it is the difference between a report that matches the screen
     // and one that quietly drops half of it.
     const raw = pdf.toString('latin1')
     for (const heading of [
-      'MACHINE OUTPUT - SET THIS',
-      'INJECTION PRESSURE - EXPECTED',
-      'MACHINE & OUTPUT',
-      'INPUTS',
-      'PRESSURE',
-      'FLOW',
-      'OPERATING WINDOW',
-      'THERMAL',
-      'TEMPERATURE AT THE MIX HEAD',
-      'CURE & EXOTHERM',
+      'Machine output',
+      'Injection pressure',
+      'Machine & output',
+      'Inputs',
+      'Pressure',
+      'Flow',
+      'Operating window',
+      'Thermal',
+      'Temperature at the mix head',
+      'Cure & exotherm',
     ]) {
       expect(raw, `report is missing the "${heading}" section`).toContain(heading)
     }
@@ -84,7 +84,7 @@ test.describe('PDF report', () => {
 
   test('quotes pressures in the unit chosen on screen', async ({ page }) => {
     await waitForEngine(page)
-    await page.getByTestId('unit-psi').click()
+    await choosePressureUnit(page, 'psi')
     await page.click('button[type=submit]')
     await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
 

@@ -101,7 +101,7 @@ export function DatasetPanel() {
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
         <Database aria-hidden="true" className="w-4 h-4 text-slate-600" />
-        <h4 className="font-bold text-slate-800">Shot dataset</h4>
+        <h4 className="font-semibold text-slate-800">Shot dataset</h4>
       </div>
       <div className="card-body space-y-4">
         <div className="flex items-baseline justify-between">
@@ -224,7 +224,7 @@ export function DatasetPanel() {
                       setSummary(null)
                       setTrained(null)
                     }}
-                    className="flex-1 min-h-[44px] text-sm px-3 rounded-lg font-bold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
+                    className="flex-1 min-h-[44px] text-sm px-3 rounded-full font-semibold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
                   >
                     Delete everything
                   </button>
@@ -235,9 +235,9 @@ export function DatasetPanel() {
                 type="button"
                 onClick={() => setConfirmingClear(true)}
                 data-testid="clear-dataset"
-                className="w-full text-xs px-3 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
+                className="w-full min-h-[44px] text-sm px-3 rounded-full font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center justify-center gap-1.5"
               >
-                <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
+                <Trash2 aria-hidden="true" className="w-4 h-4" />
                 Clear saved runs
               </button>
             )}
