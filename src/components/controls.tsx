@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { ChevronsUpDown } from 'lucide-react'
+import { CaretUpDown } from '@phosphor-icons/react'
 
 /**
  * Small controls shared across the app, styled after their Apple counterparts. Each is built on
@@ -43,7 +43,7 @@ export function SegmentedControl<T extends string>({
     <div role="radiogroup" aria-labelledby={labelId} className={fullWidth ? 'w-full' : undefined}>
       <span
         id={labelId}
-        className={labelVisible ? 'mb-1.5 block text-sm font-semibold text-slate-700' : 'sr-only'}
+        className={labelVisible ? 'mb-1.5 block text-sm font-semibold text-ink' : 'sr-only'}
       >
         {label}
       </span>
@@ -53,7 +53,7 @@ export function SegmentedControl<T extends string>({
           return (
             <label
               key={option.value}
-              className={`segment has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
+              className={`segment has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-highlight ${
                 checked ? 'segment-selected' : ''
               }`}
             >
@@ -77,8 +77,8 @@ export function SegmentedControl<T extends string>({
 }
 
 /**
- * An on/off switch. Green when on, as the system switch is; the knob position carries the
- * state as well, so it is never colour alone.
+ * An on/off switch. Deep Forest when on (Jade Mint in dark), as the brand guide draws it; the
+ * knob position carries the state as well, so it is never colour alone.
  */
 export function Switch({
   checked,
@@ -102,9 +102,9 @@ export function Switch({
       className="flex min-h-[44px] w-full items-center justify-between gap-4 text-left"
     >
       <span>
-        <span className="block text-base text-slate-900">{label}</span>
+        <span className="block text-base text-ink">{label}</span>
         {description && (
-          <span id={descriptionId} className="mt-0.5 block text-sm text-slate-500">
+          <span id={descriptionId} className="mt-0.5 block text-sm text-ink-2">
             {description}
           </span>
         )}
@@ -112,11 +112,11 @@ export function Switch({
       <span
         aria-hidden="true"
         className={`relative inline-flex h-[31px] w-[51px] flex-shrink-0 rounded-full transition-colors motion-reduce:transition-none ${
-          checked ? 'bg-emerald-600' : 'bg-slate-300'
+          checked ? 'bg-highlight' : 'bg-line'
         }`}
       >
         <span
-          className={`absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow transition-transform motion-reduce:transition-none ${
+          className={`absolute top-[2px] h-[27px] w-[27px] rounded-full bg-knob shadow transition-transform motion-reduce:transition-none ${
             checked ? 'translate-x-[22px]' : 'translate-x-[2px]'
           }`}
         />
@@ -140,9 +140,9 @@ export function PopUpSelect({
       <select {...props} className="popup">
         {children}
       </select>
-      <ChevronsUpDown
+      <CaretUpDown
         aria-hidden="true"
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-2"
       />
     </div>
   )

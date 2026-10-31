@@ -9,7 +9,7 @@ import type {
   InsulationMaterial,
   RheologyModelName,
 } from '@/calculator_types'
-import { AlertCircle, Play, ChevronDown } from 'lucide-react'
+import { CaretDown, Play, Warning, XCircle } from '@phosphor-icons/react'
 import { PopUpSelect, SegmentedControl } from './controls'
 import {
   fromSliderPosition,
@@ -523,9 +523,9 @@ export function CalculatorForm() {
     // Not clipped on a wide screen, so the Run button can stick to the bottom of the
     // scrolling column; the header rounds its own corners instead.
     <div className="card lg:overflow-visible">
-      <div className="card-header rounded-t-2xl">
-        <h2 className="font-semibold text-slate-800">Process Parameters</h2>
-        <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
+      <div className="card-header rounded-t-card">
+        <h2 className="font-semibold text-ink">Process Parameters</h2>
+        <p className="text-xs text-ink-2 mt-1">Configure your injection settings</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card-body space-y-5">
@@ -585,7 +585,7 @@ export function CalculatorForm() {
         <div className="mb-5">
           <label
             htmlFor={materialSelectId}
-            className="text-sm font-semibold text-slate-700 block mb-1.5"
+            className="text-sm font-semibold text-ink block mb-1.5"
           >
             Material Type
           </label>
@@ -611,9 +611,9 @@ export function CalculatorForm() {
             <p
               id={materialErrorId}
               role="alert"
-              className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600"
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-danger"
             >
-              <AlertCircle aria-hidden="true" className="w-3 h-3" />
+              <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
               <span>{materialError}</span>
             </p>
           )}
@@ -621,7 +621,7 @@ export function CalculatorForm() {
 
         {/* Custom Material Properties — shown only when Custom is selected */}
         {isCustomMaterial && (
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-4">
+          <div className="rounded-group border border-accent-secondary bg-muted p-4 space-y-4">
             {/* Section title and its help as one full-width row, so the toggle is a real
                 target rather than a line of small text. The label stays the same open or
                 shut; the chevron and aria-expanded carry the state. */}
@@ -630,12 +630,12 @@ export function CalculatorForm() {
               onClick={() => setShowCustomHelp((v) => !v)}
               aria-expanded={showCustomHelp}
               aria-controls={customPanelId}
-              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-indigo-100 active:bg-indigo-200/60 transition-colors"
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left state"
             >
-              <span className="text-sm font-semibold text-indigo-900">Custom material</span>
-              <span className="flex items-center gap-1 text-sm text-indigo-700">
+              <span className="text-sm font-semibold text-highlight">Custom Material</span>
+              <span className="flex items-center gap-1 text-sm text-highlight">
                 What are these?
-                <ChevronDown
+                <CaretDown
                   aria-hidden="true"
                   className={`w-4 h-4 motion-safe:transition-transform ${showCustomHelp ? 'rotate-180' : ''}`}
                 />
@@ -645,7 +645,7 @@ export function CalculatorForm() {
             {showCustomHelp && (
               <div
                 id={customPanelId}
-                className="text-sm text-indigo-900 bg-indigo-100 rounded-md p-3 space-y-2 leading-relaxed"
+                className="text-sm text-highlight bg-muted rounded-field p-3 space-y-2 leading-relaxed"
               >
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
@@ -751,27 +751,27 @@ export function CalculatorForm() {
         </div>
 
         {/* Optional: ambient conditions and part geometry */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
+        <div className="rounded-group border border-line bg-canvas p-4 space-y-4">
           <button
             type="button"
             onClick={() => setShowOptional((v) => !v)}
             aria-expanded={showOptional}
             aria-controls={optionalPanelId}
-            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-slate-100 active:bg-slate-200 transition-colors"
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left state"
           >
             <span>
-              <span className="block text-sm font-semibold text-slate-800">Optional inputs</span>
-              <span className="block text-sm text-slate-500">Ambient conditions, hose &amp; part</span>
+              <span className="block text-sm font-semibold text-ink">Optional Inputs</span>
+              <span className="block text-sm text-ink-2">Ambient conditions, hose &amp; part</span>
             </span>
-            <ChevronDown
+            <CaretDown
               aria-hidden="true"
-              className={`w-5 h-5 flex-shrink-0 text-slate-500 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 flex-shrink-0 text-ink-2 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
             />
           </button>
 
           {showOptional && (
             <div id={optionalPanelId} className="space-y-4">
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-ink-2 leading-relaxed">
                 Leave blank to calculate from the set point alone. An ambient temperature models
                 the material drifting toward the surrounding air in the hose — which matters
                 for single-shot work — and a part thickness adds a cure prediction for the
@@ -794,12 +794,12 @@ export function CalculatorForm() {
               {/* How the hose is built — feeds the line thermal model */}
               {/* The legend floats so it reads as a heading under the divider; left in
                   place, a legend sits ON the fieldset's top border and leaves a gap below */}
-              <fieldset className="border-t border-slate-200 pt-4">
-                <legend className="float-left w-full text-sm font-semibold text-slate-800">
+              <fieldset className="border-t border-line pt-4">
+                <legend className="float-left w-full text-sm font-semibold text-ink">
                   Hose
                 </legend>
                 <div className="clear-left space-y-4 pt-1">
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-ink-2 leading-relaxed">
                   Used with an ambient temperature. Leave blank for a bare hose in still air;
                   describe it, and lagging in particular, to see how well it holds temperature.
                 </p>
@@ -849,12 +849,12 @@ export function CalculatorForm() {
         {error && (
           <div
             role="alert"
-            className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3"
+            className="p-4 bg-danger-bg border border-danger-bg rounded-group flex items-start gap-3"
           >
-            <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <XCircle aria-hidden="true" className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-semibold text-red-900">Error</h4>
-              <p className="text-sm text-red-800 mt-0.5">{error}</p>
+              <h4 className="text-sm font-semibold text-danger">The Simulation Didn't Run</h4>
+              <p className="text-sm text-ink mt-0.5">{error}</p>
             </div>
           </div>
         )}
@@ -870,21 +870,21 @@ export function CalculatorForm() {
         {!isReady && (
           <div
             role="status"
-            className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3"
+            className="p-4 bg-info-bg rounded-group flex items-start gap-3"
           >
             <div
               aria-hidden="true"
-              className="w-5 h-5 border-2 border-amber-400 border-t-amber-600 rounded-full animate-spin flex-shrink-0 mt-0.5"
+              className="w-5 h-5 border-2 border-info/30 border-t-info rounded-full animate-spin flex-shrink-0 mt-0.5"
             />
             <div className="min-w-0 flex-grow">
-              <h4 className="text-sm font-semibold text-amber-900">Starting the engine</h4>
-              <p className="text-sm text-amber-800 mt-0.5">
+              <h4 className="text-sm font-semibold text-info">Starting the Engine</h4>
+              <p className="text-sm text-info mt-0.5">
                 {loadProgress?.message ?? 'Loading Python physics engine…'}
               </p>
               {loadProgress?.total ? (
                 <>
                   <div
-                    className="mt-2 h-1.5 rounded-full bg-amber-200 overflow-hidden"
+                    className="mt-2 h-1.5 rounded-full bg-surface overflow-hidden"
                     role="progressbar"
                     aria-valuemin={0}
                     aria-valuemax={loadProgress.total}
@@ -892,18 +892,18 @@ export function CalculatorForm() {
                     aria-label="Loading the physics engine"
                   >
                     <div
-                      className="h-full bg-amber-500 transition-[width] duration-150"
+                      className="h-full bg-info transition-[width] duration-150"
                       style={{
                         width: `${((loadProgress.loaded ?? 0) / loadProgress.total) * 100}%`,
                       }}
                     />
                   </div>
-                  <p className="text-xs text-amber-700 mt-1 tabular-nums">
+                  <p className="text-xs text-info mt-1 tabular-nums">
                     {loadProgress.loaded} of {loadProgress.total} modules
                   </p>
                 </>
               ) : null}
-              <p className="text-xs text-amber-700 mt-1">
+              <p className="text-xs text-info mt-1">
                 Runs entirely in your browser; nothing is uploaded.
               </p>
             </div>
@@ -912,21 +912,21 @@ export function CalculatorForm() {
 
         {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
             stays in reach however far the inputs above it run. */}
-        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-2xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
+        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-card lg:border-t lg:border-line lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full text-base font-semibold text-white shadow-sm transition-all transform motion-safe:active:scale-95 ${
-              !canSubmit
-                ? 'bg-slate-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'
+            // Large button, 50 pt. Disabled is the guide's 40% opacity; while it runs it stays at
+            // full strength and says so, as the guide's loading state does.
+            className={`state-accent w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-accent text-on-accent text-base font-semibold ${
+              isLoading ? 'disabled:opacity-100 disabled:cursor-wait' : ''
             }`}
           >
             {isLoading ? (
               <>
                 <div
                   aria-hidden="true"
-                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  className="w-4 h-4 border-2 border-on-accent/30 border-t-on-accent rounded-full animate-spin"
                 />
                 Calculating...
               </>
@@ -982,10 +982,10 @@ function InputField({
   return (
     <div className="mb-5 group">
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1.5">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-ink">
           {label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-ink-2">
           {range.min}-{range.max} {unit}
         </span>
       </div>
@@ -1001,10 +1001,10 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-field border transition-all outline-none ${
             error
-              ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-danger text-danger placeholder-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              : 'border-line-strong text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
         {/* Repeats the unit already announced with the range, so it is decorative here */}
@@ -1012,7 +1012,7 @@ function InputField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
         >
-          <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-sm font-medium ${error ? 'text-danger' : 'text-ink-2'}`}>
             {unit}
           </span>
         </div>
@@ -1039,9 +1039,9 @@ function InputField({
         <div
           id={errorId}
           role="alert"
-          className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600"
+          className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -1074,10 +1074,10 @@ function OptionalField({
   return (
     <div>
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-ink">
           {spec.label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-ink-2">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
@@ -1098,31 +1098,31 @@ function OptionalField({
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
+          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-field border transition-all outline-none placeholder:text-ink-2 ${
             error
-              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-danger bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              : 'border-line-strong bg-surface text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-danger' : 'text-ink-2'}`}>
             {spec.unit}
           </span>
         </div>
       </div>
-      <p id={helpId} className="mt-1 text-sm text-slate-500 leading-snug">
+      <p id={helpId} className="mt-1 text-sm text-ink-2 leading-snug">
         {spec.help}
       </p>
       {error && (
         <div
           id={errorId}
           role="alert"
-          className="mt-1 flex items-center gap-1.5 text-xs text-red-600"
+          className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -1154,7 +1154,7 @@ function OptionalSelect({
 
   return (
     <div>
-      <label htmlFor={id} className="text-sm font-semibold text-slate-700 block mb-1">
+      <label htmlFor={id} className="text-sm font-semibold text-ink block mb-1">
         {label}
       </label>
       <PopUpSelect
@@ -1201,10 +1201,10 @@ function CustomMaterialField({
   return (
     <div>
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-ink">
           {label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-ink-2">
           {range.min}–{range.max} {unit}
         </span>
       </div>
@@ -1220,17 +1220,17 @@ function CustomMaterialField({
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-field border transition-all outline-none ${
             error
-              ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              ? 'border-danger bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              : 'border-line-strong bg-surface text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-danger' : 'text-ink-2'}`}>
             {unit}
           </span>
         </div>
@@ -1239,9 +1239,9 @@ function CustomMaterialField({
         <div
           id={errorId}
           role="alert"
-          className="mt-1 flex items-center gap-1.5 text-xs text-red-600"
+          className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}

@@ -18,22 +18,24 @@ import {
 export type ChartColorRole = 'grid' | 'axis' | 'tick' | 'title' | 'primary' | 'secondary'
 
 export const CHART_COLORS: Record<'light' | 'dark', Record<ChartColorRole, string>> = {
+  // Stone & Forest chart rules: a recessive frame (a hairline grid in border-subtle, no
+  // borders), words in the text colours, and the series in the chart palette's order. Status
+  // colours are never a series. Each series colour holds 3:1 on its surface.
   light: {
-    grid: '#e2e8f0', // slate-200
-    axis: '#64748b', // slate-500: axis lines are graphics and need 3:1
-    tick: '#64748b', // slate-500
-    title: '#475569', // slate-600
-    primary: '#4f46e5', // indigo-600
-    secondary: '#64748b', // slate-500
+    grid: '#E2DDD5', // Warm Stone, border-subtle
+    axis: '#E2DDD5',
+    tick: '#5C6058', // Olive Slate, text-secondary
+    title: '#5C6058',
+    primary: '#1A7F58', // chart 1, Forest
+    secondary: '#B77F12', // chart 2, Ochre
   },
-  // Against the dark surface: axis 4.8:1, ticks 6.9:1, lines 5.6:1 and 6.9:1
   dark: {
-    grid: '#2c3a50',
-    axis: '#7c8aa0',
-    tick: '#9aa8bc',
-    title: '#b4c0d0',
-    primary: '#818cf8',
-    secondary: '#9aa8bc',
+    grid: '#262C29', // Muted Graphite
+    axis: '#262C29',
+    tick: '#9CA39E', // Lichen Grey
+    title: '#9CA39E',
+    primary: '#2FA877', // chart 1, Forest
+    secondary: '#C08A1C', // chart 2, Ochre
   },
 }
 
@@ -53,7 +55,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
 
   if (!results.pressure || !results.input) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
+      <div className="w-full h-64 flex items-center justify-center bg-canvas rounded-group border border-line text-ink-2">
         No pressure data available
       </div>
     )
@@ -108,14 +110,22 @@ export function PressureChart({ results, unit }: PressureChartProps) {
     // Borderless: it sits inside a results card. The white background stays because the PDF
     // captures this element as it is.
     <div className="w-full bg-surface p-1" data-chart="pressure-profile">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h3 className="text-lg font-semibold text-slate-800">Pressure Profile</h3>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        {/* The title says what the chart shows, not just what it measures */}
+        <div>
+          <h3 className="text-lg font-semibold text-ink">
+            The line needs {formatPressure(totalPressure, unit)} {unit} by its far end
+          </h3>
+          <p className="text-sm text-ink-2">
+            Pressure along the feed line, {unit} · {pipeLength.toFixed(0)} mm of pipe
+          </p>
+        </div>
         {/* The legend sits outside the plot. Inside it, it covered the end of the line —
             the one point on the chart that matters most. The two series differ by line
             style as well as colour, so the legend does not rely on colour alone. */}
-        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600" aria-hidden="true">
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2" aria-hidden="true">
           <li className="flex items-center gap-2">
-            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={colors.primary} data-stroke-role="primary" strokeWidth="3" /></svg>
+            <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={colors.primary} data-stroke-role="primary" strokeWidth="2" /></svg>
             With fittings
           </li>
           <li className="flex items-center gap-2">
@@ -149,22 +159,12 @@ export function PressureChart({ results, unit }: PressureChartProps) {
             + `${formatPressure(fittingLoss, unit)} ${unit} of fitting losses are included.`}
         </desc>
 
-        {/* Grid lines */}
+        {/* A recessive frame: horizontal hairlines only, the baseline among them */}
         <g stroke={colors.grid} data-stroke-role="grid" strokeWidth="1">
           {Array.from({ length: 6 }).map((_, i) => {
             const y = padding.top + (i * chartHeight) / 5
             return <line key={`h-${i}`} x1={padding.left} y1={y} x2={width - padding.right} y2={y} />
           })}
-          {Array.from({ length: 6 }).map((_, i) => {
-            const x = padding.left + (i * chartWidth) / 5
-            return <line key={`v-${i}`} x1={x} y1={padding.top} x2={x} y2={height - padding.bottom} />
-          })}
-        </g>
-
-        {/* Axes */}
-        <g stroke={colors.axis} data-stroke-role="axis" strokeWidth="1.5">
-          <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} />
-          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={height - padding.bottom} />
         </g>
 
         {/* Fill under the line demand */}
@@ -185,7 +185,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
           d={totalPressurePath}
           fill="none"
           stroke={colors.primary} data-stroke-role="primary"
-          strokeWidth="3"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -213,7 +213,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         </g>
 
         {/* Axis titles: the vertical one above its axis, clear of the tick labels */}
-        <g fontSize="12" fill={colors.title} data-fill-role="title" fontWeight="600">
+        <g fontSize="12" fill={colors.title} data-fill-role="title" fontWeight="500">
           <text x={padding.left - 10} y={14} textAnchor="start">
             Pressure ({unit})
           </text>
@@ -223,24 +223,30 @@ export function PressureChart({ results, unit }: PressureChartProps) {
         </g>
       </svg>
 
-      {/* The three figures behind the chart. Neutral tiles with the headline figure — the
-          pressure the line needs — emphasised; red is kept for things that are wrong. */}
+      {/* The three figures behind the chart, in the text colours: colour only marks the data,
+          so each series figure carries its line as a key */}
       <dl className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg bg-indigo-50 p-4">
-          <dt className="text-sm font-medium text-indigo-800">With fittings</dt>
-          <dd className="mt-1 text-2xl font-bold text-indigo-900 tabular-nums">
+        <div className="rounded-group bg-canvas p-4">
+          <dt className="flex items-center gap-2 text-sm font-medium text-ink-2">
+            <svg width="16" height="4" aria-hidden="true"><line x1="0" y1="2" x2="16" y2="2" stroke={colors.primary} data-stroke-role="primary" strokeWidth="2" /></svg>
+            With fittings
+          </dt>
+          <dd className="mt-1 text-2xl font-bold text-ink tabular-nums">
             {formatPressure(totalPressure, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-4">
-          <dt className="text-sm font-medium text-slate-600">Pipe only</dt>
-          <dd className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+        <div className="rounded-group bg-canvas p-4">
+          <dt className="flex items-center gap-2 text-sm font-medium text-ink-2">
+            <svg width="16" height="4" aria-hidden="true"><line x1="0" y1="2" x2="16" y2="2" stroke={colors.secondary} data-stroke-role="secondary" strokeWidth="2" strokeDasharray="4 3" /></svg>
+            Pipe only
+          </dt>
+          <dd className="mt-1 text-2xl font-bold text-ink tabular-nums">
             {formatPressure(basePressure, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-4">
-          <dt className="text-sm font-medium text-slate-600">Fitting loss</dt>
-          <dd className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+        <div className="rounded-group bg-canvas p-4">
+          <dt className="text-sm font-medium text-ink-2">Fitting loss</dt>
+          <dd className="mt-1 text-2xl font-bold text-ink tabular-nums">
             {formatPressure(fittingLoss, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>

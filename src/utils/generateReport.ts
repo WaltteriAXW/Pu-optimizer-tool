@@ -22,21 +22,21 @@ import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
  * that person set.
  */
 
-// ── Palette and shape, matching the application's light appearance ─────────────────
-const INK: RGB = [15, 23, 42]            // slate-900
-const SECONDARY: RGB = [71, 85, 105]     // slate-600
-const MUTED: RGB = [100, 116, 139]       // slate-500
-const RULE: RGB = [226, 232, 240]        // slate-200
-const CARD: RGB = [248, 250, 252]        // slate-50
-const ACCENT: RGB = [79, 70, 229]        // indigo-600
-const ACCENT_SOFT: RGB = [238, 242, 255] // indigo-50
-const ACCENT_INK: RGB = [55, 48, 163]    // indigo-800
+// ── Stone & Forest, light: palette colours only, as the printed page is light ─────────
+const INK: RGB = [28, 29, 26]            // Charcoal Moss, text-primary
+const SECONDARY: RGB = [92, 96, 88]      // Olive Slate, text-secondary
+const MUTED: RGB = [92, 96, 88]          // Olive Slate
+const RULE: RGB = [226, 221, 213]        // Warm Stone, border-subtle
+const CARD: RGB = [242, 239, 233]        // Pale Limestone
+const ACCENT: RGB = [27, 59, 43]         // Deep Forest, accent-primary
+const ACCENT_SOFT: RGB = [230, 236, 232] // Pale Mist Green, accent-muted
+const ACCENT_INK: RGB = [27, 59, 43]     // Deep Forest
 
-/** Status colours as pairs, as the app uses them: a tint behind, a deeper ink on it */
+/** The guide's status colours, as the app uses them: a tint behind, the text colour on it */
 const TONE = {
-  good: { fill: [236, 253, 245] as RGB, ink: [4, 120, 87] as RGB },    // emerald-50 / 700
-  warn: { fill: [255, 251, 235] as RGB, ink: [180, 83, 9] as RGB },    // amber-50 / 700
-  bad: { fill: [254, 242, 242] as RGB, ink: [185, 28, 28] as RGB },    // red-50 / 700
+  good: { fill: [226, 240, 230] as RGB, ink: [30, 115, 71] as RGB },  // status-success
+  warn: { fill: [250, 238, 211] as RGB, ink: [138, 90, 0] as RGB },   // status-warning
+  bad: { fill: [247, 226, 220] as RGB, ink: [178, 58, 46] as RGB },   // status-error
 }
 type Tone = keyof typeof TONE
 
@@ -90,7 +90,7 @@ export const generateReport = async (
   const stroke = (rgb: RGB) => doc.setDrawColor(rgb[0], rgb[1], rgb[2])
   const p = (bar: number | undefined | null) => formatPressure(bar, unit)
 
-  /** The mark: three foam cells on an indigo tile — the geometry of BrandMark.tsx */
+  /** The mark: three foam cells on a Deep Forest tile — the geometry of BrandMark.tsx */
   const drawMark = (x: number, top: number, size: number) => {
     const k = size / 32
     fill(ACCENT)
@@ -109,7 +109,7 @@ export const generateReport = async (
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     ink(MUTED)
-    doc.text('Injection parameter report', MARGIN + 11, 15.4)
+    doc.text('Injection Parameter Report', MARGIN + 11, 15.4)
     doc.text(`Report ${reportId}`, pageWidth - MARGIN, 11.6, { align: 'right' })
     doc.text(generated.toLocaleString(), pageWidth - MARGIN, 15.4, { align: 'right' })
     stroke(RULE)
@@ -252,7 +252,7 @@ export const generateReport = async (
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
   ink(INK)
-  doc.text('Injection parameters', MARGIN, y + 4)
+  doc.text('Injection Parameters', MARGIN, y + 4)
   y += 10
 
   doc.setFont('helvetica', 'normal')
@@ -350,7 +350,7 @@ export const generateReport = async (
 
   if (warningCount > 0) {
     full({
-      title: 'Attention needed',
+      title: 'Attention Needed',
       rows: [],
       notes: results.warnings!.map((w) => ({ text: `•  ${stripEmoji(w)}`, tone: 'warn' as Tone })),
     })
@@ -374,6 +374,11 @@ export const generateReport = async (
         // own style, which outranks any attribute set here.
         onclone: (clonedDocument) => {
           clonedDocument.documentElement.setAttribute('data-theme', 'light')
+          // html2canvas places glyphs one by one and mis-spaces Inter's negative tracking
+          // ("0.1 4"), so the captured copy is set without it
+          const untracked = clonedDocument.createElement('style')
+          untracked.textContent = '* { letter-spacing: 0 !important; }'
+          clonedDocument.head.appendChild(untracked)
           const light = CHART_COLORS.light
           const repaint = (selector: string, property: 'stroke' | 'fill', key: 'strokeRole' | 'fillRole') => {
             clonedDocument.querySelectorAll<SVGElement>(selector).forEach((el) => {
@@ -400,7 +405,7 @@ export const generateReport = async (
     } catch (error) {
       console.error('Failed to capture chart:', error)
       // The report is still worth producing without it
-      full({ title: 'Pressure profile', rows: [], notes: [{ text: 'The chart could not be captured for this report.', tone: 'warn' }] })
+      full({ title: 'Pressure Profile', rows: [], notes: [{ text: 'The chart could not be captured for this report.', tone: 'warn' }] })
     }
   }
 
@@ -444,7 +449,7 @@ export const generateReport = async (
           ? open
           : 'None in range'
     full({
-      title: 'Operating window',
+      title: 'Operating Window',
       lead: {
         text: describeFlowWindow(window.flow_window),
         tone: window.flow_window.current_inside ? undefined : 'bad',
@@ -510,7 +515,7 @@ export const generateReport = async (
           + 'runs an order of magnitude above a mechanical rotor, by design.',
       })
     }
-    machineSection = { title: 'Machine & output', rows, notes }
+    machineSection = { title: 'Machine & Output', rows, notes }
   }
   pair(flowSection, machineSection)
 
@@ -554,7 +559,7 @@ export const generateReport = async (
       ])
     }
     lineSection = {
-      title: 'Temperature at the mix head',
+      title: 'Temperature at the Mix Head',
       rows,
       notes: line.warning ? [{ text: line.warning, tone: 'warn' }] : undefined,
     }
@@ -574,7 +579,7 @@ export const generateReport = async (
     const notes: Section['notes'] = []
     if (vol.message) notes.push({ text: vol.message })
     if (vol.warning) notes.push({ text: vol.warning, tone: vol.status === 'flash_risk' ? 'bad' : 'warn' })
-    agentSection = { title: 'Blowing agent', rows, notes }
+    agentSection = { title: 'Blowing Agent', rows, notes }
   }
 
   const env = results.environmental
@@ -615,7 +620,7 @@ export const generateReport = async (
       ])
     }
     full({
-      title: 'Cure & exotherm',
+      title: 'Cure & Exotherm',
       lead: { text: 'Describes the moulded part after the mix head, not the feed line above.' },
       rows,
       notes: cure.heat_of_reaction_is_estimated

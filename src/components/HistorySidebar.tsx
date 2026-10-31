@@ -1,5 +1,5 @@
 import { useId, useRef } from 'react'
-import { Trash2, History, ChevronRight, X } from 'lucide-react'
+import { CaretRight, ClockCounterClockwise, Trash, X } from '@phosphor-icons/react'
 import { DatasetPanel } from './DatasetPanel'
 import { useModalDialog } from './useModalDialog'
 import { PopUpSelect } from './controls'
@@ -62,13 +62,13 @@ export function HistorySidebar({
       aria-modal="true"
       aria-labelledby={titleId}
       tabIndex={-1}
-      className="fixed inset-y-0 right-0 z-40 w-80 bg-surface border-l border-slate-200 shadow-lg overflow-y-auto outline-none"
+      className="fixed inset-y-0 right-0 z-40 w-80 bg-overlay border-l border-edge shadow-overlay overflow-y-auto outline-none"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-surface border-b border-slate-100 p-4">
+      <div className="sticky top-0 bg-overlay border-b border-line p-4">
         <div className="flex items-center gap-2">
-          <History aria-hidden="true" className="w-5 h-5 text-indigo-600" />
-          <h2 id={titleId} className="text-lg font-semibold text-slate-800">
+          <ClockCounterClockwise aria-hidden="true" className="w-6 h-6 text-ink" />
+          <h2 id={titleId} className="text-lg font-semibold text-ink">
             Calculation History
           </h2>
           {/* A visible way out. Escape and the backdrop also close the panel, but neither
@@ -77,12 +77,12 @@ export function HistorySidebar({
             type="button"
             onClick={onClose}
             aria-label="Close history"
-            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-2 state"
           >
-            <X aria-hidden="true" className="w-5 h-5" />
+            <X aria-hidden="true" className="w-6 h-6" />
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           {history.length} run{history.length !== 1 ? 's' : ''} saved
           {history.length > 0 && (
             <> · {labelled} with a recorded outcome</>
@@ -98,8 +98,8 @@ export function HistorySidebar({
       {/* History list */}
       {history.length === 0 ? (
         <div className="p-6 text-center">
-          <History aria-hidden="true" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">No runs saved yet</p>
+          <ClockCounterClockwise aria-hidden="true" className="w-8 h-8 text-ink-2 mx-auto mb-2" />
+          <p className="text-sm text-ink-2">No runs saved yet</p>
         </div>
       ) : (
         <div className="space-y-2 p-4">
@@ -139,7 +139,7 @@ function HistoryItem({
   const materialName = entry.results.input?.material_name || entry.parameters.material_key
 
   return (
-    <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
+    <div className="p-3 bg-canvas border border-line rounded-group group">
       {/* Main content */}
       <button
         onClick={onSelect}
@@ -148,18 +148,18 @@ function HistoryItem({
         aria-label={`Load run: ${materialName}, ${timeAgo}${
           pressure ? `, ${pressure} bar` : ''
         }`}
-        className="w-full text-left flex items-start justify-between mb-2"
+        className="state -m-1 mb-1 w-[calc(100%+0.5rem)] rounded-field p-1 text-left flex items-start justify-between"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-900 truncate">
+          <p className="text-xs font-semibold text-ink truncate">
             {materialName}
           </p>
-          <p className="text-xs text-slate-500 mt-1">{timeAgo}</p>
+          <p className="text-xs text-ink-2 mt-1">{timeAgo}</p>
 
           {/* Summary stats */}
           <div className="flex items-center gap-2 mt-2 text-xs">
             {pressure && (
-              <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full">
+              <span className="px-2.5 py-1 bg-muted text-highlight rounded-full">
                 {pressure} bar
               </span>
             )}
@@ -167,8 +167,8 @@ function HistoryItem({
               <span
                 className={`px-2.5 py-1 rounded-full capitalize ${
                   flowRegime === 'laminar'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-amber-100 text-amber-700'
+                    ? 'bg-success-bg text-success'
+                    : 'bg-warning-bg text-warning'
                 }`}
               >
                 {flowRegime}
@@ -178,14 +178,14 @@ function HistoryItem({
         </div>
 
         {/* Chevron */}
-        <ChevronRight
+        <CaretRight
           aria-hidden="true"
-          className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 flex-shrink-0 mt-1 ml-2"
+          className="w-4 h-4 text-ink-2 flex-shrink-0 mt-1 ml-2"
         />
       </button>
 
       {/* Parameters preview */}
-      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-surface p-2 rounded-lg border border-slate-100">
+      <div className="text-xs text-ink-2 space-y-0.5 mb-3 bg-surface p-2 rounded-group border border-line">
         <div className="flex justify-between">
           <span>Length:</span>
           <span className="font-medium">{entry.parameters.pipe_length_mm} mm</span>
@@ -207,7 +207,7 @@ function HistoryItem({
       {/* How the part came out. Recorded after the fact, which is the point: this is the
           one field the physics cannot supply and a model would need. */}
       <div className="mb-3" data-testid="outcome-picker">
-        <label htmlFor={outcomeId} className="block text-sm font-semibold text-slate-700 mb-1">
+        <label htmlFor={outcomeId} className="block text-sm font-semibold text-ink mb-1">
           How did the part come out?
         </label>
         <PopUpSelect
@@ -233,9 +233,9 @@ function HistoryItem({
         // Several "Delete" buttons sit in this list; without naming the run they are
         // indistinguishable when tabbed through
         aria-label={`Delete run: ${materialName}, ${timeAgo}`}
-        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center gap-1.5"
+        className="button-destructive w-full"
       >
-        <Trash2 aria-hidden="true" className="w-4 h-4" />
+        <Trash aria-hidden="true" className="w-4 h-4" />
         Delete
       </button>
     </div>

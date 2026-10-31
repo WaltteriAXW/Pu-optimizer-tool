@@ -1,8 +1,7 @@
-import { useId } from 'react'
-
 /**
- * The Polyurethane Optimizer mark: three foam cells of different sizes, rising, on an indigo
- * tile. Polyurethane is the foam; the cells are what the injection is made to produce.
+ * The Polyurethane Optimizer mark: three foam cells of different sizes, rising, on a tile in
+ * the accent colour — Deep Forest with white cells in light, Champagne with Obsidian in dark,
+ * following the brand guide's role inversion. Polyurethane is the foam; the cells are what the injection is made to produce.
  *
  * Drawn as one bold, simple shape so it still reads at favicon size. The same geometry is in
  * public/favicon.svg and is drawn into the PDF header (src/utils/generateReport.ts) — keep the
@@ -15,7 +14,6 @@ export const BRAND_CELLS = [
 ] as const
 
 export function BrandMark({ size = 40, className = '' }: { size?: number; className?: string }) {
-  const gradientId = useId()
   return (
     <svg
       width={size}
@@ -25,15 +23,17 @@ export function BrandMark({ size = 40, className = '' }: { size?: number; classN
       aria-hidden="true"
       focusable="false"
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#6366f1" />
-          <stop offset="1" stopColor="#4338ca" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="8" fill={`url(#${gradientId})`} />
+      <rect width="32" height="32" rx="8" className="fill-accent" />
       {BRAND_CELLS.map(({ cx, cy, r }) => (
-        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="none" stroke="white" strokeWidth="2.25" />
+        <circle
+          key={`${cx}-${cy}`}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          className="stroke-on-accent"
+          strokeWidth="2.25"
+        />
       ))}
     </svg>
   )

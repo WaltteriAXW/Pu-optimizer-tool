@@ -3,7 +3,7 @@ import { ExportService } from '../services/ExportService'
 import { generateReport } from '../utils/generateReport'
 import { useCalculator } from '../context/CalculatorContext'
 import type { CalculationResults } from '@/calculator_types'
-import { AlertCircle, FileDown, FileJson, FileSpreadsheet, FileText, Loader } from 'lucide-react'
+import { FileCode, FileCsv, FilePdf, FileText, SpinnerGap, Warning } from '@phosphor-icons/react'
 
 /**
  * The four exports are four equal choices, so they share the one secondary style. They used
@@ -82,7 +82,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
       <div role="group" aria-labelledby={labelId} className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
         {/* One visible label for the row, so each button reads as "Export JSON" without
             repeating the verb four times */}
-        <span id={labelId} className="mr-1 text-sm font-medium text-slate-500">
+        <span id={labelId} className="mr-1 text-sm font-medium text-ink-2">
           Export
         </span>
         <button
@@ -90,7 +90,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as JSON"
         >
-          <FileJson aria-hidden="true" className="w-4 h-4" />
+          <FileCode aria-hidden="true" className="w-4 h-4" />
           JSON
         </button>
 
@@ -99,7 +99,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as CSV"
         >
-          <FileSpreadsheet aria-hidden="true" className="w-4 h-4" />
+          <FileCsv aria-hidden="true" className="w-4 h-4" />
           CSV
         </button>
 
@@ -119,17 +119,17 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           title="Generate professional PDF report with charts"
         >
           {isGeneratingPDF ? (
-            <Loader aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <SpinnerGap aria-hidden="true" className="w-4 h-4 animate-spin" />
           ) : (
-            <FileDown aria-hidden="true" className="w-4 h-4" />
+            <FilePdf aria-hidden="true" className="w-4 h-4" />
           )}
           {isGeneratingPDF ? 'Generating...' : 'PDF'}
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+        <p role="alert" className="flex items-center gap-1.5 text-xs text-danger">
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           {error}
         </p>
       )}
