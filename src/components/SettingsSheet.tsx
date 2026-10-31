@@ -1,5 +1,5 @@
 import { useId, useRef } from 'react'
-import { BookOpen, ChevronRight, Code2 } from 'lucide-react'
+import { BookOpen, CaretRight, Code } from '@phosphor-icons/react'
 import { useCalculator } from '../context/CalculatorContext'
 import { SegmentedControl, Switch } from './controls'
 import { useModalDialog } from './useModalDialog'
@@ -47,7 +47,7 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-scrim/40 motion-safe:animate-fade"
+        className="absolute inset-0 bg-backdrop animate-fade-in"
         onClick={onClose}
       />
       <div
@@ -57,10 +57,10 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="settings-sheet"
-        className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-sheet bg-canvas pb-6 shadow-xl outline-none motion-safe:animate-fade sm:max-w-md sm:rounded-sheet"
+        className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-sheet border border-edge bg-level-3 pb-6 shadow-overlay outline-none animate-fade-in sm:max-w-md sm:rounded-sheet"
       >
         {/* Title centred, Done on the trailing edge, as a system sheet has them */}
-        <div className="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center border-b border-line bg-canvas/90 px-4 py-2 backdrop-blur">
+        <div className="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center border-b border-line bg-level-3/90 px-4 py-2 backdrop-blur">
           <span />
           <h2 id={titleId} className="text-base font-semibold text-ink">
             Settings
@@ -68,7 +68,7 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
           <button
             type="button"
             onClick={onClose}
-            className="justify-self-end min-h-[44px] rounded-full px-4 text-base font-semibold text-highlight hover:bg-muted transition-colors"
+            className="justify-self-end min-h-[44px] rounded-full px-4 text-base font-semibold text-highlight state"
           >
             Done
           </button>
@@ -126,7 +126,7 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
             <SettingsLink href={GUIDE_URL} icon={<BookOpen className="h-5 w-5" />}>
               User guide
             </SettingsLink>
-            <SettingsLink href={REPO_URL} icon={<Code2 className="h-5 w-5" />}>
+            <SettingsLink href={REPO_URL} icon={<Code className="h-5 w-5" />}>
               Source code
             </SettingsLink>
           </SettingsSection>
@@ -171,13 +171,13 @@ function SettingsLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex min-h-[48px] items-center gap-3 px-4 text-base text-ink hover:bg-canvas transition-colors"
+      className="flex min-h-[48px] items-center gap-3 px-4 text-base text-ink state"
     >
-      <span aria-hidden="true" className="text-highlight">
+      <span aria-hidden="true" className="text-ink">
         {icon}
       </span>
       <span className="flex-1">{children}</span>
-      <ChevronRight aria-hidden="true" className="h-4 w-4 text-ink-2" />
+      <CaretRight aria-hidden="true" className="h-4 w-4 text-ink-2" />
     </a>
   )
 }

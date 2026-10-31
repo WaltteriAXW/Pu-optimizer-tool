@@ -1,7 +1,7 @@
 /*
  * Stone & Forest: colour roles for light, dark and Increase Contrast.
  *
- * Only colours from the Stone & Forest brand guide (v1.1) appear here, and so in the app: every
+ * Only colours from the Stone & Forest brand guide (v1.2) appear here, and so in the app: every
  * colour class (bg-surface, text-ink-2, border-line and so on) resolves through these
  * variables (see tailwind.config.js), and Tailwind's own palette is switched off. A theme
  * switch swaps the whole set; no component changes.
@@ -10,25 +10,37 @@
  *   canvas           Pale Limestone / Deep Obsidian: bg-primary: the page
  *   surface          Pure White / Dark Basalt: bg-surface: cards, sheets, inputs
  *   raised           Pure White / Muted Graphite: the chosen segment, raised on its track
+ *   level-2          Pure White / Basalt Level 2: menus, popovers, toasts
+ *   level-3          Pale Limestone / Muted Graphite: sheets and dialogs
+ *   overlay          Pure White / Muted Graphite: side panels over the page
  *   track            Warm Stone / Deep Obsidian: segmented control and switch tracks
  *   accent           Deep Forest / Champagne Beige: accent-primary: the one main action
  *   on-accent        Pure White / Deep Obsidian: text-on-accent
- *   highlight        Deep Forest / Jade Mint: accent text, active icons, success, the switch
+ *   highlight        Deep Forest / Jade Mint: accent text, the focus ring, the switch
  *   accent-secondary Muted Sage / Jade Mint: charts, progress; decorative in light
  *   band             Muted Sage / Deep Forest Fill: the in-range band of a gauge, behind its marker
- *   muted            Pale Mist Green / Deep Forest Fill: accent-muted: pills, selected rows, success fill
+ *   muted            Pale Mist Green / Deep Forest Fill: accent-muted: pills, badges, selected rows
  *   line             Warm Stone / Muted Graphite: border-subtle: dividers, card edges
  *   line-strong      Warm Stone HC / Muted Graphite HC: input edges
  *   ink              Charcoal Moss / Frost: text-primary
  *   ink-2            Olive Slate / Lichen Grey: text-secondary
- *   danger           Clay Red / Ember Coral: destructive: errors, delete
- *   warn             Champagne Beige / Champagne Beige: warnings: fill and edge
- *   warn-ink         Charcoal Moss / Champagne Beige: warning text and icons
- *   scrim            Deep Obsidian / Deep Obsidian: backdrops and shadows, never pure black
+ *   success          Success / Success Dark: status-success: text and icon
+ *   success-bg       Success Tint / Success Tint Dark: status-success: tint fill
+ *   warning          Warning / Warning Dark: status-warning: text and icon
+ *   warning-bg       Warning Tint / Warning Tint Dark: status-warning: tint fill
+ *   danger           Clay Red / Ember Coral: status-error and destructive: text and icon
+ *   danger-bg        Error Tint / Error Tint Dark: status-error: tint fill
+ *   info             Info / Info Dark: status-info: text and icon
+ *   info-bg          Info Tint / Info Tint Dark: status-info: tint fill
+ *   scrim            Charcoal Moss / Deep Obsidian: the backdrop behind a sheet
+ *   shadow           Deep Forest / Deep Obsidian: shadows: forest-tinted by day
  *   knob             Pure White / Pure White: switch and slider knobs
  *
- * Tints behind a warning or an error are the role colour at reduced opacity (--a-*), as the
- * guide's tinted buttons are. Muted Sage is 2.3:1 on white, so in light it is decorative only.
+ * Status colours (success, warning, danger, info) come in pairs: text and icon, and a tint fill.
+ * They always travel with an icon and words, and are never a chart series; the chart has its
+ * own six colours (--c-chart-*). Elevation: light lifts a card with a forest-tinted shadow
+ * (--shadow-1 to 3), dark with a lighter surface and a 1 pt border (--a-edge). Muted Sage is
+ * 2.3:1 on white, so in light it is decorative only.
  * src/theme.test.ts checks that every value is in the palette and every pairing meets WCAG AA.
  *
  * data-theme on the root overrides the device: "light" or "dark" from Settings, and "light"
@@ -42,6 +54,9 @@
   --c-canvas: 242 239 233; /* Pale Limestone */
   --c-surface: 255 255 255; /* Pure White */
   --c-raised: 255 255 255; /* Pure White */
+  --c-level-2: 255 255 255; /* Pure White */
+  --c-level-3: 242 239 233; /* Pale Limestone */
+  --c-overlay: 255 255 255; /* Pure White */
   --c-track: 226 221 213; /* Warm Stone */
   --c-accent: 27 59 43; /* Deep Forest */
   --c-on-accent: 255 255 255; /* Pure White */
@@ -53,15 +68,28 @@
   --c-line-strong: 185 178 166; /* Warm Stone HC */
   --c-ink: 28 29 26; /* Charcoal Moss */
   --c-ink-2: 92 96 88; /* Olive Slate */
+  --c-success: 30 115 71; /* Success */
+  --c-success-bg: 226 240 230; /* Success Tint */
+  --c-warning: 138 90 0; /* Warning */
+  --c-warning-bg: 250 238 211; /* Warning Tint */
   --c-danger: 178 58 46; /* Clay Red */
-  --c-warn: 232 220 203; /* Champagne Beige */
-  --c-warn-ink: 28 29 26; /* Charcoal Moss */
-  --c-scrim: 12 14 13; /* Deep Obsidian */
+  --c-danger-bg: 247 226 220; /* Error Tint */
+  --c-info: 47 94 148; /* Info */
+  --c-info-bg: 226 234 244; /* Info Tint */
+  --c-scrim: 28 29 26; /* Charcoal Moss */
+  --c-shadow: 27 59 43; /* Deep Forest */
   --c-knob: 255 255 255; /* Pure White */
-  --a-warn-soft: 0.55;
-  --a-warn-line: 1;
-  --a-danger-soft: 0.08;
-  --a-danger-line: 0.35;
+  --a-scrim: 0.4;
+  --a-edge: 0;
+  --shadow-1: 0 1px 6px rgb(var(--c-shadow) / 0.10);
+  --shadow-2: 0 6px 18px rgb(var(--c-shadow) / 0.14);
+  --shadow-3: 0 12px 32px rgb(var(--c-shadow) / 0.20);
+  --c-chart-1: 26 127 88;
+  --c-chart-2: 183 127 18;
+  --c-chart-3: 62 111 176;
+  --c-chart-4: 194 85 58;
+  --c-chart-5: 138 79 158;
+  --c-chart-6: 95 138 30;
 }
 
 :root[data-theme='light'] {
@@ -73,6 +101,9 @@
     --c-canvas: 12 14 13; /* Deep Obsidian */
     --c-surface: 22 26 24; /* Dark Basalt */
     --c-raised: 38 44 41; /* Muted Graphite */
+    --c-level-2: 30 35 32; /* Basalt Level 2 */
+    --c-level-3: 38 44 41; /* Muted Graphite */
+    --c-overlay: 38 44 41; /* Muted Graphite */
     --c-track: 12 14 13; /* Deep Obsidian */
     --c-accent: 232 220 203; /* Champagne Beige */
     --c-on-accent: 12 14 13; /* Deep Obsidian */
@@ -84,15 +115,28 @@
     --c-line-strong: 74 82 77; /* Muted Graphite HC */
     --c-ink: 244 246 245; /* Frost */
     --c-ink-2: 156 163 158; /* Lichen Grey */
+    --c-success: 79 203 134; /* Success Dark */
+    --c-success-bg: 20 48 31; /* Success Tint Dark */
+    --c-warning: 242 181 74; /* Warning Dark */
+    --c-warning-bg: 51 40 15; /* Warning Tint Dark */
     --c-danger: 255 122 102; /* Ember Coral */
-    --c-warn: 232 220 203; /* Champagne Beige */
-    --c-warn-ink: 232 220 203; /* Champagne Beige */
+    --c-danger-bg: 58 31 26; /* Error Tint Dark */
+    --c-info: 130 180 236; /* Info Dark */
+    --c-info-bg: 22 38 58; /* Info Tint Dark */
     --c-scrim: 12 14 13; /* Deep Obsidian */
+    --c-shadow: 12 14 13; /* Deep Obsidian */
     --c-knob: 255 255 255; /* Pure White */
-    --a-warn-soft: 0.12;
-    --a-warn-line: 0.4;
-    --a-danger-soft: 0.14;
-    --a-danger-line: 0.45;
+    --a-scrim: 0.6;
+    --a-edge: 1;
+    --shadow-1: none;
+    --shadow-2: none;
+    --shadow-3: none;
+    --c-chart-1: 47 168 119;
+    --c-chart-2: 192 138 28;
+    --c-chart-3: 91 143 214;
+    --c-chart-4: 217 105 78;
+    --c-chart-5: 165 116 196;
+    --c-chart-6: 110 154 44;
   }
 }
 
@@ -118,6 +162,9 @@
   --c-canvas: 12 14 13; /* Deep Obsidian */
   --c-surface: 22 26 24; /* Dark Basalt */
   --c-raised: 38 44 41; /* Muted Graphite */
+  --c-level-2: 30 35 32; /* Basalt Level 2 */
+  --c-level-3: 38 44 41; /* Muted Graphite */
+  --c-overlay: 38 44 41; /* Muted Graphite */
   --c-track: 12 14 13; /* Deep Obsidian */
   --c-accent: 232 220 203; /* Champagne Beige */
   --c-on-accent: 12 14 13; /* Deep Obsidian */
@@ -129,15 +176,28 @@
   --c-line-strong: 74 82 77; /* Muted Graphite HC */
   --c-ink: 244 246 245; /* Frost */
   --c-ink-2: 156 163 158; /* Lichen Grey */
+  --c-success: 79 203 134; /* Success Dark */
+  --c-success-bg: 20 48 31; /* Success Tint Dark */
+  --c-warning: 242 181 74; /* Warning Dark */
+  --c-warning-bg: 51 40 15; /* Warning Tint Dark */
   --c-danger: 255 122 102; /* Ember Coral */
-  --c-warn: 232 220 203; /* Champagne Beige */
-  --c-warn-ink: 232 220 203; /* Champagne Beige */
+  --c-danger-bg: 58 31 26; /* Error Tint Dark */
+  --c-info: 130 180 236; /* Info Dark */
+  --c-info-bg: 22 38 58; /* Info Tint Dark */
   --c-scrim: 12 14 13; /* Deep Obsidian */
+  --c-shadow: 12 14 13; /* Deep Obsidian */
   --c-knob: 255 255 255; /* Pure White */
-  --a-warn-soft: 0.12;
-  --a-warn-line: 0.4;
-  --a-danger-soft: 0.14;
-  --a-danger-line: 0.45;
+  --a-scrim: 0.6;
+  --a-edge: 1;
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-3: none;
+  --c-chart-1: 47 168 119;
+  --c-chart-2: 192 138 28;
+  --c-chart-3: 91 143 214;
+  --c-chart-4: 217 105 78;
+  --c-chart-5: 165 116 196;
+  --c-chart-6: 110 154 44;
 }
 
 @media (prefers-contrast: more) {

@@ -94,7 +94,7 @@ test.describe('Polyurethane Optimizer - full calculation flow', () => {
 
     const envelope = page.getByTestId('laminar-envelope')
     await expect(envelope).toBeVisible({ timeout: 30_000 })
-    await expect(envelope).toContainText('Laminar flow')
+    await expect(envelope).toContainText('Laminar Flow')
     // The margin as a flow rate, not just the word "laminar"
     await expect(envelope).toContainText(/turbulence would not begin until [\d.]+ L\/min/)
   })
@@ -109,7 +109,7 @@ test.describe('Polyurethane Optimizer - full calculation flow', () => {
 
     const envelope = page.getByTestId('laminar-envelope')
     await expect(envelope).toBeVisible({ timeout: 30_000 })
-    await expect(envelope).toContainText('Turbulent flow', { timeout: 30_000 })
+    await expect(envelope).toContainText('Turbulent Flow', { timeout: 30_000 })
     // A direction to move, with a figure — not merely a label
     await expect(envelope).toContainText(/drop the flow rate to [\d.]+ L\/min/)
   })

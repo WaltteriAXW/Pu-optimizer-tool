@@ -133,6 +133,17 @@ export function deleteRecord(id: string): boolean {
   return write(read().filter(r => r.id !== id))
 }
 
+/**
+ * Put back a record that was just deleted, in its place by time. Deleting one run offers Undo
+ * rather than asking first, as the brand guide has it, and this is the Undo.
+ */
+export function restoreRecord(record: ShotRecord): boolean {
+  const records = read().filter(r => r.id !== record.id)
+  records.push(record)
+  records.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+  return write(records)
+}
+
 export function clearRecords(): boolean {
   try {
     localStorage.removeItem(STORAGE_KEY)

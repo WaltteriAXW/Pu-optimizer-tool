@@ -27,14 +27,25 @@ const colors = {
   'line-strong': role('line-strong'),
   ink: role('ink'),
   'ink-2': role('ink-2'),
+  // Status colours, each a text-and-icon colour and a tint fill. Always with an icon and words.
+  success: role('success'),
+  'success-bg': role('success-bg'),
+  warning: role('warning'),
+  'warning-bg': role('warning-bg'),
   danger: role('danger'),
-  'danger-soft': tint('danger', 'danger-soft'),
-  'danger-line': tint('danger', 'danger-line'),
-  warn: role('warn'),
-  'warn-ink': role('warn-ink'),
-  'warn-soft': tint('warn', 'warn-soft'),
-  'warn-line': tint('warn', 'warn-line'),
-  scrim: role('scrim'),
+  'danger-bg': role('danger-bg'),
+  info: role('info'),
+  'info-bg': role('info-bg'),
+  // Elevation surfaces, and the card edge: none in light (the shadow lifts it), 1 pt in dark
+  'level-2': role('level-2'),
+  'level-3': role('level-3'),
+  overlay: role('overlay'),
+  edge: tint('line', 'edge'),
+  // The backdrop behind a sheet: 40% Charcoal Moss by day, 60% Obsidian by night
+  backdrop: tint('scrim', 'scrim'),
+  // Categorical chart colours, in order. Never for status.
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [`chart-${n}`, role(`chart-${n}`)])),
+  shadow: role('shadow'),
   knob: role('knob'),
 }
 
@@ -75,6 +86,25 @@ export default {
         card: '20px', // cards
         sheet: '28px', // sheets, modals
       },
+      // Elevation: soft forest-tinted shadows in light, none in dark (theme.css)
+      boxShadow: {
+        raised: 'var(--shadow-1)', // cards, tiles
+        floating: 'var(--shadow-2)', // menus, popovers, toasts
+        overlay: 'var(--shadow-3)', // sheets, dialogs
+      },
+      // Motion: quick and purposeful. Entrances ease out, exits ease in and run faster.
+      transitionDuration: {
+        DEFAULT: '200ms',
+        instant: '100ms', // press, toggle
+        quick: '200ms', // hover, fades, small moves
+        standard: '300ms', // cards, sheets, enter and exit
+        slow: '450ms', // page transitions
+      },
+      transitionTimingFunction: {
+        DEFAULT: 'cubic-bezier(.2,0,0,1)',
+        enter: 'cubic-bezier(.2,0,0,1)',
+        exit: 'cubic-bezier(.4,0,1,1)',
+      },
       keyframes: {
         // Results arrive with a short fade. They used to slide up over half a second on every
         // run, which is a lot of motion for the most frequent thing anyone does here.
@@ -88,7 +118,8 @@ export default {
         },
       },
       animation: {
-        fade: 'fade 0.2s ease-out forwards',
+        fade: 'fade 200ms cubic-bezier(.2,0,0,1) forwards', // motion-quick
+        'fade-in': 'fade 300ms cubic-bezier(.2,0,0,1) forwards', // motion-standard: sheets
       },
     },
   },

@@ -11,6 +11,7 @@ import {
   saveRecord,
   setOutcome as persistOutcome,
   deleteRecord,
+  restoreRecord,
   clearRecords,
   type ShotRecord,
   type ShotOutcome,
@@ -43,6 +44,8 @@ interface CalculatorContextType {
   lastParams: ProcessParameters | null
   calculate: (params: ProcessParameters) => Promise<void>
   deleteHistory: (id: string) => void
+  /** Put back a run that was just deleted */
+  restoreHistory: (entry: HistoryEntry) => void
   clearHistory: () => void
   loadFromHistory: (entry: HistoryEntry) => void
   /** Record how the part came out. Turns a saved run into training data. */
@@ -167,6 +170,15 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     setHistory(prev => prev.filter(entry => entry.id !== id))
   }, [])
 
+  const restoreHistory = useCallback((entry: HistoryEntry) => {
+    restoreRecord(entry)
+    setHistory(prev =>
+      [...prev.filter(e => e.id !== entry.id), entry].sort((a, b) =>
+        b.timestamp.localeCompare(a.timestamp)
+      )
+    )
+  }, [])
+
   const clearHistory = useCallback(() => {
     clearRecords()
     setHistory([])
@@ -212,6 +224,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         lastParams,
         calculate,
         deleteHistory,
+        restoreHistory,
         clearHistory,
         loadFromHistory,
         recordOutcome,

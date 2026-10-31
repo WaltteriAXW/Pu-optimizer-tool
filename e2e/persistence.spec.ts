@@ -88,7 +88,7 @@ test.describe('shot records', () => {
     // Two steps on purpose: this is the one irreversible action in the application
     await page.getByTestId('clear-dataset').click()
     await expect(page.getByTestId('clear-confirm')).toBeVisible()
-    await page.getByRole('button', { name: /delete everything/i }).click()
+    await page.getByTestId('clear-confirm').getByRole('button', { name: /^delete$/i }).click()
 
     await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
 
@@ -127,6 +127,27 @@ test.describe('shot records', () => {
     await expect(page.getByLabel('Flow Rate', { exact: true })).toHaveValue('7.5')
     await expect(page.locator('select[name=material_key]')).toHaveValue('ecomate_spray')
     await expect(page.getByLabel('Low pressure', { exact: true })).toBeChecked()
+  })
+
+  test('deleting a run offers Undo, and Undo puts it back', async ({ page }) => {
+    await waitForEngine(page)
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('kpi-pipe-pressure-drop')).toBeVisible({ timeout: 30_000 })
+
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+
+    // No "are you sure?" first: the run goes, and a toast offers it back
+    await page.getByRole('button', { name: /^delete run:/i }).click()
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(0)
+    await page.getByTestId('undo-toast').getByRole('button', { name: 'Undo' }).click()
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
+
+    // Restored in storage too, not only on screen
+    await page.reload()
+    await waitForEngine(page)
+    await openHistory(page)
+    await expect(page.getByTestId('outcome-picker')).toHaveCount(1)
   })
 
   test('cancelling the clear keeps the runs', async ({ page }) => {

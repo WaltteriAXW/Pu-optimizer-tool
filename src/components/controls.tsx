@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { ChevronsUpDown } from 'lucide-react'
+import { CaretUpDown } from '@phosphor-icons/react'
 
 /**
  * Small controls shared across the app, styled after their Apple counterparts. Each is built on
@@ -140,7 +140,7 @@ export function PopUpSelect({
       <select {...props} className="popup">
         {children}
       </select>
-      <ChevronsUpDown
+      <CaretUpDown
         aria-hidden="true"
         className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-2"
       />

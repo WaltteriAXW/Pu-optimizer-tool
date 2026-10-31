@@ -14,12 +14,22 @@ import { join } from 'node:path'
 
 type RGB = [number, number, number]
 
-/** Stone & Forest v1.1: core colours, light and dark tokens, Increase Contrast variants */
+/**
+ * Stone & Forest v1.2: core colours, light and dark tokens, Increase Contrast variants, the dark
+ * elevation level, the status colours and the chart palette
+ */
+const STATUS = [
+  '1E7347', 'E2F0E6', '4FCB86', '14301F', '8A5A00', 'FAEED3', 'F2B54A', '33280F',
+  'F7E2DC', '3A1F1A', '2F5E94', 'E2EAF4', '82B4EC', '16263A',
+]
+const CHART_LIGHT = ['1A7F58', 'B77F12', '3E6FB0', 'C2553A', '8A4F9E', '5F8A1E']
+const CHART_DARK = ['2FA877', 'C08A1C', '5B8FD6', 'D9694E', 'A574C4', '6E9A2C']
 const PALETTE = [
   '1B3B2B', 'F2EFE9', 'A3B19B', '0C0E0D', 'E8DCCB', '5CE1A6',
   'FFFFFF', 'E6ECE8', 'E2DDD5', '1C1D1A', '5C6058', 'B23A2E',
   '161A18', '1A2E26', '262C29', 'F4F6F5', '9CA39E', 'FF7A66',
-  '3F433C', '6E7D66', 'B9B2A6', 'C4CAC6', '4A524D',
+  '3F433C', '6E7D66', 'B9B2A6', 'C4CAC6', '4A524D', '1E2320',
+  ...STATUS, ...CHART_LIGHT, ...CHART_DARK,
 ]
 
 const root = join(__dirname, '..')
@@ -94,14 +104,30 @@ const PAIRS: Array<[string, string, number]> = [
   // Accent text, plain buttons, the switch and the slider fill
   ['highlight', 'surface', 4.5],
   ['highlight', 'canvas', 4.5],
-  // Secondary buttons, pills and success panels: accent text on Pale Mist / Deep Forest Fill
+  // Secondary buttons and pills: accent text on Pale Mist / Deep Forest Fill
   ['highlight', 'muted', 4.5],
-  // Warnings: text on the Champagne tint
-  ['warn-ink', 'warn@warn-soft', 4.5],
-  ['warn-ink', 'surface', 4.5],
-  // Errors and delete: Clay Red / Ember Coral on the surface and on its tint
+  // Status: text and icon on the card and on its own tint
+  ['success', 'surface', 4.5],
+  ['success', 'success-bg', 4.5],
+  ['warning', 'surface', 4.5],
+  ['warning', 'warning-bg', 4.5],
   ['danger', 'surface', 4.5],
-  ['danger', 'danger@danger-soft', 4.5],
+  ['danger', 'danger-bg', 4.5],
+  ['info', 'surface', 4.5],
+  ['info', 'info-bg', 4.5],
+  ['ink', 'info-bg', 4.5],
+  // Text on the raised surfaces: toasts, sheets, side panels
+  ['ink', 'level-2', 4.5],
+  ['ink', 'level-3', 4.5],
+  ['ink-2', 'level-3', 4.5],
+  ['ink', 'overlay', 4.5],
+  // Chart series hold 3:1 on their surface
+  ['chart-1', 'surface', 3],
+  ['chart-2', 'surface', 3],
+  ['chart-3', 'surface', 3],
+  ['chart-4', 'surface', 3],
+  ['chart-5', 'surface', 3],
+  ['chart-6', 'surface', 3],
 ]
 
 describe.each([
@@ -122,6 +148,12 @@ describe.each([
 
   it.each(PAIRS)('%s on %s reaches %s:1', (fg, bg, minimum) => {
     expect(contrast(resolve(fg), resolve(bg))).toBeGreaterThanOrEqual(minimum)
+  })
+
+  it('keeps status colours out of the chart palette', () => {
+    const chart = [1, 2, 3, 4, 5, 6].map((n) => toHex(palette.colors[`chart-${n}`]))
+    const status = ['success', 'warning', 'danger', 'info'].map((r) => toHex(palette.colors[r]))
+    expect(chart.filter((c) => status.includes(c))).toEqual([])
   })
 
   it('uses only Stone & Forest colours', () => {

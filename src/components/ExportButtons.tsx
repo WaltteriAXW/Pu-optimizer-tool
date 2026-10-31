@@ -3,7 +3,7 @@ import { ExportService } from '../services/ExportService'
 import { generateReport } from '../utils/generateReport'
 import { useCalculator } from '../context/CalculatorContext'
 import type { CalculationResults } from '@/calculator_types'
-import { AlertCircle, FileDown, FileJson, FileSpreadsheet, FileText, Loader } from 'lucide-react'
+import { FileCode, FileCsv, FilePdf, FileText, SpinnerGap, Warning } from '@phosphor-icons/react'
 
 /**
  * The four exports are four equal choices, so they share the one secondary style. They used
@@ -90,7 +90,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as JSON"
         >
-          <FileJson aria-hidden="true" className="w-4 h-4" />
+          <FileCode aria-hidden="true" className="w-4 h-4" />
           JSON
         </button>
 
@@ -99,7 +99,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           className={EXPORT_BUTTON}
           title="Export as CSV"
         >
-          <FileSpreadsheet aria-hidden="true" className="w-4 h-4" />
+          <FileCsv aria-hidden="true" className="w-4 h-4" />
           CSV
         </button>
 
@@ -119,9 +119,9 @@ export function ExportButtons({ results }: ExportButtonsProps) {
           title="Generate professional PDF report with charts"
         >
           {isGeneratingPDF ? (
-            <Loader aria-hidden="true" className="w-4 h-4 animate-spin" />
+            <SpinnerGap aria-hidden="true" className="w-4 h-4 animate-spin" />
           ) : (
-            <FileDown aria-hidden="true" className="w-4 h-4" />
+            <FilePdf aria-hidden="true" className="w-4 h-4" />
           )}
           {isGeneratingPDF ? 'Generating...' : 'PDF'}
         </button>
@@ -129,7 +129,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
 
       {error && (
         <p role="alert" className="flex items-center gap-1.5 text-xs text-danger">
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           {error}
         </p>
       )}

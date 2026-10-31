@@ -63,20 +63,20 @@ test.describe('PDF report', () => {
     const pdf = Buffer.concat(chunks)
 
     // jsPDF writes its text uncompressed, so the section headings are greppable in the
-    // raw bytes, in the sentence case the screen uses. Crude, but it is the difference between a report that matches the screen
+    // raw bytes, in the Title Case the screen uses. Crude, but it is the difference between a report that matches the screen
     // and one that quietly drops half of it.
     const raw = pdf.toString('latin1')
     for (const heading of [
       'Machine output',
       'Injection pressure',
-      'Machine & output',
+      'Machine & Output',
       'Inputs',
       'Pressure',
       'Flow',
-      'Operating window',
+      'Operating Window',
       'Thermal',
-      'Temperature at the mix head',
-      'Cure & exotherm',
+      'Temperature at the Mix Head',
+      'Cure & Exotherm',
     ]) {
       expect(raw, `report is missing the "${heading}" section`).toContain(heading)
     }

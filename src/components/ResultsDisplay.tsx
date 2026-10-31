@@ -12,15 +12,7 @@ import type {
   RheologyResult,
   WindowStatus,
 } from '../calculator_types'
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Info,
-  Wind,
-  Gauge,
-  Droplet,
-  Layers,
-} from 'lucide-react'
+import { CheckCircle, Drop, Gauge, Info, Stack, Warning, Wind, XCircle } from '@phosphor-icons/react'
 
 /** Presentation for the blowing-agent volatility states */
 const VOLATILITY_LABEL: Record<string, string> = {
@@ -33,8 +25,8 @@ const VOLATILITY_LABEL: Record<string, string> = {
 }
 
 const VOLATILITY_TONE: Record<string, string> = {
-  ok: 'text-highlight',
-  marginal: 'text-warn-ink',
+  ok: 'text-success',
+  marginal: 'text-warning',
   flash_risk: 'text-danger',
   not_volatile: 'text-ink',
   no_boiling_point_data: 'text-ink-2',
@@ -42,8 +34,8 @@ const VOLATILITY_TONE: Record<string, string> = {
 }
 
 const SCORCH_TONE: Record<string, string> = {
-  low: 'text-highlight',
-  moderate: 'text-warn-ink',
+  low: 'text-success',
+  moderate: 'text-warning',
   high: 'text-danger',
   critical: 'text-danger',
 }
@@ -72,12 +64,13 @@ export function ResultsDisplay() {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-danger-line text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-danger-bg text-center"
       >
-        <div className="bg-danger-soft p-4 rounded-full mb-4">
-          <AlertTriangle aria-hidden="true" className="w-8 h-8 text-danger" />
+        <div className="bg-danger-bg p-4 rounded-full mb-4">
+          <XCircle aria-hidden="true" className="w-8 h-8 text-danger" />
         </div>
-        <h3 className="text-lg font-semibold text-ink">Calculation Failed</h3>
+        {/* Says what happened; the message below says why */}
+        <h3 className="text-lg font-semibold text-ink">The Simulation Didn't Run</h3>
         <p className="text-ink-2 mt-2 max-w-sm">{calculatorError}</p>
       </div>
     )
@@ -87,12 +80,13 @@ export function ResultsDisplay() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-dashed border-line-strong text-center">
         <div className="bg-muted p-4 rounded-full mb-4">
-          <Info aria-hidden="true" className="w-8 h-8 text-highlight" />
+          <Info aria-hidden="true" className="w-8 h-8 text-ink-2" />
         </div>
-        <h3 className="text-lg font-semibold text-ink">Ready to Simulate</h3>
+        {/* An empty state says why it is empty and offers one next step */}
+        <h3 className="text-lg font-semibold text-ink">No Results Yet</h3>
         <p className="text-ink-2 mt-2 max-w-xs">
-          Enter your process parameters and press Run Simulation to see the pressure, the
-          flow margin and the operating window.
+          Set up your line, then run a simulation to see the pressure, the flow margin and the
+          operating window here.
         </p>
       </div>
     )
@@ -151,13 +145,13 @@ export function ResultsDisplay() {
           title="Shear Rate"
           value={results.flow?.shear_rate_s_inv?.toFixed(0) || 'N/A'}
           unit="s⁻¹"
-          icon={<Layers className="w-5 h-5" />}
+          icon={<Stack className="w-5 h-5" />}
         />
         <KpiCard
           title="Viscosity"
           value={results.flow?.apparent_viscosity_cp?.toFixed(1) || 'N/A'}
           unit="cP"
-          icon={<Droplet className="w-5 h-5" />}
+          icon={<Drop className="w-5 h-5" />}
         />
       </div>
 
@@ -178,26 +172,26 @@ export function ResultsDisplay() {
         <div className="lg:col-span-1 space-y-6">
           {/* Status Box */}
           {results.warnings && results.warnings.length > 0 ? (
-            <div className="bg-warn-soft border border-warn-line rounded-card p-5">
-              <h4 className="text-warn-ink font-semibold flex items-center gap-2 mb-3">
-                <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
+            <div className="bg-warning-bg rounded-card p-5">
+              <h4 className="text-warning font-semibold flex items-center gap-2 mb-3">
+                <Warning aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
               <ul className="space-y-2">
                 {results.warnings.map((warn, i) => (
-                  <li key={i} className="text-sm text-warn-ink flex items-start gap-2">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-warn-ink flex-shrink-0" />
+                  <li key={i} className="text-sm text-warning flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-warning flex-shrink-0" />
                     {warn}
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <div className="bg-muted border border-muted rounded-card p-5">
+            <div className="bg-success-bg rounded-card p-5">
               {/* Says what was checked, not more: no warnings is not the same as optimised */}
-              <h4 className="text-highlight font-semibold flex items-center gap-2 mb-1">
-                <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
+              <h4 className="text-success font-semibold flex items-center gap-2 mb-1">
+                <CheckCircle aria-hidden="true" className="w-4 h-4" /> No Warnings
               </h4>
-              <p className="text-sm text-highlight">Nothing in these settings needs attention.</p>
+              <p className="text-sm text-ink">Nothing in these settings needs attention.</p>
             </div>
           )}
 
@@ -342,8 +336,8 @@ export function ResultsDisplay() {
             {results.volatility.warning && (
               <p className={`p-3 rounded-group text-sm border ${
                 results.volatility.status === 'flash_risk'
-                  ? 'bg-danger-soft border-danger-line text-danger'
-                  : 'bg-warn-soft border-warn-line text-warn-ink'
+                  ? 'bg-danger-bg border-danger-bg text-danger'
+                  : 'bg-warning-bg border-warning-bg text-warning'
               }`}>
                 {results.volatility.warning}
               </p>
@@ -383,7 +377,7 @@ export function ResultsDisplay() {
               <div>
                 <p className="text-xs text-ink-2 mb-1">At mix head</p>
                 <p className={`text-lg font-bold ${
-                  Math.abs(results.line_temperature.drift_c) >= 2 ? 'text-warn-ink' : 'text-highlight'
+                  Math.abs(results.line_temperature.drift_c) >= 2 ? 'text-warning' : 'text-success'
                 }`}>
                   {results.line_temperature.effective_temperature_c.toFixed(1)} °C
                 </p>
@@ -403,7 +397,7 @@ export function ResultsDisplay() {
               <HoseBreakdown hose={results.line_temperature.hose} />
             )}
             {results.line_temperature.warning && (
-              <p className="p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
+              <p className="p-3 bg-warning-bg border border-warning-bg rounded-group text-sm text-warning">
                 {results.line_temperature.warning}
               </p>
             )}
@@ -496,8 +490,8 @@ export function ResultsDisplay() {
                 <p
                   className={`text-lg font-bold ${
                     results.machine_compatibility.is_compatible
-                      ? 'text-highlight'
-                      : 'text-warn-ink'
+                      ? 'text-success'
+                      : 'text-warning'
                   }`}
                 >
                   {results.machine_compatibility.is_compatible
@@ -524,7 +518,7 @@ export function ResultsDisplay() {
               )}
             </div>
             {results.machine_compatibility.warning && (
-              <p className="mt-4 p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
+              <p className="mt-4 p-3 bg-warning-bg border border-warning-bg rounded-group text-sm text-warning">
                 {results.machine_compatibility.warning}
               </p>
             )}
@@ -698,9 +692,9 @@ function MachineSettingsCard({
       <div className="px-5 pb-4 -mt-1">
         <div className={`badge ${machine.is_compatible ? 'badge-success' : 'badge-error'}`}>
           {machine.is_compatible ? (
-            <><CheckCircle2 aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Machine can run this shot</>
+            <><CheckCircle aria-hidden="true" className="w-4 h-4 mr-1" /> Machine can run this shot</>
           ) : (
-            <><AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 mr-1" /> Outside the machine's range</>
+            <><XCircle aria-hidden="true" className="w-4 h-4 mr-1" /> Outside the machine's range</>
           )}
         </div>
         {machine.note && (
@@ -743,7 +737,7 @@ function RangeBar({
     <>
       <div className="relative h-2.5 rounded-full bg-canvas overflow-hidden">
         <div
-          className={inRange ? 'absolute inset-y-0 bg-band' : 'absolute inset-y-0 bg-danger-soft'}
+          className={inRange ? 'absolute inset-y-0 bg-band' : 'absolute inset-y-0 bg-danger-bg'}
           style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
         />
         <div
@@ -777,30 +771,34 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
   const tight = laminar && isNumber(ratio) && ratio < 1.25
 
   const tone = !laminar
-    ? 'bg-danger-soft border-danger-line'
+    ? 'bg-danger-bg border-danger-bg'
     : tight
-      ? 'bg-warn-soft border-warn-line'
-      : 'bg-muted border-muted'
+      ? 'bg-warning-bg border-warning-bg'
+      : 'bg-success-bg border-success-bg'
 
   const textTone = !laminar
     ? 'text-danger'
     : tight
-      ? 'text-warn-ink'
-      : 'text-highlight'
+      ? 'text-warning'
+      : 'text-success'
 
   return (
     <div className={`rounded-card border p-5 ${tone}`} data-testid="laminar-envelope">
       <div className="flex items-start gap-3">
-        {laminar && !tight ? (
-          <CheckCircle2 aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+        {/* The guide's status glyphs: check for good news, triangle for a warning, crossed
+            circle for a problem, so the state never rests on colour alone */}
+        {!laminar ? (
+          <XCircle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+        ) : tight ? (
+          <Warning aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         ) : (
-          <AlertTriangle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
+          <CheckCircle aria-hidden="true" className={`w-5 h-5 flex-shrink-0 mt-0.5 ${textTone}`} />
         )}
         <div className="min-w-0">
           <h4 className={`font-semibold ${textTone}`}>
-            {laminar ? (tight ? 'Laminar, with little margin' : 'Laminar flow') : 'Turbulent flow'}
+            {laminar ? (tight ? 'Laminar, With Little Margin' : 'Laminar Flow') : 'Turbulent Flow'}
           </h4>
-          <p className={`text-sm mt-1 leading-relaxed ${textTone}`}>
+          <p className="text-sm mt-1 leading-relaxed text-ink">
             {envelope.recommendation}
           </p>
           {isNumber(envelope.max_laminar_flow_lpm) && (
@@ -837,8 +835,8 @@ function OperatingWindowCard({
 }) {
   const flow = window.flow_window
   const tone = flow.current_inside
-    ? 'bg-surface border-line'
-    : 'bg-danger-soft border-danger-line'
+    ? 'bg-surface border-edge shadow-raised'
+    : 'bg-danger-bg border-danger-bg'
 
   const limitText =
     window.limit_source === 'user_limit'
@@ -849,7 +847,7 @@ function OperatingWindowCard({
 
   return (
     <div className={`rounded-card border p-5 ${tone}`} data-testid="operating-window">
-      <h4 className="font-semibold text-ink">Operating window</h4>
+      <h4 className="font-semibold text-ink">Operating Window</h4>
       <p className="text-sm text-ink-2 mt-1">
         Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
       </p>
@@ -962,7 +960,7 @@ function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
           <>
             <DetailRow label="Unsheared plug" value={`${(plug * 100).toFixed(0)}%`} unit="of the bore" />
             {plug > 0.5 && (
-              <p className="mt-2 p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
+              <p className="mt-2 p-3 bg-warning-bg border border-warning-bg rounded-group text-sm text-warning">
                 More than half the bore moves as a solid plug: the wall stress is less than
                 twice the yield stress. A cold restart or a lower output could stall the line.
               </p>
@@ -1019,8 +1017,8 @@ function KpiCard({
   status?: 'success' | 'warning' | 'neutral'
 }) {
   const statusColors = {
-    success: 'bg-muted text-highlight',
-    warning: 'bg-warn-soft text-warn-ink',
+    success: 'bg-success-bg text-success',
+    warning: 'bg-warning-bg text-warning',
     neutral: 'bg-canvas text-ink-2',
   }
 

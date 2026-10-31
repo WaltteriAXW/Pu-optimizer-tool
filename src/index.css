@@ -22,6 +22,25 @@
     font-feature-settings: 'cv11', 'ss01';
     font-optical-sizing: auto;
   }
+
+  /* Focus: a 2 pt accent ring, 2 pt outside the control, for keyboard users. Forest in light,
+     Jade in dark. Text fields show focus with their own edge instead. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-highlight));
+    outline-offset: 2px;
+  }
+
+  /* Reduce Motion: keep the meaning, drop the movement. Transitions become a 200 ms
+     crossfade; the fade and the busy spinner stay, as neither moves anything. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-property: opacity !important;
+      transition-duration: 200ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
@@ -30,28 +49,68 @@
   }
 
   .input-field-error {
-    @apply border-danger-line text-danger placeholder-danger focus:ring-2 focus:ring-danger focus:border-danger;
+    @apply border-danger text-danger placeholder-danger focus:ring-2 focus:ring-danger focus:border-danger;
   }
 
-  /* Buttons, from the brand guide: one prominent action per view, three quieter ones. All
-     capsules; regular is 44 px tall, large 50. The label is Headline style: semibold. */
+  /* Interaction states, from the brand guide: every control answers hover, press and focus.
+     Hover lays an 8% wash of the control's own text colour over it (12% on an accent fill),
+     on pointer devices only; pressed, 16% (24% on accent). The wash sits under the label, so
+     the label never dims. Disabled is 40% opacity with no hover. Focus is the ring above. */
+  .state,
+  .state-accent {
+    position: relative;
+    isolation: isolate;
+  }
+  .state::before,
+  .state-accent::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 100ms cubic-bezier(.2, 0, 0, 1);
+    pointer-events: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .state:hover:not(:disabled)::before {
+      opacity: 0.08;
+    }
+    .state-accent:hover:not(:disabled)::before {
+      opacity: 0.12;
+    }
+  }
+  .state:active:not(:disabled)::before {
+    opacity: 0.16;
+  }
+  .state-accent:active:not(:disabled)::before {
+    opacity: 0.24;
+  }
+  .state:disabled,
+  .state-accent:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* Buttons: one prominent action per view, three quieter ones. All capsules; regular is
+     44 px tall, large 50. The label is Headline style: semibold, Title Case, a verb. */
   .button-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2.5 bg-accent text-on-accent font-semibold rounded-full transition-colors hover:bg-accent/90 active:bg-accent/80 disabled:bg-line disabled:text-ink-2 disabled:cursor-not-allowed;
+    @apply state-accent inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2.5 bg-accent text-on-accent font-semibold rounded-full;
   }
 
   /* Tinted: Pale Mist with Forest in light, Forest fill with Jade in dark */
   .button-secondary {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-muted text-highlight text-sm font-semibold rounded-full transition-colors hover:bg-accent-secondary/30 active:bg-accent-secondary/45;
+    @apply state inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-muted text-highlight text-sm font-semibold rounded-full;
   }
 
   /* Plain: the label alone, for the least important choice */
   .button-plain {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 text-highlight text-sm font-semibold rounded-full transition-colors hover:bg-muted;
+    @apply state inline-flex min-h-[44px] items-center justify-center gap-2 px-4 text-highlight text-sm font-semibold rounded-full;
   }
 
   /* Destructive: never the primary role. Red label on a tinted fill. */
   .button-destructive {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-danger-soft text-danger text-sm font-semibold rounded-full transition-colors hover:bg-danger/20;
+    @apply state inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-danger-bg text-danger text-sm font-semibold rounded-full;
   }
 
   /* Segmented control: a capsule track with equal segments; the chosen one sits raised on
@@ -61,14 +120,14 @@
   }
 
   .segment {
-    @apply relative flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-ink-2 transition-colors hover:bg-line/50 hover:text-ink;
+    @apply state flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-ink-2 transition-colors hover:text-ink;
   }
 
   .segment-selected {
-    @apply bg-raised text-ink shadow-sm hover:bg-raised hover:text-ink;
+    @apply bg-raised text-ink shadow-raised hover:text-ink;
   }
 
-  /* Slider, after the system one: a thin track filled in Forest (Jade in dark) up to a round
+  /* Slider, after the system one: a thin track filled in the accent (Champagne in dark) up to a round
      white knob. The element itself is 44 px tall so the whole band is the hit region; only
      the track is drawn. --fill is the knob position as a percentage, set inline. */
   .slider {
@@ -82,7 +141,7 @@
     border-radius: 9999px;
     background: linear-gradient(
       to right,
-      rgb(var(--c-highlight)) var(--fill, 0%),
+      rgb(var(--c-accent)) var(--fill, 0%),
       rgb(var(--c-line)) var(--fill, 0%)
     );
   }
@@ -94,7 +153,7 @@
   .slider::-moz-range-progress {
     height: 4px;
     border-radius: 9999px;
-    background: rgb(var(--c-highlight));
+    background: rgb(var(--c-accent));
   }
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -103,7 +162,7 @@
     margin-top: -11px;
     border-radius: 9999px;
     background: rgb(var(--c-knob));
-    box-shadow: 0 0.5px 4px rgb(var(--c-scrim) / 0.12), 0 6px 13px rgb(var(--c-scrim) / 0.12), 0 0 0 0.5px rgb(var(--c-scrim) / 0.06);
+    box-shadow: 0 0.5px 4px rgb(var(--c-shadow) / 0.12), 0 6px 13px rgb(var(--c-shadow) / 0.12), 0 0 0 0.5px rgb(var(--c-shadow) / 0.06);
     transition: transform 0.15s;
   }
   .slider::-moz-range-thumb {
@@ -112,13 +171,13 @@
     border: none;
     border-radius: 9999px;
     background: rgb(var(--c-knob));
-    box-shadow: 0 0.5px 4px rgb(var(--c-scrim) / 0.12), 0 6px 13px rgb(var(--c-scrim) / 0.12), 0 0 0 0.5px rgb(var(--c-scrim) / 0.06);
+    box-shadow: 0 0.5px 4px rgb(var(--c-shadow) / 0.12), 0 6px 13px rgb(var(--c-shadow) / 0.12), 0 0 0 0.5px rgb(var(--c-shadow) / 0.06);
   }
   .slider:hover::-webkit-slider-thumb {
-    box-shadow: 0 0.5px 4px rgb(var(--c-scrim) / 0.16), 0 6px 13px rgb(var(--c-scrim) / 0.18), 0 0 0 0.5px rgb(var(--c-scrim) / 0.08);
+    box-shadow: 0 0.5px 4px rgb(var(--c-shadow) / 0.16), 0 6px 13px rgb(var(--c-shadow) / 0.18), 0 0 0 0.5px rgb(var(--c-shadow) / 0.08);
   }
   .slider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px rgb(var(--c-highlight) / 0.6), 0 6px 13px rgb(var(--c-scrim) / 0.12);
+    box-shadow: 0 0 0 3px rgb(var(--c-highlight) / 0.6), 0 6px 13px rgb(var(--c-shadow) / 0.12);
   }
   .slider:focus-visible::-moz-range-thumb {
     box-shadow: 0 0 0 3px rgb(var(--c-highlight) / 0.6);
@@ -132,12 +191,13 @@
   /* Pop-up button: a native select with its own chevrons. Native underneath, so an iPhone
      shows its picker wheel and a desktop its menu. */
   .popup {
-    @apply block min-h-[44px] w-full cursor-pointer appearance-none rounded-field border border-line-strong bg-surface py-2.5 pl-3 pr-10 text-sm font-medium text-ink outline-none transition-colors hover:border-ink-2 hover:bg-canvas focus:border-highlight focus:ring-2 focus:ring-highlight;
+    @apply block min-h-[44px] w-full cursor-pointer appearance-none rounded-field border border-line-strong bg-surface py-2.5 pl-3 pr-10 text-sm font-medium text-ink outline-none transition-colors hover:border-ink-2 focus:border-highlight focus:ring-2 focus:ring-highlight;
   }
 
-  /* Cards sit on the canvas with a 1 px Warm Stone (or Muted Graphite) edge, no shadow */
+  /* Cards are elevation level 1: in light, white with a soft forest shadow; in dark, Basalt
+     with a 1 pt Muted Graphite edge and no shadow */
   .card {
-    @apply bg-surface rounded-card border border-line overflow-hidden;
+    @apply bg-surface rounded-card border border-edge shadow-raised overflow-hidden;
   }
 
   .card-header {
@@ -153,15 +213,15 @@
   }
 
   .badge-success {
-    @apply bg-muted text-highlight;
+    @apply bg-success-bg text-success;
   }
 
   .badge-warning {
-    @apply bg-warn-soft text-warn-ink;
+    @apply bg-warning-bg text-warning;
   }
 
   .badge-error {
-    @apply bg-danger-soft text-danger;
+    @apply bg-danger-bg text-danger;
   }
 
   .badge-info {

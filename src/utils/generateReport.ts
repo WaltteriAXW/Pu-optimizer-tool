@@ -32,14 +32,11 @@ const ACCENT: RGB = [27, 59, 43]         // Deep Forest, accent-primary
 const ACCENT_SOFT: RGB = [230, 236, 232] // Pale Mist Green, accent-muted
 const ACCENT_INK: RGB = [27, 59, 43]     // Deep Forest
 
-/**
- * Status colours as pairs, as the app uses them: a fill behind, an ink on it. Good is Forest
- * on Pale Mist, a warning Charcoal Moss on Champagne, a problem Clay Red on Pale Limestone.
- */
+/** The guide's status colours, as the app uses them: a tint behind, the text colour on it */
 const TONE = {
-  good: { fill: [230, 236, 232] as RGB, ink: [27, 59, 43] as RGB },
-  warn: { fill: [232, 220, 203] as RGB, ink: [28, 29, 26] as RGB },
-  bad: { fill: [242, 239, 233] as RGB, ink: [178, 58, 46] as RGB },
+  good: { fill: [226, 240, 230] as RGB, ink: [30, 115, 71] as RGB },  // status-success
+  warn: { fill: [250, 238, 211] as RGB, ink: [138, 90, 0] as RGB },   // status-warning
+  bad: { fill: [247, 226, 220] as RGB, ink: [178, 58, 46] as RGB },   // status-error
 }
 type Tone = keyof typeof TONE
 
@@ -112,7 +109,7 @@ export const generateReport = async (
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     ink(MUTED)
-    doc.text('Injection parameter report', MARGIN + 11, 15.4)
+    doc.text('Injection Parameter Report', MARGIN + 11, 15.4)
     doc.text(`Report ${reportId}`, pageWidth - MARGIN, 11.6, { align: 'right' })
     doc.text(generated.toLocaleString(), pageWidth - MARGIN, 15.4, { align: 'right' })
     stroke(RULE)
@@ -255,7 +252,7 @@ export const generateReport = async (
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
   ink(INK)
-  doc.text('Injection parameters', MARGIN, y + 4)
+  doc.text('Injection Parameters', MARGIN, y + 4)
   y += 10
 
   doc.setFont('helvetica', 'normal')
@@ -353,7 +350,7 @@ export const generateReport = async (
 
   if (warningCount > 0) {
     full({
-      title: 'Attention needed',
+      title: 'Attention Needed',
       rows: [],
       notes: results.warnings!.map((w) => ({ text: `•  ${stripEmoji(w)}`, tone: 'warn' as Tone })),
     })
@@ -408,7 +405,7 @@ export const generateReport = async (
     } catch (error) {
       console.error('Failed to capture chart:', error)
       // The report is still worth producing without it
-      full({ title: 'Pressure profile', rows: [], notes: [{ text: 'The chart could not be captured for this report.', tone: 'warn' }] })
+      full({ title: 'Pressure Profile', rows: [], notes: [{ text: 'The chart could not be captured for this report.', tone: 'warn' }] })
     }
   }
 
@@ -452,7 +449,7 @@ export const generateReport = async (
           ? open
           : 'None in range'
     full({
-      title: 'Operating window',
+      title: 'Operating Window',
       lead: {
         text: describeFlowWindow(window.flow_window),
         tone: window.flow_window.current_inside ? undefined : 'bad',
@@ -518,7 +515,7 @@ export const generateReport = async (
           + 'runs an order of magnitude above a mechanical rotor, by design.',
       })
     }
-    machineSection = { title: 'Machine & output', rows, notes }
+    machineSection = { title: 'Machine & Output', rows, notes }
   }
   pair(flowSection, machineSection)
 
@@ -562,7 +559,7 @@ export const generateReport = async (
       ])
     }
     lineSection = {
-      title: 'Temperature at the mix head',
+      title: 'Temperature at the Mix Head',
       rows,
       notes: line.warning ? [{ text: line.warning, tone: 'warn' }] : undefined,
     }
@@ -582,7 +579,7 @@ export const generateReport = async (
     const notes: Section['notes'] = []
     if (vol.message) notes.push({ text: vol.message })
     if (vol.warning) notes.push({ text: vol.warning, tone: vol.status === 'flash_risk' ? 'bad' : 'warn' })
-    agentSection = { title: 'Blowing agent', rows, notes }
+    agentSection = { title: 'Blowing Agent', rows, notes }
   }
 
   const env = results.environmental
@@ -623,7 +620,7 @@ export const generateReport = async (
       ])
     }
     full({
-      title: 'Cure & exotherm',
+      title: 'Cure & Exotherm',
       lead: { text: 'Describes the moulded part after the mix head, not the feed line above.' },
       rows,
       notes: cure.heat_of_reaction_is_estimated

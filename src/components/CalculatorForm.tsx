@@ -9,7 +9,7 @@ import type {
   InsulationMaterial,
   RheologyModelName,
 } from '@/calculator_types'
-import { AlertCircle, Play, ChevronDown } from 'lucide-react'
+import { CaretDown, Play, Warning, XCircle } from '@phosphor-icons/react'
 import { PopUpSelect, SegmentedControl } from './controls'
 import {
   fromSliderPosition,
@@ -611,9 +611,9 @@ export function CalculatorForm() {
             <p
               id={materialErrorId}
               role="alert"
-              className="mt-1.5 flex items-center gap-1.5 text-xs text-danger"
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-danger"
             >
-              <AlertCircle aria-hidden="true" className="w-3 h-3" />
+              <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
               <span>{materialError}</span>
             </p>
           )}
@@ -630,12 +630,12 @@ export function CalculatorForm() {
               onClick={() => setShowCustomHelp((v) => !v)}
               aria-expanded={showCustomHelp}
               aria-controls={customPanelId}
-              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left hover:bg-accent-secondary/25 active:bg-accent-secondary/40 transition-colors"
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left state"
             >
-              <span className="text-sm font-semibold text-highlight">Custom material</span>
+              <span className="text-sm font-semibold text-highlight">Custom Material</span>
               <span className="flex items-center gap-1 text-sm text-highlight">
                 What are these?
-                <ChevronDown
+                <CaretDown
                   aria-hidden="true"
                   className={`w-4 h-4 motion-safe:transition-transform ${showCustomHelp ? 'rotate-180' : ''}`}
                 />
@@ -757,13 +757,13 @@ export function CalculatorForm() {
             onClick={() => setShowOptional((v) => !v)}
             aria-expanded={showOptional}
             aria-controls={optionalPanelId}
-            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left hover:bg-canvas active:bg-line transition-colors"
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left state"
           >
             <span>
-              <span className="block text-sm font-semibold text-ink">Optional inputs</span>
+              <span className="block text-sm font-semibold text-ink">Optional Inputs</span>
               <span className="block text-sm text-ink-2">Ambient conditions, hose &amp; part</span>
             </span>
-            <ChevronDown
+            <CaretDown
               aria-hidden="true"
               className={`w-5 h-5 flex-shrink-0 text-ink-2 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
             />
@@ -849,12 +849,12 @@ export function CalculatorForm() {
         {error && (
           <div
             role="alert"
-            className="p-4 bg-danger-soft border border-danger-line rounded-group flex items-start gap-3"
+            className="p-4 bg-danger-bg border border-danger-bg rounded-group flex items-start gap-3"
           >
-            <AlertCircle aria-hidden="true" className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
+            <XCircle aria-hidden="true" className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-semibold text-danger">Error</h4>
-              <p className="text-sm text-danger mt-0.5">{error}</p>
+              <h4 className="text-sm font-semibold text-danger">The Simulation Didn't Run</h4>
+              <p className="text-sm text-ink mt-0.5">{error}</p>
             </div>
           </div>
         )}
@@ -870,21 +870,21 @@ export function CalculatorForm() {
         {!isReady && (
           <div
             role="status"
-            className="p-4 bg-warn-soft border border-warn-line rounded-group flex items-start gap-3"
+            className="p-4 bg-info-bg rounded-group flex items-start gap-3"
           >
             <div
               aria-hidden="true"
-              className="w-5 h-5 border-2 border-warn border-t-warn rounded-full animate-spin flex-shrink-0 mt-0.5"
+              className="w-5 h-5 border-2 border-info/30 border-t-info rounded-full animate-spin flex-shrink-0 mt-0.5"
             />
             <div className="min-w-0 flex-grow">
-              <h4 className="text-sm font-semibold text-warn-ink">Starting the engine</h4>
-              <p className="text-sm text-warn-ink mt-0.5">
+              <h4 className="text-sm font-semibold text-info">Starting the Engine</h4>
+              <p className="text-sm text-info mt-0.5">
                 {loadProgress?.message ?? 'Loading Python physics engine…'}
               </p>
               {loadProgress?.total ? (
                 <>
                   <div
-                    className="mt-2 h-1.5 rounded-full bg-warn-soft overflow-hidden"
+                    className="mt-2 h-1.5 rounded-full bg-surface overflow-hidden"
                     role="progressbar"
                     aria-valuemin={0}
                     aria-valuemax={loadProgress.total}
@@ -892,18 +892,18 @@ export function CalculatorForm() {
                     aria-label="Loading the physics engine"
                   >
                     <div
-                      className="h-full bg-highlight transition-[width] duration-150"
+                      className="h-full bg-info transition-[width] duration-150"
                       style={{
                         width: `${((loadProgress.loaded ?? 0) / loadProgress.total) * 100}%`,
                       }}
                     />
                   </div>
-                  <p className="text-xs text-warn-ink mt-1 tabular-nums">
+                  <p className="text-xs text-info mt-1 tabular-nums">
                     {loadProgress.loaded} of {loadProgress.total} modules
                   </p>
                 </>
               ) : null}
-              <p className="text-xs text-warn-ink mt-1">
+              <p className="text-xs text-info mt-1">
                 Runs entirely in your browser; nothing is uploaded.
               </p>
             </div>
@@ -916,10 +916,10 @@ export function CalculatorForm() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full text-base font-semibold transition-colors ${
-              !canSubmit
-                ? 'bg-line text-ink-2 cursor-not-allowed'
-                : 'bg-accent text-on-accent hover:bg-accent/90 active:bg-accent/80'
+            // Large button, 50 pt. Disabled is the guide's 40% opacity; while it runs it stays at
+            // full strength and says so, as the guide's loading state does.
+            className={`state-accent w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-accent text-on-accent text-base font-semibold ${
+              isLoading ? 'disabled:opacity-100 disabled:cursor-wait' : ''
             }`}
           >
             {isLoading ? (
@@ -1003,7 +1003,7 @@ function InputField({
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
           className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-field border transition-all outline-none ${
             error
-              ? 'border-danger-line text-danger placeholder-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              ? 'border-danger text-danger placeholder-danger focus:ring-2 focus:ring-danger focus:border-danger'
               : 'border-line-strong text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
@@ -1039,9 +1039,9 @@ function InputField({
         <div
           id={errorId}
           role="alert"
-          className="mt-1.5 flex items-center gap-1.5 text-xs text-danger"
+          className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -1100,7 +1100,7 @@ function OptionalField({
           }
           className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-field border transition-all outline-none placeholder:text-ink-2 ${
             error
-              ? 'border-danger-line bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              ? 'border-danger bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
               : 'border-line-strong bg-surface text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
@@ -1120,9 +1120,9 @@ function OptionalField({
         <div
           id={errorId}
           role="alert"
-          className="mt-1 flex items-center gap-1.5 text-xs text-danger"
+          className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -1222,7 +1222,7 @@ function CustomMaterialField({
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
           className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-field border transition-all outline-none ${
             error
-              ? 'border-danger-line bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+              ? 'border-danger bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
               : 'border-line-strong bg-surface text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
           }`}
         />
@@ -1239,9 +1239,9 @@ function CustomMaterialField({
         <div
           id={errorId}
           role="alert"
-          className="mt-1 flex items-center gap-1.5 text-xs text-danger"
+          className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-danger"
         >
-          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+          <Warning aria-hidden="true" weight="fill" className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}

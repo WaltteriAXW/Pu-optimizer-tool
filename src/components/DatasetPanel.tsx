@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Download, Upload, Database, Brain, Trash2 } from 'lucide-react'
+import { Brain, Database, DownloadSimple, Trash, UploadSimple } from '@phosphor-icons/react'
 import { useCalculator } from '../context/CalculatorContext'
 import {
   exportRecords,
@@ -101,7 +101,7 @@ export function DatasetPanel() {
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
         <Database aria-hidden="true" className="w-4 h-4 text-ink-2" />
-        <h4 className="font-semibold text-ink">Shot dataset</h4>
+        <h4 className="font-semibold text-ink">Shot Dataset</h4>
       </div>
       <div className="card-body space-y-4">
         <div className="flex items-baseline justify-between">
@@ -142,7 +142,7 @@ export function DatasetPanel() {
             disabled={history.length === 0}
             className="button-secondary flex-1 text-sm disabled:opacity-50"
           >
-            <Download aria-hidden="true" className="w-4 h-4 mr-1.5" />
+            <DownloadSimple aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Export
           </button>
           <button
@@ -150,7 +150,7 @@ export function DatasetPanel() {
             onClick={() => fileInput.current?.click()}
             className="button-secondary flex-1 text-sm"
           >
-            <Upload aria-hidden="true" className="w-4 h-4 mr-1.5" />
+            <UploadSimple aria-hidden="true" className="w-4 h-4 mr-1.5" />
             Import
           </button>
           <input
@@ -188,7 +188,7 @@ export function DatasetPanel() {
                 <p className="leading-relaxed">{trained.caveat}</p>
               </div>
             )}
-            {trainError && <p className="mt-2 text-xs text-warn-ink">{trainError}</p>}
+            {trainError && <p className="mt-2 text-xs text-warning">{trainError}</p>}
           </div>
         )}
 
@@ -199,15 +199,14 @@ export function DatasetPanel() {
           <div className="pt-1 border-t border-line">
             {confirmingClear ? (
               <div className="space-y-2" data-testid="clear-confirm">
-                <p className="text-xs text-ink-2 leading-relaxed">
-                  Delete all {history.length} saved run
-                  {history.length === 1 ? '' : 's'}
-                  {labelled > 0 && <>, including {labelled} with a recorded outcome</>}? This
-                  cannot be undone — export first if you want to keep them.
+                <p className="text-sm font-semibold text-ink">
+                  Delete {history.length} saved run{history.length === 1 ? '' : 's'}?
                 </p>
-                {/* Cancel leads and the action trails, as in a system alert. The person
-                    chose to clear, so the confirmation is not styled as a red alarm; the
-                    text above says what cannot be undone. */}
+                <p className="text-xs text-ink-2 leading-relaxed">
+                  {labelled > 0 && <>{labelled} of them have a recorded outcome. </>}
+                  You can't undo this. Export first to keep a copy.
+                </p>
+                {/* Cancel on the left and never the default; the action is a verb */}
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -226,7 +225,7 @@ export function DatasetPanel() {
                     }}
                     className="button-destructive flex-1"
                   >
-                    Delete everything
+                    Delete
                   </button>
                 </div>
               </div>
@@ -235,10 +234,10 @@ export function DatasetPanel() {
                 type="button"
                 onClick={() => setConfirmingClear(true)}
                 data-testid="clear-dataset"
-                className="w-full min-h-[44px] text-sm px-3 rounded-full font-medium text-danger hover:bg-danger/10 transition-colors flex items-center justify-center gap-1.5"
+                className="w-full min-h-[44px] text-sm px-3 rounded-full font-medium text-danger state flex items-center justify-center gap-1.5"
               >
-                <Trash2 aria-hidden="true" className="w-4 h-4" />
-                Clear saved runs
+                <Trash aria-hidden="true" className="w-4 h-4" />
+                Clear Saved Runs
               </button>
             )}
           </div>
