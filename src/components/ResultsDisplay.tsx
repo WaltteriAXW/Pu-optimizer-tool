@@ -33,19 +33,19 @@ const VOLATILITY_LABEL: Record<string, string> = {
 }
 
 const VOLATILITY_TONE: Record<string, string> = {
-  ok: 'text-emerald-700',
-  marginal: 'text-amber-700',
-  flash_risk: 'text-red-700',
-  not_volatile: 'text-stone-700',
-  no_boiling_point_data: 'text-stone-500',
-  unknown_agent: 'text-stone-500',
+  ok: 'text-highlight',
+  marginal: 'text-warn-ink',
+  flash_risk: 'text-danger',
+  not_volatile: 'text-ink',
+  no_boiling_point_data: 'text-ink-2',
+  unknown_agent: 'text-ink-2',
 }
 
 const SCORCH_TONE: Record<string, string> = {
-  low: 'text-emerald-700',
-  moderate: 'text-amber-700',
-  high: 'text-orange-700',
-  critical: 'text-red-700',
+  low: 'text-highlight',
+  moderate: 'text-warn-ink',
+  high: 'text-danger',
+  critical: 'text-danger',
 }
 
 const MOLD_SOURCE_LABEL: Record<string, string> = {
@@ -72,25 +72,25 @@ export function ResultsDisplay() {
     return (
       <div
         role="alert"
-        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-red-200 text-center"
+        className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-danger-line text-center"
       >
-        <div className="bg-red-50 p-4 rounded-full mb-4">
-          <AlertTriangle aria-hidden="true" className="w-8 h-8 text-red-600" />
+        <div className="bg-danger-soft p-4 rounded-full mb-4">
+          <AlertTriangle aria-hidden="true" className="w-8 h-8 text-danger" />
         </div>
-        <h3 className="text-lg font-semibold text-stone-800">Calculation Failed</h3>
-        <p className="text-stone-500 mt-2 max-w-sm">{calculatorError}</p>
+        <h3 className="text-lg font-semibold text-ink">Calculation Failed</h3>
+        <p className="text-ink-2 mt-2 max-w-sm">{calculatorError}</p>
       </div>
     )
   }
 
   if (!results) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-dashed border-stone-300 text-center">
-        <div className="bg-forest-50 p-4 rounded-full mb-4">
-          <Info aria-hidden="true" className="w-8 h-8 text-forest-600" />
+      <div className="h-full flex flex-col items-center justify-center p-12 bg-surface rounded-card border border-dashed border-line-strong text-center">
+        <div className="bg-muted p-4 rounded-full mb-4">
+          <Info aria-hidden="true" className="w-8 h-8 text-highlight" />
         </div>
-        <h3 className="text-lg font-semibold text-stone-800">Ready to Simulate</h3>
-        <p className="text-stone-500 mt-2 max-w-xs">
+        <h3 className="text-lg font-semibold text-ink">Ready to Simulate</h3>
+        <p className="text-ink-2 mt-2 max-w-xs">
           Enter your process parameters and press Run Simulation to see the pressure, the
           flow margin and the operating window.
         </p>
@@ -178,33 +178,33 @@ export function ResultsDisplay() {
         <div className="lg:col-span-1 space-y-6">
           {/* Status Box */}
           {results.warnings && results.warnings.length > 0 ? (
-            <div className="bg-amber-50 border border-amber-100 rounded-card p-5">
-              <h4 className="text-amber-900 font-semibold flex items-center gap-2 mb-3">
+            <div className="bg-warn-soft border border-warn-line rounded-card p-5">
+              <h4 className="text-warn-ink font-semibold flex items-center gap-2 mb-3">
                 <AlertTriangle aria-hidden="true" className="w-4 h-4" /> Attention Needed
               </h4>
               <ul className="space-y-2">
                 {results.warnings.map((warn, i) => (
-                  <li key={i} className="text-sm text-amber-800 flex items-start gap-2">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                  <li key={i} className="text-sm text-warn-ink flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-warn-ink flex-shrink-0" />
                     {warn}
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <div className="bg-emerald-50 border border-emerald-100 rounded-card p-5">
+            <div className="bg-muted border border-muted rounded-card p-5">
               {/* Says what was checked, not more: no warnings is not the same as optimised */}
-              <h4 className="text-emerald-900 font-semibold flex items-center gap-2 mb-1">
+              <h4 className="text-highlight font-semibold flex items-center gap-2 mb-1">
                 <CheckCircle2 aria-hidden="true" className="w-4 h-4" /> No warnings
               </h4>
-              <p className="text-sm text-emerald-800">Nothing in these settings needs attention.</p>
+              <p className="text-sm text-highlight">Nothing in these settings needs attention.</p>
             </div>
           )}
 
           {/* Detailed Stats */}
           <div className="card">
             <div className="card-header">
-              <h4 className="font-semibold text-stone-800">Flow Properties</h4>
+              <h4 className="font-semibold text-ink">Flow Properties</h4>
             </div>
             <div className="card-body space-y-3">
               <DetailRow
@@ -238,7 +238,7 @@ export function ResultsDisplay() {
           {results.thermal && (
             <div className="card">
               <div className="card-header">
-                <h4 className="font-semibold text-stone-800">Thermal Properties</h4>
+                <h4 className="font-semibold text-ink">Thermal Properties</h4>
               </div>
               <div className="card-body space-y-3">
                 <DetailRow
@@ -281,7 +281,7 @@ export function ResultsDisplay() {
           {results.environmental && (
             <div className="card">
               <div className="card-header">
-                <h4 className="font-semibold text-stone-800">Environmental Impact</h4>
+                <h4 className="font-semibold text-ink">Environmental Impact</h4>
               </div>
               <div className="card-body space-y-3">
                 <DetailRow label="Material" value={results.environmental.material} unit="" />
@@ -300,8 +300,8 @@ export function ResultsDisplay() {
                   />
                 )}
                 {results.environmental.recommendation && (
-                  <div className="pt-2 border-t border-stone-100">
-                    <p className="text-xs text-stone-600">
+                  <div className="pt-2 border-t border-line">
+                    <p className="text-xs text-ink-2">
                       <span className="font-semibold">Recommendation:</span>{' '}
                       {results.environmental.recommendation}
                     </p>
@@ -317,33 +317,33 @@ export function ResultsDisplay() {
       {results.volatility && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-semibold text-stone-800">Blowing Agent</h4>
+            <h4 className="font-semibold text-ink">Blowing Agent</h4>
           </div>
           <div className="card-body space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-stone-600 mb-1">{results.volatility.agent}</p>
-                <p className={`text-lg font-bold ${VOLATILITY_TONE[results.volatility.status] ?? 'text-stone-700'}`}>
+                <p className="text-sm text-ink-2 mb-1">{results.volatility.agent}</p>
+                <p className={`text-lg font-bold ${VOLATILITY_TONE[results.volatility.status] ?? 'text-ink'}`}>
                   {VOLATILITY_LABEL[results.volatility.status] ?? results.volatility.status}
                 </p>
               </div>
               {isNumber(results.volatility.boiling_point_c) && (
                 <div className="text-right">
-                  <p className="text-sm text-stone-600 mb-1">Boiling Point</p>
-                  <p className="text-lg font-bold text-stone-900">
+                  <p className="text-sm text-ink-2 mb-1">Boiling Point</p>
+                  <p className="text-lg font-bold text-ink">
                     {results.volatility.boiling_point_c.toFixed(1)} °C
                   </p>
                 </div>
               )}
             </div>
 
-            <p className="text-sm text-stone-600">{results.volatility.message}</p>
+            <p className="text-sm text-ink-2">{results.volatility.message}</p>
 
             {results.volatility.warning && (
               <p className={`p-3 rounded-group text-sm border ${
                 results.volatility.status === 'flash_risk'
-                  ? 'bg-red-50 border-red-200 text-red-800'
-                  : 'bg-amber-50 border-amber-200 text-amber-800'
+                  ? 'bg-danger-soft border-danger-line text-danger'
+                  : 'bg-warn-soft border-warn-line text-warn-ink'
               }`}>
                 {results.volatility.warning}
               </p>
@@ -351,7 +351,7 @@ export function ResultsDisplay() {
 
             {/* Absent constants must read as "not evaluated", never as a pass */}
             {results.volatility.is_volatile && !isNumber(results.volatility.vapour_pressure_bar) && (
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-ink-2">
                 Vapour-pressure margin not evaluated — no vapour-pressure data on file for
                 this agent.
               </p>
@@ -364,26 +364,26 @@ export function ResultsDisplay() {
       {results.line_temperature && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-semibold text-stone-800">Temperature at the Mix Head</h4>
+            <h4 className="font-semibold text-ink">Temperature at the Mix Head</h4>
           </div>
           <div className="card-body space-y-3">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-stone-500 mb-1">Set point</p>
-                <p className="text-lg font-bold text-stone-900">
+                <p className="text-xs text-ink-2 mb-1">Set point</p>
+                <p className="text-lg font-bold text-ink">
                   {results.line_temperature.set_temperature_c.toFixed(1)} °C
                 </p>
               </div>
               <div>
-                <p className="text-xs text-stone-500 mb-1">Ambient</p>
-                <p className="text-lg font-bold text-stone-900">
+                <p className="text-xs text-ink-2 mb-1">Ambient</p>
+                <p className="text-lg font-bold text-ink">
                   {results.line_temperature.ambient_temperature_c.toFixed(1)} °C
                 </p>
               </div>
               <div>
-                <p className="text-xs text-stone-500 mb-1">At mix head</p>
+                <p className="text-xs text-ink-2 mb-1">At mix head</p>
                 <p className={`text-lg font-bold ${
-                  Math.abs(results.line_temperature.drift_c) >= 2 ? 'text-amber-700' : 'text-emerald-700'
+                  Math.abs(results.line_temperature.drift_c) >= 2 ? 'text-warn-ink' : 'text-highlight'
                 }`}>
                   {results.line_temperature.effective_temperature_c.toFixed(1)} °C
                 </p>
@@ -403,7 +403,7 @@ export function ResultsDisplay() {
               <HoseBreakdown hose={results.line_temperature.hose} />
             )}
             {results.line_temperature.warning && (
-              <p className="p-3 bg-amber-50 border border-amber-200 rounded-group text-sm text-amber-800">
+              <p className="p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
                 {results.line_temperature.warning}
               </p>
             )}
@@ -413,10 +413,10 @@ export function ResultsDisplay() {
 
       {/* Cure & Exotherm — the moulded part, not the feed line */}
       {results.cure && (
-        <div className="card border-2 border-stone-200">
-          <div className="card-header bg-stone-50">
-            <h4 className="font-semibold text-stone-800">Cure &amp; Exotherm</h4>
-            <p className="text-xs text-stone-500 mt-1">
+        <div className="card border-2 border-line">
+          <div className="card-header bg-canvas">
+            <h4 className="font-semibold text-ink">Cure &amp; Exotherm</h4>
+            <p className="text-xs text-ink-2 mt-1">
               Describes the moulded part after the mix head — not the feed line above.
             </p>
           </div>
@@ -443,7 +443,7 @@ export function ResultsDisplay() {
               />
             )}
 
-            <div className="pt-3 border-t border-stone-100 space-y-3">
+            <div className="pt-3 border-t border-line space-y-3">
               {isNumber(results.cure.adiabatic_rise_c) && (
                 <DetailRow
                   label="Reaction Heat (adiabatic rise)"
@@ -460,8 +460,8 @@ export function ResultsDisplay() {
               )}
               {results.cure.scorch_risk && (
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-stone-600">Scorch Risk</span>
-                  <span className={`text-sm font-semibold ${SCORCH_TONE[results.cure.scorch_risk] ?? 'text-stone-700'}`}>
+                  <span className="text-sm text-ink-2">Scorch Risk</span>
+                  <span className={`text-sm font-semibold ${SCORCH_TONE[results.cure.scorch_risk] ?? 'text-ink'}`}>
                     {results.cure.scorch_risk}
                     {isNumber(results.cure.scorch_margin_c) &&
                       ` (${results.cure.scorch_margin_c.toFixed(0)} °C margin)`}
@@ -471,7 +471,7 @@ export function ResultsDisplay() {
             </div>
 
             {results.cure.heat_of_reaction_is_estimated && (
-              <p className="p-3 bg-stone-50 border border-stone-200 rounded-group text-xs text-stone-600">
+              <p className="p-3 bg-canvas border border-line rounded-group text-xs text-ink-2">
                 Exotherm figures are <strong>estimated</strong>. This material&rsquo;s data
                 sheet states no heat of reaction, so a literature-typical value for rigid
                 polyurethane was used. Add <code>Heat_Of_Reaction_kJ_kg</code> or{' '}
@@ -487,17 +487,17 @@ export function ResultsDisplay() {
       {results.machine_compatibility && (
         <div className="card">
           <div className="card-header">
-            <h4 className="font-semibold text-stone-800">Machine Compatibility</h4>
+            <h4 className="font-semibold text-ink">Machine Compatibility</h4>
           </div>
           <div className="card-body">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-stone-600 mb-1">Compatibility Status</p>
+                <p className="text-sm text-ink-2 mb-1">Compatibility Status</p>
                 <p
                   className={`text-lg font-bold ${
                     results.machine_compatibility.is_compatible
-                      ? 'text-emerald-700'
-                      : 'text-amber-700'
+                      ? 'text-highlight'
+                      : 'text-warn-ink'
                   }`}
                 >
                   {results.machine_compatibility.is_compatible
@@ -507,8 +507,8 @@ export function ResultsDisplay() {
               </div>
               {isNumber(results.machine_compatibility.line_demand_bar) && (
                 <div className="text-right">
-                  <p className="text-sm text-stone-600 mb-1">Line demand / Machine max</p>
-                  <p className="text-lg font-bold text-stone-900">
+                  <p className="text-sm text-ink-2 mb-1">Line demand / Machine max</p>
+                  <p className="text-lg font-bold text-ink">
                     {formatPressure(
                       results.machine_compatibility.line_demand_bar,
                       pressureUnit
@@ -524,19 +524,19 @@ export function ResultsDisplay() {
               )}
             </div>
             {results.machine_compatibility.warning && (
-              <p className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-group text-sm text-amber-800">
+              <p className="mt-4 p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
                 {results.machine_compatibility.warning}
               </p>
             )}
             {results.machine_compatibility.note && (
-              <p className="mt-4 p-3 bg-stone-50 border border-stone-200 rounded-group text-sm text-stone-600">
+              <p className="mt-4 p-3 bg-canvas border border-line rounded-group text-sm text-ink-2">
                 {results.machine_compatibility.note}
               </p>
             )}
             {/* Named as the mixing element's own shear, so it is not mistaken for a limit
                 on the feed line — impingement runs an order of magnitude above a rotor. */}
             {results.machine_compatibility.mix_head_shear_range && (
-              <p className="mt-3 text-xs text-stone-500 leading-relaxed">
+              <p className="mt-3 text-xs text-ink-2 leading-relaxed">
                 Mix head: {results.machine_compatibility.mix_head_type ?? 'mixing element'} —
                 designed to run at{' '}
                 {results.machine_compatibility.mix_head_shear_range.min.toLocaleString()}–
@@ -605,22 +605,22 @@ function MachineSettingsCard({
   return (
     <div className="card overflow-hidden" data-testid="machine-settings">
       <div className="flex items-stretch">
-        <div className="w-1.5 bg-forest-600 flex-shrink-0" />
+        <div className="w-1.5 bg-highlight flex-shrink-0" />
         <div className="card-body flex-grow grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* The setting */}
           <div className="min-w-0">
-            <p className="text-sm font-medium text-stone-500">
+            <p className="text-sm font-medium text-ink-2">
               Machine output
             </p>
             {isNumber(output) ? (
               <>
                 <div className="flex items-baseline gap-2 mt-1.5">
-                  <span className="text-4xl font-bold tracking-tight tabular-nums text-stone-900">
+                  <span className="text-4xl font-bold tracking-tight tabular-nums text-ink">
                     {output.toFixed(output >= 10 ? 0 : 1)}
                   </span>
-                  <span className="text-lg font-semibold text-stone-500">kg/min</span>
+                  <span className="text-lg font-semibold text-ink-2">kg/min</span>
                 </div>
-                <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+                <p className="text-sm text-ink-2 mt-2 leading-relaxed">
                   {results.input?.flow_rate_lpm?.toFixed(2)} L/min of a{' '}
                   {results.input?.material_density_kg_m3?.toFixed(0)} kg/m³ blend. This is the
                   dial that moves the process — pressure follows from it.
@@ -641,39 +641,39 @@ function MachineSettingsCard({
                 )}
               </>
             ) : (
-              <p className="text-sm text-stone-600 mt-2">
+              <p className="text-sm text-ink-2 mt-2">
                 Not available — this run recorded no mixed density.
               </p>
             )}
           </div>
 
           {/* The reading */}
-          <div className="min-w-0 md:border-l md:border-stone-100 md:pl-6">
-            <p className="text-sm font-medium text-stone-500">
+          <div className="min-w-0 md:border-l md:border-line md:pl-6">
+            <p className="text-sm font-medium text-ink-2">
               Injection pressure
             </p>
             <div className="flex items-baseline gap-2 mt-1.5">
-              <span className="text-4xl font-bold tracking-tight tabular-nums text-stone-900">
+              <span className="text-4xl font-bold tracking-tight tabular-nums text-ink">
                 {p(injection)}
               </span>
-              <span className="text-lg font-semibold text-stone-500">{unit}</span>
+              <span className="text-lg font-semibold text-ink-2">{unit}</span>
             </div>
-            <p className="text-sm text-stone-600 mt-2 leading-relaxed">
+            <p className="text-sm text-ink-2 mt-2 leading-relaxed">
               {governedByMixHead ? (
                 <>
-                  Set by the <strong className="text-stone-900">mix head</strong>, not the
+                  Set by the <strong className="text-ink">mix head</strong>, not the
                   feed line: impingement mixing needs this pressure to mix at all. The line
                   itself only asks for{' '}
                   {isNumber(lineDemand) && (
-                    <strong className="text-stone-900">{p(lineDemand)} {unit}</strong>
+                    <strong className="text-ink">{p(lineDemand)} {unit}</strong>
                   )}
                   {isNumber(pipeDrop) && <> ({p(pipeDrop)} {unit} of pipe drop plus machine losses)</>}.
                 </>
               ) : (
                 <>
-                  Set by the <strong className="text-stone-900">feed line</strong>:{' '}
+                  Set by the <strong className="text-ink">feed line</strong>:{' '}
                   {isNumber(pipeDrop) && (
-                    <strong className="text-stone-900">{p(pipeDrop)} {unit}</strong>
+                    <strong className="text-ink">{p(pipeDrop)} {unit}</strong>
                   )}{' '}
                   of pipe drop plus the machine's own internal losses.
                 </>
@@ -704,7 +704,7 @@ function MachineSettingsCard({
           )}
         </div>
         {machine.note && (
-          <p className="mt-3 text-xs text-stone-500 leading-relaxed">{machine.note}</p>
+          <p className="mt-3 text-xs text-ink-2 leading-relaxed">{machine.note}</p>
         )}
       </div>
     </div>
@@ -741,19 +741,19 @@ function RangeBar({
 
   return (
     <>
-      <div className="relative h-2.5 rounded-full bg-stone-100 overflow-hidden">
+      <div className="relative h-2.5 rounded-full bg-canvas overflow-hidden">
         <div
-          className={inRange ? 'absolute inset-y-0 bg-forest-200' : 'absolute inset-y-0 bg-red-200'}
+          className={inRange ? 'absolute inset-y-0 bg-band' : 'absolute inset-y-0 bg-danger-soft'}
           style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
         />
         <div
-          className={`absolute -top-1 w-1 rounded-full ${inRange ? 'bg-forest-600' : 'bg-red-600'}`}
+          className={`absolute -top-1 w-1 rounded-full ${inRange ? 'bg-highlight' : 'bg-danger'}`}
           style={{ left: `calc(${pct(value)}% - 2px)`, height: '1.125rem' }}
         />
       </div>
-      <div className="flex justify-between text-xs text-stone-500 mt-1.5 tabular-nums">
+      <div className="flex justify-between text-xs text-ink-2 mt-1.5 tabular-nums">
         <span>{formatValue(min)} min</span>
-        <span className={inRange ? 'text-forest-700 font-semibold' : 'text-red-700 font-semibold'}>
+        <span className={inRange ? 'text-highlight font-semibold' : 'text-danger font-semibold'}>
           {formatValue(value)} {suffix}
         </span>
         <span>{formatValue(max)} max</span>
@@ -777,16 +777,16 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
   const tight = laminar && isNumber(ratio) && ratio < 1.25
 
   const tone = !laminar
-    ? 'bg-red-50 border-red-100'
+    ? 'bg-danger-soft border-danger-line'
     : tight
-      ? 'bg-amber-50 border-amber-100'
-      : 'bg-emerald-50 border-emerald-100'
+      ? 'bg-warn-soft border-warn-line'
+      : 'bg-muted border-muted'
 
   const textTone = !laminar
-    ? 'text-red-800'
+    ? 'text-danger'
     : tight
-      ? 'text-amber-800'
-      : 'text-emerald-800'
+      ? 'text-warn-ink'
+      : 'text-highlight'
 
   return (
     <div className={`rounded-card border p-5 ${tone}`} data-testid="laminar-envelope">
@@ -804,7 +804,7 @@ function LaminarEnvelopeCard({ envelope }: { envelope?: LaminarEnvelope }) {
             {envelope.recommendation}
           </p>
           {isNumber(envelope.max_laminar_flow_lpm) && (
-            <p className="text-xs text-stone-600 mt-2 tabular-nums">
+            <p className="text-xs text-ink-2 mt-2 tabular-nums">
               Re {envelope.reynolds_number.toFixed(0)} now · turbulence at Re{' '}
               {envelope.laminar_limit?.toFixed(0) ?? '2300'}
               {isNumber(envelope.min_laminar_diameter_mm) &&
@@ -837,8 +837,8 @@ function OperatingWindowCard({
 }) {
   const flow = window.flow_window
   const tone = flow.current_inside
-    ? 'bg-surface border-stone-200'
-    : 'bg-red-50 border-red-100'
+    ? 'bg-surface border-line'
+    : 'bg-danger-soft border-danger-line'
 
   const limitText =
     window.limit_source === 'user_limit'
@@ -849,13 +849,13 @@ function OperatingWindowCard({
 
   return (
     <div className={`rounded-card border p-5 ${tone}`} data-testid="operating-window">
-      <h4 className="font-semibold text-stone-800">Operating window</h4>
-      <p className="text-sm text-stone-500 mt-1">
+      <h4 className="font-semibold text-ink">Operating window</h4>
+      <p className="text-sm text-ink-2 mt-1">
         Feed-line pressure limit: {limitText}. Each row moves one setting with the others held.
       </p>
 
       <p
-        className={`text-sm mt-3 leading-relaxed ${flow.current_inside ? 'text-stone-700' : 'text-red-800'}`}
+        className={`text-sm mt-3 leading-relaxed ${flow.current_inside ? 'text-ink' : 'text-danger'}`}
       >
         <span className="font-semibold">Flow rate: </span>
         {describeFlowWindow(flow)}
@@ -864,7 +864,7 @@ function OperatingWindowCard({
         )}
       </p>
 
-      <dl className="mt-3 text-sm divide-y divide-stone-100">
+      <dl className="mt-3 text-sm divide-y divide-line">
         <WindowRow
           label="Highest flow rate within the pressure limit"
           status={window.max_flow_rate.status}
@@ -918,10 +918,10 @@ function WindowRow({
 
   return (
     <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 py-2">
-      <dt className="text-stone-600">{label}</dt>
-      <dd className={`ml-auto font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-red-700' : 'text-stone-900'}`}>
+      <dt className="text-ink-2">{label}</dt>
+      <dd className={`ml-auto font-semibold tabular-nums text-right ${status === 'infeasible' ? 'text-danger' : 'text-ink'}`}>
         {text}
-        <span className="block text-xs font-normal text-stone-500">
+        <span className="block text-xs font-normal text-ink-2">
           now {present.toFixed(1)} {unit}
         </span>
       </dd>
@@ -945,10 +945,10 @@ function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
   return (
     <div className="card" data-testid="flow-curve">
       <div className="card-header">
-        <h4 className="font-semibold text-stone-800">
+        <h4 className="font-semibold text-ink">
           Flow curve: {RHEOLOGY_MODEL_LABELS[rheology.model]}
         </h4>
-        <p className="text-xs text-stone-500 mt-1">
+        <p className="text-xs text-ink-2 mt-1">
           Exact laminar pipe solution (Rabinowitsch–Mooney). The viscosity above is the
           effective one that reproduces this pressure drop.
         </p>
@@ -962,7 +962,7 @@ function FlowCurveCard({ rheology }: { rheology: RheologyResult }) {
           <>
             <DetailRow label="Unsheared plug" value={`${(plug * 100).toFixed(0)}%`} unit="of the bore" />
             {plug > 0.5 && (
-              <p className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-group text-sm text-amber-800">
+              <p className="mt-2 p-3 bg-warn-soft border border-warn-line rounded-group text-sm text-warn-ink">
                 More than half the bore moves as a solid plug: the wall stress is less than
                 twice the yield stress. A cold restart or a lower output could stall the line.
               </p>
@@ -991,8 +991,8 @@ function HoseBreakdown({ hose }: { hose: HoseHeatTransfer }) {
     .sort((a, b) => hose.resistance_share[b] - hose.resistance_share[a])
 
   return (
-    <div className="text-xs text-stone-600 bg-stone-50 rounded-field p-3" data-testid="hose-breakdown">
-      <p className="font-semibold text-stone-700 mb-1">Resistance to heat loss</p>
+    <div className="text-xs text-ink-2 bg-canvas rounded-field p-3" data-testid="hose-breakdown">
+      <p className="font-semibold text-ink mb-1">Resistance to heat loss</p>
       <ul className="space-y-0.5 tabular-nums">
         {layers.map((layer) => (
           <li key={layer} className="flex justify-between">
@@ -1019,9 +1019,9 @@ function KpiCard({
   status?: 'success' | 'warning' | 'neutral'
 }) {
   const statusColors = {
-    success: 'bg-emerald-100 text-emerald-700',
-    warning: 'bg-amber-100 text-amber-700',
-    neutral: 'bg-stone-100 text-stone-600',
+    success: 'bg-muted text-highlight',
+    warning: 'bg-warn-soft text-warn-ink',
+    neutral: 'bg-canvas text-ink-2',
   }
 
   // Stable hook for the end-to-end tests. Titles are styled text inside nested divs, so
@@ -1032,15 +1032,15 @@ function KpiCard({
     <div className="card" data-testid={testId}>
       <div className="card-body">
         <div className="flex justify-between items-start gap-2 mb-2">
-          <span className="min-w-0 text-sm font-medium text-stone-500">{title}</span>
+          <span className="min-w-0 text-sm font-medium text-ink-2">{title}</span>
           {/* Decorative: every icon here restates the title beside it */}
           <div aria-hidden="true" className={`p-2 rounded-field ${statusColors[status]}`}>
             {icon}
           </div>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-2xl font-bold text-stone-900 tabular-nums">{value}</span>
-          {unit && <span className="text-xs font-medium text-stone-500">{unit}</span>}
+          <span className="text-2xl font-bold text-ink tabular-nums">{value}</span>
+          {unit && <span className="text-xs font-medium text-ink-2">{unit}</span>}
         </div>
       </div>
     </div>
@@ -1061,10 +1061,10 @@ function DetailRow({
   const numValue = typeof value === 'number' ? value.toFixed(2) : value
 
   return (
-    <div className="flex justify-between items-center py-2 border-b border-stone-50 last:border-0">
-      <span className="text-sm text-stone-600">{label}</span>
-      <span className="text-sm font-semibold text-stone-900 tabular-nums">
-        {numValue} <span className="text-stone-500 font-normal">{unit}</span>
+    <div className="flex justify-between items-center py-2 border-b border-line last:border-0">
+      <span className="text-sm text-ink-2">{label}</span>
+      <span className="text-sm font-semibold text-ink tabular-nums">
+        {numValue} <span className="text-ink-2 font-normal">{unit}</span>
       </span>
     </div>
   )

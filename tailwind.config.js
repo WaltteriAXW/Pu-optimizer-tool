@@ -1,15 +1,42 @@
 /**
- * Colour families the app uses, resolved through CSS variables in src/theme.css so each class
- * has a light, dark and Increase Contrast value. <alpha-value> keeps opacity modifiers such
- * as bg-slate-50/50 working.
+ * Colours: the Stone & Forest roles only (src/theme.css). This replaces Tailwind's palette
+ * rather than extending it, so a class such as bg-gray-100 or text-amber-600 produces nothing:
+ * only the brand guide's colours can reach the screen.
  */
-const SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950']
-const themed = (family) =>
-  Object.fromEntries(
-    SHADES.map((shade) => [shade, `rgb(var(--c-${family}-${shade}) / <alpha-value>)`])
-  )
-
 const role = (name) => `rgb(var(--c-${name}) / <alpha-value>)`
+/** A role at the opacity its tint takes in the current appearance (--a-* in theme.css) */
+const tint = (name, alpha) => `rgb(var(--c-${name}) / var(--a-${alpha}))`
+
+const colors = {
+  transparent: 'transparent',
+  current: 'currentColor',
+  inherit: 'inherit',
+  canvas: role('canvas'),
+  surface: role('surface'),
+  raised: role('raised'),
+  track: role('track'),
+  // The one main action on a view: Deep Forest with white in light, Champagne with Obsidian
+  // in dark
+  accent: role('accent'),
+  'on-accent': role('on-accent'),
+  highlight: role('highlight'),
+  'accent-secondary': role('accent-secondary'),
+  band: role('band'),
+  muted: role('muted'),
+  line: role('line'),
+  'line-strong': role('line-strong'),
+  ink: role('ink'),
+  'ink-2': role('ink-2'),
+  danger: role('danger'),
+  'danger-soft': tint('danger', 'danger-soft'),
+  'danger-line': tint('danger', 'danger-line'),
+  warn: role('warn'),
+  'warn-ink': role('warn-ink'),
+  'warn-soft': tint('warn', 'warn-soft'),
+  'warn-line': tint('warn', 'warn-line'),
+  scrim: role('scrim'),
+  knob: role('knob'),
+}
 
 /**
  * Inter, set the way Apple sets SF: Tailwind's sizes kept, with the brand guide's tracking
@@ -25,23 +52,8 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    colors,
     extend: {
-      colors: {
-        // Stone & Forest roles (src/theme.css). The page is canvas, cards and inputs are
-        // surface, and the one main action on a view is accent with on-accent text: Deep
-        // Forest with white in light, Champagne with Obsidian in dark.
-        canvas: role('canvas'),
-        surface: role('surface'),
-        raised: role('raised'),
-        accent: { DEFAULT: role('accent'), pressed: role('accent-pressed') },
-        'on-accent': role('on-accent'),
-        stone: themed('stone'),
-        forest: themed('forest'),
-        emerald: themed('emerald'),
-        amber: themed('amber'),
-        red: themed('red'),
-        orange: themed('orange'),
-      },
       fontFamily: {
         sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],

@@ -22,21 +22,24 @@ import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
  * that person set.
  */
 
-// ── Stone & Forest, light: the palette of src/theme.css, as the printed page is light ──
+// ── Stone & Forest, light: palette colours only, as the printed page is light ─────────
 const INK: RGB = [28, 29, 26]            // Charcoal Moss, text-primary
-const SECONDARY: RGB = [77, 81, 73]      // stone-600
-const MUTED: RGB = [92, 96, 88]          // Olive Slate, text-secondary
+const SECONDARY: RGB = [92, 96, 88]      // Olive Slate, text-secondary
+const MUTED: RGB = [92, 96, 88]          // Olive Slate
 const RULE: RGB = [226, 221, 213]        // Warm Stone, border-subtle
-const CARD: RGB = [247, 245, 241]        // Pale Limestone, lightened for paper
+const CARD: RGB = [242, 239, 233]        // Pale Limestone
 const ACCENT: RGB = [27, 59, 43]         // Deep Forest, accent-primary
 const ACCENT_SOFT: RGB = [230, 236, 232] // Pale Mist Green, accent-muted
 const ACCENT_INK: RGB = [27, 59, 43]     // Deep Forest
 
-/** Status colours as pairs, as the app uses them: a tint behind, a deeper ink on it */
+/**
+ * Status colours as pairs, as the app uses them: a fill behind, an ink on it. Good is Forest
+ * on Pale Mist, a warning Charcoal Moss on Champagne, a problem Clay Red on Pale Limestone.
+ */
 const TONE = {
-  good: { fill: [230, 236, 232] as RGB, ink: [27, 59, 43] as RGB },    // Pale Mist / Deep Forest
-  warn: { fill: [255, 251, 235] as RGB, ink: [180, 83, 9] as RGB },    // amber-50 / 700
-  bad: { fill: [251, 237, 234] as RGB, ink: [178, 58, 46] as RGB },    // red-50 / Clay Red
+  good: { fill: [230, 236, 232] as RGB, ink: [27, 59, 43] as RGB },
+  warn: { fill: [232, 220, 203] as RGB, ink: [28, 29, 26] as RGB },
+  bad: { fill: [242, 239, 233] as RGB, ink: [178, 58, 46] as RGB },
 }
 type Tone = keyof typeof TONE
 

@@ -1,92 +1,127 @@
 """
-Write src/theme.css from the Stone & Forest brand guide's tokens.
+Write src/theme.css from the Stone & Forest brand guide (v1.1).
 
     python3 scripts/generate_theme.py > src/theme.css
 
-Then run `npx vitest --run src/theme.test.ts`: it checks every pairing the app uses against
-WCAG AA in light, dark and Increase Contrast.
+Only the guide's own colours are used: the six core colours, the light and dark tokens, and
+the Increase Contrast variants. Each role below picks one of them per appearance. Tints (the
+fill behind a warning or an error) are those colours at reduced opacity, as the guide's own
+tinted buttons are, never a new hue.
+
+Then run `npx vitest --run src/theme.test.ts`: it checks that every value is in the palette and
+that every pairing the app uses meets WCAG AA in light, dark and Increase Contrast.
 """
-S = ['50','100','200','300','400','500','600','700','800','900','950']
-h = lambda x: ' '.join(str(int(x[i:i+2],16)) for i in (0,2,4))
 
-# ── Light ──────────────────────────────────────────────────────────────────────
-light_roles = {
-  'canvas': 'F2EFE9',          # bg-primary, Pale Limestone
-  'surface': 'FFFFFF',         # bg-surface, Pure White
-  'raised': 'FFFFFF',          # the chosen segment, on its track
-  'accent': '1B3B2B',          # accent-primary, Deep Forest
-  'accent-pressed': '132B1F',
-  'on-accent': 'FFFFFF',       # text-on-accent
+# The palette, by the guide's names. Nothing else may appear in the app.
+PALETTE = {
+    # Core
+    'Deep Forest': '1B3B2B',
+    'Pale Limestone': 'F2EFE9',
+    'Muted Sage': 'A3B19B',
+    'Deep Obsidian': '0C0E0D',
+    'Champagne Beige': 'E8DCCB',
+    'Jade Mint': '5CE1A6',
+    # Light tokens
+    'Pure White': 'FFFFFF',
+    'Pale Mist Green': 'E6ECE8',
+    'Warm Stone': 'E2DDD5',
+    'Charcoal Moss': '1C1D1A',
+    'Olive Slate': '5C6058',
+    'Clay Red': 'B23A2E',
+    # Dark tokens
+    'Dark Basalt': '161A18',
+    'Deep Forest Fill': '1A2E26',
+    'Muted Graphite': '262C29',
+    'Frost': 'F4F6F5',
+    'Lichen Grey': '9CA39E',
+    'Ember Coral': 'FF7A66',
+    # Increase Contrast variants
+    'Olive Slate HC': '3F433C',
+    'Muted Sage HC': '6E7D66',
+    'Warm Stone HC': 'B9B2A6',
+    'Lichen Grey HC': 'C4CAC6',
+    'Muted Graphite HC': '4A524D',
 }
-stone_l = dict(zip(S, ['F2EFE9','EAE6DF','E2DDD5','D1CBC1','8F8B82','5C6058','4D5149','3B3E37','2B2D28','1C1D1A','121311']))
-forest_l = dict(zip(S, ['E6ECE8','D6E1DA','BFCFC5','A3B19B','6E7D66','3D5A49','1B3B2B','132B1F','11281E','0D2018','08140F']))
-# Success is a forest green, so a good result reads as the brand rather than a stock mint
-emerald_l = dict(zip(S, ['EAF2EC','D4E6D9','B5D4BE','8DBD9B','5C9E70','3A8452','2A6E41','1F5A34','184A2B','133B23','0A2214']))
-amber_l = dict(zip(S, ['FFFBEB','FEF3C7','FDE68A','FCD34D','FBBF24','F59E0B','D97706','B45309','92400E','78350F','451A03']))
-red_l = dict(zip(S, ['FBEDEA','F5DDD7','EDC2B9','DE9A8E','CF6A5C','C04A3C','B23A2E','9C3127','7F281F','66201A','3A120E']))
-orange_l = dict(zip(S, ['FFF7ED','FFEDD5','FED7AA','FDBA74','FB923C','F97316','EA580C','C2410C','9A3412','7C2D12','431407']))
 
-# ── Dark ───────────────────────────────────────────────────────────────────────
-dark_roles = {
-  'canvas': '0C0E0D',          # Deep Obsidian
-  'surface': '161A18',         # Dark Basalt
-  'raised': '2A302D',
-  'accent': 'E8DCCB',          # Champagne Beige takes the action after dark
-  'accent-pressed': 'D4C6B1',
-  'on-accent': '0C0E0D',
+# role: (light, dark, what it is for)
+ROLES = {
+    'canvas': ('Pale Limestone', 'Deep Obsidian', 'bg-primary: the page'),
+    'surface': ('Pure White', 'Dark Basalt', 'bg-surface: cards, sheets, inputs'),
+    'raised': ('Pure White', 'Muted Graphite', 'the chosen segment, raised on its track'),
+    'track': ('Warm Stone', 'Deep Obsidian', 'segmented control and switch tracks'),
+    'accent': ('Deep Forest', 'Champagne Beige', 'accent-primary: the one main action'),
+    'on-accent': ('Pure White', 'Deep Obsidian', 'text-on-accent'),
+    'highlight': ('Deep Forest', 'Jade Mint', 'accent text, active icons, success, the switch'),
+    'accent-secondary': ('Muted Sage', 'Jade Mint', 'charts, progress; decorative in light'),
+    'band': ('Muted Sage', 'Deep Forest Fill', 'the in-range band of a gauge, behind its marker'),
+    'muted': ('Pale Mist Green', 'Deep Forest Fill', 'accent-muted: pills, selected rows, success fill'),
+    'line': ('Warm Stone', 'Muted Graphite', 'border-subtle: dividers, card edges'),
+    'line-strong': ('Warm Stone HC', 'Muted Graphite HC', 'input edges'),
+    'ink': ('Charcoal Moss', 'Frost', 'text-primary'),
+    'ink-2': ('Olive Slate', 'Lichen Grey', 'text-secondary'),
+    'danger': ('Clay Red', 'Ember Coral', 'destructive: errors, delete'),
+    'warn': ('Champagne Beige', 'Champagne Beige', 'warnings: fill and edge'),
+    'warn-ink': ('Charcoal Moss', 'Champagne Beige', 'warning text and icons'),
+    'scrim': ('Deep Obsidian', 'Deep Obsidian', 'backdrops and shadows, never pure black'),
+    'knob': ('Pure White', 'Pure White', 'switch and slider knobs'),
 }
-stone_d = dict(zip(S, ['0C0E0D','1E2320','262C29','343B37','6E7671','9CA39E','B3B9B5','CAD0CC','E0E4E1','F4F6F5','FAFBFA']))
-# Forest lives on as a tinted fill; Jade Mint does the glowing
-forest_d = dict(zip(S, ['1A2E26','1F3A2F','28493C','35604F','4FC793','5CE1A6','5CE1A6','7EE8BA','A6F0CF','CFF7E5','E9FCF3']))
-emerald_d = dict(zip(S, ['142620','18332A','1D4536','25604A','5CE1A6','5CE1A6','5CE1A6','85E9BD','B0F2D4','D6F9E9','ECFCF4']))
-amber_d = dict(zip(S, ['2A2416','3A3019','52421C','7A5F1F','FBBF24','FBBF24','FBBF24','FCD34D','FDE68A','FEF3C7','FFFBEB']))
-red_d = dict(zip(S, ['2A1A17','3A201B','52281F','7A3529','FF7A66','FF7A66','FF7A66','FF9A8A','FFC0B5','FFDCD5','FFEEEA']))
-orange_d = dict(zip(S, ['2B1E15','3C2618','55321A','7D451D','FB923C','FB923C','FB923C','FDBA74','FED7AA','FFEDD5','FFF7ED']))
 
-# Increase Contrast variants from the guide
-hc_l = {'stone-200':'B9B2A6','stone-300':'A39C90','stone-400':'6E6A62','stone-500':'3F433C','forest-400':'4F5E48'}
-hc_d = {'stone-200':'4A524D','stone-400':'9CA39E','stone-500':'C4CAC6'}
+# Opacity of the tinted fills and edges, per appearance
+ALPHAS = {
+    'warn-soft': (0.55, 0.12),
+    'warn-line': (1, 0.4),
+    'danger-soft': (0.08, 0.14),
+    'danger-line': (0.35, 0.45),
+}
 
-def decls(roles, fams, indent):
-    out = [f'{indent}--c-{k}: {h(v)};' for k, v in roles.items()]
-    for name, scale in fams:
-        out += [f'{indent}--c-{name}-{s}: {h(scale[s])};' for s in S]
-    return '\n'.join(out)
+HIGH_CONTRAST = {
+    'light': {'ink-2': 'Olive Slate HC', 'line': 'Warm Stone HC', 'accent-secondary': 'Muted Sage HC'},
+    'dark': {'ink-2': 'Lichen Grey HC', 'line': 'Muted Graphite HC'},
+}
 
-L = [('stone', stone_l), ('forest', forest_l), ('emerald', emerald_l), ('amber', amber_l), ('red', red_l), ('orange', orange_l)]
-D = [('stone', stone_d), ('forest', forest_d), ('emerald', emerald_d), ('amber', amber_d), ('red', red_d), ('orange', orange_d)]
-hc = lambda m, i: '\n'.join(f'{i}--c-{k}: {h(v)};' for k, v in m.items())
+
+def rgb(name):
+    hex_ = PALETTE[name]
+    return ' '.join(str(int(hex_[i:i + 2], 16)) for i in (0, 2, 4))
+
+
+def declarations(mode, indent):
+    i = 0 if mode == 'light' else 1
+    lines = [f'{indent}--c-{role}: {rgb(names[i])}; /* {names[i]} */' for role, names in ROLES.items()]
+    lines += [f'{indent}--a-{name}: {values[i]};' for name, values in ALPHAS.items()]
+    return '\n'.join(lines)
+
+
+def high_contrast(mode, indent):
+    return '\n'.join(f'{indent}--c-{role}: {rgb(name)}; /* {name} */' for role, name in HIGH_CONTRAST[mode].items())
+
+
+roles_doc = '\n'.join(f' *   {role:<17}{names[0]} / {names[1]}: {names[2]}' for role, names in ROLES.items())
 
 print(f'''/*
  * Stone & Forest: colour roles for light, dark and Increase Contrast.
  *
- * Values come from the Stone & Forest brand guide (v1.1). Every colour class in the app
- * (bg-stone-50, text-forest-600 and so on) resolves through these variables (see
- * tailwind.config.js), so a theme switch swaps whole token sets and no component changes.
+ * Only colours from the Stone & Forest brand guide (v1.1) appear here, and so in the app: every
+ * colour class (bg-surface, text-ink-2, border-line and so on) resolves through these
+ * variables (see tailwind.config.js), and Tailwind's own palette is switched off. A theme
+ * switch swaps the whole set; no component changes.
  *
- * The guide's roles and where they live here:
- *   bg-primary (60%)  canvas, also stone-50     Pale Limestone / Deep Obsidian
- *   bg-surface (30%)  surface                   Pure White / Dark Basalt
- *   accent-primary    accent, on-accent         Deep Forest / Champagne, for the one main action
- *   accent-secondary  forest-500/600            Forest in light; Jade Mint glows in dark
- *   accent-muted      forest-50                 Pale Mist Green / Deep Forest Fill
- *   border-subtle     stone-200                 Warm Stone / Muted Graphite
- *   text-primary      stone-900                 Charcoal Moss / Frost
- *   text-secondary    stone-500                 Olive Slate / Lichen Grey
- *   destructive       red-600                   Clay Red / Ember Coral
+ * Roles, light / dark:
+{roles_doc}
  *
- * Muted Sage (forest-300) is decorative only: it is 2.3:1 on white, so it never carries text.
- * The pairings the app uses are checked against WCAG AA in src/theme.test.ts.
+ * Tints behind a warning or an error are the role colour at reduced opacity (--a-*), as the
+ * guide's tinted buttons are. Muted Sage is 2.3:1 on white, so in light it is decorative only.
+ * src/theme.test.ts checks that every value is in the palette and every pairing meets WCAG AA.
  *
  * data-theme on the root overrides the device: "light" or "dark" from Settings, and "light"
  * for the PDF capture of the chart. Without it, the device's appearance decides.
  *
- * Generated by scripts/generate_theme.py. Edit the scales there, as a set, not here.
+ * Generated by scripts/generate_theme.py. Edit the roles there, not here.
  */
 
 :root {{
   color-scheme: light dark;
-{decls(light_roles, L, '  ')}
+{declarations('light', '  ')}
 }}
 
 :root[data-theme='light'] {{
@@ -95,31 +130,31 @@ print(f'''/*
 
 @media (prefers-color-scheme: dark) {{
   :root:not([data-theme='light']) {{
-{decls(dark_roles, D, '    ')}
+{declarations('dark', '    ')}
   }}
 }}
 
 /* Increase Contrast: the guide's high-contrast text-secondary, border and sage */
 @media (prefers-contrast: more) {{
   :root {{
-{hc(hc_l, '    ')}
+{high_contrast('light', '    ')}
   }}
 }}
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: more) {{
   :root:not([data-theme='light']) {{
-{hc(hc_d, '    ')}
+{high_contrast('dark', '    ')}
   }}
 }}
 
 /* Chosen in Settings: dark whatever the device says */
 :root[data-theme='dark'] {{
   color-scheme: dark;
-{decls(dark_roles, D, '  ')}
+{declarations('dark', '  ')}
 }}
 
 @media (prefers-contrast: more) {{
   :root[data-theme='dark'] {{
-{hc(hc_d, '    ')}
+{high_contrast('dark', '    ')}
   }}
 }}''')

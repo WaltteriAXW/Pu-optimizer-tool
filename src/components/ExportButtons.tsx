@@ -82,7 +82,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
       <div role="group" aria-labelledby={labelId} className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
         {/* One visible label for the row, so each button reads as "Export JSON" without
             repeating the verb four times */}
-        <span id={labelId} className="mr-1 text-sm font-medium text-stone-500">
+        <span id={labelId} className="mr-1 text-sm font-medium text-ink-2">
           Export
         </span>
         <button
@@ -128,7 +128,7 @@ export function ExportButtons({ results }: ExportButtonsProps) {
       </div>
 
       {error && (
-        <p role="alert" className="flex items-center gap-1.5 text-xs text-red-600">
+        <p role="alert" className="flex items-center gap-1.5 text-xs text-danger">
           <AlertCircle aria-hidden="true" className="w-3 h-3" />
           {error}
         </p>

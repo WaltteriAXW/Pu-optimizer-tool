@@ -3,39 +3,62 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
- * Contrast of the colour pairings the interface actually uses, in each appearance.
+ * The Stone & Forest palette, held to.
  *
- * The values live in src/theme.css; a change there that drops a pairing below the WCAG AA
- * minimum (4.5:1 for text, 3:1 for bold text and for graphics) fails here rather than on
- * someone's screen. The pairings are the real ones: card text on the card surface, status
- * text on its tinted background, white on the Run button and so on.
+ * Two promises are checked here. Every colour the app can show is one of the brand guide's
+ * colours: in the theme variables, and in the few places a colour is written as a value (the
+ * chart, the PDF, the favicon, the browser chrome). And every pairing the interface uses meets
+ * the WCAG AA minimum (4.5:1 for text, 3:1 for bold text and for graphics) in light, dark and
+ * Increase Contrast. A change that breaks either fails here rather than on someone's screen.
  */
 
-type Palette = Record<string, [number, number, number]>
+type RGB = [number, number, number]
 
+/** Stone & Forest v1.1: core colours, light and dark tokens, Increase Contrast variants */
+const PALETTE = [
+  '1B3B2B', 'F2EFE9', 'A3B19B', '0C0E0D', 'E8DCCB', '5CE1A6',
+  'FFFFFF', 'E6ECE8', 'E2DDD5', '1C1D1A', '5C6058', 'B23A2E',
+  '161A18', '1A2E26', '262C29', 'F4F6F5', '9CA39E', 'FF7A66',
+  '3F433C', '6E7D66', 'B9B2A6', 'C4CAC6', '4A524D',
+]
+
+const root = join(__dirname, '..')
 const css = readFileSync(join(__dirname, 'theme.css'), 'utf-8')
 
+const toHex = ([r, g, b]: RGB) => [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()
+
+interface Block {
+  colors: Record<string, RGB>
+  alphas: Record<string, number>
+}
+
 /** The declarations inside the first block whose selector text matches. */
-function block(selectorPattern: RegExp): Palette {
+function block(selectorPattern: RegExp): Block {
   const match = selectorPattern.exec(css)
   if (!match) throw new Error(`no block matching ${selectorPattern}`)
   const start = css.indexOf('{', match.index + match[0].length - 1)
   const end = css.indexOf('}', start)
-  const palette: Palette = {}
-  for (const decl of css.slice(start + 1, end).matchAll(/--c-([\w-]+):\s*(\d+) (\d+) (\d+);/g)) {
-    palette[decl[1]] = [Number(decl[2]), Number(decl[3]), Number(decl[4])]
+  const body = css.slice(start + 1, end)
+  const colors: Record<string, RGB> = {}
+  const alphas: Record<string, number> = {}
+  for (const d of body.matchAll(/--c-([\w-]+):\s*(\d+) (\d+) (\d+);/g)) {
+    colors[d[1]] = [Number(d[2]), Number(d[3]), Number(d[4])]
   }
-  return palette
+  for (const d of body.matchAll(/--a-([\w-]+):\s*([\d.]+);/g)) alphas[d[1]] = Number(d[2])
+  return { colors, alphas }
 }
 
+const merge = (a: Block, b: Block): Block => ({
+  colors: { ...a.colors, ...b.colors },
+  alphas: { ...a.alphas, ...b.alphas },
+})
+
 const light = block(/^:root \{/m)
-const dark = { ...light, ...block(/prefers-color-scheme: dark\) \{\s*:root:not/) }
-const lightMore = { ...light, ...block(/prefers-contrast: more\) \{\s*:root \{/) }
-const darkMore = { ...dark, ...block(/and \(prefers-contrast: more\) \{\s*:root:not/) }
+const dark = merge(light, block(/prefers-color-scheme: dark\) \{\s*:root:not/))
+const lightMore = merge(light, block(/prefers-contrast: more\) \{\s*:root \{/))
+const darkMore = merge(dark, block(/and \(prefers-contrast: more\) \{\s*:root:not/))
 
-const WHITE: [number, number, number] = [255, 255, 255]
-
-function luminance([r, g, b]: [number, number, number]): number {
+function luminance([r, g, b]: RGB): number {
   const channel = (v: number) => {
     const c = v / 255
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
@@ -43,55 +66,42 @@ function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
 }
 
-function contrast(a: [number, number, number], b: [number, number, number]): number {
+function contrast(a: RGB, b: RGB): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (hi + 0.05) / (lo + 0.05)
 }
 
-/** [foreground, background, minimum] — 'white' is literal white, everything else a token */
+const over = (top: RGB, alpha: number, under: RGB): RGB =>
+  top.map((c, i) => Math.round(c * alpha + under[i] * (1 - alpha))) as RGB
+
+/**
+ * [foreground, background, minimum]. A tinted background is written "role@alpha-name" and is
+ * composited over the card surface, as it sits on screen.
+ */
 const PAIRS: Array<[string, string, number]> = [
   // Body and secondary text on the card surface and on the canvas
-  ['stone-900', 'surface', 4.5],
-  ['stone-900', 'canvas', 4.5],
-  ['stone-700', 'surface', 4.5],
-  ['stone-600', 'surface', 4.5],
-  ['stone-500', 'surface', 4.5],
-  ['stone-500', 'canvas', 4.5],
-  ['stone-600', 'canvas', 4.5],
-  // Labels on the segmented controls' track, and the chosen one raised on it
-  ['stone-600', 'stone-200', 3],
-  ['stone-900', 'raised', 4.5],
-  // Graphics: input borders on hover, axis lines
-  ['stone-400', 'surface', 2.5],
+  ['ink', 'surface', 4.5],
+  ['ink', 'canvas', 4.5],
+  ['ink-2', 'surface', 4.5],
+  ['ink-2', 'canvas', 4.5],
+  // Labels on the segmented control's track, and the chosen one raised on it
+  ['ink-2', 'track', 3],
+  ['ink', 'raised', 4.5],
+  // Graphics: input edges
+  ['line-strong', 'surface', 1.5],
   // The one main action: Deep Forest and white in light, Champagne and Obsidian in dark
   ['on-accent', 'accent', 7],
-  ['on-accent', 'accent-pressed', 7],
-  // Accent text, plain buttons, the switch and slider fill (Jade Mint in dark)
-  ['forest-600', 'surface', 4.5],
-  ['forest-600', 'canvas', 4.5],
-  ['forest-700', 'surface', 4.5],
-  // Secondary buttons and pills: accent text on Pale Mist / Deep Forest Fill
-  ['forest-600', 'forest-50', 4.5],
-  ['forest-700', 'forest-50', 4.5],
-  ['forest-800', 'forest-50', 4.5],
-  ['forest-900', 'forest-50', 4.5],
-  ['forest-600', 'forest-100', 4.5],
-  // Status: text on its own tint
-  ['emerald-700', 'emerald-100', 4.5],
-  ['emerald-800', 'emerald-50', 4.5],
-  ['emerald-900', 'emerald-50', 4.5],
-  ['amber-800', 'amber-50', 4.5],
-  ['amber-900', 'amber-50', 4.5],
-  ['red-800', 'red-50', 4.5],
-  // Destructive: Clay Red / Ember Coral on the surface and on its tinted button
-  ['red-700', 'surface', 4.5],
-  ['red-600', 'surface', 4.5],
-  ['red-700', 'red-100', 4.5],
-  // Status icons on their tiles
-  ['emerald-700', 'emerald-100', 3],
-  ['amber-700', 'amber-100', 3],
-  // The clear-data confirmation, which inverts in dark
-  ['stone-50', 'stone-900', 4.5],
+  // Accent text, plain buttons, the switch and the slider fill
+  ['highlight', 'surface', 4.5],
+  ['highlight', 'canvas', 4.5],
+  // Secondary buttons, pills and success panels: accent text on Pale Mist / Deep Forest Fill
+  ['highlight', 'muted', 4.5],
+  // Warnings: text on the Champagne tint
+  ['warn-ink', 'warn@warn-soft', 4.5],
+  ['warn-ink', 'surface', 4.5],
+  // Errors and delete: Clay Red / Ember Coral on the surface and on its tint
+  ['danger', 'surface', 4.5],
+  ['danger', 'danger@danger-soft', 4.5],
 ]
 
 describe.each([
@@ -100,14 +110,54 @@ describe.each([
   ['light, increased contrast', lightMore],
   ['dark, increased contrast', darkMore],
 ])('%s appearance', (_name, palette) => {
-  const resolve = (token: string): [number, number, number] => {
-    const value = token === 'white' ? WHITE : palette[token]
-    if (!value) throw new Error(`no value for ${token}`)
-    return value
+  const resolve = (token: string): RGB => {
+    const [role, alphaName] = token.split('@')
+    const value = palette.colors[role]
+    if (!value) throw new Error(`no value for ${role}`)
+    if (!alphaName) return value
+    const alpha = palette.alphas[alphaName]
+    if (alpha === undefined) throw new Error(`no alpha ${alphaName}`)
+    return over(value, alpha, palette.colors.surface)
   }
 
   it.each(PAIRS)('%s on %s reaches %s:1', (fg, bg, minimum) => {
     expect(contrast(resolve(fg), resolve(bg))).toBeGreaterThanOrEqual(minimum)
+  })
+
+  it('uses only Stone & Forest colours', () => {
+    const outside = Object.entries(palette.colors)
+      .map(([role, value]) => [role, toHex(value)])
+      .filter(([, hex]) => !PALETTE.includes(hex))
+    expect(outside).toEqual([])
+  })
+})
+
+describe('colours written as values', () => {
+  it.each([
+    'src/components/PressureChart.tsx',
+    'src/components/BrandMark.tsx',
+    'src/index.css',
+    'public/favicon.svg',
+    'index.html',
+  ])('%s uses only Stone & Forest colours', (file) => {
+    const text = readFileSync(join(root, file), 'utf-8')
+    const hexes = [...text.matchAll(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g)].map((m) => {
+      const h = m[1].toUpperCase()
+      return h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+    })
+    expect(hexes.filter((h) => !PALETTE.includes(h))).toEqual([])
+  })
+
+  it('the PDF uses only Stone & Forest colours', () => {
+    const text = readFileSync(join(root, 'src/utils/generateReport.ts'), 'utf-8')
+    const triples = [...text.matchAll(/\[(\d{1,3}), (\d{1,3}), (\d{1,3})\]/g)].map((m) =>
+      toHex([Number(m[1]), Number(m[2]), Number(m[3])])
+    )
+    const calls = [...text.matchAll(/set(?:Text|Fill|Draw)Color\((\d{1,3}), (\d{1,3}), (\d{1,3})\)/g)].map((m) =>
+      toHex([Number(m[1]), Number(m[2]), Number(m[3])])
+    )
+    expect(triples.length).toBeGreaterThan(5)
+    expect([...triples, ...calls].filter((h) => !PALETTE.includes(h))).toEqual([])
   })
 })
 
