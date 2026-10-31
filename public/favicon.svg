@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Same geometry as src/components/BrandMark.tsx -->
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#4338ca"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <circle cx="12" cy="19.5" r="6" fill="none" stroke="#fff" stroke-width="2.25"/>
-  <circle cx="22" cy="10" r="3.75" fill="none" stroke="#fff" stroke-width="2.25"/>
-  <circle cx="24" cy="22" r="2.25" fill="none" stroke="#fff" stroke-width="2.25"/>
+  <!-- Same geometry as src/components/BrandMark.tsx: Deep Forest in light, Champagne in dark -->
+  <style>
+    .tile { fill: #1B3B2B } .cell { fill: none; stroke: #FFFFFF; stroke-width: 2.25 }
+    @media (prefers-color-scheme: dark) { .tile { fill: #E8DCCB } .cell { stroke: #0C0E0D } }
+  </style>
+  <rect class="tile" width="32" height="32" rx="8"/>
+  <circle class="cell" cx="12" cy="19.5" r="6"/>
+  <circle class="cell" cx="22" cy="10" r="3.75"/>
+  <circle class="cell" cx="24" cy="22" r="2.25"/>
 </svg>

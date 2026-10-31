@@ -22,21 +22,21 @@ import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
  * that person set.
  */
 
-// ── Palette and shape, matching the application's light appearance ─────────────────
-const INK: RGB = [15, 23, 42]            // slate-900
-const SECONDARY: RGB = [71, 85, 105]     // slate-600
-const MUTED: RGB = [100, 116, 139]       // slate-500
-const RULE: RGB = [226, 232, 240]        // slate-200
-const CARD: RGB = [248, 250, 252]        // slate-50
-const ACCENT: RGB = [79, 70, 229]        // indigo-600
-const ACCENT_SOFT: RGB = [238, 242, 255] // indigo-50
-const ACCENT_INK: RGB = [55, 48, 163]    // indigo-800
+// ── Stone & Forest, light: the palette of src/theme.css, as the printed page is light ──
+const INK: RGB = [28, 29, 26]            // Charcoal Moss, text-primary
+const SECONDARY: RGB = [77, 81, 73]      // stone-600
+const MUTED: RGB = [92, 96, 88]          // Olive Slate, text-secondary
+const RULE: RGB = [226, 221, 213]        // Warm Stone, border-subtle
+const CARD: RGB = [247, 245, 241]        // Pale Limestone, lightened for paper
+const ACCENT: RGB = [27, 59, 43]         // Deep Forest, accent-primary
+const ACCENT_SOFT: RGB = [230, 236, 232] // Pale Mist Green, accent-muted
+const ACCENT_INK: RGB = [27, 59, 43]     // Deep Forest
 
 /** Status colours as pairs, as the app uses them: a tint behind, a deeper ink on it */
 const TONE = {
-  good: { fill: [236, 253, 245] as RGB, ink: [4, 120, 87] as RGB },    // emerald-50 / 700
+  good: { fill: [230, 236, 232] as RGB, ink: [27, 59, 43] as RGB },    // Pale Mist / Deep Forest
   warn: { fill: [255, 251, 235] as RGB, ink: [180, 83, 9] as RGB },    // amber-50 / 700
-  bad: { fill: [254, 242, 242] as RGB, ink: [185, 28, 28] as RGB },    // red-50 / 700
+  bad: { fill: [251, 237, 234] as RGB, ink: [178, 58, 46] as RGB },    // red-50 / Clay Red
 }
 type Tone = keyof typeof TONE
 
@@ -90,7 +90,7 @@ export const generateReport = async (
   const stroke = (rgb: RGB) => doc.setDrawColor(rgb[0], rgb[1], rgb[2])
   const p = (bar: number | undefined | null) => formatPressure(bar, unit)
 
-  /** The mark: three foam cells on an indigo tile — the geometry of BrandMark.tsx */
+  /** The mark: three foam cells on a Deep Forest tile — the geometry of BrandMark.tsx */
   const drawMark = (x: number, top: number, size: number) => {
     const k = size / 32
     fill(ACCENT)
@@ -374,6 +374,11 @@ export const generateReport = async (
         // own style, which outranks any attribute set here.
         onclone: (clonedDocument) => {
           clonedDocument.documentElement.setAttribute('data-theme', 'light')
+          // html2canvas places glyphs one by one and mis-spaces Inter's negative tracking
+          // ("0.1 4"), so the captured copy is set without it
+          const untracked = clonedDocument.createElement('style')
+          untracked.textContent = '* { letter-spacing: 0 !important; }'
+          clonedDocument.head.appendChild(untracked)
           const light = CHART_COLORS.light
           const repaint = (selector: string, property: 'stroke' | 'fill', key: 'strokeRole' | 'fillRole') => {
             clonedDocument.querySelectorAll<SVGElement>(selector).forEach((el) => {

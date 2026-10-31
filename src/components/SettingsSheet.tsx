@@ -57,18 +57,18 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
         aria-labelledby={titleId}
         tabIndex={-1}
         data-testid="settings-sheet"
-        className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-slate-50 pb-6 shadow-xl outline-none motion-safe:animate-fade sm:max-w-md sm:rounded-3xl"
+        className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-sheet bg-canvas pb-6 shadow-xl outline-none motion-safe:animate-fade sm:max-w-md sm:rounded-sheet"
       >
         {/* Title centred, Done on the trailing edge, as a system sheet has them */}
-        <div className="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center border-b border-slate-200 bg-slate-50/90 px-4 py-2 backdrop-blur">
+        <div className="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center border-b border-stone-200 bg-canvas/90 px-4 py-2 backdrop-blur">
           <span />
-          <h2 id={titleId} className="text-base font-semibold text-slate-900">
+          <h2 id={titleId} className="text-base font-semibold text-stone-900">
             Settings
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="justify-self-end min-h-[44px] rounded-full px-4 text-base font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="justify-self-end min-h-[44px] rounded-full px-4 text-base font-semibold text-forest-600 hover:bg-forest-50 transition-colors"
           >
             Done
           </button>
@@ -96,7 +96,7 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
             footnote="Display only. Calculations and saved runs are always held in bar."
           >
             <div className="flex min-h-[52px] items-center justify-between gap-4 px-4 py-2">
-              <span className="text-base text-slate-900">Pressure</span>
+              <span className="text-base text-stone-900">Pressure</span>
               <SegmentedControl
                 name="pressure-unit"
                 label="Pressure unit"
@@ -120,8 +120,8 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
           <SettingsSection title="About">
             <div className="flex min-h-[48px] items-center justify-between px-4">
-              <span className="text-base text-slate-900">{BRAND_NAME}</span>
-              <span className="text-base text-slate-500 tabular-nums">{__APP_VERSION__}</span>
+              <span className="text-base text-stone-900">{BRAND_NAME}</span>
+              <span className="text-base text-stone-500 tabular-nums">{__APP_VERSION__}</span>
             </div>
             <SettingsLink href={GUIDE_URL} icon={<BookOpen className="h-5 w-5" />}>
               User guide
@@ -148,11 +148,11 @@ function SettingsSection({
 }) {
   return (
     <section>
-      <h3 className="mb-1.5 px-4 text-sm font-medium text-slate-500">{title}</h3>
-      <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl bg-surface">
+      <h3 className="mb-1.5 px-4 text-sm font-medium text-stone-500">{title}</h3>
+      <div className="divide-y divide-stone-200 overflow-hidden rounded-group bg-surface">
         {children}
       </div>
-      {footnote && <p className="mt-1.5 px-4 text-sm text-slate-500">{footnote}</p>}
+      {footnote && <p className="mt-1.5 px-4 text-sm text-stone-500">{footnote}</p>}
     </section>
   )
 }
@@ -171,13 +171,13 @@ function SettingsLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex min-h-[48px] items-center gap-3 px-4 text-base text-slate-900 hover:bg-slate-50 transition-colors"
+      className="flex min-h-[48px] items-center gap-3 px-4 text-base text-stone-900 hover:bg-stone-50 transition-colors"
     >
-      <span aria-hidden="true" className="text-indigo-600">
+      <span aria-hidden="true" className="text-forest-600">
         {icon}
       </span>
       <span className="flex-1">{children}</span>
-      <ChevronRight aria-hidden="true" className="h-4 w-4 text-slate-400" />
+      <ChevronRight aria-hidden="true" className="h-4 w-4 text-stone-400" />
     </a>
   )
 }

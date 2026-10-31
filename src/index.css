@@ -17,44 +17,58 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 font-sans;
+    @apply bg-canvas text-stone-900 font-sans;
+    /* Single-storey a and the open digits: Inter's softer, SF-like voice */
+    font-feature-settings: 'cv11', 'ss01';
+    font-optical-sizing: auto;
   }
 }
 
 @layer components {
   .input-field {
-    @apply block w-full px-3 py-2.5 text-sm font-medium border border-slate-300 rounded-lg shadow-sm transition-all outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400;
+    @apply block w-full px-3 py-2.5 text-sm font-medium bg-surface border border-stone-300 rounded-field transition-colors outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500 hover:border-stone-400;
   }
 
   .input-field-error {
     @apply border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500;
   }
 
+  /* Buttons, from the brand guide: one prominent action per view, three quieter ones. All
+     capsules; regular is 44 px tall, large 50. The label is Headline style: semibold. */
   .button-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-full shadow-sm transition-all transform motion-safe:active:scale-95 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2.5 bg-accent text-on-accent font-semibold rounded-full transition-colors hover:bg-accent-pressed active:bg-accent-pressed disabled:bg-stone-200 disabled:text-stone-500 disabled:cursor-not-allowed;
   }
 
+  /* Tinted: Pale Mist with Forest in light, Forest fill with Jade in dark */
   .button-secondary {
-    /* The one secondary style: outlined on the surface. The export row and the history
-       panel used to have two different ones. */
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-surface border border-slate-200 text-slate-700 text-sm font-medium rounded-full transition-colors hover:bg-slate-100 hover:border-slate-300 active:bg-slate-200;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-forest-50 text-forest-600 text-sm font-semibold rounded-full transition-colors hover:bg-forest-100 active:bg-forest-200;
+  }
+
+  /* Plain: the label alone, for the least important choice */
+  .button-plain {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 text-forest-600 text-sm font-semibold rounded-full transition-colors hover:bg-forest-50;
+  }
+
+  /* Destructive: never the primary role. Red label on a tinted fill. */
+  .button-destructive {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 px-4 bg-red-100 text-red-700 text-sm font-semibold rounded-full transition-colors hover:bg-red-200;
   }
 
   /* Segmented control: a capsule track with equal segments; the chosen one sits raised on
      it. Shared by every segmented control (src/components/controls.tsx). */
   .segmented {
-    @apply inline-grid auto-cols-fr grid-flow-col gap-0.5 rounded-full bg-slate-100 p-1;
+    @apply inline-grid auto-cols-fr grid-flow-col gap-0.5 rounded-full bg-stone-200/70 p-1;
   }
 
   .segment {
-    @apply relative flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-slate-600 transition-colors hover:bg-slate-200/70 hover:text-slate-900;
+    @apply relative flex min-h-[40px] min-w-[44px] cursor-pointer items-center justify-center rounded-full px-3 text-center text-sm font-semibold leading-tight text-stone-600 transition-colors hover:bg-stone-300/50 hover:text-stone-900;
   }
 
   .segment-selected {
-    @apply bg-surface text-slate-900 shadow-sm hover:bg-surface hover:text-slate-900;
+    @apply bg-raised text-stone-900 shadow-sm hover:bg-raised hover:text-stone-900;
   }
 
-  /* Slider, after the system one: a thin track filled in the accent colour up to a round
+  /* Slider, after the system one: a thin track filled in Forest (Jade in dark) up to a round
      white knob. The element itself is 44 px tall so the whole band is the hit region; only
      the track is drawn. --fill is the knob position as a percentage, set inline. */
   .slider {
@@ -68,19 +82,19 @@
     border-radius: 9999px;
     background: linear-gradient(
       to right,
-      rgb(var(--c-indigo-600)) var(--fill, 0%),
-      rgb(var(--c-slate-200)) var(--fill, 0%)
+      rgb(var(--c-forest-600)) var(--fill, 0%),
+      rgb(var(--c-stone-200)) var(--fill, 0%)
     );
   }
   .slider::-moz-range-track {
     height: 4px;
     border-radius: 9999px;
-    background: rgb(var(--c-slate-200));
+    background: rgb(var(--c-stone-200));
   }
   .slider::-moz-range-progress {
     height: 4px;
     border-radius: 9999px;
-    background: rgb(var(--c-indigo-600));
+    background: rgb(var(--c-forest-600));
   }
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -104,10 +118,10 @@
     box-shadow: 0 0.5px 4px rgb(0 0 0 / 0.16), 0 6px 13px rgb(0 0 0 / 0.18), 0 0 0 0.5px rgb(0 0 0 / 0.08);
   }
   .slider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px rgb(var(--c-indigo-500) / 0.6), 0 6px 13px rgb(0 0 0 / 0.12);
+    box-shadow: 0 0 0 3px rgb(var(--c-forest-500) / 0.6), 0 6px 13px rgb(0 0 0 / 0.12);
   }
   .slider:focus-visible::-moz-range-thumb {
-    box-shadow: 0 0 0 3px rgb(var(--c-indigo-500) / 0.6);
+    box-shadow: 0 0 0 3px rgb(var(--c-forest-500) / 0.6);
   }
   @media (prefers-reduced-motion: no-preference) {
     .slider:active::-webkit-slider-thumb {
@@ -118,15 +132,16 @@
   /* Pop-up button: a native select with its own chevrons. Native underneath, so an iPhone
      shows its picker wheel and a desktop its menu. */
   .popup {
-    @apply block min-h-[44px] w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-surface py-2.5 pl-3 pr-10 text-sm font-medium text-slate-900 shadow-sm outline-none transition-colors hover:border-slate-400 hover:bg-slate-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500;
+    @apply block min-h-[44px] w-full cursor-pointer appearance-none rounded-field border border-stone-300 bg-surface py-2.5 pl-3 pr-10 text-sm font-medium text-stone-900 outline-none transition-colors hover:border-stone-400 hover:bg-stone-50 focus:border-forest-500 focus:ring-2 focus:ring-forest-500;
   }
 
+  /* Cards sit on the canvas with a 1 px Warm Stone (or Muted Graphite) edge, no shadow */
   .card {
-    @apply bg-surface rounded-2xl shadow-sm border border-slate-200 overflow-hidden;
+    @apply bg-surface rounded-card border border-stone-200 overflow-hidden;
   }
 
   .card-header {
-    @apply p-5 border-b border-slate-100 bg-slate-50/50;
+    @apply p-5 border-b border-stone-200;
   }
 
   .card-body {
@@ -150,7 +165,7 @@
   }
 
   .badge-info {
-    @apply bg-indigo-100 text-indigo-700;
+    @apply bg-forest-50 text-forest-700;
   }
 }
 

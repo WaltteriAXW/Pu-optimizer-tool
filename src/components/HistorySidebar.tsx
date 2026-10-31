@@ -62,13 +62,13 @@ export function HistorySidebar({
       aria-modal="true"
       aria-labelledby={titleId}
       tabIndex={-1}
-      className="fixed inset-y-0 right-0 z-40 w-80 bg-surface border-l border-slate-200 shadow-lg overflow-y-auto outline-none"
+      className="fixed inset-y-0 right-0 z-40 w-80 bg-surface border-l border-stone-200 shadow-lg overflow-y-auto outline-none"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-surface border-b border-slate-100 p-4">
+      <div className="sticky top-0 bg-surface border-b border-stone-100 p-4">
         <div className="flex items-center gap-2">
-          <History aria-hidden="true" className="w-5 h-5 text-indigo-600" />
-          <h2 id={titleId} className="text-lg font-semibold text-slate-800">
+          <History aria-hidden="true" className="w-5 h-5 text-forest-600" />
+          <h2 id={titleId} className="text-lg font-semibold text-stone-800">
             Calculation History
           </h2>
           {/* A visible way out. Escape and the backdrop also close the panel, but neither
@@ -77,12 +77,12 @@ export function HistorySidebar({
             type="button"
             onClick={onClose}
             aria-label="Close history"
-            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            className="ml-auto -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors"
           >
             <X aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-stone-500 mt-1">
           {history.length} run{history.length !== 1 ? 's' : ''} saved
           {history.length > 0 && (
             <> · {labelled} with a recorded outcome</>
@@ -98,8 +98,8 @@ export function HistorySidebar({
       {/* History list */}
       {history.length === 0 ? (
         <div className="p-6 text-center">
-          <History aria-hidden="true" className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">No runs saved yet</p>
+          <History aria-hidden="true" className="w-8 h-8 text-stone-400 mx-auto mb-2" />
+          <p className="text-sm text-stone-500">No runs saved yet</p>
         </div>
       ) : (
         <div className="space-y-2 p-4">
@@ -139,7 +139,7 @@ function HistoryItem({
   const materialName = entry.results.input?.material_name || entry.parameters.material_key
 
   return (
-    <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-indigo-200 hover:bg-indigo-50 transition-colors group">
+    <div className="p-3 bg-stone-50 border border-stone-200 rounded-group hover:border-forest-200 hover:bg-forest-50 transition-colors group">
       {/* Main content */}
       <button
         onClick={onSelect}
@@ -151,15 +151,15 @@ function HistoryItem({
         className="w-full text-left flex items-start justify-between mb-2"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-900 truncate">
+          <p className="text-xs font-semibold text-stone-900 truncate">
             {materialName}
           </p>
-          <p className="text-xs text-slate-500 mt-1">{timeAgo}</p>
+          <p className="text-xs text-stone-500 mt-1">{timeAgo}</p>
 
           {/* Summary stats */}
           <div className="flex items-center gap-2 mt-2 text-xs">
             {pressure && (
-              <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full">
+              <span className="px-2.5 py-1 bg-forest-100 text-forest-800 rounded-full">
                 {pressure} bar
               </span>
             )}
@@ -180,12 +180,12 @@ function HistoryItem({
         {/* Chevron */}
         <ChevronRight
           aria-hidden="true"
-          className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 flex-shrink-0 mt-1 ml-2"
+          className="w-4 h-4 text-stone-500 group-hover:text-forest-600 flex-shrink-0 mt-1 ml-2"
         />
       </button>
 
       {/* Parameters preview */}
-      <div className="text-xs text-slate-600 space-y-0.5 mb-3 bg-surface p-2 rounded-lg border border-slate-100">
+      <div className="text-xs text-stone-600 space-y-0.5 mb-3 bg-surface p-2 rounded-group border border-stone-100">
         <div className="flex justify-between">
           <span>Length:</span>
           <span className="font-medium">{entry.parameters.pipe_length_mm} mm</span>
@@ -207,7 +207,7 @@ function HistoryItem({
       {/* How the part came out. Recorded after the fact, which is the point: this is the
           one field the physics cannot supply and a model would need. */}
       <div className="mb-3" data-testid="outcome-picker">
-        <label htmlFor={outcomeId} className="block text-sm font-semibold text-slate-700 mb-1">
+        <label htmlFor={outcomeId} className="block text-sm font-semibold text-stone-700 mb-1">
           How did the part come out?
         </label>
         <PopUpSelect
@@ -233,7 +233,7 @@ function HistoryItem({
         // Several "Delete" buttons sit in this list; without naming the run they are
         // indistinguishable when tabbed through
         aria-label={`Delete run: ${materialName}, ${timeAgo}`}
-        className="w-full min-h-[44px] text-sm font-medium text-red-700 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center gap-1.5"
+        className="button-destructive w-full"
       >
         <Trash2 aria-hidden="true" className="w-4 h-4" />
         Delete

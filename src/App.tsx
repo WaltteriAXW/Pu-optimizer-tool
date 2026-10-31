@@ -20,22 +20,22 @@ function AppContent() {
   return (
     // No overflow-hidden here: it clipped anything wider than a phone screen — the export
     // row lost its PDF button — instead of letting it wrap where it could be seen.
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen bg-canvas text-stone-900 font-sans">
       {/* Toolbar. A translucent material over the content, as a system toolbar is: the
           page scrolls beneath it rather than meeting a solid edge. The name leads; the two
           controls — History and Settings — sit on the trailing edge. Unit and appearance
           live in Settings rather than taking space here. */}
-      <nav className="sticky top-0 z-20 border-b border-slate-200/80 bg-surface/80 backdrop-blur-xl backdrop-saturate-150">
+      <nav className="sticky top-0 z-20 border-b border-stone-200/80 bg-surface/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Wraps rather than running off the screen when someone has enlarged their text */}
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
             <div className="flex min-w-0 items-center gap-3">
-              <BrandMark size={40} className="flex-shrink-0 drop-shadow-sm" />
+              <BrandMark size={40} className="flex-shrink-0" />
               <div className="min-w-0">
-                <h1 className="text-lg font-semibold leading-tight tracking-tight text-slate-900">
+                <h1 className="text-lg font-semibold leading-tight tracking-tight text-stone-900">
                   {BRAND_NAME}
                 </h1>
-                <p className="hidden text-sm leading-snug text-slate-500 sm:block">
+                <p className="hidden text-sm leading-snug text-stone-500 sm:block">
                   {BRAND_TAGLINE}
                 </p>
               </div>
@@ -53,8 +53,8 @@ function AppContent() {
                 title="Calculation history"
                 className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-3 text-sm font-medium transition-colors ${
                   historyOpen
-                    ? 'bg-indigo-100 text-indigo-800'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-forest-50 text-forest-700'
+                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
                 <History aria-hidden="true" className="h-5 w-5" />
@@ -64,7 +64,7 @@ function AppContent() {
                     aria-hidden="true"
                     // A neutral count. Red badges are for things that need attention, and a
                     // number of saved runs never does.
-                    className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-slate-200 px-1.5 py-0.5 text-xs font-semibold leading-none text-slate-700"
+                    className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-stone-200 px-1.5 py-0.5 text-xs font-semibold leading-none text-stone-700"
                   >
                     {history.length}
                   </span>
@@ -77,7 +77,7 @@ function AppContent() {
                 aria-label="Settings"
                 title="Settings"
                 data-testid="open-settings"
-                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900"
               >
                 <Settings aria-hidden="true" className="h-5 w-5" />
               </button>
@@ -98,7 +98,7 @@ function AppContent() {
                 window, which kept the Run button below the fold for the first thousand
                 pixels of scrolling. The scroll padding keeps a field brought into view
                 (by Tab, say) clear of the button pinned over the bottom of the column. */}
-            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-2xl">
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:scroll-pb-32 lg:rounded-card">
               <CalculatorForm />
             </div>
           </div>
@@ -135,12 +135,12 @@ function AppContent() {
       )}
 
       {/* Footer: the name and what it is. The guide and source links live in Settings. */}
-      <footer className="mt-16 border-t border-slate-200">
+      <footer className="mt-16 border-t border-stone-200">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-1 px-4 py-8 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-stone-500">
             © {new Date().getFullYear()} {BRAND_NAME}
           </p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-stone-500">
             Runs entirely in your browser. Nothing you enter is uploaded.
           </p>
         </div>

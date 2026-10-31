@@ -100,32 +100,32 @@ export function DatasetPanel() {
   return (
     <div className="card" data-testid="dataset-panel">
       <div className="card-header flex items-center gap-2">
-        <Database aria-hidden="true" className="w-4 h-4 text-slate-600" />
-        <h4 className="font-semibold text-slate-800">Shot dataset</h4>
+        <Database aria-hidden="true" className="w-4 h-4 text-stone-600" />
+        <h4 className="font-semibold text-stone-800">Shot dataset</h4>
       </div>
       <div className="card-body space-y-4">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-slate-600">Runs saved in this browser</span>
+          <span className="text-sm text-stone-600">Runs saved in this browser</span>
           <span className="text-sm font-semibold tabular-nums">{history.length}</span>
         </div>
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-slate-600">With a recorded outcome</span>
+          <span className="text-sm text-stone-600">With a recorded outcome</span>
           <span className="text-sm font-semibold tabular-nums">{labelled}</span>
         </div>
 
         {/* The honest statement of where this stands. Saying anything more confident with
             a handful of shots is exactly the failure the removed neural network embodied. */}
-        <div className="rounded-lg bg-slate-50 border border-slate-100 p-3">
+        <div className="rounded-group bg-stone-50 border border-stone-100 p-3">
           {readiness?.ready ? (
-            <p className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-900">
+            <p className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-900">
                 {readiness.labelled} labelled shots.
               </strong>{' '}
               Enough to start checking where the physics and the parts disagree.
             </p>
           ) : (
-            <p className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-900">No model yet.</strong>{' '}
+            <p className="text-xs text-stone-600 leading-relaxed">
+              <strong className="text-stone-900">No model yet.</strong>{' '}
               {readiness
                 ? `${readiness.reasons.join('; ')}.`
                 : 'A prediction needs shots whose outcome someone has recorded.'}{' '}
@@ -181,8 +181,8 @@ export function DatasetPanel() {
               {training ? 'Training…' : 'Train on recorded shots'}
             </button>
             {trained && (
-              <div className="mt-2 text-xs text-slate-600 space-y-1">
-                <p className="font-semibold text-slate-900">
+              <div className="mt-2 text-xs text-stone-600 space-y-1">
+                <p className="font-semibold text-stone-900">
                   {(trained.accuracy * 100).toFixed(0)}% on {trained.held_out} held-out shots
                 </p>
                 <p className="leading-relaxed">{trained.caveat}</p>
@@ -196,10 +196,10 @@ export function DatasetPanel() {
             simply no way to ask for it, so a dataset once recorded could not be discarded
             from inside the application at all. */}
         {history.length > 0 && (
-          <div className="pt-1 border-t border-slate-100">
+          <div className="pt-1 border-t border-stone-100">
             {confirmingClear ? (
               <div className="space-y-2" data-testid="clear-confirm">
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-stone-600 leading-relaxed">
                   Delete all {history.length} saved run
                   {history.length === 1 ? '' : 's'}
                   {labelled > 0 && <>, including {labelled} with a recorded outcome</>}? This
@@ -224,7 +224,7 @@ export function DatasetPanel() {
                       setSummary(null)
                       setTrained(null)
                     }}
-                    className="flex-1 min-h-[44px] text-sm px-3 rounded-full font-semibold text-slate-50 bg-slate-900 hover:bg-slate-800 transition-colors"
+                    className="flex-1 min-h-[44px] text-sm px-3 rounded-full font-semibold text-stone-50 bg-stone-900 hover:bg-stone-800 transition-colors"
                   >
                     Delete everything
                   </button>
@@ -245,7 +245,7 @@ export function DatasetPanel() {
         )}
 
         {summary && (
-          <p className="text-xs text-slate-600" data-testid="import-summary">
+          <p className="text-xs text-stone-600" data-testid="import-summary">
             Imported {summary.added} new run{summary.added === 1 ? '' : 's'}
             {summary.duplicates > 0 && <>, skipped {summary.duplicates} already held</>}
             {summary.rejected > 0 && <>, rejected {summary.rejected} unreadable</>}.

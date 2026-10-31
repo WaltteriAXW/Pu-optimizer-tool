@@ -523,9 +523,9 @@ export function CalculatorForm() {
     // Not clipped on a wide screen, so the Run button can stick to the bottom of the
     // scrolling column; the header rounds its own corners instead.
     <div className="card lg:overflow-visible">
-      <div className="card-header rounded-t-2xl">
-        <h2 className="font-semibold text-slate-800">Process Parameters</h2>
-        <p className="text-xs text-slate-500 mt-1">Configure your injection settings</p>
+      <div className="card-header rounded-t-card">
+        <h2 className="font-semibold text-stone-800">Process Parameters</h2>
+        <p className="text-xs text-stone-500 mt-1">Configure your injection settings</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card-body space-y-5">
@@ -585,7 +585,7 @@ export function CalculatorForm() {
         <div className="mb-5">
           <label
             htmlFor={materialSelectId}
-            className="text-sm font-semibold text-slate-700 block mb-1.5"
+            className="text-sm font-semibold text-stone-700 block mb-1.5"
           >
             Material Type
           </label>
@@ -621,7 +621,7 @@ export function CalculatorForm() {
 
         {/* Custom Material Properties — shown only when Custom is selected */}
         {isCustomMaterial && (
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-4">
+          <div className="rounded-group border border-forest-200 bg-forest-50 p-4 space-y-4">
             {/* Section title and its help as one full-width row, so the toggle is a real
                 target rather than a line of small text. The label stays the same open or
                 shut; the chevron and aria-expanded carry the state. */}
@@ -630,10 +630,10 @@ export function CalculatorForm() {
               onClick={() => setShowCustomHelp((v) => !v)}
               aria-expanded={showCustomHelp}
               aria-controls={customPanelId}
-              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-indigo-100 active:bg-indigo-200/60 transition-colors"
+              className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left hover:bg-forest-100 active:bg-forest-200/60 transition-colors"
             >
-              <span className="text-sm font-semibold text-indigo-900">Custom material</span>
-              <span className="flex items-center gap-1 text-sm text-indigo-700">
+              <span className="text-sm font-semibold text-forest-900">Custom material</span>
+              <span className="flex items-center gap-1 text-sm text-forest-700">
                 What are these?
                 <ChevronDown
                   aria-hidden="true"
@@ -645,7 +645,7 @@ export function CalculatorForm() {
             {showCustomHelp && (
               <div
                 id={customPanelId}
-                className="text-sm text-indigo-900 bg-indigo-100 rounded-md p-3 space-y-2 leading-relaxed"
+                className="text-sm text-forest-900 bg-forest-100 rounded-field p-3 space-y-2 leading-relaxed"
               >
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
@@ -751,27 +751,27 @@ export function CalculatorForm() {
         </div>
 
         {/* Optional: ambient conditions and part geometry */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
+        <div className="rounded-group border border-stone-200 bg-stone-50 p-4 space-y-4">
           <button
             type="button"
             onClick={() => setShowOptional((v) => !v)}
             aria-expanded={showOptional}
             aria-controls={optionalPanelId}
-            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 text-left hover:bg-slate-100 active:bg-slate-200 transition-colors"
+            className="-m-2 flex min-h-[44px] w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-group px-2 text-left hover:bg-stone-100 active:bg-stone-200 transition-colors"
           >
             <span>
-              <span className="block text-sm font-semibold text-slate-800">Optional inputs</span>
-              <span className="block text-sm text-slate-500">Ambient conditions, hose &amp; part</span>
+              <span className="block text-sm font-semibold text-stone-800">Optional inputs</span>
+              <span className="block text-sm text-stone-500">Ambient conditions, hose &amp; part</span>
             </span>
             <ChevronDown
               aria-hidden="true"
-              className={`w-5 h-5 flex-shrink-0 text-slate-500 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 flex-shrink-0 text-stone-500 motion-safe:transition-transform ${showOptional ? 'rotate-180' : ''}`}
             />
           </button>
 
           {showOptional && (
             <div id={optionalPanelId} className="space-y-4">
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-stone-600 leading-relaxed">
                 Leave blank to calculate from the set point alone. An ambient temperature models
                 the material drifting toward the surrounding air in the hose — which matters
                 for single-shot work — and a part thickness adds a cure prediction for the
@@ -794,12 +794,12 @@ export function CalculatorForm() {
               {/* How the hose is built — feeds the line thermal model */}
               {/* The legend floats so it reads as a heading under the divider; left in
                   place, a legend sits ON the fieldset's top border and leaves a gap below */}
-              <fieldset className="border-t border-slate-200 pt-4">
-                <legend className="float-left w-full text-sm font-semibold text-slate-800">
+              <fieldset className="border-t border-stone-200 pt-4">
+                <legend className="float-left w-full text-sm font-semibold text-stone-800">
                   Hose
                 </legend>
                 <div className="clear-left space-y-4 pt-1">
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-stone-600 leading-relaxed">
                   Used with an ambient temperature. Leave blank for a bare hose in still air;
                   describe it, and lagging in particular, to see how well it holds temperature.
                 </p>
@@ -849,7 +849,7 @@ export function CalculatorForm() {
         {error && (
           <div
             role="alert"
-            className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3"
+            className="p-4 bg-red-50 border border-red-200 rounded-group flex items-start gap-3"
           >
             <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
@@ -870,7 +870,7 @@ export function CalculatorForm() {
         {!isReady && (
           <div
             role="status"
-            className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3"
+            className="p-4 bg-amber-50 border border-amber-200 rounded-group flex items-start gap-3"
           >
             <div
               aria-hidden="true"
@@ -912,21 +912,21 @@ export function CalculatorForm() {
 
         {/* Submit Button. Pinned to the bottom of the form column on a wide screen, so it
             stays in reach however far the inputs above it run. */}
-        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-2xl lg:border-t lg:border-slate-100 lg:px-5 lg:pb-5 lg:pt-4">
+        <div className="mt-8 bg-surface lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 lg:-mb-5 lg:rounded-b-card lg:border-t lg:border-stone-200 lg:px-5 lg:pb-5 lg:pt-4">
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full text-base font-semibold text-white shadow-sm transition-all transform motion-safe:active:scale-95 ${
+            className={`w-full min-h-[50px] flex items-center justify-center gap-2 py-3 px-4 rounded-full text-base font-semibold transition-colors ${
               !canSubmit
-                ? 'bg-slate-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg'
+                ? 'bg-stone-200 text-stone-500 cursor-not-allowed'
+                : 'bg-accent text-on-accent hover:bg-accent-pressed active:bg-accent-pressed'
             }`}
           >
             {isLoading ? (
               <>
                 <div
                   aria-hidden="true"
-                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  className="w-4 h-4 border-2 border-on-accent/30 border-t-on-accent rounded-full animate-spin"
                 />
                 Calculating...
               </>
@@ -982,10 +982,10 @@ function InputField({
   return (
     <div className="mb-5 group">
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1.5">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-stone-700">
           {label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-stone-500">
           {range.min}-{range.max} {unit}
         </span>
       </div>
@@ -1001,10 +1001,10 @@ function InputField({
           // The accepted range is read out with the field, and the error too once there is
           // one — otherwise the reason a value was rejected is visible only to sighted users
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2.5 text-sm font-medium rounded-field border transition-all outline-none ${
             error
               ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              : 'border-stone-300 text-stone-900 focus:ring-2 focus:ring-forest-500 focus:border-forest-500 hover:border-stone-400'
           }`}
         />
         {/* Repeats the unit already announced with the range, so it is decorative here */}
@@ -1012,7 +1012,7 @@ function InputField({
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
         >
-          <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-sm font-medium ${error ? 'text-red-600' : 'text-stone-500'}`}>
             {unit}
           </span>
         </div>
@@ -1074,10 +1074,10 @@ function OptionalField({
   return (
     <div>
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-stone-700">
           {spec.label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-stone-500">
           {spec.min}–{spec.max} {spec.unit}
         </span>
       </div>
@@ -1098,22 +1098,22 @@ function OptionalField({
           aria-describedby={
             error ? `${errorId} ${helpId} ${rangeId}` : `${helpId} ${rangeId}`
           }
-          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none placeholder:text-slate-500 ${
+          className={`block min-h-[44px] w-full pl-3 pr-16 py-2.5 text-sm font-medium rounded-field border transition-all outline-none placeholder:text-stone-500 ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              : 'border-stone-300 bg-surface text-stone-900 focus:ring-2 focus:ring-forest-500 focus:border-forest-500 hover:border-stone-400'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-stone-500'}`}>
             {spec.unit}
           </span>
         </div>
       </div>
-      <p id={helpId} className="mt-1 text-sm text-slate-500 leading-snug">
+      <p id={helpId} className="mt-1 text-sm text-stone-500 leading-snug">
         {spec.help}
       </p>
       {error && (
@@ -1154,7 +1154,7 @@ function OptionalSelect({
 
   return (
     <div>
-      <label htmlFor={id} className="text-sm font-semibold text-slate-700 block mb-1">
+      <label htmlFor={id} className="text-sm font-semibold text-stone-700 block mb-1">
         {label}
       </label>
       <PopUpSelect
@@ -1201,10 +1201,10 @@ function CustomMaterialField({
   return (
     <div>
       <div className="flex flex-wrap justify-between items-baseline gap-x-2 mb-1">
-        <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        <label htmlFor={id} className="text-sm font-semibold text-stone-700">
           {label}
         </label>
-        <span id={rangeId} className="whitespace-nowrap text-xs text-slate-500">
+        <span id={rangeId} className="whitespace-nowrap text-xs text-stone-500">
           {range.min}–{range.max} {unit}
         </span>
       </div>
@@ -1220,17 +1220,17 @@ function CustomMaterialField({
           max={range.max}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${errorId} ${rangeId}` : rangeId}
-          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-xl border shadow-sm transition-all outline-none ${
+          className={`block min-h-[44px] w-full bg-surface pl-3 pr-16 py-2 text-sm font-medium rounded-field border transition-all outline-none ${
             error
               ? 'border-red-300 bg-surface text-red-900 focus:ring-2 focus:ring-red-500 focus:border-red-500'
-              : 'border-slate-300 bg-surface text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400'
+              : 'border-stone-300 bg-surface text-stone-900 focus:ring-2 focus:ring-forest-500 focus:border-forest-500 hover:border-stone-400'
           }`}
         />
         <div
           aria-hidden="true"
           className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"
         >
-          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-xs font-medium ${error ? 'text-red-600' : 'text-stone-500'}`}>
             {unit}
           </span>
         </div>

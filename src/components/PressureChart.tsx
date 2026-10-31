@@ -18,22 +18,25 @@ import {
 export type ChartColorRole = 'grid' | 'axis' | 'tick' | 'title' | 'primary' | 'secondary'
 
 export const CHART_COLORS: Record<'light' | 'dark', Record<ChartColorRole, string>> = {
+  // Stone & Forest. Deep Forest leads in light; Jade Mint glows on Basalt in dark. Muted Sage
+  // is too faint (2.3:1) for a line that carries data, so the second line uses its
+  // high-contrast variant.
   light: {
-    grid: '#e2e8f0', // slate-200
-    axis: '#64748b', // slate-500: axis lines are graphics and need 3:1
-    tick: '#64748b', // slate-500
-    title: '#475569', // slate-600
-    primary: '#4f46e5', // indigo-600
-    secondary: '#64748b', // slate-500
+    grid: '#E2DDD5', // Warm Stone, border-subtle
+    axis: '#5C6058', // Olive Slate: axis lines are graphics and need 3:1
+    tick: '#5C6058',
+    title: '#4D5149',
+    primary: '#1B3B2B', // Deep Forest
+    secondary: '#6E7D66', // Muted Sage, high-contrast variant
   },
-  // Against the dark surface: axis 4.8:1, ticks 6.9:1, lines 5.6:1 and 6.9:1
+  // Against Dark Basalt: axis 3.7:1, ticks 6.8:1, lines 10.7:1 and 6.8:1
   dark: {
-    grid: '#2c3a50',
-    axis: '#7c8aa0',
-    tick: '#9aa8bc',
-    title: '#b4c0d0',
-    primary: '#818cf8',
-    secondary: '#9aa8bc',
+    grid: '#262C29', // Muted Graphite
+    axis: '#6E7671',
+    tick: '#9CA39E', // Lichen Grey
+    title: '#B3B9B5',
+    primary: '#5CE1A6', // Jade Mint
+    secondary: '#9CA39E',
   },
 }
 
@@ -53,7 +56,7 @@ export function PressureChart({ results, unit }: PressureChartProps) {
 
   if (!results.pressure || !results.input) {
     return (
-      <div className="w-full h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
+      <div className="w-full h-64 flex items-center justify-center bg-stone-50 rounded-group border border-stone-200 text-stone-500">
         No pressure data available
       </div>
     )
@@ -109,11 +112,11 @@ export function PressureChart({ results, unit }: PressureChartProps) {
     // captures this element as it is.
     <div className="w-full bg-surface p-1" data-chart="pressure-profile">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h3 className="text-lg font-semibold text-slate-800">Pressure Profile</h3>
+        <h3 className="text-lg font-semibold text-stone-800">Pressure Profile</h3>
         {/* The legend sits outside the plot. Inside it, it covered the end of the line —
             the one point on the chart that matters most. The two series differ by line
             style as well as colour, so the legend does not rely on colour alone. */}
-        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600" aria-hidden="true">
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600" aria-hidden="true">
           <li className="flex items-center gap-2">
             <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke={colors.primary} data-stroke-role="primary" strokeWidth="3" /></svg>
             With fittings
@@ -226,21 +229,21 @@ export function PressureChart({ results, unit }: PressureChartProps) {
       {/* The three figures behind the chart. Neutral tiles with the headline figure — the
           pressure the line needs — emphasised; red is kept for things that are wrong. */}
       <dl className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg bg-indigo-50 p-4">
-          <dt className="text-sm font-medium text-indigo-800">With fittings</dt>
-          <dd className="mt-1 text-2xl font-bold text-indigo-900 tabular-nums">
+        <div className="rounded-group bg-forest-50 p-4">
+          <dt className="text-sm font-medium text-forest-800">With fittings</dt>
+          <dd className="mt-1 text-2xl font-bold text-forest-900 tabular-nums">
             {formatPressure(totalPressure, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-4">
-          <dt className="text-sm font-medium text-slate-600">Pipe only</dt>
-          <dd className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+        <div className="rounded-group bg-stone-50 p-4">
+          <dt className="text-sm font-medium text-stone-600">Pipe only</dt>
+          <dd className="mt-1 text-2xl font-bold text-stone-900 tabular-nums">
             {formatPressure(basePressure, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>
-        <div className="rounded-lg bg-slate-50 p-4">
-          <dt className="text-sm font-medium text-slate-600">Fitting loss</dt>
-          <dd className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+        <div className="rounded-group bg-stone-50 p-4">
+          <dt className="text-sm font-medium text-stone-600">Fitting loss</dt>
+          <dd className="mt-1 text-2xl font-bold text-stone-900 tabular-nums">
             {formatPressure(fittingLoss, unit)} <span className="text-sm font-medium">{unit}</span>
           </dd>
         </div>

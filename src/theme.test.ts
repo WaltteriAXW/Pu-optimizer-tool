@@ -50,41 +50,48 @@ function contrast(a: [number, number, number], b: [number, number, number]): num
 
 /** [foreground, background, minimum] — 'white' is literal white, everything else a token */
 const PAIRS: Array<[string, string, number]> = [
-  // Body and secondary text on the card surface and on the page
-  ['slate-900', 'surface', 4.5],
-  ['slate-700', 'surface', 4.5],
-  ['slate-600', 'surface', 4.5],
-  ['slate-500', 'surface', 4.5],
-  ['slate-500', 'slate-50', 4.5],
-  ['slate-600', 'slate-50', 4.5],
-  // Bold labels on the segmented controls' track
-  ['slate-500', 'slate-100', 3],
-  ['indigo-700', 'surface', 4.5],
+  // Body and secondary text on the card surface and on the canvas
+  ['stone-900', 'surface', 4.5],
+  ['stone-900', 'canvas', 4.5],
+  ['stone-700', 'surface', 4.5],
+  ['stone-600', 'surface', 4.5],
+  ['stone-500', 'surface', 4.5],
+  ['stone-500', 'canvas', 4.5],
+  ['stone-600', 'canvas', 4.5],
+  // Labels on the segmented controls' track, and the chosen one raised on it
+  ['stone-600', 'stone-200', 3],
+  ['stone-900', 'raised', 4.5],
   // Graphics: input borders on hover, axis lines
-  ['slate-400', 'surface', 2.5],
-  // Accent text and the Run button
-  ['indigo-600', 'surface', 4.5],
-  ['white', 'indigo-600', 3],
-  // ...and its hover state, which in dark must not lighten past what white text can sit on
-  ['white', 'indigo-700', 3],
-  ['indigo-800', 'indigo-50', 4.5],
-  // Pills and the active History button: text on the stronger tint
-  ['indigo-800', 'indigo-100', 4.5],
+  ['stone-400', 'surface', 2.5],
+  // The one main action: Deep Forest and white in light, Champagne and Obsidian in dark
+  ['on-accent', 'accent', 7],
+  ['on-accent', 'accent-pressed', 7],
+  // Accent text, plain buttons, the switch and slider fill (Jade Mint in dark)
+  ['forest-600', 'surface', 4.5],
+  ['forest-600', 'canvas', 4.5],
+  ['forest-700', 'surface', 4.5],
+  // Secondary buttons and pills: accent text on Pale Mist / Deep Forest Fill
+  ['forest-600', 'forest-50', 4.5],
+  ['forest-700', 'forest-50', 4.5],
+  ['forest-800', 'forest-50', 4.5],
+  ['forest-900', 'forest-50', 4.5],
+  ['forest-600', 'forest-100', 4.5],
+  // Status: text on its own tint
   ['emerald-700', 'emerald-100', 4.5],
-  ['indigo-900', 'indigo-50', 4.5],
-  // Status panels: text on their own tint
   ['emerald-800', 'emerald-50', 4.5],
   ['emerald-900', 'emerald-50', 4.5],
   ['amber-800', 'amber-50', 4.5],
   ['amber-900', 'amber-50', 4.5],
   ['red-800', 'red-50', 4.5],
+  // Destructive: Clay Red / Ember Coral on the surface and on its tinted button
   ['red-700', 'surface', 4.5],
   ['red-600', 'surface', 4.5],
+  ['red-700', 'red-100', 4.5],
   // Status icons on their tiles
   ['emerald-700', 'emerald-100', 3],
   ['amber-700', 'amber-100', 3],
   // The clear-data confirmation, which inverts in dark
-  ['slate-50', 'slate-900', 4.5],
+  ['stone-50', 'stone-900', 4.5],
 ]
 
 describe.each([
