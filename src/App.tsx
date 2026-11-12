@@ -4,6 +4,7 @@ import { CalculatorForm } from './components/CalculatorForm'
 import { ResultsDisplay } from './components/ResultsDisplay'
 import { HistorySidebar } from './components/HistorySidebar'
 import { SettingsSheet } from './components/SettingsSheet'
+import { UserGuide } from './components/UserGuide'
 import { BrandMark, BRAND_NAME, BRAND_TAGLINE } from './components/BrandMark'
 import { ClockCounterClockwise, Gear, Trash } from '@phosphor-icons/react'
 import type { HistoryEntry } from './components/HistorySidebar'
@@ -18,6 +19,7 @@ function AppContent() {
   } = useCalculator()
   const [historyOpen, setHistoryOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   // The run just deleted, held for a few seconds so it can be put back. Deleting one run asks
   // nothing first; it offers Undo instead, as the brand guide prefers.
   const [justDeleted, setJustDeleted] = useState<HistoryEntry | null>(null)
@@ -176,7 +178,7 @@ function AppContent() {
         )}
       </div>
 
-      {/* Footer: the name and what it is. The guide and source links live in Settings. */}
+      {/* Footer: the name and what it is. The user guide lives in Settings. */}
       <footer className="mt-16 border-t border-line">
         <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-1 px-4 py-8 text-center sm:px-6 lg:px-8">
           <p className="text-sm text-ink-2">
@@ -188,7 +190,22 @@ function AppContent() {
         </div>
       </footer>
 
-      <SettingsSheet isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onOpenGuide={() => {
+          setSettingsOpen(false)
+          setGuideOpen(true)
+        }}
+      />
+      {/* The guide opens from Settings, so Done goes back there */}
+      <UserGuide
+        isOpen={guideOpen}
+        onClose={() => {
+          setGuideOpen(false)
+          setSettingsOpen(true)
+        }}
+      />
     </div>
   )
 }

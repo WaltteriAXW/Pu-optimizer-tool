@@ -1,4 +1,5 @@
 import { useId, useRef } from 'react'
+import { BookOpen, CaretRight } from '@phosphor-icons/react'
 import { useCalculator } from '../context/CalculatorContext'
 import { SegmentedControl, Switch } from './controls'
 import { useModalDialog } from './useModalDialog'
@@ -23,7 +24,15 @@ const UNIT_OPTIONS = [
  * footnote below — and every change applies at once, so the only button is Done. Escape and
  * the backdrop close it too.
  */
-export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  isOpen,
+  onClose,
+  onOpenGuide,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onOpenGuide: () => void
+}) {
   const {
     appearance,
     setAppearance,
@@ -119,6 +128,17 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
               <span className="text-base text-ink">{BRAND_NAME}</span>
               <span className="text-base text-ink-2 tabular-nums">{__APP_VERSION__}</span>
             </div>
+            <button
+              type="button"
+              onClick={onOpenGuide}
+              aria-haspopup="dialog"
+              data-testid="open-user-guide"
+              className="flex min-h-[48px] w-full items-center gap-3 px-4 text-left text-base text-ink state"
+            >
+              <BookOpen aria-hidden="true" className="h-5 w-5 text-ink" />
+              <span className="flex-1">User guide</span>
+              <CaretRight aria-hidden="true" className="h-4 w-4 text-ink-2" />
+            </button>
           </SettingsSection>
         </div>
       </div>

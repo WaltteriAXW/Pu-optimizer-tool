@@ -27,6 +27,27 @@ test.describe('settings', () => {
     await expect(sheet).toHaveCount(0)
   })
 
+  test('the user guide opens inside the app and Done goes back to Settings', async ({ page }) => {
+    await page.getByTestId('open-settings').click()
+    await page.getByTestId('open-user-guide').click()
+
+    const guide = page.getByRole('dialog', { name: 'User guide' })
+    await expect(guide).toBeVisible()
+    // Every slide is there, and the first one has actually loaded
+    await expect(page.getByTestId('guide-slide')).toHaveCount(14)
+    const first = guide.getByRole('img').first()
+    await expect(first).toHaveAttribute('alt', /first calculation/)
+    await expect
+      .poll(() => first.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
+      .toBeGreaterThan(0)
+    // Nothing on the way leads out of the app
+    await expect(guide.locator('a[href]')).toHaveCount(0)
+
+    await guide.getByRole('button', { name: 'Done' }).click()
+    await expect(guide).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  })
+
   test('a chosen appearance overrides the device, and survives a reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' })
     await page.getByTestId('open-settings').click()
