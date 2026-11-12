@@ -1,13 +1,10 @@
 import { useId, useRef } from 'react'
-import { BookOpen, CaretRight, Code } from '@phosphor-icons/react'
+import { BookOpen, CaretRight } from '@phosphor-icons/react'
 import { useCalculator } from '../context/CalculatorContext'
 import { SegmentedControl, Switch } from './controls'
 import { useModalDialog } from './useModalDialog'
 import { BRAND_NAME } from './BrandMark'
 import type { Appearance, PressureUnit } from '../services/displayPreferences'
-
-const REPO_URL = 'https://github.com/WaltteriAXW/Pu-optimizer-tool'
-const GUIDE_URL = `${REPO_URL}/blob/main/GETTING_STARTED.md`
 
 const APPEARANCE_OPTIONS = [
   { value: 'system', label: 'Automatic', testId: 'appearance-system' },
@@ -27,7 +24,15 @@ const UNIT_OPTIONS = [
  * footnote below — and every change applies at once, so the only button is Done. Escape and
  * the backdrop close it too.
  */
-export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SettingsSheet({
+  isOpen,
+  onClose,
+  onOpenGuide,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onOpenGuide: () => void
+}) {
   const {
     appearance,
     setAppearance,
@@ -123,12 +128,17 @@ export function SettingsSheet({ isOpen, onClose }: { isOpen: boolean; onClose: (
               <span className="text-base text-ink">{BRAND_NAME}</span>
               <span className="text-base text-ink-2 tabular-nums">{__APP_VERSION__}</span>
             </div>
-            <SettingsLink href={GUIDE_URL} icon={<BookOpen className="h-5 w-5" />}>
-              User guide
-            </SettingsLink>
-            <SettingsLink href={REPO_URL} icon={<Code className="h-5 w-5" />}>
-              Source code
-            </SettingsLink>
+            <button
+              type="button"
+              onClick={onOpenGuide}
+              aria-haspopup="dialog"
+              data-testid="open-user-guide"
+              className="flex min-h-[48px] w-full items-center gap-3 px-4 text-left text-base text-ink state"
+            >
+              <BookOpen aria-hidden="true" className="h-5 w-5 text-ink" />
+              <span className="flex-1">User guide</span>
+              <CaretRight aria-hidden="true" className="h-4 w-4 text-ink-2" />
+            </button>
           </SettingsSection>
         </div>
       </div>
@@ -154,30 +164,5 @@ function SettingsSection({
       </div>
       {footnote && <p className="mt-1.5 px-4 text-sm text-ink-2">{footnote}</p>}
     </section>
-  )
-}
-
-function SettingsLink({
-  href,
-  icon,
-  children,
-}: {
-  href: string
-  icon: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex min-h-[48px] items-center gap-3 px-4 text-base text-ink state"
-    >
-      <span aria-hidden="true" className="text-ink">
-        {icon}
-      </span>
-      <span className="flex-1">{children}</span>
-      <CaretRight aria-hidden="true" className="h-4 w-4 text-ink-2" />
-    </a>
   )
 }
