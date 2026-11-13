@@ -42,7 +42,7 @@ The Pu-optimizer-tool now uses a **two-category machine system** based on operat
 
 | Parameter | Value | Unit | Notes |
 |-----------|-------|------|-------|
-| **Operating Pressure Range** | 5–20 | bar | Gentle, controlled delivery |
+| **Operating Pressure Range** | 8–20 | bar | Gentle, controlled delivery |
 | **Typical Output** | 2–300+ | kg/min | Very modular, highly variable |
 | **Feed Line Diameter (A component)** | 10–16 | mm | Larger lines reduce shear |
 | **Feed Line Diameter (B component)** | 10–16 | mm | Generous sizing |
@@ -64,63 +64,44 @@ The Pu-optimizer-tool now uses a **two-category machine system** based on operat
 
 ## Usage in Code
 
-### JavaScript/TypeScript
+The machine specifications live in one place, `MACHINE_SPECS` in `src/constants.py`. The engine reads them; the UI only sends the machine's ID.
 
-```javascript
-// Machine selection in component
-const MACHINE_SPECS = {
-  high_pressure: {
-    name: "High-Pressure (HP) System",
-    maxPressure: 200.0,
-    output: "5-200+ kg/min",
-    // ... other properties
-  },
-  low_pressure: {
-    name: "Low-Pressure (LP) System",
-    maxPressure: 20.0,
-    output: "2-300+ kg/min",
-    // ... other properties
-  }
-};
+### TypeScript (UI)
 
-// Using in calculations
-calculateResults({
-  pipeLength: 500,
-  pipeDiameter: 20,
-  temperature: 25,
-  flowRate: 48,
-  moldVolume: 48,
-  machineType: 'low_pressure'  // or 'high_pressure'
-});
+The form sends the machine as `machine_type` with the other process parameters (`ProcessParameters` in `src/calculator_types.ts`):
+
+```typescript
+const params: ProcessParameters = {
+  pipe_length_mm: 500,
+  pipe_diameter_mm: 12,
+  temperature_c: 25,
+  flow_rate_lpm: 5,
+  material_key: 'genfoam_hd12',
+  machine_type: 'low_pressure', // or 'high_pressure'
+}
 ```
 
 ### Python
 
+The engine's entry point is `calculate_all` in `src/core/processors/calculation_processor.py`. Run from the repository root:
+
 ```python
-from polyurethane_calculator import PolyurethaneCalculator
+from src.core.processors.calculation_processor import calculate_all
 
-calculator = PolyurethaneCalculator("genfoam_hd12")
+results = calculate_all({
+    'pipe_length_mm': 500,
+    'pipe_diameter_mm': 12,
+    'temperature_c': 25,
+    'flow_rate_lpm': 5,
+    'material_key': 'genfoam_hd12',
+    'machine_type': 'low_pressure',  # or 'high_pressure'
+})
 
-# Calculate with Low-Pressure system
-results = calculator.calculate(
-    pipe_length=500,
-    pipe_diameter=12,
-    temperature=25,
-    flow_rate_lpm=30,
-    viscosity=350,
-    density=1120,
-    machine_type="low_pressure"  # or "high_pressure"
-)
-
-# Log production run
-log_result = calculator.log_production_run(
-    parameters=parameters,
-    results=results,
-    quality_status="good",
-    machine_type="low_pressure",
-    material_preset="genfoam_hd12"
-)
+compat = results['data']['machine_compatibility']
+print(compat['is_compatible'], compat['min_pressure_bar'], compat['max_pressure_bar'])
 ```
+
+Production outcomes are recorded in the browser (History, "How did the part come out?"), not through a Python API. See [LOGGING_GUIDE.md](LOGGING_GUIDE.md).
 
 ---
 
@@ -145,14 +126,13 @@ The following specific machine models have been replaced:
    - Use `high_pressure` for applications requiring >20 bar pressure
    - Use `low_pressure` for standard applications with ≤20 bar pressure
 
-2. **Update default values:**
-   - New default machine: `low_pressure`
-   - This provides a safe starting point for most applications
+2. **Default machine:**
+   - The form starts on `high_pressure` (see [Default Configuration](#default-configuration))
 
 3. **Test calculations:**
    - Verify that pressure calculations are within the new machine limits
    - High-pressure systems: 100-200 bar
-   - Low-pressure systems: 5-20 bar
+   - Low-pressure systems: 8-20 bar
 
 ---
 
@@ -194,45 +174,25 @@ The following specific machine models have been replaced:
 
 ## Pressure Compatibility Checking
 
-The calculator automatically checks machine compatibility:
-
-```javascript
-// Example compatibility check
-if (calculatedPressure > machine.maxPressure) {
-  warnings.push(
-    `Required pressure (${calculatedPressure} bar) exceeds ` +
-    `machine capacity (${machine.maxPressure} bar)`
-  );
-  recommendations.push(
-    "Consider: 1) Reduce flow rate, 2) Increase pipe diameter, " +
-    "3) Increase temperature, or 4) Use High-Pressure system"
-  );
-}
-```
+The engine checks every result against the selected machine in `calculate_machine_compatibility` (`src/core/modules/pressure.py`). The result is returned as `machine_compatibility`, with `is_compatible`, `status`, the line demand, the injection pressure and the machine's pressure and output limits. When the line needs more than the machine can deliver, `warning` says so, for example "The line demands 271.0 bar, beyond the machine maximum of 20.0 bar". [Troubleshooting](#troubleshooting) covers what to change.
 
 ---
 
 ## Default Configuration
 
 ### Default Machine Selection
-- **Default:** `low_pressure`
-- **Rationale:** Safe for most standard applications
+- **Default:** `high_pressure`
 - **Location:**
-  - JavaScript: `/src/constants.js`
-  - Python: `/src/constants.py`
-  - Reducers: `/src/reducers/calculatorReducer.js`
+  - The form: the `machine_type` starting value in `src/components/CalculatorForm.tsx`
+  - The engine: `calculate_all` also falls back to `high_pressure` when no `machine_type` is given (`src/core/processors/calculation_processor.py`)
+- `Defaults.MACHINE` in `src/constants.py` says `low_pressure`, but the app does not read it.
 
 ### Changing Defaults
 
-To change the default machine in your deployment:
+To change the machine the form starts on, change the `machine_type` starting value in `src/components/CalculatorForm.tsx`:
 
-```javascript
-// In constants.js
-export const DEFAULTS = {
-  // ... other defaults
-  machine: 'high_pressure', // Change here
-  material: 'genfoam_hd12'
-};
+```typescript
+machine_type: 'low_pressure', // was 'high_pressure'
 ```
 
 ---
@@ -241,23 +201,7 @@ export const DEFAULTS = {
 
 ### Custom Machine Specifications
 
-If you need to add custom machine specifications, extend the `MACHINE_SPECS` object:
-
-```javascript
-const MACHINE_SPECS = {
-  high_pressure: { /* ... */ },
-  low_pressure: { /* ... */ },
-
-  // Add custom machine
-  custom_ultra_high: {
-    name: "Custom Ultra-High Pressure System",
-    category: "Ultra-High-Pressure",
-    output: "10-150 kg/min",
-    maxPressure: 350.0,
-    // ... other properties
-  }
-};
-```
+Machine specifications are the `MACHINE_SPECS` dictionary in `src/constants.py` (snake_case keys such as `max_pressure`, `pressure_range`, `output_range`, `process_loss`). The form only offers the machines listed in `MACHINE_OPTIONS` in `src/components/CalculatorForm.tsx`, so a new machine needs an entry in both. Adding a machine type is a feature change.
 
 ---
 
@@ -362,5 +306,4 @@ Where:
 For questions or issues with the machine selection system:
 1. Review this documentation
 2. Check the [troubleshooting section](#troubleshooting)
-3. Consult the code comments in `/src/polyurethane_calculator.py` and `/src/polyurethane_optimizer_component.jsx`
-4. Review example usage in `/src/logging_example.py`
+3. Consult the code comments in `src/constants.py` (`MACHINE_SPECS`), `src/core/modules/pressure.py` (`calculate_machine_compatibility`) and `src/core/processors/calculation_processor.py` (`calculate_all`)
