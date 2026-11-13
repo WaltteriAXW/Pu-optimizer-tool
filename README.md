@@ -13,7 +13,7 @@ A physics-based calculation engine that helps polyurethane injection molding man
 - **Machine compatibility** — does a low- or high-pressure machine work for these conditions?
 - **Environmental impact** — GWP of the selected material and blowing agent
 
-**Technology:** Python physics engine + React/TypeScript UI running in your browser (via Pyodide WebAssembly). No backend, no server — everything runs client-side, and works offline after the first load.
+**Technology:** Python physics engine + React/TypeScript UI running in your browser (via Pyodide WebAssembly). No backend, no server — everything runs client-side. The engine and app are served from the same site and kept by a service worker, so after the first load the calculator works with no connection (the first visit downloads about 21 MB).
 
 ---
 
@@ -54,7 +54,7 @@ A physics-based calculation engine that helps polyurethane injection molding man
 - **2 machine classes** — low-pressure (8–20 bar) and high-pressure (100–200 bar), with the operator's actual set point derived from whichever binds: line demand, or the machine's own minimum
 
 ### Learning From Real Outcomes
-Every calculation is saved locally in the browser. After a part is made, you can record how it actually came out (good / voids / short-shot / scorch / …). Once there are enough labelled shots, the tool can fit a small model to the *residual* between the physics prediction and reality — it deliberately will not train or show a confidence figure before there's real labelled data to train on, and it never invents synthetic training data. Datasets can be exported/imported as JSON to pool shots across machines or people, since the app has no backend of its own.
+Every calculation is saved locally in the browser. After a part is made, you can record how it actually came out (good / voids / short-shot / scorch / …). Once there are enough labelled shots, the tool can fit a small model to the *residual* between the physics prediction and reality — it deliberately will not train or show a confidence figure before there's real labelled data to train on, and it never invents synthetic training data. Training needs scikit-learn, which is downloaded the first time a model is trained, so that one step needs a connection once. Datasets can be exported/imported as JSON to pool shots across machines or people, since the app has no backend of its own.
 
 ### Export
 Results can be exported as JSON, CSV, a plain-text report, or a PDF (with the pressure chart embedded).
