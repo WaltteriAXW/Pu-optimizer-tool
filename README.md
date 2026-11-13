@@ -115,3 +115,9 @@ There is no neural-network surrogate and no synthetic-data ML quality/defect cla
 **For material questions:** See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md)
 
 **For developers:** See [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)
+
+---
+
+## Licence
+
+Proprietary. All rights reserved by AXW Chemicals Ltd. See [LICENSE](LICENSE). Enquiries: info@axw.fi

@@ -55,3 +55,7 @@ design-canvas/*.html
 # directly, so this is derived output — tracking it is what kept deleted Python modules
 # alive in the bundle after their sources were removed.
 public/python/
+
+# Claude Code personal files
+CLAUDE.local.md
+.claude/settings.local.json

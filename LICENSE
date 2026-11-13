@@ -1,0 +1,19 @@
+Copyright (c) 2026 AXW Chemicals Ltd. All rights reserved.
+
+Main developer: Waltteri Naapuri.
+
+This software, including its source code, documentation, material data and brand
+assets, is proprietary. It is published for viewing and evaluation only.
+
+No licence is granted to copy, modify, distribute, sublicense, host, or use this
+software, in whole or in part, for commercial or production purposes without prior
+written permission from the copyright holder.
+
+Evaluation use of the hosted tool at https://waltteriaxw.github.io/Pu-optimizer-tool/
+is permitted. Calculation results are estimates and come with no warranty of any
+kind, express or implied. Verify results before relying on them at a machine.
+
+Third-party components (React, Pyodide, Vite and others listed in package.json and
+requirements.txt) remain under their own licences.
+
+Licensing and enquiries: info@axw.fi
