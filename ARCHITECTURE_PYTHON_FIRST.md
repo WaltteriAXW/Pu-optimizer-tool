@@ -137,7 +137,7 @@ export function MyComponent() {
         const results = await calcService.calculate({
           pipe_length_mm: 500,
           pipe_diameter_mm: 12,
-          material_key: 'ecofoam_standard',
+          material_key: 'genfoam_hd12',
           temperature_c: 25,
           flow_rate_lpm: 1.0
         })
@@ -174,7 +174,7 @@ from core.processors.calculation_processor import calculate_all
 result = calculate_all({
     'pipe_length_mm': 500,
     'pipe_diameter_mm': 12,
-    'material_key': 'ecofoam_standard',
+    'material_key': 'genfoam_hd12',
     'temperature_c': 25,
     'flow_rate_lpm': 1.0
 })

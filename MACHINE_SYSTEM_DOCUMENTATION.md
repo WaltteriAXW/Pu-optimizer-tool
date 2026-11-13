@@ -99,7 +99,7 @@ calculateResults({
 ```python
 from polyurethane_calculator import PolyurethaneCalculator
 
-calculator = PolyurethaneCalculator("ecofoam_standard")
+calculator = PolyurethaneCalculator("genfoam_hd12")
 
 # Calculate with Low-Pressure system
 results = calculator.calculate(
@@ -118,7 +118,7 @@ log_result = calculator.log_production_run(
     results=results,
     quality_status="good",
     machine_type="low_pressure",
-    material_preset="ecofoam_standard"
+    material_preset="genfoam_hd12"
 )
 ```
 
@@ -231,7 +231,7 @@ To change the default machine in your deployment:
 export const DEFAULTS = {
   // ... other defaults
   machine: 'high_pressure', // Change here
-  material: 'ecofoam_standard'
+  material: 'genfoam_hd12'
 };
 ```
 

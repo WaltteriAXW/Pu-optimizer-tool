@@ -112,16 +112,3 @@ jobs:
         with:
           folder: dist
           branch: gh-pages
-
-      # Replaces actions/create-release@v1, which is archived and still on the Node 12
-      # runtime. gh is preinstalled on the runner, so this needs no third-party action.
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v${VERSION}-$(date +%s)"
-          NOTES=$(printf '%s\n\n%s\n' \
-            "Deployed from ${GITHUB_SHA} to https://waltteriaxw.github.io/Pu-optimizer-tool/" \
-            "Earlier versions are on the [releases page](https://github.com/${GITHUB_REPOSITORY}/releases).")
-          gh release create "$TAG" --title "Release v${VERSION}" --notes "$NOTES"

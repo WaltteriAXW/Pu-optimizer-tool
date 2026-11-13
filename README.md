@@ -100,6 +100,9 @@ There is no neural-network surrogate and no synthetic-data ML quality/defect cla
 ### Deployment
 - **GitHub Pages**, deployed via **GitHub Actions** — the deploy job is gated on lint, type-check, unit tests, the Python test suite, and the full end-to-end suite all passing, and it ships the exact build artifact that suite ran against
 
+### Reference data
+- [reference-data/](reference-data/) holds CSV tables of injection pipe and mould dimensions, kept for reference. The app doesn't read them.
+
 ---
 
 ## Try It Now
@@ -115,3 +118,9 @@ There is no neural-network surrogate and no synthetic-data ML quality/defect cla
 **For material questions:** See [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md)
 
 **For developers:** See [ARCHITECTURE_PYTHON_FIRST.md](ARCHITECTURE_PYTHON_FIRST.md)
+
+---
+
+## Licence
+
+Proprietary. All rights reserved by AXW Chemicals Ltd. See [LICENSE](LICENSE). Enquiries: info@axw.fi
