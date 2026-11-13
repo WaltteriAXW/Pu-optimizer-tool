@@ -10,7 +10,7 @@ This guide walks you through your first pressure calculation using the Polyureth
 
 Navigate to: [Polyurethane Optimizer](https://waltteriaxw.github.io/Pu-optimizer-tool/)
 
-The first load fetches the Python physics engine (Pyodide) — you'll see "Initializing Engine" for a few seconds. After that it works offline.
+The first load downloads the Python physics engine (Pyodide), about 21 MB, and keeps it in the browser. You'll see "Initializing Engine" for a few seconds. After that the calculator works offline. The one exception is training a model on recorded outcomes: the first time, it downloads scikit-learn, so it needs a connection once.
 
 You'll see a form on the left with:
 - Pipe Length (mm)

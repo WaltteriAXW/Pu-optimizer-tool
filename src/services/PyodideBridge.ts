@@ -1,6 +1,6 @@
 import { loadPyodide, type PyodideInterface } from 'pyodide'
 import type { PyodideManager } from './CalculationService'
-import { PYODIDE_CDN_URL } from './pyodideCdn'
+import { PYODIDE_INDEX_URL } from './pyodideRuntime'
 
 let pyodideInstance: PyodideInterface | null = null
 
@@ -40,10 +40,10 @@ export class PyodideBridge implements PyodideManager {
       console.log('Initializing Pyodide...')
       onProgress?.({
         phase: 'runtime',
-        message: 'Downloading the Python runtime (about 6 MB, once)',
+        message: 'Loading the Python runtime (downloaded once, then kept for offline use)',
       })
       pyodideInstance = await loadPyodide({
-        indexURL: PYODIDE_CDN_URL,
+        indexURL: PYODIDE_INDEX_URL,
       })
 
       // No packages are loaded here on purpose. The calculation path — src.core.processors

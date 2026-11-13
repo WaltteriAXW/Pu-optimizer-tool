@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import fs from 'fs'
 import path from 'path'
+import { VitePWA } from 'vite-plugin-pwa'
+import { pyodideCdnUrl } from './src/services/pyodideCdnUrl'
 
 // Files the Python runtime needs at runtime: the modules themselves, plus the
 // material database CSV, which Pyodide reads from its virtual filesystem.
@@ -12,8 +14,10 @@ const isSyncedAsset = (name: string) => name.endsWith('.py') || name.endsWith('.
 const pythonSyncPlugin = () => {
   return {
     name: 'python-sync',
-    // Copy Python files to dist/python after build completes
-    closeBundle() {
+    // Copy Python files to dist/python once the bundle is written. writeBundle, not
+    // closeBundle: the service worker is generated in closeBundle and must see these files
+    // to precache them.
+    writeBundle() {
       const srcDir = path.resolve(__dirname, 'src')
       const destDir = path.resolve(__dirname, 'dist/python/src')
 
@@ -115,6 +119,59 @@ collections:
   }
 }
 
+// The Pyodide runtime, served from the app's own origin so the service worker can precache it
+// and the engine starts offline. Copied from the installed npm package, so the runtime always
+// matches the `loadPyodide` the app bundles.
+const PYODIDE_DIR = path.resolve(__dirname, 'node_modules/pyodide')
+const PYODIDE_FILES = ['pyodide.asm.js', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json']
+const pyodideVersion = JSON.parse(
+  fs.readFileSync(path.join(PYODIDE_DIR, 'package.json'), 'utf-8')
+).version
+const PYODIDE_PACKAGE_CDN = pyodideCdnUrl(pyodideVersion)
+
+/**
+ * One runtime file's contents. The npm package carries no package wheels, so the lock file is
+ * rewritten to point each wheel at the CDN for the same release: loadPackage('scikit-learn')
+ * still works, and the service worker keeps each wheel after its first download.
+ */
+const pyodideFile = (name: string): Buffer => {
+  const data = fs.readFileSync(path.join(PYODIDE_DIR, name))
+  if (name !== 'pyodide-lock.json') return data
+  const lock = JSON.parse(data.toString('utf-8'))
+  for (const pkg of Object.values(lock.packages) as Array<{ file_name: string }>) {
+    pkg.file_name = new URL(pkg.file_name, PYODIDE_PACKAGE_CDN).toString()
+  }
+  return Buffer.from(JSON.stringify(lock))
+}
+
+const PYODIDE_TYPES: Record<string, string> = {
+  '.js': 'text/javascript',
+  '.wasm': 'application/wasm',
+  '.zip': 'application/zip',
+  '.json': 'application/json',
+}
+
+const pyodideRuntimePlugin = () => ({
+  name: 'pyodide-runtime',
+  writeBundle() {
+    const dest = path.resolve(__dirname, 'dist/pyodide')
+    fs.mkdirSync(dest, { recursive: true })
+    for (const name of PYODIDE_FILES) fs.writeFileSync(path.join(dest, name), pyodideFile(name))
+    console.log(`[pyodide-runtime] Copied Pyodide ${pyodideVersion} to dist/pyodide`)
+  },
+  configureServer(server: import('vite').ViteDevServer) {
+    const prefix = `${server.config.base}pyodide/`
+    server.middlewares.use((req, res, next) => {
+      const url = req.url?.split('?')[0] ?? ''
+      if (!url.startsWith(prefix)) return next()
+      const name = url.slice(prefix.length)
+      if (!PYODIDE_FILES.includes(name)) return next()
+      res.setHeader('Content-Type', PYODIDE_TYPES[path.extname(name)] ?? 'application/octet-stream')
+      res.end(pyodideFile(name))
+    })
+  },
+})
+
 // The version shown in generated reports. Read from package.json so there is one number
 // rather than three: the PDF used to print "v2.1.0-alpha" in its header and "v2.1.0" in
 // its footer while package.json said 2.0.0, and nothing kept the three in step.
@@ -131,7 +188,45 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(packageVersion),
   },
 
-  plugins: [react(), pythonSyncPlugin()],
+  plugins: [
+    react(),
+    pythonSyncPlugin(),
+    pyodideRuntimePlugin(),
+    // Service worker: precaches the app, the Python modules, the user guide and the Pyodide
+    // runtime, so everything works offline after the first load. A new deploy is picked up on
+    // the next load and old caches are cleared.
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'script-defer',
+      manifest: false,
+      workbox: {
+        globPatterns: [
+          '**/*.{js,css,html,svg,woff2,webp}',
+          'python/**/*.{py,csv}',
+          'pyodide/*.{js,wasm,zip,json}',
+        ],
+        // The Pyodide runtime files are about 9 MB each
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        // Take over the open page as soon as the cache is ready, so the first visit already
+        // works offline, and let a new deploy replace the old worker without waiting
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            // Optional package wheels (scikit-learn and its dependencies), fetched on first use
+            urlPattern: ({ url }) => url.href.startsWith(PYODIDE_PACKAGE_CDN),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: `pyodide-packages-${pyodideVersion}`,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

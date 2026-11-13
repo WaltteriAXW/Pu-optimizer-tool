@@ -27,6 +27,9 @@ export default defineConfig({
        matches vite.config.ts's `base`, without which every asset 404s. */
     baseURL: 'http://localhost:4173/Pu-optimizer-tool/',
     trace: 'on-first-retry',
+    /* The service worker is off by default so every test sees the network exactly as it
+       routes it. e2e/offline.spec.ts turns it on to test offline use. */
+    serviceWorkers: 'block',
   },
 
   /* Configure projects for major browsers */

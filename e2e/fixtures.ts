@@ -1,63 +1,45 @@
 import { test as base, expect } from '@playwright/test'
-import fs from 'node:fs'
-import path from 'node:path'
-import { PYODIDE_CDN_URL } from '../src/services/pyodideCdn'
+import { version as pyodideVersion } from 'pyodide'
+import { pyodideCdnUrl } from '../src/services/pyodideCdnUrl'
 
 /**
  * Playwright fixtures for the end-to-end suite.
  *
- * The application loads Pyodide from a CDN, which makes the whole suite dependent on
- * outbound network access — the reason it could never run in a sandboxed environment or in
- * CI. Pyodide's runtime is already present in node_modules as a dependency, so the CDN
- * request is served from there instead.
+ * The Pyodide runtime is served from the app's own origin (the build copies it into
+ * dist/pyodide), so the suite needs no network to boot the engine. Optional package wheels
+ * still point at the CDN; those requests are failed explicitly, so a test can never come to
+ * depend on the network by accident.
  *
- * This is a test harness only. The application still loads Pyodide from the CDN in real
- * use; nothing about the shipped code changes.
+ * Built from the same helper as vite.config.ts, so a Pyodide bump moves both together.
  */
-
-/* Imported from the application rather than restated, so a dependency bump moves the URL the
-   app requests and the URL this route intercepts at the same time. */
-const PYODIDE_CDN = PYODIDE_CDN_URL
-const PYODIDE_LOCAL = path.resolve('node_modules/pyodide')
-
-const CONTENT_TYPES: Record<string, string> = {
-  '.js': 'text/javascript',
-  '.mjs': 'text/javascript',
-  '.wasm': 'application/wasm',
-  '.json': 'application/json',
-  '.zip': 'application/zip',
-  '.ts': 'text/plain',
-}
+const PYODIDE_CDN = pyodideCdnUrl(pyodideVersion)
+const PYODIDE_SELF_HOSTED = /\/pyodide\/([^?]+)/
 
 export const test = base.extend<{ pyodideRequests: string[] }>({
   /**
-   * Every Pyodide asset requested during the test, so a test can assert on what the boot
-   * actually fetched — proving, for instance, that nothing pulls numpy any more.
+   * Every Pyodide file requested during the test, self-hosted or from the CDN, so a test can
+   * assert on what the boot actually fetched — proving, for instance, that nothing pulls
+   * numpy any more.
    */
   pyodideRequests: async ({ page }, use) => {
     const requested: string[] = []
 
-    await page.route(`${PYODIDE_CDN}**`, async route => {
-      const name = route.request().url().slice(PYODIDE_CDN.length).split('?')[0]
-      requested.push(name)
-
-      const file = path.join(PYODIDE_LOCAL, name)
-
-      // Anything not shipped in the npm package — a package wheel, for instance — is not
-      // available offline. Fail it explicitly rather than hanging on a blocked request.
-      if (!name || !fs.existsSync(file)) {
-        return route.fulfill({
-          status: 404,
-          body: `${name} is not bundled in node_modules/pyodide`,
-        })
+    page.on('request', request => {
+      const url = request.url()
+      if (url.startsWith(PYODIDE_CDN)) {
+        requested.push(url.slice(PYODIDE_CDN.length).split('?')[0])
+        return
       }
-
-      await route.fulfill({
-        status: 200,
-        contentType: CONTENT_TYPES[path.extname(name)] ?? 'application/octet-stream',
-        body: fs.readFileSync(file),
-      })
+      const match = new URL(url).pathname.match(PYODIDE_SELF_HOSTED)
+      if (match) requested.push(match[1])
     })
+
+    await page.route(`${PYODIDE_CDN}**`, route =>
+      route.fulfill({
+        status: 404,
+        body: `${route.request().url()} is a package wheel; the suite does not use the network`,
+      })
+    )
 
     await use(requested)
   },
