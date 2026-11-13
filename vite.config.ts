@@ -172,6 +172,20 @@ const pyodideRuntimePlugin = () => ({
   },
 })
 
+// Pyodide's loader has a Node-only `import("node-fetch")` that never runs in a browser.
+// node-fetch is not installed, so the dev server could not resolve it and `npm run dev`
+// crashed on startup. In dev, Pyodide is left out of pre-bundling (optimizeDeps below) and
+// node-fetch resolves to an empty module; the production build already lists it under
+// rollupOptions.external.
+const NODE_FETCH_STUB = '\0node-fetch-stub'
+const nodeFetchStubPlugin = () => ({
+  name: 'node-fetch-stub',
+  apply: 'serve' as const,
+  enforce: 'pre' as const,
+  resolveId: (id: string) => (id === 'node-fetch' ? NODE_FETCH_STUB : null),
+  load: (id: string) => (id === NODE_FETCH_STUB ? 'export default undefined' : null),
+})
+
 // The version shown in generated reports. Read from package.json so there is one number
 // rather than three: the PDF used to print "v2.1.0-alpha" in its header and "v2.1.0" in
 // its footer while package.json said 2.0.0, and nothing kept the three in step.
@@ -190,6 +204,7 @@ export default defineConfig({
 
   plugins: [
     react(),
+    nodeFetchStubPlugin(),
     pythonSyncPlugin(),
     pyodideRuntimePlugin(),
     // Service worker: precaches the app, the Python modules, the user guide and the Pyodide
@@ -227,6 +242,10 @@ export default defineConfig({
       },
     }),
   ],
+  // See nodeFetchStubPlugin
+  optimizeDeps: {
+    exclude: ['pyodide'],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
