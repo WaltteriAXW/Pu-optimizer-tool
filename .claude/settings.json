@@ -18,5 +18,10 @@
       "Bash(git push origin main)",
       "Bash(git push --force:*)"
     ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
   }
 }
