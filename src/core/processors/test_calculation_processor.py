@@ -765,10 +765,42 @@ class TestCustomMaterialActivationEnergy:
         })
         assert not result['success']
 
-    def test_catalogued_material_reports_database_source(self):
+    def test_catalogued_material_reports_typical_sources(self):
+        # Neither value is on the data sheets and neither was measured: both are typical
         from .calculation_processor import calculate_all
         result = calculate_all({
             'pipe_length_mm': 500, 'pipe_diameter_mm': 12, 'temperature_c': 35,
             'flow_rate_lpm': 5, 'material_key': 'genfoam_hd12',
         })
-        assert result['data']['thermal']['activation_energy_source'] == 'database'
+        data = result['data']
+        assert data['thermal']['activation_energy_source'] == 'typical'
+        assert data['flow']['flow_index'] == 0.85
+        assert data['flow']['flow_index_source'] == 'typical'
+
+    def test_labelling_changes_no_numbers(self):
+        # Adding the source labels must not move a result: HD12 at 35 °C, 5 L/min through
+        # 500 mm of 12 mm pipe was 0.11991 bar before and is 0.11991 bar after
+        from .calculation_processor import calculate_all
+        result = calculate_all({
+            'pipe_length_mm': 500, 'pipe_diameter_mm': 12, 'temperature_c': 35,
+            'flow_rate_lpm': 5, 'material_key': 'genfoam_hd12',
+        })
+        assert result['data']['pressure']['pressure_with_fittings_bar'] == pytest.approx(0.11991, abs=1e-5)
+
+    def test_custom_flow_index_is_typical_until_the_user_changes_it(self):
+        assert self._flow(flow_index_source='typical')['flow_index_source'] == 'typical'
+        # No marker: the user's own value, as on every run saved before the marker existed
+        assert self._flow()['flow_index_source'] == 'user'
+
+    def test_measured_flow_curve_index_is_the_users(self):
+        flow = self._flow(
+            flow_index_source='typical', rheology_model='carreau',
+            zero_shear_viscosity_cp=1500, time_constant_s=0.05, rheology_index=0.6,
+        )
+        assert flow['flow_index_source'] == 'user'
+
+    def _flow(self, **extra):
+        from .calculation_processor import calculate_all
+        result = calculate_all({**self.BASE, **extra})
+        assert result['success'], result['errors']
+        return result['data']['flow']

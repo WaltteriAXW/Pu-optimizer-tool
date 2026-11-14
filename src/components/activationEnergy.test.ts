@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describeActivationEnergy, ACTIVATION_ENERGY_SOURCE_LABELS } from './resultFormatting'
+import {
+  describeActivationEnergy,
+  describeFlowIndex,
+  ACTIVATION_ENERGY_SOURCE_LABELS,
+} from './resultFormatting'
 import { ExportService } from '@/services/ExportService'
 import type { ActivationEnergySource, CalculationResults } from '@/calculator_types'
 
@@ -10,9 +14,16 @@ import type { ActivationEnergySource, CalculationResults } from '@/calculator_ty
  * export: a default is always called an estimate, a typed value is "Entered by user".
  */
 
-const results = (source?: ActivationEnergySource, value = 25000): CalculationResults => ({
+const results = (
+  source?: ActivationEnergySource,
+  value = 25000,
+  flowIndexSource?: ActivationEnergySource
+): CalculationResults => ({
   input: { pipe_length_mm: 500, pipe_diameter_mm: 12, material_key: 'custom', temperature_c: 35, flow_rate_lpm: 5 },
-  flow: { shear_rate_s_inv: 100, apparent_viscosity_cp: 300, reynolds_number: 10, flow_regime: 'laminar', velocity_m_s: 1 },
+  flow: {
+    shear_rate_s_inv: 100, apparent_viscosity_cp: 300, reynolds_number: 10, flow_regime: 'laminar', velocity_m_s: 1,
+    ...(flowIndexSource ? { flow_index: 0.85, flow_index_source: flowIndexSource } : {}),
+  },
   pressure: {
     base_pressure_drop_bar: 1, pressure_drop_pa: 100000, pressure_with_fittings_bar: 1.2,
     fitting_loss_bar: 0.2, reynolds_number: 10, flow_regime: 'laminar',
@@ -40,6 +51,12 @@ describe('describeActivationEnergy', () => {
       label: 'Calculated from two viscosity readings',
       source: 'calculated',
     })
+  })
+
+  it('calls a catalogued value typical, including on runs saved before sources existed', () => {
+    expect(describeActivationEnergy(results('typical').thermal)?.label).toBe('Typical value')
+    expect(describeActivationEnergy(results('database').thermal)?.label).toBe('Typical value')
+    expect(describeActivationEnergy(results('measured').thermal)?.label).toBe('Measured')
   })
 
   it('shows nothing for runs saved before the engine reported it', () => {
@@ -70,6 +87,28 @@ describe('activation energy in exports', () => {
     expect(JSON.parse(service.export(run, { format: 'json' })).thermal.activation_energy_label).toBeUndefined()
     expect(service.export(run, { format: 'csv' })).not.toContain('Activation Energy')
     expect(service.export(run, { format: 'report' })).not.toContain('Activation Energy')
+  })
+})
+
+describe('flow index source', () => {
+  const service = new ExportService()
+
+  it('labels a typical flow index on screen and in JSON, CSV and the text report', () => {
+    const run = results('typical', 25000, 'typical')
+    expect(describeFlowIndex(run.flow)).toEqual({ value: 0.85, label: 'Typical value', source: 'typical' })
+    expect(JSON.parse(service.export(run, { format: 'json' })).flow.flow_index_label).toBe('Typical value')
+    expect(service.export(run, { format: 'csv' })).toContain('Flow Index (Typical value),0.85,')
+    expect(service.export(run, { format: 'report' })).toContain('Flow Index:         0.85 (Typical value)')
+  })
+
+  it('marks a typed flow index as entered by the user', () => {
+    expect(describeFlowIndex(results('user', 25000, 'user').flow)?.label).toBe('Entered by user')
+  })
+
+  it('shows nothing for runs saved before the engine reported it', () => {
+    const run = results('typical')
+    expect(describeFlowIndex(run.flow)).toBeNull()
+    expect(service.export(run, { format: 'csv' })).not.toContain('Flow Index')
   })
 })
 

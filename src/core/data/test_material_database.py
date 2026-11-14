@@ -197,3 +197,35 @@ class TestLookup:
 
     def test_database_is_cached(self):
         assert load_materials() is load_materials()
+
+
+class TestValueSources:
+    """
+    The flow index and activation energy say where they came from. Neither is on the
+    catalogued products' data sheets and none was measured, so every row is typical.
+    """
+
+    @pytest.mark.parametrize('key', ['genfoam_hd12', 'genfoam_hd20', 'ecomate_spray', 'ecofoam_xhd_rc'])
+    def test_every_catalogued_value_is_typical(self, key):
+        material = get_material(key)
+        assert material['flow_index_source'] == 'typical'
+        assert material['activation_energy_source'] == 'typical'
+
+    def _row(self, **cells):
+        row = dict(get_material('genfoam_hd12')['raw'])
+        row.update(cells)
+        return row
+
+    def test_empty_source_means_typical(self):
+        physics = derive_physics(self._row(Flow_Index_Source='', Activation_Energy_Source=''))
+        assert physics['flow_index_source'] == 'typical'
+        assert physics['activation_energy_source'] == 'typical'
+
+    def test_measured_is_carried_through(self):
+        physics = derive_physics(self._row(Flow_Index_Source='Measured', Activation_Energy_Source='measured'))
+        assert physics['flow_index_source'] == 'measured'
+        assert physics['activation_energy_source'] == 'measured'
+
+    def test_unknown_source_is_refused(self):
+        with pytest.raises(MaterialDatabaseError, match='Flow_Index_Source'):
+            derive_physics(self._row(Flow_Index_Source='guessed'))

@@ -104,7 +104,22 @@ def _require_positive(row: Dict[str, str], column: str, product: str) -> float:
 # DERIVATION
 # ============================================================================
 
-def derive_physics(row: Dict[str, str]) -> Dict[str, float]:
+# Where a catalogued flow index or activation energy came from. Neither is on the data sheets
+# the catalogue is built from, so every row says 'typical' today; 'measured' is for a value
+# someone has actually measured. An empty cell means typical.
+VALUE_SOURCES = ('typical', 'measured')
+
+
+def _value_source(row: Dict[str, str], column: str, product: str) -> str:
+    source = (row.get(column) or '').strip().lower() or 'typical'
+    if source not in VALUE_SOURCES:
+        raise MaterialDatabaseError(
+            f'Material "{product}" has {column} "{source}"; use one of {", ".join(VALUE_SOURCES)}.'
+        )
+    return source
+
+
+def derive_physics(row: Dict[str, str]) -> Dict[str, Any]:
     """Blend the two components into the properties of the liquid being pumped."""
     name = row.get('Product_Name') or row.get('Material_Key') or 'unknown'
 
@@ -147,7 +162,9 @@ def derive_physics(row: Dict[str, str]) -> Dict[str, float]:
         'density': density,
         'reference_temp_c': reference_temp if reference_temp is not None else DEFAULT_REFERENCE_TEMP_C,
         'flow_index': _require_positive(row, 'Flow_Index', name),
+        'flow_index_source': _value_source(row, 'Flow_Index_Source', name),
         'activation_energy': _require_positive(row, 'Activation_Energy_J_mol', name),
+        'activation_energy_source': _value_source(row, 'Activation_Energy_Source', name),
         'polyol_sg': polyol_sg,
         'iso_sg': iso_sg,
         'weight_ratio': [polyol_parts, iso_parts],

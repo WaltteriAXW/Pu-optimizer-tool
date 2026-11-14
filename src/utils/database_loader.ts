@@ -28,6 +28,9 @@ export interface PolyurethaneProduct {
   Viscosity_Reference_Temp_C: string;
   Flow_Index: string;
   Activation_Energy_J_mol: string;
+  /** 'typical' or 'measured'; empty means typical. Every row is typical today. */
+  Flow_Index_Source: string;
+  Activation_Energy_Source: string;
 
   // Mix Ratios
   Mix_Ratio_Weight_Polyol: string;

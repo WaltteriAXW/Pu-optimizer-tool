@@ -8,6 +8,7 @@ import {
   isSameTemperature,
   describeFlowWindow,
   describeActivationEnergy,
+  describeFlowIndex,
 } from './resultFormatting'
 import { formatPressure, type PressureUnit } from '../services/displayPreferences'
 import type {
@@ -227,6 +228,7 @@ export function ResultsDisplay() {
                 value={results.flow?.shear_rate_s_inv}
                 unit="s⁻¹"
               />
+              <FlowIndexRow flow={results.flow} />
             </div>
           </div>
         </div>
@@ -1056,19 +1058,58 @@ function KpiCard({
  * The activation energy the run used, with where it came from. An estimate is called one,
  * because it is the one input here the user did not measure.
  */
+function FlowIndexRow({ flow }: { flow: CalculationResults['flow'] }) {
+  const flowIndex = describeFlowIndex(flow)
+  if (!flowIndex) return null
+  return (
+    <SourcedRow
+      testId="result-flow-index"
+      label="Flow index"
+      value={flowIndex.value.toFixed(2)}
+      unit=""
+      source={flowIndex.label}
+    />
+  )
+}
+
+/** A value with a line under it saying where it came from */
+function SourcedRow({
+  testId,
+  label,
+  value,
+  unit,
+  source,
+}: {
+  testId: string
+  label: string
+  value: string
+  unit: string
+  source: string
+}) {
+  return (
+    <div className="py-2 border-b border-line last:border-0" data-testid={testId}>
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-ink-2">{label}</span>
+        <span className="text-sm font-semibold text-ink tabular-nums">
+          {value} {unit && <span className="text-ink-2 font-normal">{unit}</span>}
+        </span>
+      </div>
+      <p className="mt-0.5 text-right text-xs text-ink-2">{source}</p>
+    </div>
+  )
+}
+
 function ActivationEnergyRow({ thermal }: { thermal: CalculationResults['thermal'] }) {
   const activation = describeActivationEnergy(thermal)
   if (!activation) return null
   return (
-    <div className="py-2 border-b border-line last:border-0" data-testid="result-activation-energy">
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-ink-2">Activation energy</span>
-        <span className="text-sm font-semibold text-ink tabular-nums">
-          {activation.valueJMol.toLocaleString('en-GB')} <span className="text-ink-2 font-normal">J/mol</span>
-        </span>
-      </div>
-      <p className="mt-0.5 text-right text-xs text-ink-2">{activation.label}</p>
-    </div>
+    <SourcedRow
+      testId="result-activation-energy"
+      label="Activation energy"
+      value={activation.valueJMol.toLocaleString('en-GB')}
+      unit="J/mol"
+      source={activation.label}
+    />
   )
 }
 

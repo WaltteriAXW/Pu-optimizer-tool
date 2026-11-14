@@ -58,6 +58,8 @@ test.describe('operating window, hose and flow curves', () => {
 
   test('a custom material can be described by a measured flow curve', async ({ page }) => {
     await page.locator('select[name=material_key]').selectOption('custom')
+    // The model menu is out of the way until someone says they have a measured curve
+    await page.getByRole('button', { name: 'I have a measured flow curve' }).click()
     await page.getByLabel('Viscosity Model').selectOption('carreau')
     await expect(page.getByLabel('Zero-Shear Viscosity η₀')).toHaveValue('1500')
     // A measured value off any round grid. A numeric `step` on the input once made the

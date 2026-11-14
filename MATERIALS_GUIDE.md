@@ -19,14 +19,14 @@ The database lives in one place — `src/data/polyurethane_foam_database.csv` �
 
 ## Material Specifications
 
-Values below are read straight from the CSV. "n/a" means the data sheet doesn't state that property for this material — the calculation engine falls back to a literature-typical value in that case and flags the result as an estimate (this applies to cure/exotherm predictions in particular; see [CAPABILITIES.md](CAPABILITIES.md)).
+Values below are read straight from the CSV. The flow index and activation energy are typical values, not measurements: neither is on these data sheets, and the results and exports label them "Typical value". Where each came from is recorded in `src/data/database_data_dictionary.md`. "n/a" means the data sheet doesn't state that property for this material — the calculation engine falls back to a literature-typical value in that case and flags the result as an estimate (this applies to cure/exotherm predictions in particular; see [CAPABILITIES.md](CAPABILITIES.md)).
 
 ### Genfoam HD12
 
 - **Type:** High-density pour/mould, water-blown
 - **Application:** Pour-in-place and molded foam
 - Polyol viscosity: 900–1050 cP · Isocyanate viscosity: 200±20 cP (both @ 25 °C)
-- Flow index: 0.85 · Activation energy: 25,000 J/mol
+- Flow index: 0.85 · Activation energy: 25,000 J/mol (both typical values, not on the data sheet)
 - Cream time: 50–60 s · Gel time: 130–140 s
 - Free-rise density: 195–215 kg/m³ · Molded density: 350–550 kg/m³
 - Heat of reaction, peak exotherm, mould temperature, compressive strength, closed-cell content, k-factor: n/a (not on this data sheet)
@@ -36,7 +36,7 @@ Values below are read straight from the CSV. "n/a" means the data sheet doesn't 
 - **Type:** High-density pour/mould, water-blown, denser than HD12
 - **Application:** Pour-in-place and molded foam
 - Polyol viscosity: 900–1050 cP · Isocyanate viscosity: 200±20 cP (both @ 25 °C)
-- Flow index: 0.83 · Activation energy: 26,000 J/mol
+- Flow index: 0.83 · Activation energy: 26,000 J/mol (both typical values, not on the data sheet)
 - Cream time: 50–60 s · Gel time: 130–140 s
 - Free-rise density: 290–315 kg/m³ · Molded density: 400–600 kg/m³
 - Heat of reaction, peak exotherm, mould temperature, compressive strength, closed-cell content, k-factor: n/a (not on this data sheet)
@@ -45,7 +45,7 @@ Values below are read straight from the CSV. "n/a" means the data sheet doesn't 
 
 - **Type:** Spray foam, continuous coatings
 - Polyol viscosity: 350±50 cP · Isocyanate viscosity: 200±20 cP (both @ 25 °C) — much lower than the pour/mould products, characteristic of spray systems
-- Flow index: 0.88 · Activation energy: 24,000 J/mol
+- Flow index: 0.88 · Activation energy: 24,000 J/mol (both typical values, not on the data sheet)
 - Mould/substrate temperature: 5–40 °C
 - Cream time: 8–12 s · Gel time: 18–26 s · Tack-free time: 18–26 s — fast, as expected of a spray system
 - Free-rise density: 28.8–32.0 kg/m³
@@ -56,7 +56,7 @@ Values below are read straight from the CSV. "n/a" means the data sheet doesn't 
 
 - **Type:** Extra-high-density panel/cavity fill, discontinuous application
 - Polyol viscosity: 850±50 cP · Isocyanate viscosity: 200±20 cP (both @ 25 °C)
-- Flow index: 0.82 · Activation energy: 28,000 J/mol
+- Flow index: 0.82 · Activation energy: 28,000 J/mol (both typical values, not on the data sheet)
 - Mould/substrate temperature: 35–45 °C — needs a heated mould, unlike the other three
 - Cream time: 8–12 s · Gel time: 28–32 s
 - Free-rise density: 40.0–45.0 kg/m³
