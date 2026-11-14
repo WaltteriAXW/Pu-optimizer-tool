@@ -4,10 +4,132 @@ Uses Arrhenius equation for temperature-dependent viscosity.
 """
 
 import math
-from typing import Dict
+from typing import Any, Dict, Optional
 
 # Gas constant
 GAS_CONSTANT_J_MOL_K = 8.314
+
+# Activation energy for a custom material: the typical value used when the user gives no
+# second viscosity reading, the range a calculated value must fall in, and how it is shown
+DEFAULT_ACTIVATION_ENERGY_J_MOL = 25000.0
+ACTIVATION_ENERGY_MIN_J_MOL = 1000.0
+ACTIVATION_ENERGY_MAX_J_MOL = 100000.0
+ACTIVATION_ENERGY_ROUNDING_J_MOL = 100.0
+# Two readings closer together than this give too little change to fit a slope to
+MIN_READING_GAP_C = 5.0
+
+
+def activation_energy_from_readings(
+    viscosity_1_cp: float,
+    temp_1_c: float,
+    viscosity_2_cp: float,
+    temp_2_c: float,
+) -> Dict[str, Any]:
+    """
+    Activation energy from two viscosity readings, the Arrhenius equation solved for E_a:
+
+        E_a = R * ln(η₁ / η₂) / (1/T₁ - 1/T₂),  T in kelvin, R = 8.314 J/(mol·K)
+
+    Args:
+        viscosity_1_cp: First viscosity reading in cP (the material's reference viscosity)
+        temp_1_c: Temperature of the first reading in °C
+        viscosity_2_cp: Second viscosity reading in cP
+        temp_2_c: Temperature of the second reading in °C
+
+    Returns:
+        Dict with 'activation_energy_j_mol' (rounded to the nearest 100 J/mol, or None) and
+        'error' (a plain-language message, or None). A value outside 1,000–100,000 J/mol is
+        reported as an error with the value it came to, never clamped into range.
+    """
+    def failed(message: str, value: Optional[float] = None) -> Dict[str, Any]:
+        return {'activation_energy_j_mol': None, 'unrounded_j_mol': value, 'error': message}
+
+    try:
+        v1, t1, v2, t2 = (float(x) for x in (viscosity_1_cp, temp_1_c, viscosity_2_cp, temp_2_c))
+    except (TypeError, ValueError):
+        return failed('Both viscosity readings and the temperature must be numbers.')
+    if not all(math.isfinite(x) for x in (v1, t1, v2, t2)):
+        return failed('Both viscosity readings and the temperature must be numbers.')
+    if v1 <= 0 or v2 <= 0:
+        return failed('Viscosity readings must be greater than zero.')
+
+    t1_k, t2_k = t1 + 273.15, t2 + 273.15
+    if t1_k <= 0 or t2_k <= 0:
+        return failed('The temperature must be above absolute zero (−273.15 °C).')
+
+    if abs(t2 - t1) < MIN_READING_GAP_C:
+        return failed(
+            f'The second temperature must differ from {_fmt_c(t1)} °C by at least '
+            f'{_fmt_c(MIN_READING_GAP_C)} °C.'
+        )
+
+    warmer_is_thinner = (v2 < v1) if t2 > t1 else (v1 < v2)
+    if not warmer_is_thinner:
+        return failed(
+            'Viscosity must be lower at the higher temperature. Check the two readings.'
+        )
+
+    value = GAS_CONSTANT_J_MOL_K * math.log(v1 / v2) / ((1 / t1_k) - (1 / t2_k))
+    if not ACTIVATION_ENERGY_MIN_J_MOL <= value <= ACTIVATION_ENERGY_MAX_J_MOL:
+        return failed(
+            f'These readings give {value:,.0f} J/mol, outside the expected range of '
+            f'{ACTIVATION_ENERGY_MIN_J_MOL:,.0f}–{ACTIVATION_ENERGY_MAX_J_MOL:,.0f} J/mol. '
+            'Check the two readings.',
+            value,
+        )
+
+    step = ACTIVATION_ENERGY_ROUNDING_J_MOL
+    rounded = math.floor(value / step + 0.5) * step
+    return {'activation_energy_j_mol': rounded, 'unrounded_j_mol': value, 'error': None}
+
+
+def resolve_activation_energy(parameters: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    The activation energy a custom material calculates with, and where it came from.
+
+    In order of precedence:
+    - 'user': a value typed in (``activation_energy_j_mol``). Saved runs and imported
+      datasets from before the second reading existed carry one, so they calculate
+      exactly as they did.
+    - 'calculated': from the reference viscosity (``viscosity_cp`` at ``reference_temp_c``,
+      25 °C unless given) and a second reading (``viscosity_2_cp`` at ``viscosity_2_temp_c``).
+    - 'default': neither given, so the typical 25,000 J/mol, an estimate.
+
+    Returns:
+        Dict with 'activation_energy_j_mol', 'source' and 'error' (None when usable).
+    """
+    typed = parameters.get('activation_energy_j_mol')
+    if typed is not None:
+        return {'activation_energy_j_mol': float(typed), 'source': 'user', 'error': None}
+
+    v2 = parameters.get('viscosity_2_cp')
+    t2 = parameters.get('viscosity_2_temp_c')
+    if v2 is None and t2 is None:
+        return {
+            'activation_energy_j_mol': DEFAULT_ACTIVATION_ENERGY_J_MOL,
+            'source': 'default',
+            'error': None,
+        }
+    if v2 is None or t2 is None:
+        return {
+            'activation_energy_j_mol': None,
+            'source': 'calculated',
+            'error': 'Enter both the second viscosity reading and its temperature, or leave both empty.',
+        }
+
+    result = activation_energy_from_readings(
+        parameters.get('viscosity_cp'), parameters.get('reference_temp_c', 25.0), v2, t2
+    )
+    return {
+        'activation_energy_j_mol': result['activation_energy_j_mol'],
+        'source': 'calculated',
+        'error': result['error'],
+    }
+
+
+def _fmt_c(value: float) -> str:
+    """A temperature for a message: 25, not 25.0; 22.5 stays 22.5."""
+    return f'{value:g}'
 
 
 def calculate_temperature_dependent_viscosity(

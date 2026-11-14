@@ -3,6 +3,8 @@ import type { PyodideManager } from './CalculationService'
 import { PYODIDE_INDEX_URL } from './pyodideRuntime'
 
 let pyodideInstance: PyodideInterface | null = null
+// Gives every callPython its own argument slot in Python's globals
+let callCounter = 0
 
 /**
  * PyodideBridge - Manages Python runtime in the browser
@@ -376,8 +378,10 @@ export class PyodideBridge implements PyodideManager {
         return arg
       })
 
-      // Set up arguments in Python
-      const argName = `_args_${Date.now()}`
+      // Set up arguments in Python. The name must be unique per call: runPythonAsync can
+      // yield before the code runs, and two calls in the same millisecond (the form's live
+      // activation energy and a calculation, say) would otherwise swap arguments.
+      const argName = `_args_${Date.now()}_${++callCounter}`
       pyodide.globals.set(argName, pythonArgs)
 
       // Execute Python code

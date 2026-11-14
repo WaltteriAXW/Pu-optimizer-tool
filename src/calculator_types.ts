@@ -6,6 +6,12 @@
  * Process parameters for polyurethane injection
  * Note: Uses snake_case naming convention for API compatibility with Python backend
  */
+/**
+ * Where a run's activation energy came from: calculated from two viscosity readings, the
+ * typical default (an estimate), typed in by the user, or a catalogued material's row.
+ */
+export type ActivationEnergySource = 'calculated' | 'default' | 'user' | 'database'
+
 export interface ProcessParameters {
   pipe_length_mm: number;               // mm
   pipe_diameter_mm: number;             // mm
@@ -18,7 +24,12 @@ export interface ProcessParameters {
   viscosity_cp?: number;                // cP
   density_kg_m3?: number;               // kg/m³
   flow_index?: number;                  // Power-law flow index (0–1)
+  // Activation energy. Set only when the user typed it (custom material, "Enter value
+  // manually"), and by saved runs from before it was calculated. Otherwise Python works it
+  // out from a second viscosity reading, or uses the typical default.
   activation_energy_j_mol?: number;     // J/mol
+  viscosity_2_cp?: number;              // cP, a second viscosity reading (custom material)
+  viscosity_2_temp_c?: number;          // °C, the temperature of that second reading
   polyol_sg?: number;                   // Polyol specific gravity
   iso_sg?: number;                      // Isocyanate specific gravity
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
@@ -212,6 +223,9 @@ export interface CalculationResults {
     reference_viscosity_cp: number;
     current_viscosity_cp: number;
     temperature_factor: number;
+    /** The activation energy used, and where it came from. Absent on runs saved earlier. */
+    activation_energy_j_mol?: number;
+    activation_energy_source?: ActivationEnergySource;
     shear_heating_c?: number;
     heat_generated_w?: number;
   };

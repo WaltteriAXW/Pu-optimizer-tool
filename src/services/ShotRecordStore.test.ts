@@ -145,6 +145,23 @@ describe('export and import', () => {
     expect(getLabelledRecords()).toHaveLength(1)
   })
 
+  it('keeps a typed activation energy from a run saved before it was calculated', () => {
+    // Older custom-material runs carry the value the user typed. Python uses a typed value
+    // as-is (labelled "Entered by user"), so keeping it is what makes them recalculate
+    // unchanged; dropping it would silently switch them to the typical default.
+    const legacy = saveRecord(
+      { ...params, material_key: 'custom', viscosity_cp: 350, density_kg_m3: 1120, flow_index: 0.85, activation_energy_j_mol: 31234 },
+      results
+    )
+    const payload = exportRecords()
+    clearRecords()
+
+    expect(importRecords(payload)).toEqual({ added: 1, duplicates: 0, rejected: 0 })
+    const restored = getRecords().find((record) => record.id === legacy.id)
+    expect(restored?.parameters.activation_energy_j_mol).toBe(31234)
+    expect(restored?.parameters.viscosity_2_cp).toBeUndefined()
+  })
+
   it('importing the same file twice changes nothing', () => {
     saveRecord(params, results)
     const payload = exportRecords()

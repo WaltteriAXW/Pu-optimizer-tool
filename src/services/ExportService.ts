@@ -5,6 +5,7 @@
  */
 
 import type { CalculationResults } from '@/calculator_types'
+import { describeActivationEnergy } from '@/components/resultFormatting'
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'report'
@@ -39,8 +40,14 @@ export class ExportService {
    * Export to JSON format
    */
   private exportToJSON(results: CalculationResults, options: ExportOptions): string {
+    // The activation energy's source travels as a code; the label beside it says in words
+    // whether it is an estimate, so a reader of the file does not need this app to tell
+    const activation = describeActivationEnergy(results.thermal)
     const data = {
       ...results,
+      ...(activation && results.thermal
+        ? { thermal: { ...results.thermal, activation_energy_label: activation.label } }
+        : {}),
       exportedAt: options.includeTimestamp ? new Date().toISOString() : undefined
     }
 
@@ -105,6 +112,10 @@ export class ExportService {
       rows.push(`Reference Viscosity,${thermal.reference_viscosity_cp.toFixed(2)},cP`)
       rows.push(`Current Viscosity,${thermal.current_viscosity_cp.toFixed(2)},cP`)
       rows.push(`Temperature Factor,${thermal.temperature_factor.toFixed(4)},`)
+      const activation = describeActivationEnergy(thermal)
+      if (activation) {
+        rows.push(`Activation Energy (${activation.label}),${activation.valueJMol},J/mol`)
+      }
       rows.push(`Shear Heating,${(thermal.shear_heating_c ?? 0).toFixed(2)},°C`)
       rows.push(`Heat Generated,${(thermal.heat_generated_w ?? 0).toFixed(2)},W`)
     }
@@ -230,6 +241,10 @@ export class ExportService {
       lines.push(`Reference Visc:     ${thermal.reference_viscosity_cp.toFixed(2)} cP`)
       lines.push(`Current Visc:       ${thermal.current_viscosity_cp.toFixed(2)} cP`)
       lines.push(`Temp Factor:        ${thermal.temperature_factor.toFixed(4)}`)
+      const activation = describeActivationEnergy(thermal)
+      if (activation) {
+        lines.push(`Activation Energy:  ${activation.valueJMol} J/mol (${activation.label})`)
+      }
       lines.push(`Shear Heating:      ${(thermal.shear_heating_c ?? 0).toFixed(2)}°C`)
       lines.push(`Heat Generated:     ${(thermal.heat_generated_w ?? 0).toFixed(2)} W`)
     }

@@ -150,6 +150,29 @@ export class CalculationService {
   }
 
   /**
+   * Activation energy from two viscosity readings, worked out by Python so the form shows
+   * exactly what the calculation will use. Resolves with the value rounded to the nearest
+   * 100 J/mol, or with a plain-language error when the readings cannot give one.
+   */
+  async activationEnergyFromReadings(
+    viscosity1Cp: number,
+    temp1C: number,
+    viscosity2Cp: number,
+    temp2C: number
+  ): Promise<{ value: number | null; error: string | null }> {
+    const result = await this.pyodideManager.callPython<{
+      activation_energy_j_mol: number | null
+      error: string | null
+    }>('src.core.modules.thermal.activation_energy_from_readings', [
+      viscosity1Cp,
+      temp1C,
+      viscosity2Cp,
+      temp2C,
+    ])
+    return { value: result?.activation_energy_j_mol ?? null, error: result?.error ?? null }
+  }
+
+  /**
    * Prepare the parameters sent to Python.
    *
    * Catalogued materials travel as a material_key alone: Python reads the same material
@@ -174,6 +197,8 @@ export class CalculationService {
       'reference_temp_c',
       'flow_index',
       'activation_energy_j_mol',
+      'viscosity_2_cp',
+      'viscosity_2_temp_c',
       'polyol_sg',
       'iso_sg',
       'weight_ratio',
