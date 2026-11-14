@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
-import { describeFlowWindow, describeActivationEnergy } from '@/components/resultFormatting'
+import { describeFlowWindow, describeActivationEnergy, describeFlowIndex } from '@/components/resultFormatting'
 import { CHART_COLORS, type ChartColorRole } from '@/components/PressureChart'
 import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
 
@@ -481,6 +481,10 @@ export const generateReport = async (
       ['Velocity', `${fmt(flow?.velocity_m_s, 3)} m/s`],
       ['Shear rate', `${fmt(flow?.shear_rate_s_inv, 0)} 1/s`],
       ['Apparent viscosity', `${fmt(flow?.apparent_viscosity_cp, 1)} cP`],
+      ...((): Array<[string, string]> => {
+        const flowIndex = describeFlowIndex(flow)
+        return flowIndex ? [[`Flow index (${flowIndex.label})`, fmt(flowIndex.value, 2)]] : []
+      })(),
       ...(flow?.rheology
         ? ([
             ['Viscosity model', flow.rheology.model.replace(/_/g, '-')],

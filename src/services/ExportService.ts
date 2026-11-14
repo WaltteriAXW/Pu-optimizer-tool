@@ -5,7 +5,7 @@
  */
 
 import type { CalculationResults } from '@/calculator_types'
-import { describeActivationEnergy } from '@/components/resultFormatting'
+import { describeActivationEnergy, describeFlowIndex } from '@/components/resultFormatting'
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'report'
@@ -43,8 +43,12 @@ export class ExportService {
     // The activation energy's source travels as a code; the label beside it says in words
     // whether it is an estimate, so a reader of the file does not need this app to tell
     const activation = describeActivationEnergy(results.thermal)
+    const flowIndex = describeFlowIndex(results.flow)
     const data = {
       ...results,
+      ...(flowIndex && results.flow
+        ? { flow: { ...results.flow, flow_index_label: flowIndex.label } }
+        : {}),
       ...(activation && results.thermal
         ? { thermal: { ...results.thermal, activation_energy_label: activation.label } }
         : {}),
@@ -88,6 +92,8 @@ export class ExportService {
     rows.push(`Flow Regime,${results.flow.flow_regime},`)
     rows.push(`Velocity,${results.flow.velocity_m_s.toFixed(3)},m/s`)
     rows.push(`Shear Thinning,${results.flow.is_shear_thinning ? 'Yes' : 'No'},`)
+    const flowIndex = describeFlowIndex(results.flow)
+    if (flowIndex) rows.push(`Flow Index (${flowIndex.label}),${flowIndex.value},`)
     if (results.flow.rheology) {
       rows.push(`Viscosity Model,${results.flow.rheology.model},`)
       rows.push(`Wall Shear Stress,${results.flow.rheology.wall_shear_stress_pa.toFixed(2)},Pa`)
@@ -222,6 +228,8 @@ export class ExportService {
     lines.push(`Flow Regime:        ${results.flow.flow_regime.toUpperCase()}`)
     lines.push(`Velocity:           ${results.flow.velocity_m_s.toFixed(3)} m/s`)
     lines.push(`Shear Thinning:     ${results.flow.is_shear_thinning ? 'YES' : 'NO'}`)
+    const flowIndex = describeFlowIndex(results.flow)
+    if (flowIndex) lines.push(`Flow Index:         ${flowIndex.value} (${flowIndex.label})`)
 
     // Pressure Section
     lines.push('\n' + '─'.repeat(63))

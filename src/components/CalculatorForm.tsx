@@ -264,6 +264,8 @@ export function CalculatorForm() {
         if (typeof value === 'string' && value) {
           restored[key] = value
         }
+      } else if (key === 'flow_index_source') {
+        if (value === 'typical') restored.flow_index_source = 'typical'
       } else if (key in OPTIONAL_SELECTS) {
         if (typeof value === 'string' && OPTIONAL_SELECTS[key].includes(value)) {
           (restored as unknown as Record<string, unknown>)[key] = value
@@ -278,6 +280,13 @@ export function CalculatorForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [showCustomHelp, setShowCustomHelp] = useState(false)
   const [showOptional, setShowOptional] = useState(false)
+  // The custom form uses the power law; the model menu is for someone with a measured flow
+  // curve, so it stays out of the way until asked for. A remembered setup that used another
+  // model opens with it shown, since hiding a model that is in use would hide its fields'
+  // reason for existing.
+  const [showFlowCurve, setShowFlowCurve] = useState(
+    () => Boolean(inputs.rheology_model) && inputs.rheology_model !== 'power_law'
+  )
 
   // Ids for the controls this component renders directly. The reusable field components
   // generate their own.
@@ -331,6 +340,8 @@ export function CalculatorForm() {
             ...prev,
             material_key: 'custom',
             ...CUSTOM_MATERIAL_DEFAULTS,
+            // The pre-filled flow index is a typical value until the user changes it
+            flow_index_source: 'typical',
           }))
         } else {
           // Strip custom properties; preset values are injected by CalculationService
@@ -340,6 +351,7 @@ export function CalculatorForm() {
               density_kg_m3,
               flow_index,
               activation_energy_j_mol,
+              flow_index_source,
               viscosity_2_cp,
               viscosity_2_temp_c,
               polyol_sg,
@@ -433,6 +445,15 @@ export function CalculatorForm() {
 
         // The second reading is judged by Python, as a pair (secondReadingError below)
         if (isSecondReading) return
+
+        // A flow index the user typed is theirs, no longer the typical pre-fill
+        if (name === 'flow_index') {
+          setInputs((prev) => {
+            const next = { ...prev }
+            delete next.flow_index_source
+            return next
+          })
+        }
 
         // Optional field validation
         if (name in optionalRanges) {
@@ -795,17 +816,27 @@ export function CalculatorForm() {
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
                 <p><strong>Flow Index (0–1):</strong> Power-law exponent for non-Newtonian behaviour. 1.0 = Newtonian; typical PU foams: 0.8–0.9.</p>
                 <p><strong>Temperature sensitivity (activation energy, J/mol):</strong> How fast the material thins as it warms. Add a viscosity reading at a second temperature and it is calculated for your material; without one a typical 25,000 J/mol is used, marked as an estimate.</p>
-                <p><strong>Viscosity Model:</strong> The power law suits a data sheet. If you have a measured flow curve, Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. These use the exact laminar pipe solution rather than the apparent-viscosity shortcut. Parameters are at 25 °C; temperature shifts the whole curve by the activation energy.</p>
+                <p><strong>Measured flow curve:</strong> The form uses the power law, which suits a data sheet. If you have a measured flow curve, choose "I have a measured flow curve": Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. If you have a measured flow curve, Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. These use the exact laminar pipe solution rather than the apparent-viscosity shortcut. Parameters are at 25 °C; temperature shifts the whole curve by the activation energy.</p>
               </div>
             )}
 
-            <OptionalSelect
-              name="rheology_model"
-              label="Viscosity Model"
-              value={inputs.rheology_model ?? 'power_law'}
-              options={RHEOLOGY_MODEL_OPTIONS}
-              onChange={handleChange}
-            />
+            {showFlowCurve ? (
+              <OptionalSelect
+                name="rheology_model"
+                label="Viscosity Model"
+                value={inputs.rheology_model ?? 'power_law'}
+                options={RHEOLOGY_MODEL_OPTIONS}
+                onChange={handleChange}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowFlowCurve(true)}
+                className="inline-flex min-h-[44px] items-center text-sm font-medium text-highlight underline underline-offset-2 state"
+              >
+                I have a measured flow curve
+              </button>
+            )}
 
             {/* The flow curve: a viscosity and flow index for the power law, or the chosen
                 model's own parameters. Density and activation energy apply to every model. */}

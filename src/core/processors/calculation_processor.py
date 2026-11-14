@@ -387,7 +387,14 @@ class CalculationProcessor:
                     # to print a hardcoded 1000 kg/m³ for every material.
                     'material_density_kg_m3': material['density'],
                 },
-                'flow': flow_result,
+                # The flow index the run used, and where it came from: 'typical' or 'measured'
+                # for a catalogued material (its CSV row says which), 'typical' for the custom
+                # form's untouched default, 'user' for a value or flow curve the user entered
+                'flow': {
+                    **flow_result,
+                    'flow_index': material['flow_index'],
+                    'flow_index_source': material.get('flow_index_source', 'user'),
+                },
                 'pressure': {
                     'base_pressure_drop_bar': pressure_result['pressure_drop_bar'],
                     'pressure_drop_pa': pressure_result['pressure_drop_pa'],
@@ -404,10 +411,10 @@ class CalculationProcessor:
                     'current_viscosity_cp': thermal_result['current_viscosity_cp'],
                     'temperature_factor': thermal_result['temperature_factor'],
                     # Where the activation energy came from: 'calculated' from two viscosity
-                    # readings, 'default' (the typical value, an estimate), 'user' (typed in)
-                    # or 'database' (a catalogued material's row)
+                    # readings, 'default' (the custom form's typical value, an estimate), 'user'
+                    # (typed in), or a catalogued material's 'typical' / 'measured' value
                     'activation_energy_j_mol': material['activation_energy'],
-                    'activation_energy_source': material.get('activation_energy_source', 'database'),
+                    'activation_energy_source': material.get('activation_energy_source', 'typical'),
                     'shear_heating_c': shear_heating.get('temperature_rise_c', 0),
                     'heat_generated_w': shear_heating.get('heat_generated_w', 0),
                 },
@@ -872,6 +879,13 @@ class CalculationProcessor:
                 'rheology': rheology,
                 'activation_energy': activation['activation_energy_j_mol'],
                 'activation_energy_source': activation['source'],
+                # The form says 'typical' while its pre-filled flow index is untouched; a typed
+                # value, a saved run from before, or a measured flow curve is the user's
+                'flow_index_source': (
+                    'typical'
+                    if rheology is None and parameters.get('flow_index_source') == 'typical'
+                    else 'user'
+                ),
                 'polyol_sg': parameters.get('polyol_sg'),
                 'iso_sg': parameters.get('iso_sg'),
                 'weight_ratio': parameters.get('weight_ratio'),

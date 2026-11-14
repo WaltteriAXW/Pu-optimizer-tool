@@ -63,7 +63,7 @@ Select **Custom Material…** at the bottom of the Material dropdown. These fiel
 | Viscosity (at 25 °C) | 50 – 10,000 | cP |
 | Second viscosity reading, optional | any value above zero | cP |
 | Measured at, optional | at least 5 °C away from 25 °C | °C |
-| Flow Index | 0.01 – 1.0 | (dimensionless) |
+| Flow Index | 0.01 – 1.0 (pre-filled 0.85, labelled "Typical value" until you change it) | (dimensionless) |
 | Density | 900 – 1,500 | kg/m³ |
 | Temperature sensitivity (activation energy) | read-only; 1,000 – 100,000 if entered manually | J/mol |
 
@@ -74,6 +74,8 @@ You don't type the activation energy. It is shown read-only, and set one of thre
 - **Calculated.** Fill in both the second viscosity reading and the temperature it was measured at. The Python engine works it out from your two readings, `Ea = R · ln(v₁ / v₂) / (1/T₁ − 1/T₂)` with T in kelvin and R = 8.314 J/(mol·K), where v₁ is the viscosity at 25 °C. It's rounded to the nearest 100 J/mol. The field says "Calculated from your two viscosity readings."
 - **Typical value (an estimate).** Leave both empty and the typical 25,000 J/mol is used. It's labelled as an estimate on the form, in the results, and in the JSON, CSV, text report and PDF.
 - **Entered by user.** "Enter value manually" under the field unlocks it, and "Use calculated value" (or "Use typical value") locks it again. A typed value must be between 1,000 and 100,000 J/mol, and it's marked "Entered by user" in the results and every export.
+
+The form uses the power law. A measured flow curve is behind the "I have a measured flow curve" link, which reveals the Viscosity Model menu; a remembered setup that used one opens with the menu already shown.
 
 The second reading pairs with the power-law viscosity. With a measured flow curve (Carreau, Cross, Herschel–Bulkley) there's no single viscosity to pair it with, so those models use the typical value unless you enter one manually.
 

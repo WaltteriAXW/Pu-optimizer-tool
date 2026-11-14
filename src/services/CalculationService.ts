@@ -197,6 +197,7 @@ export class CalculationService {
       'reference_temp_c',
       'flow_index',
       'activation_energy_j_mol',
+      'flow_index_source',
       'viscosity_2_cp',
       'viscosity_2_temp_c',
       'polyol_sg',

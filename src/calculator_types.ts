@@ -7,10 +7,17 @@
  * Note: Uses snake_case naming convention for API compatibility with Python backend
  */
 /**
- * Where a run's activation energy came from: calculated from two viscosity readings, the
- * typical default (an estimate), typed in by the user, or a catalogued material's row.
+ * Where a run's flow index or activation energy came from:
+ * - 'typical' / 'measured': a catalogued material's row says which (all typical today)
+ * - 'calculated': activation energy from two viscosity readings
+ * - 'default': the custom form's typical activation energy, an estimate
+ * - 'user': typed in, or a measured flow curve
+ * - 'database': runs saved before catalogued values carried a source; they were typical
  */
-export type ActivationEnergySource = 'calculated' | 'default' | 'user' | 'database'
+export type ValueSource = 'typical' | 'measured' | 'calculated' | 'default' | 'user' | 'database'
+
+/** Kept for the activation energy, which can come from every source above */
+export type ActivationEnergySource = ValueSource
 
 export interface ProcessParameters {
   pipe_length_mm: number;               // mm
@@ -28,6 +35,9 @@ export interface ProcessParameters {
   // manually"), and by saved runs from before it was calculated. Otherwise Python works it
   // out from a second viscosity reading, or uses the typical default.
   activation_energy_j_mol?: number;     // J/mol
+  // 'typical' while the custom form's pre-filled flow index is untouched; absent means the
+  // user's own value
+  flow_index_source?: 'typical' | 'user';
   viscosity_2_cp?: number;              // cP, a second viscosity reading (custom material)
   viscosity_2_temp_c?: number;          // °C, the temperature of that second reading
   polyol_sg?: number;                   // Polyol specific gravity
@@ -208,6 +218,9 @@ export interface CalculationResults {
     laminar_envelope?: LaminarEnvelope;
     /** Present only for a custom material described by a measured flow curve */
     rheology?: RheologyResult;
+    /** The flow index used, and where it came from. Absent on runs saved earlier. */
+    flow_index?: number;
+    flow_index_source?: ValueSource;
   };
   pressure: {
     base_pressure_drop_bar: number;  // bar

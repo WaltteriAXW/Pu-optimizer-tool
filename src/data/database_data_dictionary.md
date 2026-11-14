@@ -31,6 +31,25 @@ parsed to their midpoint / nominal value.
   below 1.0 is shear-thinning. Typical rigid PU systems fall in 0.80–0.90.
 - **Activation_Energy_J_mol**: Arrhenius activation energy in J/mol, controlling how strongly
   viscosity responds to temperature. Typical PU systems fall in 20 000–35 000 J/mol.
+- **Flow_Index_Source**, **Activation_Energy_Source**: where the value beside it came from:
+  `typical` or `measured`. An empty cell means `typical`. The application shows this next to the
+  value on the results panel and in every export ("Typical value" or "Measured"). Only write
+  `measured` for a value someone has actually measured on this product, and say where in `Notes`.
+
+### Where the current flow index and activation energy values came from
+
+Neither property is on the technical data sheets these rows are built from, and none of the
+values below was measured. Every row is therefore marked `typical`.
+
+| Material_Key | Flow_Index | Activation_Energy_J_mol | Origin in the repository history |
+|---|---|---|---|
+| genfoam_hd12 | 0.85 | 25000 | Commit 969fa6f (2025-11-25) added `POWER_LAW_INDEX_STANDARD` and `ACTIVATION_ENERGY_STANDARD` to `src/constants.py` for a placeholder material, "ecofoam_standard". Commit a58b7a4 (2026-01-20) carried the values over when the placeholders were replaced by real products. |
+| genfoam_hd20 | 0.83 | 26000 | First appears in commit a58b7a4 (2026-01-20), with no stated source. |
+| ecomate_spray | 0.88 | 24000 | Commit 969fa6f, `POWER_LAW_INDEX_SPRAY` and `ACTIVATION_ENERGY_SPRAY`, for the placeholder "ecomate_spray_ec". |
+| ecofoam_xhd_rc | 0.82 | 28000 | Commit 969fa6f, `POWER_LAW_INDEX_XHD` and `ACTIVATION_ENERGY_XHD`, for the placeholder "ecofoam_xhd". |
+
+All four pairs moved unchanged into this CSV in commit 1bfabdf (2026-08-16). Replace a value
+and set its source to `measured` once it has been measured on the product.
 
 The mixed-liquid density and viscosity actually used by the pressure calculation are derived
 from the two components rather than stored: density by volume-additive mixing of the two

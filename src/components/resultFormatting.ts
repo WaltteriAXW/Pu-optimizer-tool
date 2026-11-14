@@ -1,4 +1,4 @@
-import type { ActivationEnergySource } from '@/calculator_types'
+import type { ValueSource } from '@/calculator_types'
 
 /**
  * Display decisions for the results panel.
@@ -80,29 +80,48 @@ export const describeFlowWindow = (window: {
 }
 
 /**
- * How a run's activation energy is labelled in the results and in every export, so the
- * screen, JSON, CSV, text report and PDF all say the same thing. A default is always called
- * an estimate; a typed value is always marked as entered by the user.
+ * How a run's flow index and activation energy are labelled in the results and in every
+ * export, so the screen, JSON, CSV, text report and PDF all say the same thing. A value nobody
+ * measured is always called typical; a typed value is always marked as entered by the user.
  */
-export const ACTIVATION_ENERGY_SOURCE_LABELS: Record<ActivationEnergySource, string> = {
+export const VALUE_SOURCE_LABELS: Record<ValueSource, string> = {
+  typical: 'Typical value',
+  measured: 'Measured',
   calculated: 'Calculated from two viscosity readings',
   default: 'Estimate, typical value',
   user: 'Entered by user',
-  database: 'From the material database',
+  // Runs saved before catalogued values carried a source. Every catalogued value was typical.
+  database: 'Typical value',
 }
+
+/** The activation energy labels, kept under their earlier name */
+export const ACTIVATION_ENERGY_SOURCE_LABELS = VALUE_SOURCE_LABELS
 
 /**
  * The activation energy a run used, rounded for display, with its source label. Null for
  * runs saved before the engine reported it.
  */
 export function describeActivationEnergy(
-  thermal: { activation_energy_j_mol?: number; activation_energy_source?: ActivationEnergySource } | undefined
-): { valueJMol: number; label: string; source: ActivationEnergySource } | null {
+  thermal: { activation_energy_j_mol?: number; activation_energy_source?: ValueSource } | undefined
+): { valueJMol: number; label: string; source: ValueSource } | null {
   if (!thermal || !isNumber(thermal.activation_energy_j_mol) || !thermal.activation_energy_source) {
     return null
   }
   const source = thermal.activation_energy_source
-  const label = ACTIVATION_ENERGY_SOURCE_LABELS[source]
+  const label = VALUE_SOURCE_LABELS[source]
   if (!label) return null
   return { valueJMol: Math.round(thermal.activation_energy_j_mol), label, source }
+}
+
+/**
+ * The flow index a run used, with its source label. Null for runs saved before the engine
+ * reported it.
+ */
+export function describeFlowIndex(
+  flow: { flow_index?: number; flow_index_source?: ValueSource } | undefined
+): { value: number; label: string; source: ValueSource } | null {
+  if (!flow || !isNumber(flow.flow_index) || !flow.flow_index_source) return null
+  const label = VALUE_SOURCE_LABELS[flow.flow_index_source]
+  if (!label) return null
+  return { value: flow.flow_index, label, source: flow.flow_index_source }
 }
