@@ -93,6 +93,8 @@ def resolve_activation_energy(parameters: Dict[str, Any]) -> Dict[str, Any]:
       exactly as they did.
     - 'calculated': from the reference viscosity (``viscosity_cp`` at ``reference_temp_c``,
       25 °C unless given) and a second reading (``viscosity_2_cp`` at ``viscosity_2_temp_c``).
+      'data_sheet' instead when ``activation_energy_from`` says the two readings were read
+      from a data sheet.
     - 'default': neither given, so the typical 25,000 J/mol, an estimate.
 
     Returns:
@@ -120,9 +122,11 @@ def resolve_activation_energy(parameters: Dict[str, Any]) -> Dict[str, Any]:
     result = activation_energy_from_readings(
         parameters.get('viscosity_cp'), parameters.get('reference_temp_c', 25.0), v2, t2
     )
+    # The two readings may be a data sheet's, filled in by the form and confirmed by the user
+    from_data_sheet = parameters.get('activation_energy_from') == 'data_sheet'
     return {
         'activation_energy_j_mol': result['activation_energy_j_mol'],
-        'source': 'calculated',
+        'source': 'data_sheet' if from_data_sheet else 'calculated',
         'error': result['error'],
     }
 

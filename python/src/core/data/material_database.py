@@ -104,7 +104,69 @@ def _require_positive(row: Dict[str, str], column: str, product: str) -> float:
 # DERIVATION
 # ============================================================================
 
-def derive_physics(row: Dict[str, str]) -> Dict[str, float]:
+# Where a catalogued flow index or activation energy came from. Neither is on the data sheets
+# the catalogue is built from, so every row says 'typical' today; 'measured' is for a value
+# someone has actually measured. An empty cell means typical.
+VALUE_SOURCES = ('typical', 'measured')
+
+
+def _value_source(row: Dict[str, str], column: str, product: str) -> str:
+    source = (row.get(column) or '').strip().lower() or 'typical'
+    if source not in VALUE_SOURCES:
+        raise MaterialDatabaseError(
+            f'Material "{product}" has {column} "{source}"; use one of {", ".join(VALUE_SOURCES)}.'
+        )
+    return source
+
+
+def blend_components(
+    polyol_viscosity_cp: float,
+    iso_viscosity_cp: float,
+    polyol_sg: float,
+    iso_sg: float,
+    polyol_parts_by_weight: float,
+    iso_parts_by_weight: float,
+) -> Dict[str, float]:
+    """
+    The mixed liquid being pumped, from its two components: density by volume-additive mixing
+    at the weight mix ratio, and viscosity by logarithmic blending on volume fractions (the
+    Arrhenius blending rule). Used for every catalogued material and for values read from a
+    data sheet, so the two are combined the same way.
+
+    Returns:
+        Dict with 'viscosity_cp', 'density_kg_m3' and the two volume fractions.
+    """
+    total_parts = polyol_parts_by_weight + iso_parts_by_weight
+    if total_parts <= 0:
+        raise ValueError('The mix ratio must add up to more than zero.')
+
+    polyol_density = polyol_sg * 1000.0
+    iso_density = iso_sg * 1000.0
+
+    # Mass fractions from the weight mix ratio
+    polyol_mass_fraction = polyol_parts_by_weight / total_parts
+    iso_mass_fraction = iso_parts_by_weight / total_parts
+
+    # Specific volumes give both the mixed density and the volume fractions
+    polyol_specific_volume = polyol_mass_fraction / polyol_density
+    iso_specific_volume = iso_mass_fraction / iso_density
+    total_specific_volume = polyol_specific_volume + iso_specific_volume
+
+    polyol_volume_fraction = polyol_specific_volume / total_specific_volume
+    iso_volume_fraction = iso_specific_volume / total_specific_volume
+
+    return {
+        'viscosity_cp': math.exp(
+            polyol_volume_fraction * math.log(polyol_viscosity_cp)
+            + iso_volume_fraction * math.log(iso_viscosity_cp)
+        ),
+        'density_kg_m3': 1.0 / total_specific_volume,
+        'polyol_volume_fraction': polyol_volume_fraction,
+        'iso_volume_fraction': iso_volume_fraction,
+    }
+
+
+def derive_physics(row: Dict[str, str]) -> Dict[str, Any]:
     """Blend the two components into the properties of the liquid being pumped."""
     name = row.get('Product_Name') or row.get('Material_Key') or 'unknown'
 
@@ -115,30 +177,10 @@ def derive_physics(row: Dict[str, str]) -> Dict[str, float]:
     polyol_parts = _require(row, 'Mix_Ratio_Weight_Polyol', name)
     iso_parts = _require(row, 'Mix_Ratio_Weight_Iso', name)
 
-    total_parts = polyol_parts + iso_parts
-    if total_parts <= 0:
+    if polyol_parts + iso_parts <= 0:
         raise MaterialDatabaseError(f'Material "{name}" has a zero total mix ratio.')
-
-    polyol_density = polyol_sg * 1000.0
-    iso_density = iso_sg * 1000.0
-
-    # Mass fractions from the weight mix ratio
-    polyol_mass_fraction = polyol_parts / total_parts
-    iso_mass_fraction = iso_parts / total_parts
-
-    # Specific volumes give both the mixed density and the volume fractions
-    polyol_specific_volume = polyol_mass_fraction / polyol_density
-    iso_specific_volume = iso_mass_fraction / iso_density
-    total_specific_volume = polyol_specific_volume + iso_specific_volume
-
-    density = 1.0 / total_specific_volume
-    polyol_volume_fraction = polyol_specific_volume / total_specific_volume
-    iso_volume_fraction = iso_specific_volume / total_specific_volume
-
-    viscosity = math.exp(
-        polyol_volume_fraction * math.log(polyol_viscosity)
-        + iso_volume_fraction * math.log(iso_viscosity)
-    )
+    mixed = blend_components(polyol_viscosity, iso_viscosity, polyol_sg, iso_sg, polyol_parts, iso_parts)
+    viscosity, density = mixed['viscosity_cp'], mixed['density_kg_m3']
 
     reference_temp = parse_measurement(row.get('Viscosity_Reference_Temp_C'))
 
@@ -147,7 +189,9 @@ def derive_physics(row: Dict[str, str]) -> Dict[str, float]:
         'density': density,
         'reference_temp_c': reference_temp if reference_temp is not None else DEFAULT_REFERENCE_TEMP_C,
         'flow_index': _require_positive(row, 'Flow_Index', name),
+        'flow_index_source': _value_source(row, 'Flow_Index_Source', name),
         'activation_energy': _require_positive(row, 'Activation_Energy_J_mol', name),
+        'activation_energy_source': _value_source(row, 'Activation_Energy_Source', name),
         'polyol_sg': polyol_sg,
         'iso_sg': iso_sg,
         'weight_ratio': [polyol_parts, iso_parts],
