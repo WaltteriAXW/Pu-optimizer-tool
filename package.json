@@ -15,6 +15,9 @@
   ],
   "author": "WaltteriAXW",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/WaltteriAXW/Pu-optimizer-tool.git"
