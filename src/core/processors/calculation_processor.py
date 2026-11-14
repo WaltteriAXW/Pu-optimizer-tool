@@ -386,6 +386,14 @@ class CalculationProcessor:
                     # two components. Reported because the exports quote it: the PDF used
                     # to print a hardcoded 1000 kg/m³ for every material.
                     'material_density_kg_m3': material['density'],
+                    # 'data_sheet_confirmed' when the custom material's values were read from a
+                    # data sheet and confirmed by the user, so every export can say so
+                    **(
+                        {'material_values_source': 'data_sheet_confirmed'}
+                        if material_key == 'custom'
+                        and parameters.get('material_values_source') == 'data_sheet_confirmed'
+                        else {}
+                    ),
                 },
                 # The flow index the run used, and where it came from: 'typical' or 'measured'
                 # for a catalogued material (its CSV row says which), 'typical' for the custom

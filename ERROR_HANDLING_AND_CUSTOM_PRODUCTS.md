@@ -100,6 +100,25 @@ That's the entire custom-material workflow — no name, no save step, no storage
 
 ---
 
+### Filling the form from a data sheet (PDF)
+
+"Fill from a data sheet (PDF)" reads a technical data sheet in the browser and shows what it found before filling anything. It is an aid: you check each value against the line it came from, and you are responsible for the values you confirm.
+
+| Situation | What happens |
+|---|---|
+| The PDF has no text layer (a scan) | "This PDF is a scan, so the tool can't read it. Enter the values by hand." Nothing is filled. |
+| The PDF can't be opened | "The tool couldn't read this PDF. Enter the values by hand." |
+| A value isn't on the sheet | Shown as "Not found". If the mixed viscosity or density can't be worked out, the field is left empty with "Not found on the data sheet. Enter it by hand." and Run is held back until you enter it. |
+| A viscosity has no unit on its line | Not read: the tool doesn't guess the unit. |
+| The mix ratio doesn't say weight or volume | Not used; the reason is shown. |
+| A volume ratio | Converted to weight with the two specific gravities, if both are found. |
+| The two components' viscosities are at different temperatures | Not combined; the reason is shown. |
+| Two-temperature readings that break the rules (too close, thicker when warmer, out of range) | The activation energy stays the typical value, and the reason is shown. |
+
+Component names: "Polyol", "Resin", "Component A" and "B-side" are read as the polyol; "Isocyanate", "Iso", "MDI", "Component B" and "A-side" as the isocyanate. A sheet that uses "A" and "B" without saying which is which is read the European way (A = polyol); check this in the review.
+
+Values you change after filling stay yours. Changing the viscosity or the second reading turns "Calculated from the data sheet" back into "Calculated from your two viscosity readings". The run stays marked "Material values read from a data sheet, confirmed by the user".
+
 ## See Also
 
 - [MATERIALS_GUIDE.md](MATERIALS_GUIDE.md) — the 4 catalogued materials and their real specs

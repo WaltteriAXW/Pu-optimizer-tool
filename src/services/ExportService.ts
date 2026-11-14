@@ -5,7 +5,11 @@
  */
 
 import type { CalculationResults } from '@/calculator_types'
-import { describeActivationEnergy, describeFlowIndex } from '@/components/resultFormatting'
+import {
+  describeActivationEnergy,
+  describeFlowIndex,
+  describeMaterialValues,
+} from '@/components/resultFormatting'
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'report'
@@ -44,8 +48,12 @@ export class ExportService {
     // whether it is an estimate, so a reader of the file does not need this app to tell
     const activation = describeActivationEnergy(results.thermal)
     const flowIndex = describeFlowIndex(results.flow)
+    const materialValues = describeMaterialValues(results.input)
     const data = {
       ...results,
+      ...(materialValues
+        ? { input: { ...results.input, material_values_label: materialValues } }
+        : {}),
       ...(flowIndex && results.flow
         ? { flow: { ...results.flow, flow_index_label: flowIndex.label } }
         : {}),
@@ -80,6 +88,9 @@ export class ExportService {
     rows.push(`Pipe Length,${results.input.pipe_length_mm},mm`)
     rows.push(`Pipe Diameter,${results.input.pipe_diameter_mm},mm`)
     rows.push(`Material,${results.input.material_name},`)
+    const materialValues = describeMaterialValues(results.input)
+    // Quoted: the wording has a comma in it
+    if (materialValues) rows.push(`Material Values,"${materialValues}",`)
     rows.push(`Temperature,${results.input.temperature_c},°C`)
     rows.push(`Flow Rate,${results.input.flow_rate_lpm},LPM`)
     rows.push(`Machine Type,${results.input.machine_type},`)
@@ -214,6 +225,8 @@ export class ExportService {
     lines.push(`Pipe Length:        ${results.input.pipe_length_mm} mm`)
     lines.push(`Pipe Diameter:      ${results.input.pipe_diameter_mm} mm`)
     lines.push(`Material:           ${results.input.material_name} (${results.input.material_key})`)
+    const materialValues = describeMaterialValues(results.input)
+    if (materialValues) lines.push(`Material Values:    ${materialValues}`)
     lines.push(`Temperature:        ${results.input.temperature_c}°C`)
     lines.push(`Flow Rate:          ${results.input.flow_rate_lpm} LPM`)
     lines.push(`Machine Type:       ${results.input.machine_type}`)

@@ -155,6 +155,11 @@ function HistoryItem({
             {materialName}
           </p>
           <p className="text-xs text-ink-2 mt-1">{timeAgo}</p>
+          {entry.results.input?.material_values_source === 'data_sheet_confirmed' && (
+            <p className="mt-1 text-xs text-ink-2" data-testid="history-data-sheet-mark">
+              Material values read from a data sheet, confirmed by the user
+            </p>
+          )}
 
           {/* Summary stats */}
           <div className="flex items-center gap-2 mt-2 text-xs">

@@ -88,6 +88,7 @@ export const VALUE_SOURCE_LABELS: Record<ValueSource, string> = {
   typical: 'Typical value',
   measured: 'Measured',
   calculated: 'Calculated from two viscosity readings',
+  data_sheet: 'Calculated from the data sheet',
   default: 'Estimate, typical value',
   user: 'Entered by user',
   // Runs saved before catalogued values carried a source. Every catalogued value was typical.
@@ -124,4 +125,15 @@ export function describeFlowIndex(
   const label = VALUE_SOURCE_LABELS[flow.flow_index_source]
   if (!label) return null
   return { value: flow.flow_index, label, source: flow.flow_index_source }
+}
+
+/** How a run whose custom material came from a data sheet is marked, everywhere it appears */
+export const DATA_SHEET_CONFIRMED_LABEL =
+  'Material values read from a data sheet, confirmed by the user'
+
+/** The data sheet mark for a run, or null when its values didn't come from one */
+export function describeMaterialValues(
+  input: { material_values_source?: string } | undefined
+): string | null {
+  return input?.material_values_source === 'data_sheet_confirmed' ? DATA_SHEET_CONFIRMED_LABEL : null
 }
