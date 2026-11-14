@@ -26,7 +26,7 @@ These are shared between the browser and the Python engine (`VALIDATION_RANGES` 
 | Temperature | 5 – 50 | °C |
 | Flow rate | 0.1 – 200 | L/min |
 
-Custom-material fields (viscosity, density, flow index, activation energy) have their own ranges — see [Custom Materials](#custom-materials) below.
+Custom-material fields (viscosity, density, flow index, and the optional second viscosity reading) have their own rules — see [Custom Materials](#custom-materials) below.
 
 A value outside range produces a message like:
 
@@ -39,7 +39,7 @@ A non-numeric value produces `"Temperature must be a valid number"` (or the equi
 
 ## Unknown Material
 
-If `material_key` doesn't match anything in the database and none of the four custom-material fields (viscosity, density, flow index, activation energy) were supplied, calculation fails with:
+If `material_key` doesn't match anything in the database and it isn't `custom` with the custom-material fields (viscosity, density, flow index) supplied, calculation fails with:
 
 ```
 No material properties available (tried: material_key "xyz" not in the database
@@ -56,16 +56,41 @@ These aren't validation errors (the calculation still completes) — they're ret
 
 ## Custom Materials
 
-Select **Custom Material…** at the bottom of the Material dropdown. Four fields appear:
+Select **Custom Material…** at the bottom of the Material dropdown. These fields appear:
 
 | Property | Range | Unit |
 |---|---|---|
-| Viscosity | 50 – 10,000 | cP |
-| Density | 900 – 1,500 | kg/m³ |
+| Viscosity (at 25 °C) | 50 – 10,000 | cP |
+| Second viscosity reading, optional | any value above zero | cP |
+| Measured at, optional | at least 5 °C away from 25 °C | °C |
 | Flow Index | 0.01 – 1.0 | (dimensionless) |
-| Activation Energy | 1,000 – 100,000 | J/mol |
+| Density | 900 – 1,500 | kg/m³ |
+| Temperature sensitivity (activation energy) | read-only; 1,000 – 100,000 if entered manually | J/mol |
 
-That's the entire custom-material workflow — no name, no save step, no storage backend choice. The four values you enter are used directly for that calculation, in place of a database lookup. Switching back to a catalogued material clears them, so a leftover custom value can't silently carry over and override a real material's properties.
+### Temperature sensitivity (activation energy)
+
+You don't type the activation energy. It is shown read-only, and set one of three ways:
+
+- **Calculated.** Fill in both the second viscosity reading and the temperature it was measured at. The Python engine works it out from your two readings, `Ea = R · ln(v₁ / v₂) / (1/T₁ − 1/T₂)` with T in kelvin and R = 8.314 J/(mol·K), where v₁ is the viscosity at 25 °C. It's rounded to the nearest 100 J/mol. The field says "Calculated from your two viscosity readings."
+- **Typical value (an estimate).** Leave both empty and the typical 25,000 J/mol is used. It's labelled as an estimate on the form, in the results, and in the JSON, CSV, text report and PDF.
+- **Entered by user.** "Enter value manually" under the field unlocks it, and "Use calculated value" (or "Use typical value") locks it again. A typed value must be between 1,000 and 100,000 J/mol, and it's marked "Entered by user" in the results and every export.
+
+The second reading pairs with the power-law viscosity. With a measured flow curve (Carreau, Cross, Herschel–Bulkley) there's no single viscosity to pair it with, so those models use the typical value unless you enter one manually.
+
+The second reading is refused, with the reason shown under it and the Run button held back, when:
+
+| Problem | Message |
+|---|---|
+| Only one of the pair is filled in | "Enter both the second viscosity reading and its temperature, or leave both empty." |
+| The temperature is within 5 °C of 25 °C | "The second temperature must differ from 25 °C by at least 5 °C." |
+| The viscosity isn't lower at the higher temperature | "Viscosity must be lower at the higher temperature. Check the two readings." |
+| The result falls outside 1,000 – 100,000 J/mol | "These readings give … J/mol, outside the expected range of 1,000–100,000 J/mol. Check the two readings." The value is never clamped into range. |
+
+The engine applies the same rules if the parameters reach it directly (`viscosity_2_cp`, `viscosity_2_temp_c`), and refuses a second reading on a catalogued material.
+
+**Saved runs and imported datasets** from before this change carry a typed `activation_energy_j_mol`. It's used exactly as before, so they calculate unchanged, and it's labelled "Entered by user".
+
+That's the entire custom-material workflow — no name, no save step, no storage backend choice. The values you enter are used directly for that calculation, in place of a database lookup. Switching back to a catalogued material clears them, so a leftover custom value can't silently carry over and override a real material's properties.
 
 **What custom materials don't get:** environmental impact (GWP/eco-friendliness) and cure/exotherm prediction both require a data sheet with reaction and blowing-agent data behind them — since a custom material has neither, those sections of the results are simply omitted rather than showing invented numbers.
 

@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
-import { describeFlowWindow } from '@/components/resultFormatting'
+import { describeFlowWindow, describeActivationEnergy } from '@/components/resultFormatting'
 import { CHART_COLORS, type ChartColorRole } from '@/components/PressureChart'
 import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
 
@@ -528,6 +528,13 @@ export const generateReport = async (
       [`Viscosity at ${fmt(thermal.reference_temp_c, 0)} °C (reference)`, `${fmt(thermal.reference_viscosity_cp, 1)} cP`],
       [`Viscosity at ${fmt(thermal.temperature_c, 1)} °C`, `${fmt(thermal.current_viscosity_cp, 1)} cP`],
     ]
+    const activation = describeActivationEnergy(thermal)
+    if (activation) {
+      rows.push([
+        `Activation energy (${activation.label})`,
+        `${activation.valueJMol.toLocaleString('en-GB')} J/mol`,
+      ])
+    }
     if (typeof thermal.shear_heating_c === 'number') rows.push(['Shear heating', `${fmt(thermal.shear_heating_c, 2)} °C`])
     if (typeof thermal.heat_generated_w === 'number') rows.push(['Heat generated', `${fmt(thermal.heat_generated_w, 1)} W`])
     thermalSection = { title: 'Thermal', rows }

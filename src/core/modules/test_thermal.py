@@ -351,3 +351,100 @@ class TestPhysicsValidation:
         assert result['current_viscosity_cp'] > 0.1
         # But shouldn't exceed ridiculous values
         assert result['current_viscosity_cp'] < 100000
+
+
+class TestActivationEnergyFromReadings:
+    """Activation energy from two viscosity readings (custom material form)."""
+
+    def test_formula_matches_worked_example(self):
+        # 1000 cP at 20 °C and 600 cP at 30 °C: R ln(1000/600) / (1/293.15 - 1/303.15)
+        result = thermal.activation_energy_from_readings(1000, 20, 600, 30)
+        assert result['error'] is None
+        assert result['unrounded_j_mol'] == pytest.approx(37742, abs=1)
+        assert result['activation_energy_j_mol'] == 37700
+
+    def test_order_of_readings_does_not_matter(self):
+        forward = thermal.activation_energy_from_readings(1000, 20, 600, 30)
+        backward = thermal.activation_energy_from_readings(600, 30, 1000, 20)
+        assert backward['activation_energy_j_mol'] == forward['activation_energy_j_mol']
+
+    def test_rounds_to_nearest_100(self):
+        result = thermal.activation_energy_from_readings(350, 25, 200, 40)
+        assert result['activation_energy_j_mol'] % 100 == 0
+        assert abs(result['activation_energy_j_mol'] - result['unrounded_j_mol']) <= 50
+
+    def test_round_trips_through_arrhenius(self):
+        # A viscosity generated with a known Ea gives that Ea back
+        second = calculate_temperature_dependent_viscosity(25, 350, 30000, 45)['current_viscosity_cp']
+        result = thermal.activation_energy_from_readings(350, 25, second, 45)
+        assert result['unrounded_j_mol'] == pytest.approx(30000, rel=1e-9)
+
+    @pytest.mark.parametrize('temp_2_c', [25, 21, 29.9, 20.1])
+    def test_rejects_second_temperature_within_5_c(self, temp_2_c):
+        result = thermal.activation_energy_from_readings(350, 25, 300, temp_2_c)
+        assert result['activation_energy_j_mol'] is None
+        assert result['error'] == 'The second temperature must differ from 25 °C by at least 5 °C.'
+
+    def test_accepts_exactly_5_c_apart(self):
+        assert thermal.activation_energy_from_readings(350, 25, 320, 30)['error'] is None
+
+    @pytest.mark.parametrize('viscosity_2_cp, temp_2_c', [
+        (400, 40),  # thicker when warmer
+        (350, 40),  # unchanged when warmer
+        (300, 10),  # thinner when cooler
+    ])
+    def test_rejects_viscosity_not_lower_at_higher_temperature(self, viscosity_2_cp, temp_2_c):
+        result = thermal.activation_energy_from_readings(350, 25, viscosity_2_cp, temp_2_c)
+        assert result['activation_energy_j_mol'] is None
+        assert result['error'] == 'Viscosity must be lower at the higher temperature. Check the two readings.'
+
+    def test_rejects_result_below_range_without_clamping(self):
+        # Barely any change over 35 °C: far below 1,000 J/mol
+        result = thermal.activation_energy_from_readings(350, 25, 349, 60)
+        assert result['activation_energy_j_mol'] is None
+        assert result['unrounded_j_mol'] < 1000
+        assert 'outside the expected range of 1,000–100,000 J/mol' in result['error']
+
+    def test_rejects_result_above_range_without_clamping(self):
+        # A hundredfold drop over 10 °C: far above 100,000 J/mol
+        result = thermal.activation_energy_from_readings(5000, 25, 50, 35)
+        assert result['activation_energy_j_mol'] is None
+        assert result['unrounded_j_mol'] > 100000
+        assert 'outside the expected range of 1,000–100,000 J/mol' in result['error']
+
+    @pytest.mark.parametrize('bad', [0, -10, None, 'abc', float('nan')])
+    def test_rejects_non_positive_or_non_numeric_viscosity(self, bad):
+        result = thermal.activation_energy_from_readings(350, 25, bad, 40)
+        assert result['activation_energy_j_mol'] is None
+        assert result['error']
+
+
+class TestResolveActivationEnergy:
+    """Which activation energy a custom material calculates with, and its source."""
+
+    def test_default_when_no_second_reading(self):
+        result = thermal.resolve_activation_energy({'viscosity_cp': 350})
+        assert result == {'activation_energy_j_mol': 25000.0, 'source': 'default', 'error': None}
+
+    def test_calculated_from_second_reading_at_25_c_reference(self):
+        result = thermal.resolve_activation_energy(
+            {'viscosity_cp': 350, 'viscosity_2_cp': 200, 'viscosity_2_temp_c': 40}
+        )
+        assert result['source'] == 'calculated'
+        assert result['activation_energy_j_mol'] == thermal.activation_energy_from_readings(
+            350, 25, 200, 40
+        )['activation_energy_j_mol']
+
+    def test_typed_value_wins_and_is_marked_user(self):
+        # Saved runs and imported datasets carry a typed value: it must be used unchanged
+        result = thermal.resolve_activation_energy(
+            {'viscosity_cp': 350, 'activation_energy_j_mol': 31234,
+             'viscosity_2_cp': 200, 'viscosity_2_temp_c': 40}
+        )
+        assert result == {'activation_energy_j_mol': 31234.0, 'source': 'user', 'error': None}
+
+    @pytest.mark.parametrize('half', [{'viscosity_2_cp': 200}, {'viscosity_2_temp_c': 40}])
+    def test_one_of_the_pair_alone_is_an_error(self, half):
+        result = thermal.resolve_activation_energy({'viscosity_cp': 350, **half})
+        assert result['activation_energy_j_mol'] is None
+        assert 'leave both empty' in result['error']

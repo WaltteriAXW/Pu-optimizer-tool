@@ -2,7 +2,13 @@ import React, { useEffect, useRef } from 'react'
 import { useCalculator } from '../context/CalculatorContext'
 import { PressureChart } from './PressureChart'
 import { ExportButtons } from './ExportButtons'
-import { isNumber, formatTemperature, isSameTemperature, describeFlowWindow } from './resultFormatting'
+import {
+  isNumber,
+  formatTemperature,
+  isSameTemperature,
+  describeFlowWindow,
+  describeActivationEnergy,
+} from './resultFormatting'
 import { formatPressure, type PressureUnit } from '../services/displayPreferences'
 import type {
   CalculationResults,
@@ -261,6 +267,7 @@ export function ResultsDisplay() {
                     unit="cP"
                   />
                 )}
+                <ActivationEnergyRow thermal={results.thermal} />
                 {isNumber(results.thermal.heat_generated_w) && (
                   <DetailRow
                     label="Heat Generated"
@@ -1041,6 +1048,26 @@ function KpiCard({
           {unit && <span className="text-xs font-medium text-ink-2">{unit}</span>}
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The activation energy the run used, with where it came from. An estimate is called one,
+ * because it is the one input here the user did not measure.
+ */
+function ActivationEnergyRow({ thermal }: { thermal: CalculationResults['thermal'] }) {
+  const activation = describeActivationEnergy(thermal)
+  if (!activation) return null
+  return (
+    <div className="py-2 border-b border-line last:border-0" data-testid="result-activation-energy">
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-ink-2">Activation energy</span>
+        <span className="text-sm font-semibold text-ink tabular-nums">
+          {activation.valueJMol.toLocaleString('en-GB')} <span className="text-ink-2 font-normal">J/mol</span>
+        </span>
+      </div>
+      <p className="mt-0.5 text-right text-xs text-ink-2">{activation.label}</p>
     </div>
   )
 }

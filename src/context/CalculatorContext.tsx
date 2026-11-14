@@ -67,6 +67,16 @@ interface CalculatorContextType {
   setRememberSetup: (remember: boolean) => void
   /** How far the Python engine has got, while it is still starting up */
   loadProgress: EngineProgress | null
+  /**
+   * Activation energy from two viscosity readings, worked out in Python. Resolves with the
+   * rounded value, or with a plain-language error when the readings cannot give one.
+   */
+  activationEnergyFromReadings: (
+    viscosity1Cp: number,
+    temp1C: number,
+    viscosity2Cp: number,
+    temp2C: number
+  ) => Promise<{ value: number | null; error: string | null }>
 }
 
 /** Progress reported while the Python engine boots. */
@@ -208,6 +218,12 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     [residualModelService]
   )
 
+  const activationEnergyFromReadings = useCallback(
+    (viscosity1Cp: number, temp1C: number, viscosity2Cp: number, temp2C: number) =>
+      calculationService.activationEnergyFromReadings(viscosity1Cp, temp1C, viscosity2Cp, temp2C),
+    [calculationService]
+  )
+
   const loadFromHistory = useCallback((entry: HistoryEntry) => {
     setResults(entry.results)
     setLastParams(entry.parameters)
@@ -238,6 +254,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         rememberSetup,
         setRememberSetup,
         loadProgress,
+        activationEnergyFromReadings,
       }}
     >
       {children}

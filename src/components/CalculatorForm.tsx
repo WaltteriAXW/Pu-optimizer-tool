@@ -18,16 +18,32 @@ import {
   type SliderScale,
 } from './sliderScale'
 
-/** Default values pre-filled when the user switches to Custom Material */
+/**
+ * Default values pre-filled when the user switches to Custom Material. The activation
+ * energy is not among them: Python works it out from a second viscosity reading, or uses
+ * its typical default, unless the user enters one by hand.
+ */
 const CUSTOM_MATERIAL_DEFAULTS: Required<Pick<
   ProcessParameters,
-  'viscosity_cp' | 'density_kg_m3' | 'flow_index' | 'activation_energy_j_mol'
+  'viscosity_cp' | 'density_kg_m3' | 'flow_index'
 >> = {
   viscosity_cp: 350,
   density_kg_m3: 1120,
   flow_index: 0.85,
-  activation_energy_j_mol: 25000,
 }
+
+/**
+ * The typical activation energy shown when there is no second viscosity reading. Display
+ * only: Python's DEFAULT_ACTIVATION_ENERGY_J_MOL (src/core/modules/thermal.py) is the value
+ * the calculation uses, and a unit test keeps the two in step.
+ */
+export const DEFAULT_ACTIVATION_ENERGY_J_MOL = 25000
+
+/** The temperature the custom-material viscosity is quoted at, unless a run says otherwise */
+const CUSTOM_REFERENCE_TEMP_C = 25
+
+/** The optional second viscosity reading. Clearing either removes it. */
+const SECOND_READING_FIELDS = ['viscosity_2_cp', 'viscosity_2_temp_c'] as const
 
 /**
  * Optional inputs. Leaving one blank sends nothing, which keeps the calculation exactly
@@ -212,11 +228,19 @@ const CUSTOM_FIELD_RANGES: Record<
   viscosity_cp:            { min: 50,   max: 10000,  label: 'Viscosity',         unit: 'cP' },
   density_kg_m3:           { min: 900,  max: 1500,   label: 'Density',           unit: 'kg/m³' },
   flow_index:              { min: 0.01, max: 1.0,    label: 'Flow Index',        unit: '(0–1)' },
-  activation_energy_j_mol: { min: 1000, max: 100000, label: 'Activation Energy', unit: 'J/mol' },
+  activation_energy_j_mol: { min: 1000, max: 100000, label: 'Activation energy', unit: 'J/mol' },
 }
 
 export function CalculatorForm() {
-  const { calculate, isLoading, isReady, error, loadProgress, rememberSetup } = useCalculator()
+  const {
+    calculate,
+    isLoading,
+    isReady,
+    error,
+    loadProgress,
+    rememberSetup,
+    activationEnergyFromReadings,
+  } = useCalculator()
 
   // The last setup comes back on load. Only recognised numeric fields are taken from
   // storage, and the material is deliberately left for the effect below to resolve against
@@ -316,6 +340,8 @@ export function CalculatorForm() {
               density_kg_m3,
               flow_index,
               activation_energy_j_mol,
+              viscosity_2_cp,
+              viscosity_2_temp_c,
               polyol_sg,
               iso_sg,
               final_density_kg_m3,
@@ -355,6 +381,8 @@ export function CalculatorForm() {
           } else {
             next.rheology_model = model
             Object.assign(next, RHEOLOGY_MODEL_FIELDS[model])
+            // The second reading pairs with the power-law viscosity, which this model has not
+            for (const key of SECOND_READING_FIELDS) delete next[key]
           }
           return next as unknown as ProcessParameters
         })
@@ -387,7 +415,8 @@ export function CalculatorForm() {
         ...HOSE_FIELD_RANGES,
         max_line_pressure_bar: LINE_LIMIT_RANGE,
       }
-      if (name in optionalRanges && value.trim() === '') {
+      const isSecondReading = (SECOND_READING_FIELDS as readonly string[]).includes(name)
+      if ((name in optionalRanges || isSecondReading) && value.trim() === '') {
         setInputs((prev) => {
           const next = { ...prev }
           delete next[name as keyof ProcessParameters]
@@ -401,6 +430,9 @@ export function CalculatorForm() {
       const numValue = parseFloat(value)
       if (!isNaN(numValue)) {
         setInputs((prev) => ({ ...prev, [name]: numValue } as ProcessParameters))
+
+        // The second reading is judged by Python, as a pair (secondReadingError below)
+        if (isSecondReading) return
 
         // Optional field validation
         if (name in optionalRanges) {
@@ -512,12 +544,114 @@ export function CalculatorForm() {
     }
   }
 
+  // ── Activation energy (custom material) ─────────────────────────────────
+  // Entered by hand when the user unlocked the field (and on saved runs from before it was
+  // calculated); otherwise Python works it out from the two viscosity readings, or the
+  // typical default stands in as an estimate.
+  const isCustomMaterial = inputs.material_key === 'custom'
+  const isPowerLaw = !inputs.rheology_model || inputs.rheology_model === 'power_law'
+  const isManualActivation = inputs.activation_energy_j_mol !== undefined
+  const referenceTempC = inputs.reference_temp_c ?? CUSTOM_REFERENCE_TEMP_C
+  const { viscosity_cp: viscosity1Cp, viscosity_2_cp: viscosity2Cp, viscosity_2_temp_c: temp2C } = inputs
+  const hasSecondReading = viscosity2Cp !== undefined || temp2C !== undefined
+  const readingsKey =
+    isCustomMaterial && isPowerLaw && viscosity1Cp !== undefined && viscosity2Cp !== undefined && temp2C !== undefined
+      ? `${viscosity1Cp}|${referenceTempC}|${viscosity2Cp}|${temp2C}`
+      : null
+
+  // The answer for one set of readings. Held with its key, so an answer still arriving
+  // for readings the user has since changed is never shown against the new ones.
+  const [readingsResult, setReadingsResult] = useState<{
+    key: string
+    value: number | null
+    error: string | null
+  } | null>(null)
+
+  useEffect(() => {
+    if (!readingsKey || !isReady || isManualActivation) return
+    if (readingsResult?.key === readingsKey) return
+    let cancelled = false
+    const timer = setTimeout(() => {
+      activationEnergyFromReadings(viscosity1Cp!, referenceTempC, viscosity2Cp!, temp2C!)
+        .then(({ value, error: readingError }) => {
+          if (!cancelled) setReadingsResult({ key: readingsKey, value, error: readingError })
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setReadingsResult({
+              key: readingsKey,
+              value: null,
+              error: 'The activation energy could not be calculated. Try again.',
+            })
+          }
+        })
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [
+    readingsKey,
+    isReady,
+    isManualActivation,
+    readingsResult?.key,
+    activationEnergyFromReadings,
+    viscosity1Cp,
+    referenceTempC,
+    viscosity2Cp,
+    temp2C,
+  ])
+
+  const currentReadings = readingsKey && readingsResult?.key === readingsKey ? readingsResult : null
+  const readingsPending = !isManualActivation && readingsKey !== null && currentReadings === null
+  let secondReadingError: string | undefined
+  if (isCustomMaterial && isPowerLaw && !isManualActivation && hasSecondReading) {
+    if (viscosity2Cp === undefined || temp2C === undefined) {
+      secondReadingError = 'Enter both the second viscosity reading and its temperature, or leave both empty.'
+    } else if (currentReadings?.error) {
+      secondReadingError = currentReadings.error
+    }
+  }
+
+  const activationStatus: 'user' | 'calculated' | 'default' | 'none' = isManualActivation
+    ? 'user'
+    : isPowerLaw && hasSecondReading
+      ? typeof currentReadings?.value === 'number'
+        ? 'calculated'
+        : 'none'
+      : 'default'
+  const shownActivation =
+    activationStatus === 'user'
+      ? inputs.activation_energy_j_mol
+      : activationStatus === 'calculated'
+        ? currentReadings?.value ?? undefined
+        : activationStatus === 'default'
+          ? DEFAULT_ACTIVATION_ENERGY_J_MOL
+          : undefined
+
+  // Unlocking starts from whatever the field shows, so nothing jumps; locking again hands
+  // the value back to the readings or the default
+  const unlockActivation = () => {
+    setInputs((prev) => ({
+      ...prev,
+      activation_energy_j_mol: shownActivation ?? DEFAULT_ACTIVATION_ENERGY_J_MOL,
+    }))
+  }
+  const relockActivation = () => {
+    setInputs((prev) => {
+      const next = { ...prev }
+      delete next.activation_energy_j_mol
+      return next
+    })
+    setFieldErrors((prev) => { const u = { ...prev }; delete u.activation_energy_j_mol; return u })
+  }
+
   const hasErrors =
     Object.keys(fieldErrors).length > 0 ||
     Boolean(insulationThicknessError) ||
-    Object.keys(rheologyErrors).length > 0
+    Object.keys(rheologyErrors).length > 0 ||
+    (isCustomMaterial && (Boolean(secondReadingError) || readingsPending))
   const canSubmit = !hasErrors && isReady && !isLoading && inputs.material_key !== ''
-  const isCustomMaterial = inputs.material_key === 'custom'
 
   return (
     // Not clipped on a wide screen, so the Run button can stick to the bottom of the
@@ -528,7 +662,17 @@ export function CalculatorForm() {
         <p className="text-xs text-ink-2 mt-1">Configure your injection settings</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card-body space-y-5">
+      <form
+        // Enter in a field submits too, so it is held to the same rule as the button
+        onSubmit={(e) => {
+          if (!canSubmit) {
+            e.preventDefault()
+            return
+          }
+          handleSubmit(e)
+        }}
+        className="card-body space-y-5"
+      >
         {/* Pipe Length */}
         <InputField
           label="Pipe Length"
@@ -650,7 +794,7 @@ export function CalculatorForm() {
                 <p><strong>Viscosity (cP):</strong> Dynamic viscosity at reference temperature (25 °C). Controls flow resistance.</p>
                 <p><strong>Density (kg/m³):</strong> Bulk liquid density of the mixed material before foaming.</p>
                 <p><strong>Flow Index (0–1):</strong> Power-law exponent for non-Newtonian behaviour. 1.0 = Newtonian; typical PU foams: 0.8–0.9.</p>
-                <p><strong>Activation Energy (J/mol):</strong> Arrhenius energy controlling how viscosity changes with temperature. Typical range: 20 000–35 000 J/mol.</p>
+                <p><strong>Temperature sensitivity (activation energy, J/mol):</strong> How fast the material thins as it warms. Add a viscosity reading at a second temperature and it is calculated for your material; without one a typical 25,000 J/mol is used, marked as an estimate.</p>
                 <p><strong>Viscosity Model:</strong> The power law suits a data sheet. If you have a measured flow curve, Carreau or Cross level off at low shear where the power law does not, and Herschel–Bulkley adds a yield stress for filled systems. These use the exact laminar pipe solution rather than the apparent-viscosity shortcut. Parameters are at 25 °C; temperature shifts the whole curve by the activation energy.</p>
               </div>
             )}
@@ -693,6 +837,14 @@ export function CalculatorForm() {
                   error={fieldErrors.viscosity_cp}
                 />
 
+                <SecondViscosityReading
+                  viscosityCp={inputs.viscosity_2_cp}
+                  tempC={inputs.viscosity_2_temp_c}
+                  referenceTempC={referenceTempC}
+                  onChange={handleChange}
+                  error={secondReadingError}
+                />
+
                 <CustomMaterialField
                   label="Flow Index"
                   name="flow_index"
@@ -715,12 +867,14 @@ export function CalculatorForm() {
               error={fieldErrors.density_kg_m3}
             />
 
-            <CustomMaterialField
-              label="Activation Energy"
-              name="activation_energy_j_mol"
-              value={inputs.activation_energy_j_mol ?? CUSTOM_MATERIAL_DEFAULTS.activation_energy_j_mol}
+            <ActivationEnergyField
+              status={activationStatus}
+              value={shownActivation}
+              canCalculate={isPowerLaw}
+              hasReadings={isPowerLaw && viscosity2Cp !== undefined && temp2C !== undefined}
               onChange={handleChange}
-              unit="J/mol"
+              onUnlock={unlockActivation}
+              onRelock={relockActivation}
               range={CUSTOM_FIELD_RANGES.activation_energy_j_mol}
               error={fieldErrors.activation_energy_j_mol}
             />
@@ -1245,6 +1399,213 @@ function CustomMaterialField({
           <span>{error}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+
+/**
+ * The optional second viscosity reading: a viscosity and the temperature it was measured
+ * at. With the 25 °C viscosity above it, Python works out the activation energy.
+ */
+function SecondViscosityReading({
+  viscosityCp,
+  tempC,
+  referenceTempC,
+  onChange,
+  error,
+}: {
+  viscosityCp: number | undefined
+  tempC: number | undefined
+  referenceTempC: number
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  error?: string
+}) {
+  const id = useId()
+  const viscosityId = `${id}-viscosity`
+  const tempId = `${id}-temp`
+  const hintId = `${id}-hint`
+  const errorId = `${id}-error`
+  const describedBy = error ? `${errorId} ${hintId}` : hintId
+
+  const inputClass = `block min-h-[44px] w-full bg-surface pl-3 pr-12 py-2 text-sm font-medium rounded-field border transition-all outline-none placeholder:text-ink-2 ${
+    error
+      ? 'border-danger text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+      : 'border-line-strong text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
+  }`
+
+  return (
+    <div>
+      {/* Bottom-aligned: the longer label wraps on a phone, and the inputs should still line up */}
+      <div className="grid grid-cols-2 items-end gap-3">
+        <div>
+          <label htmlFor={viscosityId} className="mb-1 block text-sm font-semibold text-ink">
+            Second viscosity reading
+          </label>
+          <div className="relative">
+            <input
+              id={viscosityId}
+              type="number"
+              name="viscosity_2_cp"
+              value={viscosityCp ?? ''}
+              placeholder="optional"
+              onChange={onChange}
+              step="any"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={describedBy}
+              className={inputClass}
+            />
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-xs font-medium text-ink-2">
+              cP
+            </span>
+          </div>
+        </div>
+        <div>
+          <label htmlFor={tempId} className="mb-1 block text-sm font-semibold text-ink">
+            Measured at
+          </label>
+          <div className="relative">
+            <input
+              id={tempId}
+              type="number"
+              name="viscosity_2_temp_c"
+              value={tempC ?? ''}
+              placeholder="optional"
+              onChange={onChange}
+              step="any"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={describedBy}
+              className={inputClass}
+            />
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-xs font-medium text-ink-2">
+              °C
+            </span>
+          </div>
+        </div>
+      </div>
+      <p id={hintId} className="mt-1 text-sm text-ink-2 leading-snug">
+        Optional. The viscosity above is your {referenceTempC} °C value.
+      </p>
+      {error && (
+        <div
+          id={errorId}
+          role="alert"
+          className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-danger"
+        >
+          <XCircle aria-hidden="true" className="h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** How each source of the activation energy is tagged and explained on the form */
+const ACTIVATION_STATUS_TEXT: Record<'user' | 'calculated' | 'default', { tag: string; note: string }> = {
+  calculated: { tag: 'Calculated', note: 'Calculated from your two viscosity readings.' },
+  default: {
+    tag: 'Estimate',
+    note: 'Typical value. Add a second viscosity reading to calculate it for your material.',
+  },
+  user: { tag: 'Entered by user', note: 'Entered by user.' },
+}
+
+/**
+ * Temperature sensitivity (activation energy). Read-only unless the user unlocks it: it
+ * shows the value Python calculated from the two viscosity readings, or the typical default
+ * as an estimate. Read-only rather than disabled, so it stays in the tab order and screen
+ * readers announce the value; greyed with role colours that keep AA contrast.
+ */
+function ActivationEnergyField({
+  status,
+  value,
+  canCalculate,
+  hasReadings,
+  onChange,
+  onUnlock,
+  onRelock,
+  range,
+  error,
+}: {
+  status: 'user' | 'calculated' | 'default' | 'none'
+  value: number | undefined
+  /** False for a measured flow curve, which has no single viscosity to pair a reading with */
+  canCalculate: boolean
+  hasReadings: boolean
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onUnlock: () => void
+  onRelock: () => void
+  range: { min: number; max: number }
+  error?: string
+}) {
+  const id = useId()
+  const noteId = `${id}-note`
+  const helpId = `${id}-help`
+  const errorId = `${id}-error`
+  const isManual = status === 'user'
+  const text = status === 'none' ? null : ACTIVATION_STATUS_TEXT[status]
+  const note =
+    status === 'default' && !canCalculate
+      ? 'Typical value. A second viscosity reading works with the power-law viscosity only.'
+      : text?.note
+
+  return (
+    <div>
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2">
+        <label htmlFor={id} className="text-sm font-semibold text-ink">
+          Temperature sensitivity (activation energy)
+        </label>
+        {text && (
+          <span className="whitespace-nowrap text-xs font-medium text-ink-2">{text.tag}</span>
+        )}
+      </div>
+      <div className="relative">
+        <input
+          id={id}
+          type="number"
+          name="activation_energy_j_mol"
+          value={value ?? ''}
+          placeholder={status === 'none' ? 'Not calculated' : undefined}
+          readOnly={!isManual}
+          onChange={isManual ? onChange : undefined}
+          step="any"
+          min={isManual ? range.min : undefined}
+          max={isManual ? range.max : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={[error ? errorId : null, note ? noteId : null, helpId].filter(Boolean).join(' ')}
+          className={`block min-h-[44px] w-full pl-3 pr-16 py-2 text-sm font-medium rounded-field border transition-all outline-none ${
+            !isManual
+              ? 'cursor-default border-line bg-canvas text-ink-2 placeholder:text-ink-2 focus:ring-2 focus:ring-highlight'
+              : error
+                ? 'border-danger bg-surface text-danger focus:ring-2 focus:ring-danger focus:border-danger'
+                : 'border-line-strong bg-surface text-ink focus:ring-2 focus:ring-highlight focus:border-highlight hover:border-ink-2'
+          }`}
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+          <span className={`text-xs font-medium ${error ? 'text-danger' : 'text-ink-2'}`}>J/mol</span>
+        </div>
+      </div>
+      {error && (
+        <div id={errorId} role="alert" className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-danger">
+          <XCircle aria-hidden="true" className="h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+      {note && (
+        <p id={noteId} data-testid="activation-energy-note" className="mt-1 text-sm text-ink leading-snug">
+          {note}
+        </p>
+      )}
+      <p id={helpId} className="mt-1 text-sm text-ink-2 leading-snug">
+        How fast the material thins as it warms. It only affects the result when you run away from 25 °C.
+      </p>
+      <button
+        type="button"
+        onClick={isManual ? onRelock : onUnlock}
+        className="mt-1 inline-flex min-h-[44px] items-center text-sm font-medium text-highlight underline underline-offset-2 state"
+      >
+        {isManual ? (hasReadings ? 'Use calculated value' : 'Use typical value') : 'Enter value manually'}
+      </button>
     </div>
   )
 }

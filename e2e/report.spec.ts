@@ -82,6 +82,30 @@ test.describe('PDF report', () => {
     }
   })
 
+  test('calls a typical activation energy an estimate', async ({ page }) => {
+    await waitForEngine(page)
+    // A custom material with no second viscosity reading uses the typical value
+    await page.locator('select[name=material_key]').selectOption('custom')
+    await page.click('button[type=submit]')
+    await expect(page.getByTestId('result-activation-energy')).toContainText('Estimate', {
+      timeout: 30_000,
+    })
+
+    const download = await Promise.all([
+      page.waitForEvent('download', { timeout: 60_000 }),
+      page.locator('button:has-text("PDF")').click(),
+    ]).then(([d]) => d)
+
+    const stream = await download.createReadStream()
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(chunk as Buffer)
+    const raw = Buffer.concat(chunks).toString('latin1')
+
+    // Parentheses inside a PDF text string are escaped in the raw bytes
+    expect(raw).toContain('Activation energy \\(Estimate, typical value\\)')
+    expect(raw).toContain('25,000 J/mol')
+  })
+
   test('quotes pressures in the unit chosen on screen', async ({ page }) => {
     await waitForEngine(page)
     await choosePressureUnit(page, 'psi')

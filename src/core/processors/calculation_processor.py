@@ -27,6 +27,7 @@ from ..modules.line_thermal import (
     calculate_line_temperature,
 )
 from ..modules.volatility import check_blowing_agent_volatility
+from ..modules.thermal import resolve_activation_energy
 from ..optimizers.operating_window import solve_operating_window
 from ..rheology.models import build_model as build_rheology_model
 from ..rheology.pipe_flow import solve_pipe_flow
@@ -402,6 +403,11 @@ class CalculationProcessor:
                     'reference_viscosity_cp': thermal_result['reference_viscosity_cp'],
                     'current_viscosity_cp': thermal_result['current_viscosity_cp'],
                     'temperature_factor': thermal_result['temperature_factor'],
+                    # Where the activation energy came from: 'calculated' from two viscosity
+                    # readings, 'default' (the typical value, an estimate), 'user' (typed in)
+                    # or 'database' (a catalogued material's row)
+                    'activation_energy_j_mol': material['activation_energy'],
+                    'activation_energy_source': material.get('activation_energy_source', 'database'),
                     'shear_heating_c': shear_heating.get('temperature_rise_c', 0),
                     'heat_generated_w': shear_heating.get('heat_generated_w', 0),
                 },
@@ -833,10 +839,15 @@ class CalculationProcessor:
         # (Carreau, Cross, Herschel-Bulkley) stands in for the power-law viscosity and
         # flow index; validation has already checked its parameters.
         rheology = build_rheology_model(parameters)
-        supplied_keys = ['density_kg_m3', 'activation_energy_j_mol']
+        supplied_keys = ['density_kg_m3']
         if rheology is None:
             supplied_keys += ['viscosity_cp', 'flow_index']
-        has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys)
+        # The activation energy may be typed, calculated from a second viscosity reading, or
+        # left to the typical default; only a custom material may leave it out
+        has_supplied = all(key in parameters and parameters[key] is not None for key in supplied_keys) and (
+            parameters.get('activation_energy_j_mol') is not None
+            or parameters.get('material_key') == 'custom'
+        )
 
         if has_supplied:
             if rheology is None:
@@ -848,6 +859,10 @@ class CalculationProcessor:
                 # Arrhenius factor is taken against.
                 viscosity_cp = rheology.viscosity(1.0) * 1000.0
                 flow_index = rheology.index
+            activation = resolve_activation_energy(parameters)
+            if activation['error']:
+                # validate_parameters has already refused bad readings; this is the backstop
+                return None, activation['error']
             material = {
                 'name': parameters.get('material_name'),
                 'viscosity': viscosity_cp,
@@ -855,7 +870,8 @@ class CalculationProcessor:
                 'reference_temp_c': parameters.get('reference_temp_c', 25.0),
                 'flow_index': flow_index,
                 'rheology': rheology,
-                'activation_energy': parameters.get('activation_energy_j_mol'),
+                'activation_energy': activation['activation_energy_j_mol'],
+                'activation_energy_source': activation['source'],
                 'polyol_sg': parameters.get('polyol_sg'),
                 'iso_sg': parameters.get('iso_sg'),
                 'weight_ratio': parameters.get('weight_ratio'),

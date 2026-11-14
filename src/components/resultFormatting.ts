@@ -1,3 +1,5 @@
+import type { ActivationEnergySource } from '@/calculator_types'
+
 /**
  * Display decisions for the results panel.
  *
@@ -75,4 +77,32 @@ export const describeFlowWindow = (window: {
     `The top is set by ${describeWindowBound(window.max_governed_by)}, ` +
     `the bottom by ${describeWindowBound(window.min_governed_by)}.`
   )
+}
+
+/**
+ * How a run's activation energy is labelled in the results and in every export, so the
+ * screen, JSON, CSV, text report and PDF all say the same thing. A default is always called
+ * an estimate; a typed value is always marked as entered by the user.
+ */
+export const ACTIVATION_ENERGY_SOURCE_LABELS: Record<ActivationEnergySource, string> = {
+  calculated: 'Calculated from two viscosity readings',
+  default: 'Estimate, typical value',
+  user: 'Entered by user',
+  database: 'From the material database',
+}
+
+/**
+ * The activation energy a run used, rounded for display, with its source label. Null for
+ * runs saved before the engine reported it.
+ */
+export function describeActivationEnergy(
+  thermal: { activation_energy_j_mol?: number; activation_energy_source?: ActivationEnergySource } | undefined
+): { valueJMol: number; label: string; source: ActivationEnergySource } | null {
+  if (!thermal || !isNumber(thermal.activation_energy_j_mol) || !thermal.activation_energy_source) {
+    return null
+  }
+  const source = thermal.activation_energy_source
+  const label = ACTIVATION_ENERGY_SOURCE_LABELS[source]
+  if (!label) return null
+  return { valueJMol: Math.round(thermal.activation_energy_j_mol), label, source }
 }
