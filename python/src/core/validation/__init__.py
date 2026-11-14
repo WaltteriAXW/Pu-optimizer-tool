@@ -96,6 +96,7 @@ def validate_parameters(parameters: Dict[str, Any]) -> List[str]:
 
     errors.extend(_validate_hose(parameters))
     errors.extend(_validate_rheology(parameters))
+    errors.extend(_validate_second_viscosity(parameters))
 
     limit = parameters.get('max_line_pressure_bar')
     if limit is not None:
@@ -126,6 +127,28 @@ def _validate_rheology(parameters: Dict[str, Any]) -> List[str]:
     except ValueError as e:
         return [str(e)]
     return []
+
+
+def _validate_second_viscosity(parameters: Dict[str, Any]) -> List[str]:
+    """
+    A second viscosity reading turns into the activation energy. It belongs to a custom
+    power-law material, where the first reading is the 25 °C viscosity it is paired with, and
+    readings that give an impossible result are refused rather than clamped into range.
+    """
+    from ..modules.thermal import resolve_activation_energy
+
+    if parameters.get('viscosity_2_cp') is None and parameters.get('viscosity_2_temp_c') is None:
+        return []
+    if parameters.get('material_key') != 'custom':
+        return ['A second viscosity reading needs a custom material']
+    model = parameters.get('rheology_model')
+    if model and model != 'power_law':
+        return ['A second viscosity reading works with the power-law viscosity only']
+    if parameters.get('activation_energy_j_mol') is not None:
+        # A value entered by hand takes precedence; the readings are not used
+        return []
+    error = resolve_activation_energy(parameters)['error']
+    return [error] if error else []
 
 
 def _validate_hose(parameters: Dict[str, Any]) -> List[str]:

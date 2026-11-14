@@ -707,3 +707,68 @@ class TestMeasuredFlowCurve:
 
         assert result['success'] is False
         assert 'custom material' in result['errors'][0]
+
+
+class TestCustomMaterialActivationEnergy:
+    """The activation energy a custom material calculates with, and how it is labelled."""
+
+    BASE = {
+        'pipe_length_mm': 500, 'pipe_diameter_mm': 12, 'temperature_c': 35,
+        'flow_rate_lpm': 5, 'material_key': 'custom',
+        'viscosity_cp': 350, 'density_kg_m3': 1120, 'flow_index': 0.85,
+    }
+
+    def _thermal(self, **extra):
+        from .calculation_processor import calculate_all
+        result = calculate_all({**self.BASE, **extra})
+        assert result['success'], result['errors']
+        return result['data']['thermal']
+
+    def test_no_second_reading_uses_default_marked_as_estimate_source(self):
+        thermal = self._thermal()
+        assert thermal['activation_energy_j_mol'] == 25000
+        assert thermal['activation_energy_source'] == 'default'
+
+    def test_second_reading_calculates_and_is_used(self):
+        thermal = self._thermal(viscosity_2_cp=200, viscosity_2_temp_c=40)
+        assert thermal['activation_energy_source'] == 'calculated'
+        assert thermal['activation_energy_j_mol'] == 29000
+        default = self._thermal()
+        assert thermal['current_viscosity_cp'] != default['current_viscosity_cp']
+
+    def test_legacy_typed_value_calculates_unchanged(self):
+        # A saved run from before this change: typed 25,000 must give the same numbers
+        # as before, and is labelled as entered by the user
+        typed = self._thermal(activation_energy_j_mol=25000)
+        default = self._thermal()
+        assert typed['activation_energy_source'] == 'user'
+        assert typed['current_viscosity_cp'] == default['current_viscosity_cp']
+
+    @pytest.mark.parametrize('extra, message', [
+        ({'viscosity_2_cp': 300, 'viscosity_2_temp_c': 28}, 'at least 5 °C'),
+        ({'viscosity_2_cp': 400, 'viscosity_2_temp_c': 40}, 'lower at the higher temperature'),
+        ({'viscosity_2_cp': 349.9, 'viscosity_2_temp_c': 60}, 'outside the expected range'),
+        ({'viscosity_2_cp': 200}, 'leave both empty'),
+    ])
+    def test_bad_second_reading_refuses_to_calculate(self, extra, message):
+        from .calculation_processor import calculate_all
+        result = calculate_all({**self.BASE, **extra})
+        assert not result['success']
+        assert any(message in error for error in result['errors'])
+
+    def test_second_reading_refused_on_catalogued_material(self):
+        from .calculation_processor import calculate_all
+        result = calculate_all({
+            'pipe_length_mm': 500, 'pipe_diameter_mm': 12, 'temperature_c': 35,
+            'flow_rate_lpm': 5, 'material_key': 'genfoam_hd12',
+            'viscosity_2_cp': 200, 'viscosity_2_temp_c': 40,
+        })
+        assert not result['success']
+
+    def test_catalogued_material_reports_database_source(self):
+        from .calculation_processor import calculate_all
+        result = calculate_all({
+            'pipe_length_mm': 500, 'pipe_diameter_mm': 12, 'temperature_c': 35,
+            'flow_rate_lpm': 5, 'material_key': 'genfoam_hd12',
+        })
+        assert result['data']['thermal']['activation_energy_source'] == 'database'
