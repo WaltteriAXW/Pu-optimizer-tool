@@ -4,6 +4,7 @@ import { VALIDATION_RANGES, DEFAULTS, type RangeSpec } from '../constants'
 import { getDefaultMaterialProvider } from '@/services/MaterialProvider'
 import { getLastInputs, getPreferences, saveLastInputs } from '@/services/displayPreferences'
 import type {
+  DataSheetReading,
   ProcessParameters,
   HoseMaterial,
   InsulationMaterial,
@@ -11,6 +12,7 @@ import type {
 } from '@/calculator_types'
 import { CaretDown, Play, Warning, XCircle } from '@phosphor-icons/react'
 import { PopUpSelect, SegmentedControl } from './controls'
+import { DataSheetPanel } from './DataSheetPanel'
 import {
   fromSliderPosition,
   SLIDER_STEPS,
@@ -328,6 +330,60 @@ export function CalculatorForm() {
     }
   }, [])
 
+  // Readings changed by hand are no longer the data sheet's, so the activation energy they
+  // give is "calculated from your two readings" again
+  const clearDataSheetActivation = useCallback(() => {
+    setInputs((prev) => {
+      if (!prev.activation_energy_from) return prev
+      const next = { ...prev }
+      delete next.activation_energy_from
+      return next
+    })
+  }, [])
+
+  // "Use these values" on a data sheet: fill the custom form with what was found and combined.
+  // Nothing calculates; every value stays editable. A value that was not found stays empty,
+  // with the reason on the field.
+  const applyDataSheet = useCallback((reading: DataSheetReading) => {
+    const c = reading.combined
+    const notFound = 'Not found on the data sheet. Enter it by hand.'
+    setInputs((prev) => {
+      const next: ProcessParameters = { ...prev, material_key: 'custom' }
+      for (const key of [
+        ...RHEOLOGY_FIELD_KEYS,
+        'rheology_model',
+        'activation_energy_j_mol',
+        'viscosity_2_cp',
+        'viscosity_2_temp_c',
+        'activation_energy_from',
+        'reference_temp_c',
+        'material_name',
+      ] as const) {
+        delete (next as unknown as Record<string, unknown>)[key]
+      }
+      next.viscosity_cp = c.viscosity_cp ?? undefined
+      next.density_kg_m3 = c.density_kg_m3 ?? undefined
+      next.flow_index = c.flow_index
+      next.flow_index_source = 'typical'
+      if (typeof c.reference_temp_c === 'number') next.reference_temp_c = c.reference_temp_c
+      if (c.activation_energy_source === 'data_sheet' && c.second_reading) {
+        next.viscosity_2_cp = c.second_reading.viscosity_cp
+        next.viscosity_2_temp_c = c.second_reading.temp_c
+        next.activation_energy_from = 'data_sheet'
+      }
+      if (reading.found.product_name) next.material_name = reading.found.product_name.value
+      next.material_values_source = 'data_sheet_confirmed'
+      return next
+    })
+    setFieldErrors((prev) => {
+      const updated = { ...prev }
+      for (const key of [...Object.keys(CUSTOM_FIELD_RANGES), ...RHEOLOGY_FIELD_KEYS]) delete updated[key]
+      if (typeof c.viscosity_cp !== 'number') updated.viscosity_cp = notFound
+      if (typeof c.density_kg_m3 !== 'number') updated.density_kg_m3 = notFound
+      return updated
+    })
+  }, [])
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target
@@ -352,6 +408,10 @@ export function CalculatorForm() {
               flow_index,
               activation_energy_j_mol,
               flow_index_source,
+              activation_energy_from,
+              material_values_source,
+              material_name,
+              reference_temp_c,
               viscosity_2_cp,
               viscosity_2_temp_c,
               polyol_sg,
@@ -429,6 +489,7 @@ export function CalculatorForm() {
       }
       const isSecondReading = (SECOND_READING_FIELDS as readonly string[]).includes(name)
       if ((name in optionalRanges || isSecondReading) && value.trim() === '') {
+        if (isSecondReading) clearDataSheetActivation()
         setInputs((prev) => {
           const next = { ...prev }
           delete next[name as keyof ProcessParameters]
@@ -444,7 +505,13 @@ export function CalculatorForm() {
         setInputs((prev) => ({ ...prev, [name]: numValue } as ProcessParameters))
 
         // The second reading is judged by Python, as a pair (secondReadingError below)
-        if (isSecondReading) return
+        if (isSecondReading) {
+          clearDataSheetActivation()
+          return
+        }
+
+        // A changed viscosity or second reading is no longer the data sheet's pair
+        if (name === 'viscosity_cp' || isSecondReading) clearDataSheetActivation()
 
         // A flow index the user typed is theirs, no longer the typical pre-fill
         if (name === 'flow_index') {
@@ -507,7 +574,7 @@ export function CalculatorForm() {
         }
       }
     },
-    []
+    [clearDataSheetActivation]
   )
 
   // A slider always lands inside the range, so setting from one clears any error the typed
@@ -634,17 +701,19 @@ export function CalculatorForm() {
     }
   }
 
-  const activationStatus: 'user' | 'calculated' | 'default' | 'none' = isManualActivation
+  const activationStatus: 'user' | 'calculated' | 'data_sheet' | 'default' | 'none' = isManualActivation
     ? 'user'
     : isPowerLaw && hasSecondReading
       ? typeof currentReadings?.value === 'number'
-        ? 'calculated'
+        ? inputs.activation_energy_from === 'data_sheet'
+          ? 'data_sheet'
+          : 'calculated'
         : 'none'
       : 'default'
   const shownActivation =
     activationStatus === 'user'
       ? inputs.activation_energy_j_mol
-      : activationStatus === 'calculated'
+      : activationStatus === 'calculated' || activationStatus === 'data_sheet'
         ? currentReadings?.value ?? undefined
         : activationStatus === 'default'
           ? DEFAULT_ACTIVATION_ENERGY_J_MOL
@@ -820,6 +889,14 @@ export function CalculatorForm() {
               </div>
             )}
 
+            <DataSheetPanel onUse={applyDataSheet} />
+            {inputs.material_values_source === 'data_sheet_confirmed' && (
+              <p className="text-sm text-ink" data-testid="data-sheet-mark">
+                Values read from a data sheet{inputs.material_name ? ` (${inputs.material_name})` : ''} and
+                confirmed by you. You can still edit them.
+              </p>
+            )}
+
             {showFlowCurve ? (
               <OptionalSelect
                 name="rheology_model"
@@ -861,7 +938,7 @@ export function CalculatorForm() {
                 <CustomMaterialField
                   label="Viscosity"
                   name="viscosity_cp"
-                  value={inputs.viscosity_cp ?? CUSTOM_MATERIAL_DEFAULTS.viscosity_cp}
+                  value={inputs.viscosity_cp}
                   onChange={handleChange}
                   unit="cP"
                   range={CUSTOM_FIELD_RANGES.viscosity_cp}
@@ -879,7 +956,7 @@ export function CalculatorForm() {
                 <CustomMaterialField
                   label="Flow Index"
                   name="flow_index"
-                  value={inputs.flow_index ?? CUSTOM_MATERIAL_DEFAULTS.flow_index}
+                  value={inputs.flow_index}
                   onChange={handleChange}
                   unit="(0–1)"
                   range={CUSTOM_FIELD_RANGES.flow_index}
@@ -891,7 +968,7 @@ export function CalculatorForm() {
             <CustomMaterialField
               label="Density"
               name="density_kg_m3"
-              value={inputs.density_kg_m3 ?? CUSTOM_MATERIAL_DEFAULTS.density_kg_m3}
+              value={inputs.density_kg_m3}
               onChange={handleChange}
               unit="kg/m³"
               range={CUSTOM_FIELD_RANGES.density_kg_m3}
@@ -1532,8 +1609,12 @@ function SecondViscosityReading({
 }
 
 /** How each source of the activation energy is tagged and explained on the form */
-const ACTIVATION_STATUS_TEXT: Record<'user' | 'calculated' | 'default', { tag: string; note: string }> = {
+const ACTIVATION_STATUS_TEXT: Record<
+  'user' | 'calculated' | 'data_sheet' | 'default',
+  { tag: string; note: string }
+> = {
   calculated: { tag: 'Calculated', note: 'Calculated from your two viscosity readings.' },
+  data_sheet: { tag: 'Calculated', note: 'Calculated from the data sheet.' },
   default: {
     tag: 'Estimate',
     note: 'Typical value. Add a second viscosity reading to calculate it for your material.',
@@ -1558,7 +1639,7 @@ function ActivationEnergyField({
   range,
   error,
 }: {
-  status: 'user' | 'calculated' | 'default' | 'none'
+  status: 'user' | 'calculated' | 'data_sheet' | 'default' | 'none'
   value: number | undefined
   /** False for a measured flow curve, which has no single viscosity to pair a reading with */
   canCalculate: boolean

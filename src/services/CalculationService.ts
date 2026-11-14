@@ -7,7 +7,8 @@
  * Single responsibility: coordinate all calculations and return results
  */
 
-import type { ProcessParameters, CalculationResults } from '@/calculator_types'
+import type { ProcessParameters, CalculationResults, DataSheetReading } from '@/calculator_types'
+import type { SheetRow } from './dataSheetReader'
 
 /**
  * Interface for PyodideManager to provide proper typing
@@ -173,6 +174,17 @@ export class CalculationService {
   }
 
   /**
+   * Find the custom-material values in a data sheet's text, and combine the two components
+   * the way the catalogue does. Python does both; this only carries the rows across.
+   */
+  async readDataSheet(rows: SheetRow[]): Promise<DataSheetReading> {
+    return this.pyodideManager.callPython<DataSheetReading>(
+      'src.core.data.data_sheet.read_data_sheet',
+      [rows]
+    )
+  }
+
+  /**
    * Prepare the parameters sent to Python.
    *
    * Catalogued materials travel as a material_key alone: Python reads the same material
@@ -198,6 +210,8 @@ export class CalculationService {
       'flow_index',
       'activation_energy_j_mol',
       'flow_index_source',
+      'activation_energy_from',
+      'material_values_source',
       'viscosity_2_cp',
       'viscosity_2_temp_c',
       'polyol_sg',

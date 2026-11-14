@@ -10,11 +10,19 @@
  * Where a run's flow index or activation energy came from:
  * - 'typical' / 'measured': a catalogued material's row says which (all typical today)
  * - 'calculated': activation energy from two viscosity readings
+ * - 'data_sheet': activation energy from two viscosity readings on a data sheet
  * - 'default': the custom form's typical activation energy, an estimate
  * - 'user': typed in, or a measured flow curve
  * - 'database': runs saved before catalogued values carried a source; they were typical
  */
-export type ValueSource = 'typical' | 'measured' | 'calculated' | 'default' | 'user' | 'database'
+export type ValueSource =
+  | 'typical'
+  | 'measured'
+  | 'calculated'
+  | 'data_sheet'
+  | 'default'
+  | 'user'
+  | 'database'
 
 /** Kept for the activation energy, which can come from every source above */
 export type ActivationEnergySource = ValueSource
@@ -40,6 +48,11 @@ export interface ProcessParameters {
   flow_index_source?: 'typical' | 'user';
   viscosity_2_cp?: number;              // cP, a second viscosity reading (custom material)
   viscosity_2_temp_c?: number;          // °C, the temperature of that second reading
+  // 'data_sheet' when the two readings were read from a data sheet the user confirmed
+  activation_energy_from?: 'data_sheet';
+  // Set when the user confirmed custom material values read from a data sheet
+  material_values_source?: 'data_sheet_confirmed';
+  material_name?: string;
   polyol_sg?: number;                   // Polyol specific gravity
   iso_sg?: number;                      // Isocyanate specific gravity
   final_density_kg_m3?: number;         // Final foam density after cure (kg/m³)
@@ -201,6 +214,8 @@ export interface CalculationResults {
     machine_type?: string;
     /** Density of the mixed liquid being pumped (kg/m³), blended from both components */
     material_density_kg_m3?: number;
+    /** Present when the custom material's values were read from a data sheet and confirmed */
+    material_values_source?: 'data_sheet_confirmed';
     /**
      * The same output as throughput. This is how a metering pump is set and how machine
      * capacity is specified, so it is the figure that maps onto a dial.
@@ -434,5 +449,41 @@ export class PyodideError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'PyodideError';
+  }
+}
+
+/** One value found on a data sheet, with the exact line it came from */
+export interface DataSheetViscosity {
+  value_cp: number
+  low_cp?: number
+  high_cp?: number
+  /** As written on the sheet: "950", "900–1050", "350±50" */
+  display: string
+  temp_c?: number
+  line: string
+}
+
+export interface DataSheetReading {
+  found: {
+    product_name?: { value: string; line: string }
+    polyol_viscosity?: DataSheetViscosity[]
+    iso_viscosity?: DataSheetViscosity[]
+    polyol_specific_gravity?: { value: number; display: string; from_density: boolean; line: string }
+    iso_specific_gravity?: { value: number; display: string; from_density: boolean; line: string }
+    mix_ratio?: Array<{ polyol: number; iso: number; basis?: 'weight' | 'volume'; line: string }>
+  }
+  missing: string[]
+  /** What the form would be filled with: blended exactly as the catalogue is */
+  combined: {
+    viscosity_cp?: number
+    reference_temp_c?: number
+    density_kg_m3?: number
+    weight_ratio?: [number, number]
+    flow_index: number
+    flow_index_source: 'typical'
+    activation_energy_j_mol: number
+    activation_energy_source: 'data_sheet' | 'typical'
+    second_reading?: { viscosity_cp: number; temp_c: number }
+    notes: string[]
   }
 }

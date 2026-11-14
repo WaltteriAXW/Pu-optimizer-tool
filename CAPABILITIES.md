@@ -193,6 +193,16 @@ These are solved with the exact laminar pipe relation (Rabinowitsch–Mooney) ra
 
 These features are physics, not field data: none has yet been compared with shots on a real machine.
 
+## Filling a Custom Material From a Data Sheet (optional)
+
+"Fill from a data sheet (PDF)" at the top of the custom material form reads a technical data sheet in the browser. pdfjs-dist is bundled with the app and only loaded when you use it; nothing is uploaded, and there is no OCR, so a scanned sheet is refused with "This PDF is a scan, so the tool can't read it. Enter the values by hand."
+
+It looks for the product name, the polyol and isocyanate viscosities with their temperatures, both specific gravities (or densities) and the mix ratio by weight or volume. It reads cP and mPa·s (and converts Pa·s), ranges such as 900-1050 (the midpoint, with the range shown) and tolerances such as 350±50. The two components are combined exactly as the catalogue combines them. If both viscosities are given at two temperatures, the activation energy is calculated from them and marked "Calculated from the data sheet"; otherwise it is the typical value, marked as such. The flow index is always a typical value.
+
+You see every value with the exact line it came from, and "Not found" for the rest, before anything is filled in. Only "Use these values" fills the form, nothing calculates by itself, and every value stays editable. A value that wasn't found stays empty for you to enter.
+
+This is an aid, not a source of truth. Data sheets are laid out in many ways, and you are responsible for the values you confirm. The run is marked "Material values read from a data sheet, confirmed by the user" in history and in the JSON, CSV, text report and PDF. Like the features above, it has not been checked against shots on a real machine. English-language sheets only.
+
 ---
 
 ## What Changed

@@ -42,7 +42,7 @@ test.describe('simpler custom material form', () => {
 
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
     const chunks: Buffer[] = []
     for await (const chunk of await download.createReadStream()) chunks.push(chunk as Buffer)

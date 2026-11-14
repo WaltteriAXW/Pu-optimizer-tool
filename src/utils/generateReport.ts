@@ -2,7 +2,12 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import type { CalculationResults } from '@/calculator_types'
 import { formatPressure, type PressureUnit } from '@/services/displayPreferences'
-import { describeFlowWindow, describeActivationEnergy, describeFlowIndex } from '@/components/resultFormatting'
+import {
+  describeFlowWindow,
+  describeActivationEnergy,
+  describeFlowIndex,
+  describeMaterialValues,
+} from '@/components/resultFormatting'
 import { CHART_COLORS, type ChartColorRole } from '@/components/PressureChart'
 import { BRAND_CELLS, BRAND_NAME } from '@/components/BrandMark'
 
@@ -425,6 +430,10 @@ export const generateReport = async (
         ['Mixed liquid density', input?.material_density_kg_m3 ? `${fmt(input.material_density_kg_m3, 0)} kg/m³` : 'not recorded'],
         ['Machine', machine],
       ],
+      ...((): Pick<Section, 'notes'> => {
+        const materialValues = describeMaterialValues(input)
+        return materialValues ? { notes: [{ text: materialValues }] } : {}
+      })(),
     },
     {
       title: 'Pressure',

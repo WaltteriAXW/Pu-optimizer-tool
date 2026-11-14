@@ -22,7 +22,7 @@ test.describe('PDF report', () => {
 
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
 
     expect(download.suggestedFilename()).toMatch(/^Polyurethane-Optimizer-report-.+\.pdf$/)
@@ -54,7 +54,7 @@ test.describe('PDF report', () => {
 
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
 
     const stream = await download.createReadStream()
@@ -93,7 +93,7 @@ test.describe('PDF report', () => {
 
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
 
     const stream = await download.createReadStream()
@@ -114,7 +114,7 @@ test.describe('PDF report', () => {
 
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
 
     const stream = await download.createReadStream()

@@ -183,6 +183,7 @@ export class PyodideBridge implements PyodideManager {
       // Core data — the material database reader and blowing agent constants
       'src/core/data/__init__.py',
       'src/core/data/material_database.py',
+      'src/core/data/data_sheet.py',
       'src/core/data/blowing_agents.py',
 
       // Core kinetics

@@ -220,6 +220,9 @@ export default defineConfig({
           'python/**/*.{py,csv}',
           'pyodide/*.{js,wasm,zip,json}',
         ],
+        // pdfjs (the data sheet reader) is loaded only when someone reads a data sheet, so
+        // it is not downloaded up front; runtime caching below keeps it once it has been used
+        globIgnores: ['**/pdf-*.js', '**/pdf.worker*'],
         // The Pyodide runtime files are about 9 MB each
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         cleanupOutdatedCaches: true,
@@ -229,6 +232,13 @@ export default defineConfig({
         skipWaiting: true,
         navigateFallback: 'index.html',
         runtimeCaching: [
+          {
+            // The data sheet reader, after its first use, so it works offline from then on
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && /\/assets\/pdf(-|\.worker)[^/]*\.m?js$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: { cacheName: 'data-sheet-reader' },
+          },
           {
             // Optional package wheels (scikit-learn and its dependencies), fetched on first use
             urlPattern: ({ url }) => url.href.startsWith(PYODIDE_PACKAGE_CDN),

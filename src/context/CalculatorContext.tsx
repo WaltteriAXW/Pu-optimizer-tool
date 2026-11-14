@@ -24,7 +24,8 @@ import {
   type Appearance,
   type PressureUnit,
 } from '../services/displayPreferences'
-import type { ProcessParameters, CalculationResults } from '@/calculator_types'
+import type { ProcessParameters, CalculationResults, DataSheetReading } from '@/calculator_types'
+import type { SheetRow } from '../services/dataSheetReader'
 
 /**
  * A past run.
@@ -77,6 +78,8 @@ interface CalculatorContextType {
     viscosity2Cp: number,
     temp2C: number
   ) => Promise<{ value: number | null; error: string | null }>
+  /** The custom-material values found in a data sheet's text, worked out in Python */
+  readDataSheet: (rows: SheetRow[]) => Promise<DataSheetReading>
 }
 
 /** Progress reported while the Python engine boots. */
@@ -224,6 +227,11 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     [calculationService]
   )
 
+  const readDataSheet = useCallback(
+    (rows: SheetRow[]) => calculationService.readDataSheet(rows),
+    [calculationService]
+  )
+
   const loadFromHistory = useCallback((entry: HistoryEntry) => {
     setResults(entry.results)
     setLastParams(entry.parameters)
@@ -255,6 +263,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         setRememberSetup,
         loadProgress,
         activationEnergyFromReadings,
+        readDataSheet,
       }}
     >
       {children}

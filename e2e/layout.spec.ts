@@ -94,7 +94,7 @@ test.describe('layout', () => {
     // The chart is repainted light for the printed page; the export must still succeed
     const download = await Promise.all([
       page.waitForEvent('download', { timeout: 60_000 }),
-      page.locator('button:has-text("PDF")').click(),
+      page.getByRole('button', { name: 'PDF', exact: true }).click(),
     ]).then(([d]) => d)
     expect(download.suggestedFilename()).toMatch(/\.pdf$/)
   })

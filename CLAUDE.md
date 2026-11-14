@@ -40,6 +40,7 @@ CI runs all of the above and blocks the deploy on any failure. Run lint, type-ch
 - The browser loads Python from a hand-kept list in `src/services/PyodideBridge.ts`. After adding or removing a non-test `.py` file, update that list; `pythonModuleList.test.ts` fails if it drifts.
 - Never invent data. No synthetic training data, no made-up material properties. Missing values display "not specified".
 - Features not yet checked against a real machine (hose model, operating window, measured flow curves) stay labelled as estimates in UI, docs and exports.
+- Reading a data sheet PDF is an aid, not a source of truth: the user confirms every value and is responsible for it, and the run stays marked "Material values read from a data sheet, confirmed by the user".
 - Pressure is bar in the engine, JSON, CSV and text report. psi is display-only.
 - UI colour comes only from the role classes in `src/theme.css` via Tailwind (`bg-surface`, `text-ink-2`, ...). No hard-coded hex values, 44 px minimum targets.
 - Work on a branch and open a PR. Do not push to `main`.

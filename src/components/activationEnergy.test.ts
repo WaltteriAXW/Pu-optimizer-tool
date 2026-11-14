@@ -122,3 +122,29 @@ describe('the typical default shown on the form', () => {
     expect(Number(match![1])).toBe(DEFAULT_ACTIVATION_ENERGY_J_MOL)
   })
 })
+
+describe('a run whose material came from a data sheet', () => {
+  const service = new ExportService()
+  const MARK = 'Material values read from a data sheet, confirmed by the user'
+  const fromSheet = (): CalculationResults => {
+    const run = results('data_sheet', 37400, 'typical')
+    return { ...run, input: { ...run.input, material_values_source: 'data_sheet_confirmed' } }
+  }
+
+  it('says so in JSON, CSV and the text report', () => {
+    const run = fromSheet()
+    expect(JSON.parse(service.export(run, { format: 'json' })).input.material_values_label).toBe(MARK)
+    expect(service.export(run, { format: 'csv' })).toContain(`Material Values,"${MARK}",`)
+    expect(service.export(run, { format: 'report' })).toContain(`Material Values:    ${MARK}`)
+  })
+
+  it('labels the activation energy as calculated from the data sheet', () => {
+    expect(describeActivationEnergy(fromSheet().thermal)?.label).toBe('Calculated from the data sheet')
+  })
+
+  it('adds nothing to other runs', () => {
+    const run = results('typical')
+    expect(service.export(run, { format: 'csv' })).not.toContain('Material Values')
+    expect(service.export(run, { format: 'report' })).not.toContain('Material Values')
+  })
+})

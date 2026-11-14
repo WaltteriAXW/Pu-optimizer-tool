@@ -82,6 +82,8 @@ The calculation engine, custom materials, line-thermal modelling, blowing-agent 
 
 Three further pieces are wired in: describing how the hose is built (`src/core/thermodynamics`), the operating window (`src/core/optimizers`), and measured flow curves for custom materials (`src/core/rheology`). None of them changes a result unless you use it, and none has yet been checked against shots on a real machine.
 
+The custom material form can also be filled from a technical data sheet PDF (`src/core/data/data_sheet.py`). Reading the sheet is an aid: the user checks every value against the line it came from and confirms it, and is responsible for the values confirmed. Runs filled this way are marked in history and in every export.
+
 There is no neural-network surrogate and no synthetic-data ML quality/defect classifier — an earlier version of this project had one, and it was deliberately removed in favor of the shot-record model described above, which only speaks once it has real outcomes to learn from.
 
 ---
